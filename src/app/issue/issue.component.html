@@ -1,0 +1,25 @@
+<div>
+    <ul *ngIf="modalReady">
+        <h1>Lend us a hand!</h1>
+        <h3>Our AI is still learning how to read scripts and it looks like we ran into a few issues</h3>
+       <div class="screenbox">
+        <li *ngFor="let line of currentProblem.modalText; "> 
+           <div [ngClass]="getClass(line.css)">{{line.text}}</div> 
+        </li>
+        <li>
+            <div class={{currentProblem.finalText.css}}> {{currentProblem.finalText.text}}</div>
+        </li>
+    </div>
+    <div>Is the line in red DESCRIPTION or SOMETHING ELSE</div>
+    <div class="button-container">
+       
+        <div>
+            <button (click)="updateScriptDoc(currentProblem.index,'dialog')">something else</button>
+        </div>
+        <div>
+            <button (click)="updateScriptDoc(currentProblem.index,'first-description')">description</button>
+        </div>
+    </div>
+    </ul>
+
+</div>

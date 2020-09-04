@@ -1,0 +1,4075 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    li {
+      font: 12px Courier, fixed;
+      list-style-type: none;
+      line-height: normal;
+    }
+
+    .body {
+      margin-left: 10%;
+      margin-right: 10%;
+      top: 2%;
+      bottom: 2%
+    }
+
+    .sceneheader,
+    .character {
+      padding-top: 1.5ex;
+    }
+
+    .version {
+      display: none;
+    }
+
+    .description {
+      padding-right: 10%;
+    }
+
+    .character {
+      margin-left: 20%;
+      text-align: center;
+      margin-right: 20%;
+      padding-top: 15px
+    }
+
+    .dialog,
+    .short-dialog {
+      margin-left: 20%;
+    }
+
+    .short-dialog {
+      padding-bottom: 10px
+    }
+
+    .parenthetical {
+      margin-left: 20%;
+    }
+
+    /* special case: dialogue followed by a parenthetical; the extra line needs to be suppressed */
+
+    .dialogue+.parenthetical {
+      padding-bottom: 0;
+    }
+
+    .transition {
+      padding-top: 3ex;
+      margin-left: 65%;
+      padding-bottom: 1.5ex;
+    }
+
+    .scene-header {
+      font-weight: 900;
+      padding-top: 20px;
+      padding-bottom: 20px
+    }
+
+    .shot {
+      text-align: right;
+      font-weight: 900;
+    }
+
+    .hidden {
+      display: none
+    }
+  </style>
+</head>
+
+<body>
+
+</body>
+<ul class ="scenebox">
+  <li class=""> </li>
+  <li class=""> THE LAST THING MARY SAW
+  <li class=""> Written and Directed by
+  <li class=""> EDOARDO VITALETTI
+  <li class=""> 16 West 19th Street September 2019 draft
+  <li class=""> New York City, NY, 10011
+  <li class=""> (516)-439-7261
+  <li class=""> isen@intrinsicvaluefilms.com
+  <li class=""> MAIN CHARACTERS:
+  <li class=""> MARY(22)
+  <li class=""> ELEANOR(20)
+  <li class=""> CONSTANCE, THE GRANDMOTHER(76)
+  <li class=""> THEODORE, THE HOUSE GUARD(42)
+  <li class=""> RUPERT, THE INTRUDER(20s)
+  <li class=""> ABIEL, THE CONSTABLE(40s)
+  <li class=""> THE FAMILY TREE:
+  <li class=""> OSBERT(75) - CONSTANCE(76)
+  <li class=""> |__________|
+  <li class=""> ______|_______
+  <li class=""> | |
+  <li class=""> RANDOLPH(47) - AGNES(46) EUSTACE(49) - ANN(38)
+  <li class=""> |________________| |____________|
+  <li class=""> ______|_____ |
+  <li class=""> | | JAMES(18)
+  <li class=""> MATTHEW(12) MARY(22)
+  <li class=""> SECONDARY:
+  <li class=""> ELDRED(40s)
+  <li class=""> DEPUTY 1(30s)
+  <li class=""> DEPUTY 2(30s)
+  <li class=""> JOSEPH(40s)
+  <li class=""> ROSE(30s)
+  <li class=""> FARMER (40s)
+  <li class=""> ii.
+  <li class=""> OVER BLACK:
+  <li class=""> MARY (V.O.)
+  <li class=""> Yours are my eyes, yours are my
+  <li class=""> clothes. In you I rest, in your
+  <li class=""> light I see now...
+  <li class=""> CUT TO:
+  <li class=""> INT. THE FARM HOUSE - THE KITCHEN - DAY
+  <li class=""> NOTE: ALL IN ONE TAKE.
+  <li class=""> Through a window: ELEANOR, the HOUSE MAID - early 20s, hair
+  <li class=""> tied under a MAID CAP, WORK CLOTHES - SWEEPS the ground right
+  <li class=""> outside the property.
+  <li class=""> A gentle breeze brushes her, slightly lifting her GOWN. A
+  <li class=""> vision of pure beauty.
+  <li class=""> MARY (V.O.)
+  <li class=""> Unholy was the night I searched
+  <li class=""> you, my head and body hidden in the
+  <li class=""> sheets.
+  <li class=""> MARY's hands grab an empty COPPER TRAY on the table - we
+  <li class=""> don't see her face yet. She walks into:
+  <li class=""> INT. THE FARM HOUSE - THE LIVING ROOM - CONTINUOUS
+  <li class=""> MARY (V.O.)
+  <li class=""> And now fear takes me, fear that in
+  <li class=""> you I will not find shelter any </li>
+  <li class=""> more. </li>
+  <li class=""> Camera stays on MARY'S BACK. </li>
+  <li class=""> She carries the tray through the room, where a few members of </li>
+  <li class=""> the FAMILY sit and read from their BIBLES in pious silence. </li>
+  <li class=""> Camera closes on Mary's upper body. She walks up the stairs, </li>
+  <li class=""> into the hallway and then into: </li>
+  <li class=""> INT. THE GRANDMOTHER'S BEDROOM - CONTINUOUS </li>
+  <li class=""> In the back, we get a glimpse of a BLURRED FIGURE lying on </li>
+  <li class=""> the BED, right next to the NIGHTSTAND. </li>
+  <li class=""> Camera turns to reveal Mary's face: early 20s, pale </li>
+  <li class=""> complexion. She's got the expression of someone on a mission. </li>
+  <li class=""> MARY (V.O.) </li>
+  <li class=""> Too close was your presence, too </li>
+  <li class=""> warm was your breath. </li>
+  <li class=""> She reaches for the nightstand and picks up an empty TEA CUP. </li>
+  <li class=""> She places it on her tray. </li>
+  <li class=""> Her eyes stay fixed on the bed in front of her. </li>
+  <li class=""> MARY (V.O.) </li>
+  <li class=""> All that was earthly, all that was </li>
+  <li class=""> mortal, I embraced it. </li>
+  <li class=""> Camera tracks to a WINDOW in front of the bed. </li>
+  <li class=""> MARY (V.O.) </li>
+  <li class=""> Earth is far gone. I am but your </li>
+  <li class=""> breath now. </li>
+  <li class=""> Through the window, we see the back FIELD. </li>
+  <li class=""> ANGLE ON: downstairs, Eleanor keeps sweeping dust off the </li>
+  <li class=""> ground. </li>
+  <li class=""> MARY (V.O.) </li>
+  <li class=""> Yours are my eyes, yours are my </li>
+  <li class=""> clothes. In you I rest, in your </li>
+  <li class=""> light I see now. </li>
+  <li class=""> Mary knocks on the window. Eleanor looks up, they lock eyes. </li>
+  <li class=""> She freezes, loosening her grip on the BROOM and letting it </li>
+  <li class=""> fall to the ground. </li>
+  <li class=""> Camera tracks to the bed, finally revealing: CONSTANCE, </li>
+  <li class=""> Mary's old GRANDMOTHER - 76, dry hair, emaciated - is DEAD. </li>
+  <li class=""> Dark, almost black BLOOD stains her mouth, chin and clothes. </li>
+  <li class=""> The vision is painterly in its stillness. </li>
+  <li class=""> MARY (V.O.) </li>
+  <li class=""> Let me mourn for a day. </li>
+  <li class=""> CUT TO BLACK: </li>
+  <li class=""> MARY (V.O.) </li>
+  <li class=""> Only one day more. </li>
+  <li class=""> TITLE CARD APPEARS: </li>
+  <li class=""> "THE LAST THING MARY SAW" </li>
+  <li class=""> CUT TO: </li>
+  <li class=""> INT. THE CONSTABLE'S OFFICE - NIGHT </li>
+  <li class=""> A CANDLE glimmers through an otherwise pitch-black room. </li>
+  <li class=""> Caught in the gleam, we see the town's CONSTABLE: ABIEL - </li>
+  <li class=""> 40s, thick DARK CIRCLES around his eyes. He sits in shock. </li>
+  <li class=""> ELDRED (O.S.) </li>
+  <li class=""> It is a risk we cannot afford, </li>
+  <li class=""> Abiel. </li>
+  <li class=""> ABIEL </li>
+  <li class=""> We have no choice. </li>
+  <li class=""> Behind him, his deputy ELDRED'S face - 40s - slightly breaks </li>
+  <li class=""> through darkness. </li>
+  <li class=""> ELDRED </li>
+  <li class=""> It is not our responsibility to </li>
+  <li class=""> give the Devil a chance to repent. </li>
+  <li class=""> ABIEL </li>
+  <li class=""> Did Peter not instruct us to repay </li>
+  <li class=""> evil with blessing, so that we may </li>
+  <li class=""> inherit our own blessing? </li>
+  <li class=""> ELDRED </li>
+  <li class=""> He inhabits her, I say. And he must </li>
+  <li class=""> perish with her. </li>
+  <li class=""> ABIEL </li>
+  <li class=""> Fear is guiding your words. </li>
+  <li class=""> ELDRED </li>
+  <li class=""> God guides my words. And Lucifer </li>
+  <li class=""> will be guiding hers. </li>
+  <li class=""> ABIEL </li>
+  <li class=""> We must listen to them </li>
+  <li class=""> nevertheless. </li>
+  <li class=""> ELDRED </li>
+  <li class=""> Then we must do so now. </li>
+  <li class=""> ABIEL </li>
+  <li class=""> No. A day will pass before </li>
+  <li class=""> interrogation. </li>
+  <li class=""> ELDRED </li>
+  <li class=""> And harbor the Evil in our </li>
+  <li class=""> household? </li>
+  <li class=""> ABIEL </li>
+  <li class=""> We have no choice. </li>
+  <li class=""> Abiel looks down. </li>
+  <li class=""> ANGLE ON: in his hands sits an old BOOK, stained in dry </li>
+  <li class=""> BLOOD. The cover reads: "Sorcerers and Prophets of the Pagan </li>
+  <li class=""> World." </li>
+  <li class=""> ELDRED (O.S.) </li>
+  <li class=""> Doubts cloud your mind, my friend. </li>
+  <li class=""> ABIEL </li>
+  <li class=""> Her eyes. I cannot but think about </li>
+  <li class=""> them. </li>
+  <li class=""> ELDRED (O.S.) </li>
+  <li class=""> Eyes like the Devil, I say. </li>
+  <li class=""> Abiel takes a deep breath. </li>
+  <li class=""> He opens the book on page one-hundred and ten, stained in </li>
+  <li class=""> blood and featuring the chapter's title: "The Story of </li>
+  <li class=""> Tiresias". </li>
+  <li class=""> He turns the page, to reveal that the following three have </li>
+  <li class=""> been torn from the book. </li>
+  <li class=""> ELDRED (CONT'D) </li>
+  <li class=""> We must turn to the Lord's prayer. </li>
+  <li class=""> Abiel's eyes get lost in the void. </li>
+  <li class=""> CUT TO: </li>
+  <li class=""> INT. THE CONSTABLE'S OFFICE - THE DETENTION ROOM - MORNING </li>
+  <li class=""> Two DEPUTIES - both armed with RIFLES - guard a rudimentary </li>
+  <li class=""> detention room, furnished with an old, rusty BED FRAME and a </li>
+  <li class=""> CROOKED CHAIR. </li>
+  <li class=""> Mary - wearing the WORK CLOTHES we previously saw on Eleanor - </li>
+  <li class=""> sits on the chair, facing the GREY WALL. Her back is all we </li>
+  <li class=""> see. </li>
+  <li class=""> Deputy 1 and Deputy 2 anxiously look at her. </li>
+  <li class=""> O.S. SFX of: A SHARP PEN SCRIBBLING. </li>
+  <li class=""> ABIEL (V.O.) </li>
+  <li class=""> The day is the third in the month </li>
+  <li class=""> CUT TO: </li>
+  <li class=""> INT. THE DETENTION ROOM - DUSK </li>
+  <li class=""> We look at a DIRTY TRAY on the floor, some DRY BREAD and a </li>
+  <li class=""> GLASS OF WATER sit on it. </li>
+  <li class=""> Mary kneels to the tray, revealing her hands covered in DRY </li>
+  <li class=""> BLOOD. NOTE: CAMERA frames her up to her nose, DOES NOT show </li>
+  <li class=""> her eyes. </li>
+  <li class=""> She crosses herself, breaks the bread and dips a piece into </li>
+  <li class=""> the water. </li>
+  <li class=""> ABIEL (V.O.) </li>
+  <li class=""> ...after an agreed upon, one-day </li>
+  <li class=""> period of grieving, we are hereby </li>
+  <li class=""> gathered to proceed with the </li>
+  <li class=""> interrogation of Maiden Mary, in </li>
+  <li class=""> regards to the tragic events that </li>
+  <li class=""> have occurred at the Farm following </li>
+  <li class=""> her grandmother's sudden departure. </li>
+  <li class=""> She slowly chews on the bread. </li>
+  <li class=""> CUT TO: </li>
+  <li class=""> INT. OUTSIDE THE INTERROGATION ROOM - NIGHT </li>
+  <li class=""> SLOW-MO: Deputy 1 and 2 walk to a door in front of them. Dim </li>
+  <li class=""> CANDLE LIGHT guides their cautious steps. </li>
+  <li class=""> ABIEL (V.O.) </li>
+  <li class=""> Do you understand the charges that </li>
+  <li class=""> have been preferred against you? </li>
+  <li class=""> MARY (V.O.) </li>
+  <li class=""> Yes. </li>
+  <li class=""> Deputy 1 opens the door, as the other holds his rifle firmly. </li>
+  <li class=""> ABIEL (V.O.) </li>
+  <li class=""> Will you, in accordance with our </li>
+  <li class=""> God-given laws, solemnly swear to </li>
+  <li class=""> say nothing but the truth in </li>
+  <li class=""> regards to any question that may be </li>
+  <li class=""> posed to you? </li>
+  <li class=""> MARY (V.O.) </li>
+  <li class=""> Yes. </li>
+  <li class=""> The Deputies make their way into the room. </li>
+  <li class=""> CUT TO: </li>
+  <li class=""> INT. INSIDE THE INTERROGATION ROOM - NIGHT </li>
+  <li class=""> REGULAR MOTION: Abiel and Eldred sit behind a desk, the </li>
+  <li class=""> latter holding a DIP-PEN and PAPER in his hand. Lit CANDLES </li>
+  <li class=""> sit on their desk, while the Deputies guard each side of it. </li>
+  <li class=""> Mary sits in front of them. A BLACK CLOTH now covers her </li>
+  <li class=""> eyes. Her body is still, as if lifeless. </li>
+  <li class=""> Abiel observes Eldred's pen moving across the paper. </li>
+  <li class=""> ABIEL </li>
+  <li class=""> May the Lord be with you and infuse </li>
+  <li class=""> your words with proper judgement </li>
+  <li class=""> and wit. </li>
+  <li class=""> Eldred finishes writing. He scans Mary, as if looking at a </li>
+  <li class=""> dangerous animal. </li>
+  <li class=""> DEAD ON: the four men look into camera. Following Eldred's </li>
+  <li class=""> hand signal, Deputy 1 and 2 slowly point their rifles at </li>
+  <li class=""> Mary. No sudden movements allowed. </li>
+  <li class=""> ABIEL (CONT'D) </li>
+  <li class=""> Could you recite the Lord's Prayer </li>
+  <li class=""> for us? </li>
+  <li class=""> The Deputies adjust their aim. </li>
+  <li class=""> MARY </li>
+  <li class=""> "Our Father who art in heaven, </li>
+  <li  class=""> hallowed be thy name. Thy kingdom </li>
+  <li  class=""> come. Thy will be done, on earth as </li>
+  <li  class=""> it is in heaven. Give us this day </li>
+  <li  class=""> our daily bread and forgive us our </li>
+  <li  class=""> trespasses, as we forgive those who </li>
+  <li  class=""> trespass against us; and lead us </li>
+  <li  class=""> not into temptation, but deliver us </li>
+  <li  class=""> from evil." </li>
+  <li  class=""> Silence. All freeze, look at each other, waiting for
+  </li>
+  <li  class=""> something that just does not come out of Mary's
+    mouth. </li>
+  <li  class=""> MARY (O.S.) (CONT'D) </li>
+  <li  class=""> Will you say your Prayer too, </li>
+  <li  class=""> Constable? </li>
+  <li  class=""> They halt. All faces turn to Mary once again. </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> (pauses) </li>
+  <li  class=""> "Our Father, which art in heaven, </li>
+  <li  class=""> hallowed be thy name. Thy kingdom </li>
+  <li  class=""> come. </li>
+  <li  class=""> (MORE) </li>
+  <li  class=""> Thy will be done, in earth as it is </li>
+  <li  class=""> in heaven. Give us this day our </li>
+  <li  class=""> daily bread and forgive us our </li>
+  <li  class=""> trespasses, as we forgive them that </li>
+  <li  class=""> trespass against us; and lead us </li>
+  <li  class=""> not into temptation, but deliver us </li>
+  <li  class=""> from evil..." </li>
+  <li  class=""> Eldred turns his face to Abiel. </li>
+  <li  class=""> ABIEL (CONT'D) </li>
+  <li  class=""> "...For thine is the kingdom, and </li>
+  <li  class=""> the power, and the glory, forever." </li>
+  <li  class=""> The room goes silent again. </li>
+  <li  class=""> Following Abiel's nod, the armed Deputies slowly
+    take a </li>
+  <li  class=""> leave, closing the door behind them. </li>
+  <li  class=""> Abiel turns his head to Eldred, who locks eyes with
+    him. </li>
+  <li  class=""> He nods to him as well. </li>
+  <li  class=""> ELDRED </li>
+  <li  class=""> (perplexed) </li>
+  <li  class=""> I can not accommodate that. </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> I will turn in the report myself. </li>
+  <li  class=""> ELDRED </li>
+  <li  class=""> These are not the rules we follow. </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> Please, Eldred. </li>
+  <li  class=""> Eldred engages Abiel in what feels like a staring
+    contest. </li>
+  <li  class=""> The former takes another look at Mary. </li>
+  <li  class=""> CAMERA BEHIND MARY: in the back, we see Eldred
+    leaning into </li>
+  <li  class=""> Abiel and whispering something in his ear. Eldred
+    then stands </li>
+  <li  class=""> up and finally leaves the room. </li>
+  <li  class=""> Abiel and Mary are alone now. </li>
+  <li  class=""> ABIEL (CONT'D) </li>
+  <li  class=""> What is a man of the law to do when </li>
+  <li  class=""> he finds himself at a crossroad? </li>
+  <li  class=""> A beat. </li>
+  <li  class=""> ABIEL (CONT'D) </li>
+  <li  class=""> To perform his duty... </li>
+  <li  class=""> ABIEL (CONT'D) </li>
+  <li  class=""> He looks at "Sorcerers and Prophets of the Pagan
+    World", </li>
+  <li  class=""> sitting on a corner of the desk. </li>
+  <li  class=""> ABIEL (CONT'D) </li>
+  <li  class=""> ...or to lend an ear to curiosity? </li>
+  <li  class=""> MARY </li>
+  <li  class=""> Which path appeals to you the most, </li>
+  <li  class=""> Constable? </li>
+  <li  class=""> He looks at the book for a few more seconds, then
+    finally </li>
+  <li  class=""> takes his eyes off it. </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> Tell me about the funeral. </li>
+  <li  class=""> Mary settles into her chair, prepares for a long
+    story. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> In our family, when someone dies, </li>
+  <li  class=""> three rules must be followed. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> EXT. OUTDOOR - DAY </li>
+  <li  class=""> MARY'S FLASHBACK </li>
+  <li  class=""> A full CIRCLE BELL tolls solemnly against a clear
+    sky. The </li>
+  <li  class=""> strikes resonate in the silent atmosphere. </li>
+  <li  class=""> TITLE FADES IN/OUT: </li>
+  <li  class=""> CHAPTER I </li>
+  <li  class=""> THE GRANDMOTHER'S FINGER </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> EXT. THE BACK OF THE FARM HOUSE - A SMALL SHED - DAY
+  </li>
+  <li  class=""> O.S. SOUND: DISTANT BELL STRIKES DON'T STOP UNTIL
+    SPECIFIED. </li>
+  <li  class=""> INSIDE THE SHED, the sun slightly shines through a
+    crack in </li>
+  <li  class=""> the door. Suddenly, ELEANOR opens it on us and scans
+    the </li>
+  <li  class=""> room. </li>
+  <li  class=""> REVERSE: bags of FLOUR, dirty GREENS and VEGETABLES
+    sit </li>
+  <li  class=""> inside the shed. </li>
+  <li  class=""> CLOSE ON: Eleanor fixes a few hairs under her maid
+    cap. </li>
+  <li  class=""> Looking far into the distance, her eyes chase the
+    sound of </li>
+  <li  class=""> the death bells. Two VERTICAL SCARS show on her
+    neck. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE CHICKEN COOP IN THE FIELD </li>
+  <li  class=""> We look inside an old, run-down chicken coop. The
+    FEEDER is </li>
+  <li  class=""> full, FEATHERS and DIRT are scattered all around,
+    but NO </li>
+  <li  class=""> BIRDS show. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> EXT. THE FIELD OUTSIDE THE FARM HOUSE </li>
+  <li  class=""> LOW ANGLE ON: at the end of a DIRT ROAD, THEODORE,
+    the HOUSE </li>
+  <li  class=""> GUARD stands - 42, bald, skeleton-thin, eyes too
+    caved into </li>
+  <li  class=""> his skull. He wears a long COAT. </li>
+  <li  class=""> The FARM HOUSE towers behind him. The wooden chicken
+    coop </li>
+  <li  class=""> also appears in the distance. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE FARM HOUSE - OSBERT'S ROOM - LATER </li>
+  <li  class=""> CAMERA TRACKS INTO: OSBERT'S - late 70s, the WIDOWER
+    - naked </li>
+  <li  class=""> back. He's sitting in a WOODEN BATHTUB, which is
+    mostly out </li>
+  <li  class=""> of frame. </li>
+  <li  class=""> He grabs a BUCKET of WATER from the side and holds
+    it right </li>
+  <li  class=""> above his head. </li>
+  <li  class=""> MARY (V.O.) </li>
+  <li  class=""> Rule number one: the relatives of </li>
+  <li  class=""> the Dead make a vow of silence for </li>
+  <li  class=""> the entire day. </li>
+  <li  class=""> He flips it: water cascades on him. </li>
+  <li  class=""> O.S. SOUND OF THE BELL STRIKING CEASES ABRUPTLY.
+  </li>
+  <li  class=""> Total silence now. </li>
+  <li  class=""> MOMENTS LATER. </li>
+  <li  class=""> CLOSE ON: a BLACK LEATHER BAG - almost like a
+    doctor's bag - </li>
+  <li  class=""> sits on the bed. Osbert's hands enter the frame,
+    open it and </li>
+  <li  class=""> sift through it. </li>
+  <li  class=""> He takes out an INCENSE BURNER. </li>
+  <li  class=""> MOMENTS LATER </li>
+  <li  class=""> A MATCH lights O.S. </li>
+  <li  class=""> Osbert, now in full FUNERAL ATTIRE and with a WOODEN
+    CROSS </li>
+  <li  class=""> hanging from his neck, leans over the incense
+    burner. He </li>
+  <li  class=""> removes the top and lights the wicks with the match.
+    Smoke </li>
+  <li  class=""> lifts up in the air. </li>
+  <li  class=""> He holds the hand bell and prepares to shake it....
+  </li>
+  <li  class=""> SEQUENCE </li>
+  <li  class=""> SOUND CUE: every time we move to a different room,
+    the bell </li>
+  <li  class=""> rings. </li>
+  <li  class=""> 1. INT. EUSTACE AND ANN'S ROOM </li>
+  <li  class=""> CLOSE ON: EUSTACE - Constance and Osbert's son - his
+    spouse </li>
+  <li  class=""> ANN and their son JAMES pick up their heads from a
+  </li>
+  <li  class=""> collective, silent prayer. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> 2. INT. RANDOLPH AND AGNES'S ROOM </li>
+  <li  class=""> AGNES - Eustace's sister - her spouse RANDOLPH and
+    their son </li>
+  <li  class=""> MATTHEW, all down to their knees, listen to the
+    sound. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> 3. INT. MARY'S ROOM </li>
+  <li  class=""> MARY - Randolph and Agnes' daughter, Matthew's
+    sister - looks </li>
+  <li  class=""> up to the ceiling, immobile with her hands joined.
+  </li>
+  <li  class=""> END OF SEQUENCE </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. THE FARM HOUSE - THE LIVING ROOM - DAY </li>
+  <li  class=""> Eleanor stands in a corner. </li>
+  <li  class=""> HER POV - THROUGH A WINDOW: in the field, she
+    notices the </li>
+  <li  class=""> house Guard talking with a MYSTERIOUS YOUNG MAN,
+    whose mouth </li>
+  <li  class=""> is covered by a BLACK CLOTH. </li>
+  <li  class=""> Camera moves to the Family, all wearing black
+    FUNERAL CLOTHES </li>
+  <li  class=""> in the center of the room. </li>
+  <li  class=""> They're arranged in two lines: on the right,
+    Eustace, Ann and </li>
+  <li  class=""> James; on the left, Mary, Agnes, Randolph and
+    Matthew. </li>
+  <li  class=""> Osbert's POV: he walks between the two lines, which
+    lead up </li>
+  <li  class=""> to an OPEN CASKET. He swings his incense burner back
+    and </li>
+  <li  class=""> forth, filling the room with smoke. </li>
+  <li  class=""> Osbert stops in front of Mary, who's standing with
+    her head </li>
+  <li  class=""> bowed down. She looks up: her face is red, her eyes
+    swollen. </li>
+  <li  class=""> Osbert walks to the casket and kneels down to it.
+  </li>
+  <li  class=""> Camera TRACKS into the casket, revealing: CONSTANCE
+    lyes </li>
+  <li  class=""> dead, in a BLACK DRESS and with her hands joined
+    against her </li>
+  <li  class=""> stomach. </li>
+  <li  class=""> The rest of the Family slowly gathers around. Time
+    for quiet </li>
+  <li  class=""> and prayer. </li>
+  <li  class=""> O.S. SOUND: A FAR KNOCK. A LOUDER ONE FOLLOWS. </li>
+  <li  class=""> The Family turns to Eleanor, prompting her to leave
+    the room. </li>
+  <li  class=""> Mary's eyes follow her walking away. </li>
+  <li  class=""> INT. THE FARM HOUSE - THE KITCHEN - SECONDS LATER
+  </li>
+  <li  class=""> CAMERA TRACKS through the kitchen: </li>
+  <li  class=""> top of a FIRE. Water boils inside. </li>
+  <li  class=""> are scattered on a large, wooden table. </li>
+  <li  class=""> O.S. SOUND: ANOTHER KNOCK. </li>
+  <li  class=""> Eleanor walks to a DOOR situated in the back. </li>
+  <li  class=""> She opens it on the MYSTERIOUS MAN she saw outside -
+    pale, </li>
+  <li  class=""> greasy hair, his uncovered mouth showing a CLEFT
+    LIP. He's </li>
+  <li  class=""> holding two big, brown SACKS. </li>
+  <li  class=""> MYSTERIOUS MAN </li>
+  <li  class=""> (lisp) </li>
+  <li  class=""> May I come in? </li>
+  <li  class=""> ELEANOR'S POV - CLOSE ON: his cleft lip. </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> My name is Rupert, I was summoned </li>
+  <li  class=""> from the farms down in the valley. </li>
+  <li  class=""> (MORE) </li>
+  <li  class=""> I was told you needed some of </li>
+  <li  class=""> these. </li>
+  <li  class=""> He tilts one of the sacks: peeking out of it is the
+    head of a </li>
+  <li  class=""> DEAD CHICKEN. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> Ready for treatment. </li>
+  <li  class=""> Eleanor awkwardly nods yes, lets Rupert in. </li>
+  <li  class=""> She walks to the counter, opens a drawer and takes
+    out a </li>
+  <li  class=""> BROWN WOOL POUCH. SOUND: COINS jingle on the inside.
+  </li>
+  <li  class=""> RUPERT (O.S.) (CONT'D) </li>
+  <li  class=""> You can not talk, right? </li>
+  <li  class=""> She shakes her head no, walks over to him and hands
+    him the </li>
+  <li  class=""> pouch. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> Don't bother... I like to do the </li>
+  <li  class=""> talking. </li>
+  <li  class=""> He takes the pouch, studies it with a quasi
+    scientific </li>
+  <li  class=""> interest. He gives it a shake - the sound of a good
+    deal. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> My deepest condolences, by the way. </li>
+  <li  class=""> He throws his sacks on the table. Stacks of dead
+    chickens </li>
+  <li  class=""> fall on it. Eleanor walks to them and starts to
+    pluck them. </li>
+  <li  class=""> Rupert pulls a chair and sets it right next to the
+    table. </li>
+  <li  class=""> They lock eyes for a few, uncomfortable seconds.
+  </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> I'm sure you don't mind if I help. </li>
+  <li  class=""> This looks like a lot of work. </li>
+  <li  class=""> He starts plucking a chicken as well. One eye on the
+    dead </li>
+  <li  class=""> bird, the other leers at Eleanor. </li>
+  <li  class=""> BACK TO: </li>
+  <li  class=""> INT. THE LIVING ROOM </li>
+  <li  class=""> Soft sunlight coming through the window shapes the
+    incense </li>
+  <li  class=""> smoke. We see the profile of Constance's face. </li>
+  <li  class=""> The CASKET'S POV: the Family prays with their eyes
+    closed. </li>
+  <li  class=""> CAMERA moves to Matthew, as a TAPPING SOUND kicks
+    in. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> Matthew opens his eyes and looks down to the open
+    casket, </li>
+  <li  class=""> noticing something. </li>
+  <li  class=""> He pulls his father's shirt, calls for his
+    attention. </li>
+  <li  class=""> Randolph shows the same, shocked reaction. </li>
+  <li  class=""> CAMERA FOLLOWS in circle: each family member calls
+    for the </li>
+  <li  class=""> attention of the person standing right next to them
+    - there's </li>
+  <li  class=""> something off inside the casket. </li>
+  <li  class=""> CAMERA STOPS ON: Mary, her eyes wide open. </li>
+  <li  class=""> We TRACK inside the casket: Constance's right INDEX
+    FINGER is </li>
+  <li  class=""> flickering and tapping on the other hand, as if
+    caught in a </li>
+  <li  class=""> supernatural spasm. </li>
+  <li  class=""> Matthew opens his mouth, about to speak, but his
+    mother Agnes </li>
+  <li  class=""> grabs his face and pulls him back - no talking
+    allowed. </li>
+  <li  class=""> All eyes converge to Osbert, preoccupied as ever.
+    His incense </li>
+  <li  class=""> burner is now immobile, as he looks at the finger in
+    shock. </li>
+  <li  class=""> Finally, his hands mime the opening of a bag to
+    James, who </li>
+  <li  class=""> promptly leaves the scene. </li>
+  <li  class=""> EXTREME CLOSE UP ON: the Dead's finger keeps
+    flickering. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE KITCHEN </li>
+  <li  class=""> ELEANOR'S POV - CLOSE ON: Rupert's deformed lip. She
+    can't </li>
+  <li  class=""> take her eyes off it. </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> Mysterious, is it not? The human </li>
+  <li  class=""> body? </li>
+  <li  class=""> She quickly looks away. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> (smiles) </li>
+  <li  class=""> Don't worry. Curiosity is the </li>
+  <li  class=""> noblest of all sins. </li>
+  <li  class=""> She keeps working, does her best to ignore him.
+  </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> Do you know what they call my </li>
+  <li  class=""> condition? </li>
+  <li  class=""> Her head slightly shakes "no". </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> I gather you don't get many books </li>
+  <li  class=""> around here. </li>
+  <li  class=""> He pauses. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> When I was born, my mother brought </li>
+  <li  class=""> me to a doctor... </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE LIVING ROOM </li>
+  <li  class=""> Osbert's face sinks in his BLACK LEATHER BAG. He
+    takes out an </li>
+  <li  class=""> ASPERGILLUM, a CUP and a small vile of HOLY WATER.
+  </li>
+  <li  class=""> After pouring the holy water into the cup, he dips
+    the </li>
+  <li  class=""> aspergillum in it. </li>
+  <li  class=""> RUPERT (V.O.) </li>
+  <li  class=""> He looked at it and said that it </li>
+  <li  class=""> was caused by an imperfection in my </li>
+  <li  class=""> brain, and that I was going to look </li>
+  <li  class=""> like this forever... </li>
+  <li  class=""> CLOSE ON: with a firm hand gesture, Osbert lifts the
+  </li>
+  <li  class=""> aspergillum in the air and sprinkles holy water all
+    over </li>
+  <li  class=""> Constance's body. </li>
+  <li  class=""> Her finger flickers, still. </li>
+  <li  class=""> RUPERT (V.O.) </li>
+  <li  class=""> My mother wasn't quite satisfied </li>
+  <li  class=""> with his explanation. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE KITCHEN </li>
+  <li  class=""> Eleanor has stopped plucking the chickens. </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> So she brought me to another </li>
+  <li  class=""> doctor, who told her that he could </li>
+  <li  class=""> sew the two sides of my upper lip </li>
+  <li  class=""> together... </li>
+  <li  class=""> His hand mimes the procedure. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE LIVING ROOM </li>
+  <li  class=""> Osbert digs into his bag once again and takes out a
+    glass </li>
+  <li  class=""> container with some BLESSED SALT in it. </li>
+  <li  class=""> RUPERT (V.O.) </li>
+  <li  class=""> He said that it would continue to </li>
+  <li  class=""> cause me great trouble and, sure </li>
+  <li  class=""> enough, still look hideous to the </li>
+  <li  class=""> eye, but that would ultimately </li>
+  <li  class=""> improve my situation. </li>
+  <li  class=""> CLOSE ON: Osbert vigorously shakes salt in the air,
+    letting </li>
+  <li  class=""> it all drop on Constance's body. </li>
+  <li  class=""> RUPERT (V.O.) </li>
+  <li  class=""> Yet, she wasn't satisfied with this </li>
+  <li  class=""> doctor either. </li>
+  <li  class=""> Another look at the finger: the flickering has only
+  </li>
+  <li  class=""> intensified. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE KITCHEN </li>
+  <li  class=""> Only the sound of the water boiling in the cauldron
+    behind </li>
+  <li  class=""> Eleanor. </li>
+  <li  class=""> RUPERT (O.S.) </li>
+  <li  class=""> Then... </li>
+  <li  class=""> A beat. </li>
+  <li  class=""> ELEANOR'S POV - CLOSE ON: Rupert stares into camera.
+  </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> (more serious) </li>
+  <li  class=""> A few years ago, we went to a small </li>
+  <li  class=""> village in a remote part of the </li>
+  <li  class=""> region, where the sun barely shines </li>
+  <li  class=""> through the clouds. There, we saw a </li>
+  <li  class=""> third doctor. And when he saw my </li>
+  <li  class=""> face, he jumped in horror and </li>
+  <li  class=""> kicked me out of the room before </li>
+  <li  class=""> saying anything. Do you know why? </li>
+  <li  class=""> Eleanor slowly shakes her head no. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE LIVING ROOM </li>
+  <li  class=""> Osbert takes out a vile of BLESSED OIL. He pours a
+    few drops </li>
+  <li  class=""> on his right thumb and crosses himself - his
+    forehead, then </li>
+  <li  class=""> his lips. </li>
+  <li  class=""> MONTAGE </li>
+  <li  class=""> CLOSE UPS OF - the Family crosses themselves on:
+  </li>
+  <li  class=""> RUPERT (V.O.) </li>
+  <li  class=""> It is common superstition that evil </li>
+  <li  class=""> forces reside in certain animals. </li>
+  <li  class=""> For instance, people believe that </li>
+  <li  class=""> if a woman, when pregnant, </li>
+  <li  class=""> encounters a hare on her path... </li>
+  <li  class=""> INTERCUT WITH - Osbert crosses Constance on: </li>
+  <li  class=""> RUPERT (V.O.) </li>
+  <li  class=""> ...she will give birth to a </li>
+  <li  class=""> defected child, whose mouth will </li>
+  <li  class=""> resemble that of a hare itself. </li>
+  <li  class=""> Thus, the name... </li>
+  <li  class=""> END OF MONTAGE </li>
+  <li  class=""> CLOSE ON: the finger continues flickering
+    incessantly. </li>
+  <li  class=""> INT. THE KITCHEN </li>
+  <li  class=""> Eleanor listens attentively. </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> (articulates) </li>
+  <li  class=""> Hare-mouth. </li>
+  <li  class=""> A beat. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> Since then, I have taken the name </li>
+  <li  class=""> of Evil. My mother promised the </li>
+  <li  class=""> doctor that she would immediately </li>
+  <li  class=""> rid of me and of the spirits that </li>
+  <li  class=""> resided within my deformed being. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE LIVING ROOM </li>
+  <li  class=""> Osbert goes back into his bag and extracts a small
+    IRON SAW - </li>
+  <li  class=""> his last resource. </li>
+  <li  class=""> RUPERT (V.O.) </li>
+  <li  class=""> But instead of waiting, I bargained </li>
+  <li  class=""> my way to survival. </li>
+  <li  class=""> Osbert stares the finger down. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE KITCHEN </li>
+  <li  class=""> Rupert plucks a few more feathers from his chicken.
+  </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> I stabbed my mother to death that </li>
+  <li  class=""> very day, went back to the doctor </li>
+  <li  class=""> and forced him to turn in a large </li>
+  <li  class=""> sum of gold, telling him that if he </li>
+  <li  class=""> didn't do that, he was to be cursed </li>
+  <li  class=""> on the spot. </li>
+  <li  class=""> (he nods, deep in thought) </li>
+  <li  class=""> He agreed. </li>
+  <li  class=""> She keeps listening, petrified. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> That is how a negotiation works. I </li>
+  <li  class=""> give you freedom, you give me gold. </li>
+  <li  class=""> (looks at the chickens) </li>
+  <li  class=""> I give you my brown sacks, you give </li>
+  <li  class=""> me your brown pouch. </li>
+  <li  class=""> They lock eyes - Eleanor knows where he's going with
+    this. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> It appears as though... </li>
+  <li  class=""> He reaches into his pocket and takes another WOOL
+    POUCH, this </li>
+  <li  class=""> time GREY and smaller. Eleanor looks at it in awe.
+  </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> ...I also came with a small pouch. </li>
+  <li  class=""> And like that stupid doctor had a </li>
+  <li  class=""> desire for life, your friend </li>
+  <li  class=""> outside told me that you show as </li>
+  <li  class=""> deep a desire for this. </li>
+  <li  class=""> She walks ahead, extends her arm in pursuit of the
+    pouch. </li>
+  <li  class=""> Rupert clinches his fist around it. </li>
+  <li  class=""> ENHANCED SOUND OF: Rupert's fist squeezes the pouch
+    until </li>
+  <li  class=""> something almost pops on the inside. Eleanor
+    freezes. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> The question is: what can you give </li>
+  <li  class=""> me in exchange? </li>
+  <li  class=""> He stands up from his chair and walks over to her.
+  </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE LIVING ROOM </li>
+  <li  class=""> CLOSE ON: the iron saw moves closer and closer to
+    the </li>
+  <li  class=""> flickering finger. Agnes covers Matthew's eyes.
+  </li>
+  <li  class=""> RUPERT (V.O.) </li>
+  <li  class=""> Terrible curse, the one I am forced </li>
+  <li  class=""> to live with. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE KITCHEN </li>
+  <li  class=""> CLOSE ON: Rupert stands right in front of Eleanor.
+  </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> I know my face is enemy of </li>
+  <li  class=""> desire... </li>
+  <li  class=""> He leans his face into Eleanor's. She pulls away,
+    reluctant. </li>
+  <li  class=""> He grabs her hands, slightly caresses her
+    goose-bumped arms. </li>
+  <li  class=""> His warm, putrid breath stands inches away from her
+    nose. </li>
+  <li  class=""> CLOSE ON: he shows her his fist, inside which the
+    grey pouch </li>
+  <li  class=""> is. A thin line of BLACK LIQUID trickles down his
+    wrist. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> ...but can the mute girl want this </li>
+  <li  class=""> enough to excuse the sight for some </li>
+  <li  class=""> time, too? </li>
+  <li  class=""> He forces his waist against hers and rests his head
+    into her </li>
+  <li  class=""> shoulder. His right hand slowly reaches for her gown
+    and </li>
+  <li  class=""> lifts it up. </li>
+  <li  class=""> CAMERA on: her face and frozen eyes. Rupert's hand
+    moves </li>
+  <li  class=""> through her underwear, reaches her skin. </li>
+  <li  class=""> Camera stays on her. Suddenly, Rupert's hand moves
+    in deeper. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE LIVING ROOM </li>
+  <li  class=""> The saw is just few inches away from the finger,
+    ready for </li>
+  <li  class=""> the cut... </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE KITCHEN </li>
+  <li  class=""> Eleanor's eyelids tremble, painful tears start
+    carving her </li>
+  <li  class=""> cheeks. She clenches her lips. </li>
+  <li  class=""> Her left hand instinctively grabs the edge of the
+    table and </li>
+  <li  class=""> inadvertently pushes a few COPPER PANS to the
+    ground. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE LIVING ROOM </li>
+  <li  class=""> O.S. FAR SOUND: COPPER PANS FALL IN THE KITCHEN.
+  </li>
+  <li  class=""> The Family turns, fearful, and listens to the sound
+  </li>
+  <li  class=""> eventually fading in the space. </li>
+  <li  class=""> After a few seconds, the room goes quiet. No sound
+    anymore. </li>
+  <li  class=""> CLOSE ON: the finger ceases flickering. </li>
+  <li  class=""> Osbert removes his saw and pulls away from it.
+    Everyone looks </li>
+  <li  class=""> at each other, holding their breath in suspense.
+  </li>
+  <li  class=""> All eyes are on the finger now, praying it will
+    remain still. </li>
+  <li  class=""> One, two, then three seconds. </li>
+  <li  class=""> Everyone breathes out, letting themselves go - the
+    danger is </li>
+  <li  class=""> gone. </li>
+  <li  class=""> They rejoin in circle, holding each others' hands in
+  </li>
+  <li  class=""> victorious relief. </li>
+  <li  class=""> Eyes close, heads bow: it's time to pray again. Only
+    Mary's </li>
+  <li  class=""> eyes stay fixed on the hallway. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. THE KITCHEN - LATER </li>
+  <li  class=""> CLOSE ON: Eleanor's hand shakes as she holds a long
+    COOKING </li>
+  <li  class=""> KNIFE. She cuts the head off a few dismembered
+    chickens and </li>
+  <li  class=""> tosses them into the cauldron. </li>
+  <li  class=""> In the back, Rupert is putting his pants back on.
+  </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> I will come back after the funeral. </li>
+  <li  class=""> She doesn't listen. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> Eleanor. </li>
+  <li  class=""> She turns, surprised to hear her name. He tosses the
+    grey </li>
+  <li  class=""> POUCH to her, she catches it and slips it into her
+    POCKET. </li>
+  <li  class=""> She avoids any eye contact with Rupert. </li>
+  <li  class=""> He eyes the BREAD LOAVES on the table. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> Can I take a pair of these with me? </li>
+  <li  class=""> Eleanor freezes - a thought crosses her mind. </li>
+  <li  class=""> We see her slipping her cooking knife behind her
+    back, her </li>
+  <li  class=""> hand now steady as a rock. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE LIVING ROOM </li>
+  <li  class=""> The Family prays undisturbed, as if nothing
+    happened. </li>
+  <li  class=""> Until... </li>
+  <li  class=""> ANGLE ON: the Family takes a few steps back from the
+    casket. </li>
+  <li  class=""> Something scared them even more. </li>
+  <li  class=""> CLOSE ON: slowly, the oil that Osbert previously
+    applied to </li>
+  <li  class=""> Constance's finger darkens, leaving a BLACK MARK.
+  </li>
+  <li  class=""> All the members of the Family interrupt their
+    prayer, recoil </li>
+  <li  class=""> from the casket. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE KITCHEN </li>
+  <li  class=""> Eleanor comes around the table, next to Rupert. He
+    smiles - </li>
+  <li  class=""> her closeness comforts him. </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> Which one? </li>
+  <li  class=""> Her hand feels a few loaves. Finally, she singles
+    one out. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> Thank you very much. </li>
+  <li  class=""> He puts the loaf in his pocket and walks toward the
+    door, </li>
+  <li  class=""> when Eleanor grabs his RIGHT HAND and stops him.
+  </li>
+  <li  class=""> They lock eyes - she nods to another loaf. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> (hesitant) </li>
+  <li  class=""> Is that one better? </li>
+  <li  class=""> She nods yes, their eyes still locked. Her left hand
+    now </li>
+  <li  class=""> holds his right one down. </li>
+  <li  class=""> He cautiously moves his free hand across the table
+    and </li>
+  <li  class=""> reaches for the loaf she hinted at. He feels it.
+  </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> (smiles) </li>
+  <li  class=""> Oh yeah, this one's soft- </li>
+  <li  class=""> SUDDEN O.S. SFX: THE KNIFE BLADE SWIFTLY CUTS
+    THROUGH AIR. </li>
+  <li  class=""> With a quick move, she chops his RIGHT INDEX FINGER
+    off. </li>
+  <li  class=""> He screams, as BLOOD gushes from the wound. </li>
+  <li  class=""> INT. THE LIVING ROOM </li>
+  <li  class=""> AUDIO: FAR SCREAMS. </li>
+  <li  class=""> Constance's finger is fully black now, as if ROTTEN.
+  </li>
+  <li  class=""> The Family fix their exhausted and fearful eyes on
+    the </li>
+  <li  class=""> hallway. </li>
+  <li  class=""> Osbert nods to Mary, who starts walking toward the
+    kitchen. </li>
+  <li  class=""> They all bring their attention back to the casket,
+    carefully </li>
+  <li  class=""> pacing their fearful movements. </li>
+  <li  class=""> All, except for James, whose eyes follow Mary
+    walking down </li>
+  <li  class=""> the hallway. </li>
+  <li  class=""> INT. THE KITCHEN </li>
+  <li  class=""> Rupert holds his bleeding hand, screaming in pain.
+  </li>
+  <li  class=""> RUPERT (V.O.) </li>
+  <li  class=""> (screams) </li>
+  <li  class=""> NO! </li>
+  <li  class=""> He looks at Eleanor. </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> Whore!! </li>
+  <li  class=""> He takes a few, aggressive steps toward her,
+    when.... </li>
+  <li  class=""> O.S. SOUND: A DOOR OPENS </li>
+  <li  class=""> The main door of the kitchen opens - MARY enters. He
+    halts. </li>
+  <li  class=""> The three stare each others down. </li>
+  <li  class=""> Rupert walks back to the table and grabs the SECOND
+    LOAF, </li>
+  <li  class=""> staining it with BLOOD. </li>
+  <li  class=""> He opens the backdoor and runs away from the
+    property. </li>
+  <li  class=""> Eleanor and Mary watch in silence. </li>
+  <li  class=""> Eleanor takes the GREY POUCH out of her pocket and
+    shows it </li>
+  <li  class=""> to Mary. </li>
+  <li  class=""> INSERT: CAMERA follows the pouch going back into her
+    POCKET. </li>
+  <li  class=""> After a second of indecision, Mary runs to Eleanor,
+    who drops </li>
+  <li  class=""> her knife. </li>
+  <li  class=""> Their foreheads move closer to one another, their
+    eyes close. </li>
+  <li  class=""> Time seems to stop. </li>
+  <li  class=""> As their lips are about to join in a kiss, suddenly
+    we </li>
+  <li  class=""> hear... </li>
+  <li  class=""> O.S. SOUND: SOMEONE BITES INTO AN APPLE. </li>
+  <li  class=""> Startled, the girls recoil. </li>
+  <li  class=""> Camera turns to the entrance door of the kitchen:
+    JAMES is </li>
+  <li  class=""> standing at the threshold, eating an apple and
+    staring the </li>
+  <li  class=""> two girls down. </li>
+  <li  class=""> Mary and Eleanor instinctively step away from each
+    other, </li>
+  <li  class=""> locking eyes with him. Their gaze begs mercy. </li>
+  <li  class=""> SLOW MO: James carelessly turns his back to them and
+    slowly </li>
+  <li  class=""> walks away into the living room. </li>
+  <li  class=""> NON-DIEGETIC SOUND OF a hoarse, creepy WOMAN'S
+    HUMMING kicks </li>
+  <li  class=""> in. </li>
+  <li  class=""> FADE TO: </li>
+  <li  class=""> EXT. OUTSIDE THE PROPERTY - IN THE FIELD - DAY </li>
+  <li  class=""> THE HUMMING BRIDGES THROUGH THE SCENES. </li>
+  <li  class=""> Theodore's POV: a MAN walks across the field and
+    toward him. </li>
+  <li  class=""> THE MAN'S POV: he approaches Theodore whose cold
+    stare </li>
+  <li  class=""> pierces through the camera. </li>
+  <li  class=""> Theodore fixes his posture straight, placing his
+    hand on the </li>
+  <li  class=""> grip of a FLINTLOCK PISTOL hanging from his belt.
+  </li>
+  <li  class=""> TITLE FADES IN/OUT: </li>
+  <li  class=""> CHAPTER II </li>
+  <li  class=""> THE ANGEL'S PISTOL </li>
+  <li  class=""> THE HUMMING STOPS. </li>
+  <li  class=""> RUPERT (O.S.) </li>
+  <li  class=""> (shouts) </li>
+  <li  class=""> Are you a member of the Family? </li>
+  <li  class=""> No answer. </li>
+  <li  class=""> Rupert reaches closer to Theodore. He wears a BLACK
+    CLOTH </li>
+  <li  class=""> over his mouth and carries TWO BIG SACKS - it's the
+    scene </li>
+  <li  class=""> Eleanor saw from the window in the previous Chapter.
+  </li>
+  <li  class=""> The second Theodore notices the cloth over Rupert's
+    face, he </li>
+  <li  class=""> takes his pistol out and aims it at him. We notice a
+    precious </li>
+  <li  class=""> GOLD FINISH on the grip. </li>
+  <li  class=""> Rupert slowly raises hands and sacks above his head.
+  </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> (muffled) </li>
+  <li  class=""> I come here for business. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> Today is a day of mourning, not of </li>
+  <li  class=""> business. </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> I only bring what I was called for. </li>
+  <li  class=""> Theodore cocks the hammer of his pistol. Rupert
+    releases the </li>
+  <li  class=""> sack in his right hand, letting it fall. </li>
+  <li  class=""> The heads of a few dead chickens stick out of the
+    sack as </li>
+  <li  class=""> soon as it hits the ground. </li>
+  <li  class=""> MARY (V/O) </li>
+  <li  class=""> Rule number two: at the end of the </li>
+  <li  class=""> day, a large meal is consumed to </li>
+  <li  class=""> honor the dead. </li>
+  <li  class=""> Theodore observes the dead birds on the ground,
+    slightly </li>
+  <li  class=""> lowering his pistol. Rupert's hands remain high
+    above his </li>
+  <li  class=""> head. </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> May I lower my hands? </li>
+  <li  class=""> Theodore stares him down, then finally un-cocks the
+    hammer </li>
+  <li  class=""> and lowers his pistol. </li>
+  <li  class=""> RUPERT'S POV - CLOSE ON: the pistol going back on
+    Theodore's </li>
+  <li  class=""> belt, before the latter hides it with his coat.
+  </li>
+  <li  class=""> Rupert turns his head to the chicken coop in the
+    distance. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> What happened to your chickens? </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> The rats infested the coop. </li>
+  <li  class=""> Rupert turns back to Theodore, who has his eyes
+    fixed on him. </li>
+  <li  class=""> THEODORE (CONT'D) </li>
+  <li  class=""> (points to the house) </li>
+  <li  class=""> Walk up to the house, then circle </li>
+  <li  class=""> around the left side. You will see </li>
+  <li  class=""> a small door - that is the entrance </li>
+  <li  class=""> to the kitchen. Knock slowly, the </li>
+  <li  class=""> Maid will open to you. Her name is </li>
+  <li  class=""> Eleanor. She can't talk. </li>
+  <li  class=""> </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> I was informed of the rule. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> No. She can't talk. </li>
+  <li  class=""> As he says that, Theodore brings his right thumb and
+    index </li>
+  <li  class=""> finger to his neck, indicating the same spots where
+    Eleanor's </li>
+  <li  class=""> scars would be. Rupert looks at him, perplexed.
+  </li>
+  <li  class=""> Theodore reaches into his coat and takes out the
+    GREY WOOL </li>
+  <li  class=""> POUCH we saw before. </li>
+  <li  class=""> THEODORE (CONT'D) </li>
+  <li  class=""> When you see her, give her this. </li>
+  <li  class=""> She needs it to prepare the meal. </li>
+  <li  class=""> He is about to throw the pouch to Rupert, who
+    extends his arm </li>
+  <li  class=""> to receive. </li>
+  <li  class=""> Suddenly, Theodore stops. </li>
+  <li  class=""> THEODORE (CONT'D) </li>
+  <li  class=""> Without this, the meal does not </li>
+  <li  class=""> come out right. And if the meal </li>
+  <li  class=""> does not come out right, she is </li>
+  <li  class=""> bound to suffer great punishment. </li>
+  <li  class=""> Do not squeeze it. </li>
+  <li  class=""> He tosses the pouch to Rupert, who catches it
+    mid-air and </li>
+  <li  class=""> carefully places it into an inside pocket. </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> (smiles) </li>
+  <li  class=""> You have my word. </li>
+  <li  class=""> He picks up the brown sack he dropped before, then
+    walks past </li>
+  <li  class=""> Theodore and toward the house. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> May I... make a request? </li>
+  <li  class=""> Rupert stops and turns his attention back to
+    Theodore. </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> What is it? </li>
+  <li  class=""> Theodore's eyes wander in the void, caught in
+    imagination. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> I know what it looks like- the food </li>
+  <li  class=""> that she makes. </li>
+  <li  class=""> (MORE) </li>
+  <li  class=""> The funeral meal starts with bread, </li>
+  <li  class=""> and you have to make that in the </li>
+  <li  class=""> morning. Will you bring some of it </li>
+  <li  class=""> to me? </li>
+  <li  class=""> Rupert looks at Theodore's deep set eyes. </li>
+  <li  class=""> THEODORE (CONT'D) </li>
+  <li  class=""> I have not received food in days. I </li>
+  <li  class=""> am hungry. </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> (points at his waist) </li>
+  <li  class=""> That is valuable, is it not? </li>
+  <li  class=""> Theodore opens his jacket, revealing his pistol once
+    again. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> It is my father's pistol. </li>
+  <li  class=""> RUPERT'S POV: the sun shines right on the gold
+    finish of the </li>
+  <li  class=""> weapon. </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> Is it worth a loaf of bread? </li>
+  <li  class=""> Theodore caresses the grip. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> EXT. THEODORE'S HOUSE - THE BACKYARD - DAY </li>
+  <li  class=""> THEODORE'S MEMORIES - ALL IN BLACK AND WHITE </li>
+  <li  class=""> A skinned, dead PIG hangs on a rope, which is tied
+    to a tall </li>
+  <li  class=""> wooden stick. Its rib cage faces the camera. </li>
+  <li  class=""> JOSEPH (O.S.) </li>
+  <li  class=""> To the right, a small step to the </li>
+  <li  class=""> right... </li>
+  <li  class=""> (pauses) </li>
+  <li  class=""> Hold your arm straight.... Good.... </li>
+  <li  class=""> O.S. SOUND: A PISTOL GOES OFF! </li>
+  <li  class=""> Dense smoke fills up the screen, blocking our view
+    of the </li>
+  <li  class=""> carcass for a few seconds. </li>
+  <li  class=""> Camera reveals Theodore, here 12 YEARS OLD, and his
+    father, </li>
+  <li  class=""> JOSEPH, 40s. The boy holds the PISTOL we saw
+    previously, </li>
+  <li  class=""> while his father stands right next to him, trying to
+    see </li>
+  <li  class=""> through the smoke. </li>
+  <li  class=""> THEODORE (CONT'D) </li>
+  <li  class=""> As the white cloud slowly dissipates in front of
+    their eyes, </li>
+  <li  class=""> a disappointed expression takes shape on Joseph's
+    face. </li>
+  <li  class=""> Back on the pig: it hangs still, untouched by the
+    bullet. </li>
+  <li  class=""> JOSEPH (O.S.) (CONT'D) </li>
+  <li  class=""> Your arm was not straight, </li>
+  <li  class=""> Theodore. </li>
+  <li  class=""> THEODORE (O.S.) </li>
+  <li  class=""> I'm afraid it will break if I keep </li>
+  <li  class=""> it so. </li>
+  <li  class=""> Back on them. </li>
+  <li  class=""> JOSEPH </li>
+  <li  class=""> Nonsense. Do you not trust your </li>
+  <li  class=""> father? </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> (puts the pistol down) </li>
+  <li  class=""> I do, but- </li>
+  <li  class=""> JOSEPH </li>
+  <li  class=""> Hand me the pistol. </li>
+  <li  class=""> Joseph receives the pistol from his son and starts
+    loading it </li>
+  <li  class=""> again. </li>
+  <li  class=""> He half-cocks the hammer and pours some gunpowder
+    down the </li>
+  <li  class=""> barrel. </li>
+  <li  class=""> He wraps another bullet in a small piece of cloth
+    and rams it </li>
+  <li  class=""> down the barrel. </li>
+  <li  class=""> Then, he adds some more black powder in the
+    flintlock's pan. </li>
+  <li  class=""> JOSEPH (CONT'D) </li>
+  <li  class=""> Do the circle. </li>
+  <li  class=""> Theodore forms a small circle with his thumb and
+    index </li>
+  <li  class=""> finger. </li>
+  <li  class=""> THEODORE'S POV - THROUGH THE CIRCLE: the pig shows
+    inside it. </li>
+  <li  class=""> Theodore nears the circle to his face, until it
+    lands on his </li>
+  <li  class=""> right eye - the right side of the lens. </li>
+  <li  class=""> JOSEPH (CONT'D) </li>
+  <li  class=""> (passes him the pistol) </li>
+  <li  class=""> Left arm in an angle, right arm </li>
+  <li  class=""> straight. </li>
+  <li  class=""> THEODORE'S POV: he closes his left eye, grabs the
+    pistol in </li>
+  <li  class=""> his right hand and does what his father tells him,
+    except he </li>
+  <li  class=""> lets his right arm get a little looser than he
+    should. </li>
+  <li  class=""> Joseph notices and immediately straightens his son's
+    arm. </li>
+  <li  class=""> JOSEPH (CONT'D) </li>
+  <li  class=""> Now patience. </li>
+  <li  class=""> Theodore stands in position, aiming the pistol at
+    the pig as </li>
+  <li  class=""> accurately as he can. A few seconds of silence,
+    until... </li>
+  <li  class=""> SOUND: THE PISTOL GOES OFF AGAIN! </li>
+  <li  class=""> Both Joseph and Theodore hurry through the cloud of
+    smoke and </li>
+  <li  class=""> to the pig - they know the shot was good. </li>
+  <li  class=""> Joseph stands in front of the pig and lets out a
+    smile, </li>
+  <li  class=""> extending his arm to it. </li>
+  <li  class=""> Camera turns and reveals a HOLE around the left
+    thigh. Joseph </li>
+  <li  class=""> sticks and twists his finger in it. </li>
+  <li  class=""> JOSEPH (CONT'D) </li>
+  <li  class=""> If you hit it here, it will bleed </li>
+  <li  class=""> and die in time, but it will escape </li>
+  <li  class=""> from you. </li>
+  <li  class=""> His finger moves across the carcass, to the sternum,
+    right </li>
+  <li  class=""> where the heart would be. </li>
+  <li  class=""> JOSEPH (CONT'D) </li>
+  <li  class=""> Here, no chance is left to it. </li>
+  <li  class=""> Theodore looks up to his Father's face, his heart
+    filled with </li>
+  <li  class=""> admiration. </li>
+  <li  class=""> Suddenly, a strong COUGH takes Theodore. He bends
+    over, hands </li>
+  <li  class=""> on his knees. Joseph pets him on his back. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> EXT. THEODORE'S HOUSE - THE BACKYARD - LATER </li>
+  <li  class=""> The brightest of suns illuminates the land. </li>
+  <li  class=""> We see Theodore, naked from his waist up and with
+    his eyes </li>
+  <li  class=""> closed. He can barely hold a smile. </li>
+  <li  class=""> Suddenly, water splashes on his face. He laughs, as
+    his </li>
+  <li  class=""> MOTHER - ROSE, 30s, BLACK hair and eyes - circles
+    around him. </li>
+  <li  class=""> She rinses and washes him with soap, tickling him
+    all over. </li>
+  <li  class=""> The laughter continues, increasingly more joyous -
+    it feels </li>
+  <li  class=""> like a dream. </li>
+  <li  class=""> ROSE </li>
+  <li  class=""> (smiles) </li>
+  <li  class=""> Like the angels in the sky. </li>
+  <li  class=""> ANGLE ON: in the distance stands Theodore's father,
+    smoking a </li>
+  <li  class=""> PIPE and looking at the scene. </li>
+  <li  class=""> He smiles, the wind flowing through his hair. </li>
+  <li  class=""> EXT. THEODORE'S HOUSE - THE BACKYARD - LATER </li>
+  <li  class=""> Theodore runs through the grass, a few feet ahead
+    from his </li>
+  <li  class=""> mother, who follows holding a WICKER BASKET. </li>
+  <li  class=""> Theodore's eyes land on a few MUSHROOMS on the
+    ground. He </li>
+  <li  class=""> kneels to them and picks them up, Rose towering
+    behind him </li>
+  <li  class=""> and laying the basket on the ground right next to
+    her son. </li>
+  <li  class=""> Suddenly, something catches her eyes a few feet away
+    from the </li>
+  <li  class=""> scene. </li>
+  <li  class=""> C.U. - LOW ANGLE: in the extreme foreground, a few
+    BLACK, </li>
+  <li  class=""> SHINY BERRIES stand out from the grass. Rose walks
+    toward </li>
+  <li  class=""> them, her hand slowly coming into focus. </li>
+  <li  class=""> She picks up a berry and feels it in her hand. The
+    surface is </li>
+  <li  class=""> soft, the shape is perfectly round. </li>
+  <li  class=""> O.S SOUND OF: THEODORE COUGHS AGAIN. </li>
+  <li  class=""> Rose turns to her son. He covers his mouth with his
+    hand, a </li>
+  <li  class=""> violent cough forcing him to contort his body once
+    again. </li>
+  <li  class=""> Rose bends over to the berries and picks up a few
+    more. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THEODORE'S HOUSE - THE LIVING ROOM </li>
+  <li  class=""> Inside the family's modest living room, Joseph sits
+    at the </li>
+  <li  class=""> dinner table, peacefully smoking his pipe and
+    reading from a </li>
+  <li  class=""> BOOK. </li>
+  <li  class=""> O.S. SOUND OF: SOMEONE KNOCKS ON THE DOOR. </li>
+  <li  class=""> Perplexed, he stops his reading. He sits still for a
+    few </li>
+  <li  class=""> seconds - visitors don't come by often. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> EXT. IN FRONT OF THE ENTRANCE DOOR </li>
+  <li  class=""> The door opens on us, revealing Joseph inside the
+    house, his </li>
+  <li  class=""> pipe in hand. </li>
+  <li  class=""> He startles, his pipe falls to the ground - the
+    vision in </li>
+  <li  class=""> front of him is jaw dropping. </li>
+  <li  class=""> NOTE: CAMERA stays on Joseph, never reveals who's on
+    the </li>
+  <li  class=""> other side. </li>
+  <li  class=""> FEMALE VOICE (O.S.) </li>
+  <li  class=""> The day brings great duty upon you, </li>
+  <li  class=""> Joseph. For your God calls you to </li>
+  <li  class=""> serve him as his faithful Angel. </li>
+  <li  class=""> JOSEPH </li>
+  <li  class=""> Speak, and I shall listen. </li>
+  <li  class=""> FEMALE VOICE (O.S.) </li>
+  <li  class=""> Blessed is the love you and your </li>
+  <li  class=""> wife share for you son. But whether </li>
+  <li  class=""> your love for the Holy Father </li>
+  <li  class=""> surpasses it - your wife was </li>
+  <li  class=""> instructed to put that to the test. </li>
+  <li  class=""> Joseph listens carefully, his eyes barely blinking.
+  </li>
+  <li  class=""> FEMALE VOICE (O.S.) (CONT'D) </li>
+  <li  class=""> She is out, gathering provisions to </li>
+  <li  class=""> harm your child's life, to </li>
+  <li  class=""> sacrifice him in alignment with the </li>
+  <li  class=""> Word she has received. Stop her </li>
+  <li  class=""> actions before she administers the </li>
+  <li  class=""> poison to him. Then leave your </li>
+  <li  class=""> house and proceed through the </li>
+  <li  class=""> forest, for prosperity and land </li>
+  <li  class=""> await you and your son on the other </li>
+  <li  class=""> side. </li>
+  <li  class=""> Joseph takes all the words in, a smile slowly
+    appearing on </li>
+  <li  class=""> his face. He's enlightened. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. THEODORE'S HOUSE - THE LIVING ROOM - LATER
+  </li>
+  <li  class=""> We see Theodore holding hands with and praying
+    between his </li>
+  <li  class=""> mother and father. They're all on their knees. </li>
+  <li  class=""> CLOSE ON: Rose looks at her son, smiles kindly.
+  </li>
+  <li  class=""> ALL TOGETHER </li>
+  <li  class=""> "Our Father, which art in heaven, </li>
+  <li  class=""> hallowed be thy name. Thy kingdom </li>
+  <li  class=""> come. Thy will be done, in earth as </li>
+  <li  class=""> it is in heaven. Give us this day </li>
+  <li  class=""> our daily bread and forgive us our </li>
+  <li  class=""> trespasses, as we forgive them that </li>
+  <li  class=""> trespass against us; and lead us </li>
+  <li  class=""> not into temptation, but deliver us </li>
+  <li  class=""> from evil. For thine is the </li>
+  <li  class=""> kingdom, and the power, and the </li>
+  <li  class=""> glory, forever." </li>
+  <li  class=""> Joseph looks at Theodore and breaks into a joyous
+    smile. </li>
+  <li  class=""> C.U. OF: a CROSS hangs on the wall in front of them.
+  </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. THEODORE'S HOUSE - THEODORE'S ROOM - NIGHT
+  </li>
+  <li  class=""> Theodore lies in bed. A lit candle sits to his side.
+  </li>
+  <li  class=""> His mother comes into frame, tucking him in. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> Mother? </li>
+  <li  class=""> ROSE </li>
+  <li  class=""> Mm-mh? </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> Will you make your bread in the </li>
+  <li  class=""> morning? </li>
+  <li  class=""> She caresses his hair with a smile. </li>
+  <li  class=""> ROSE </li>
+  <li  class=""> The warmest bread you can dream of. </li>
+  <li  class=""> He smiles back, then turns to the side and closes
+    his eyes in </li>
+  <li  class=""> peaceful bliss. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THEODORE'S HOUSE - JOSEPH AND ROSE'S ROOM </li>
+  <li  class=""> Rose and Joseph lie in bed, low candle-light shining
+    on their </li>
+  <li  class=""> faces. She has her back turned to him. </li>
+  <li  class=""> He stares at the ceiling, on hold. </li>
+  <li  class=""> JOSEPH </li>
+  <li  class=""> Was the day good? </li>
+  <li  class=""> ROSE </li>
+  <li  class=""> It was. </li>
+  <li  class=""> O.S SOUND OF: THEODORE COUGHS IN HIS BEDROOM. </li>
+  <li  class=""> JOSEPH </li>
+  <li  class=""> His lungs are giving him trouble. </li>
+  <li  class=""> ROSE </li>
+  <li  class=""> I found wild berries in the grass </li>
+  <li  class=""> today. I will infuse warm water </li>
+  <li  class=""> with them in the morning- that </li>
+  <li  class=""> should bring remedy. </li>
+  <li  class=""> Joseph eyes start twitching and get watery. Rose
+    turns to </li>
+  <li  class=""> him. </li>
+  <li  class=""> ROSE (CONT'D) </li>
+  <li  class=""> What is the matter? </li>
+  <li  class=""> He grabs her hand and holds it. </li>
+  <li  class=""> JOSEPH </li>
+  <li  class=""> We truly are blessed, Rose. </li>
+  <li  class=""> Rose lays her puzzled eyes on his hand holding hers.
+    She </li>
+  <li  class=""> tightens her grip on it. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. THEODORE'S HOUSE - THEODORE'S ROOM - MORNING
+  </li>
+  <li  class=""> O.S. SOUND OF: THEODORE CONTINUES COUGHING. </li>
+  <li  class=""> C.U. ON: Rose holds a MUG of steaming hot water in
+    her hand. </li>
+  <li  class=""> She pours one of the berries she caught the day
+    before in it. </li>
+  <li  class=""> As the berry sinks in, it slowly melts into the
+    liquid, </li>
+  <li  class=""> leaving no trace. </li>
+  <li  class=""> Rose kneels in front of Theodore's bed, while Joseph
+    stands </li>
+  <li  class=""> right behind her. </li>
+  <li  class=""> THEODORE (O.S.) </li>
+  <li  class=""> Will it taste bitter? </li>
+  <li  class=""> ROSE </li>
+  <li  class=""> It might, but it is for your good. </li>
+  <li  class=""> CAMERA turns to reveal Theodore, sitting on his bed,
+    his face </li>
+  <li  class=""> slightly paler than the day before. </li>
+  <li  class=""> He peeks his eye into the mug. </li>
+  <li  class=""> ROSE (CONT'D) </li>
+  <li  class=""> The earlier you drink it, the </li>
+  <li  class=""> earlier you will savor the bread. </li>
+  <li  class=""> Theodore wets his lips. Finally, he nods yes. </li>
+  <li  class=""> Rose extends the mug to her son. Theodore is about
+    to reach </li>
+  <li  class=""> for it, when... </li>
+  <li  class=""> JOSEPH (O.S.) </li>
+  <li  class=""> Stop. </li>
+  <li  class=""> Rose quickly turns around to her husband. Suddenly,
+    he takes </li>
+  <li  class=""> his pistol out of his pocket and points it at her.
+  </li>
+  <li  class=""> Theodore backs up against the wall, while Rose
+    freezes in </li>
+  <li  class=""> front of the pistol's barrel. The mug falls from her
+    hands, </li>
+  <li  class=""> breaking into pieces and spilling warm water all
+    over. </li>
+  <li  class=""> ROSE </li>
+  <li  class=""> (shocked) </li>
+  <li  class=""> What is this? </li>
+  <li  class=""> JOSEPH </li>
+  <li  class=""> "Lay not thine hand upon the lad, </li>
+  <li  class=""> neither do thou any thing unto him: </li>
+  <li  class=""> for now I know that thou fearest </li>
+  <li  class=""> God, seeing thou hast not withheld </li>
+  <li  class=""> thy son, thine only son from me." </li>
+  <li  class=""> Absolute silence in the room. </li>
+  <li  class=""> ROSE </li>
+  <li  class=""> Joseph, what are you- </li>
+  <li  class=""> Suddenly, Joseph cocks the hammer and fires the
+    pistol. </li>
+  <li  class=""> A bullet strikes Rose in her chest, spattering
+    Theodore's </li>
+  <li  class=""> clothes and face with blood. </li>
+  <li  class=""> The young boy looks at the scene, petrified and
+    confused. </li>
+  <li  class=""> JOSEPH </li>
+  <li  class=""> Dress. We ought to leave. </li>
+  <li  class=""> Not a word from Theodore, whose back is now fully
+    pushed </li>
+  <li  class=""> against the wall. </li>
+  <li  class=""> JOSEPH (CONT'D) </li>
+  <li  class=""> Dress, Theodore. </li>
+  <li  class=""> The boy is frozen and breathing heavily. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> EXT. THE WOODS - DAY </li>
+  <li  class=""> EXTREME CLOSE UP: we look into the barrel of the
+    pistol. </li>
+  <li  class=""> Joseph's finger wraps around the trigger. The aim is
+    right, </li>
+  <li  class=""> the shot is ready. </li>
+  <li  class=""> WIDE: Theodore sits in the foreground, covered in a
+    WOOL </li>
+  <li  class=""> BLANKET and pale as ever. In the background, Joseph
+    holds his </li>
+  <li  class=""> pistol, crouched on the ground. </li>
+  <li  class=""> SOUND: THE PISTOL GOES OFF! </li>
+  <li  class=""> In the background, we see Joseph running toward
+    whatever was </li>
+  <li  class=""> shot. </li>
+  <li  class=""> C.U.: on the ground lies the body of a dead RABBIT.
+  </li>
+  <li  class=""> JOSEPH </li>
+  <li  class=""> (holds the rabbit) </li>
+  <li  class=""> We will have meat for supper, son. </li>
+  <li  class=""> Theodore doesn't respond, nor looks at his father.
+  </li>
+  <li  class=""> Finally, he picks his head up. HIS POV: his eyes
+    focus on the </li>
+  <li  class=""> pistol in his father's hands. He's loading it once
+    again. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> EXT. THE WOODS - NIGHT </li>
+  <li  class=""> C.U. : the pistol sits on the ground, right next to
+    the flame </li>
+  <li  class=""> of a FIRE. </li>
+  <li  class=""> WIDE: a pitch-black night blankets the land.
+    Theodore and his </li>
+  <li  class=""> father sit on the ground, next to a small CAMPFIRE.
+    Only </li>
+  <li  class=""> their faces show. </li>
+  <li  class=""> Joseph's teeth tear a piece of flesh off the cooked
+    rabbit. </li>
+  <li  class=""> Theodore sits in silence, deep in his thoughts.
+  </li>
+  <li  class=""> JOSEPH </li>
+  <li  class=""> Your mind is not settled. </li>
+  <li  class=""> No response. Joseph puts the rabbit down. </li>
+  <li  class=""> JOSEPH (CONT'D) </li>
+  <li  class=""> I had no choice. </li>
+  <li  class=""> (pauses) </li>
+  <li  class=""> You did not see who stood outside </li>
+  <li  class=""> our door. </li>
+  <li  class=""> Theodore turns his face to his father. </li>
+  <li  class=""> JOSEPH (CONT'D) </li>
+  <li  class=""> You did not hear the tenor of Her </li>
+  <li  class=""> voice. </li>
+  <li  class=""> Joseph picks up the rabbit and takes another bite
+    off it. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> Mother had no divine mandate. </li>
+  <li  class=""> JOSEPH </li>
+  <li  class=""> The Lord does not tolerate doubt. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> But our house- </li>
+  <li  class=""> JOSEPH </li>
+  <li  class=""> We walk to a better promise. </li>
+  <li  class=""> Theodore looks into the flame in front of him.
+    Joseph reaches </li>
+  <li  class=""> into his pocket for the same GREY POUCH we saw in
+    this and in </li>
+  <li  class=""> the previous Chapter. </li>
+  <li  class=""> He throws it to his son. </li>
+  <li  class=""> JOSEPH (CONT'D) </li>
+  <li  class=""> "Blessed are they that have not </li>
+  <li  class=""> seen, and yet have believed", said </li>
+  <li  class=""> our Christ to Thomas. </li>
+  <li  class=""> Theodore twists the pouch in his hand. </li>
+  <li  class=""> JOSEPH (CONT'D) </li>
+  <li  class=""> Feed yourself with it, if you dare </li>
+  <li  class=""> dispel all your doubts. </li>
+  <li  class=""> Theodore looks away. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> I loved her great. </li>
+  <li  class=""> Joseph contemplates the flame, too. The heat
+    envelopes his </li>
+  <li  class=""> body. </li>
+  <li  class=""> JOSEPH </li>
+  <li  class=""> She was a marvelous creature. Her </li>
+  <li  class=""> black eyes could tame this flame, </li>
+  <li  class=""> too. </li>
+  <li  class=""> Theodore looks back at him. Joseph holds back tears.
+  </li>
+  <li  class=""> JOSEPH (CONT'D) </li>
+  <li  class=""> (whispers to himself) </li>
+  <li  class=""> Forgive me Father, for I long for </li>
+  <li  class=""> worldly love over Yours. </li>
+  <li  class=""> He puts the rabbit down right next to the pistol,
+    then </li>
+  <li  class=""> scratches his eyes with his free hand. </li>
+  <li  class=""> He keeps his eyes closed for a few seconds and
+    breathes </li>
+  <li  class=""> deeply, trying to compose himself. </li>
+  <li  class=""> His eyes open and his hand reaches for the cooked
+    rabbit, but </li>
+  <li  class=""> notices the pistol doesn't sit next to it anymore.
+    He whips </li>
+  <li  class=""> his head to his son. </li>
+  <li  class=""> CAMERA TRACKS to reveal the pistol in Theodore's
+    hand, aiming </li>
+  <li  class=""> at his father. </li>
+  <li  class=""> Silence. </li>
+  <li  class=""> THEODORE'S POV: his eye slowly move from Joseph's
+    crossed </li>
+  <li  class=""> legs to his chest. He's aiming. </li>
+  <li  class=""> JOSEPH (CONT'D) </li>
+  <li  class=""> (knowingly) </li>
+  <li  class=""> You bear malice toward me. </li>
+  <li  class=""> Theodore looks straight into his father's eyes.
+  </li>
+  <li  class=""> JOSEPH (CONT'D) </li>
+  <li  class=""> Unbearable pain weighs on our </li>
+  <li  class=""> hearts, son. </li>
+  <li  class=""> Joseph picks up the dead rabbit once again. </li>
+  <li  class=""> JOSEPH (CONT'D) </li>
+  <li  class=""> But allow for this to be the first </li>
+  <li  class=""> of many generous suppers that await </li>
+  <li  class=""> for us beyond this forest. </li>
+  <li  class=""> Theodore's eyes open wide, his hand shakes more. The
+    flame </li>
+  <li  class=""> reflects on the weapon's golden finish. </li>
+  <li  class=""> Camera pans away, landing on Joseph. He picks up the
+    rabbit </li>
+  <li  class=""> once again. As his mouth closes in on another
+    bite... </li>
+  <li  class=""> SUDDEN O.S. SOUND: THEODORE COCKS THE HAMMER, THE
+    PISTOL </li>
+  <li  class=""> FIRES. </li>
+  <li  class=""> Joseph drops to the ground, blood gushing out of his
+    chest. </li>
+  <li  class=""> Theodore holds the smoking pistol in his hand,
+    steady as </li>
+  <li  class=""> ever. </li>
+  <li  class=""> He crawls past the fire, looks at his father's dead
+    eyes. For </li>
+  <li  class=""> a few seconds, those eyes look back at him. </li>
+  <li  class=""> CLOSE ON: Theodore shakes off that image, grabs the
+    dead </li>
+  <li  class=""> rabbit, breaks it apart and eats it voraciously.
+    Like he </li>
+  <li  class=""> hasn't eaten in days. </li>
+  <li  class=""> END OF THEODORE'S MEMORIES. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> EXT. OUTSIDE THE PROPERTY - DAY </li>
+  <li  class=""> BACK TO COLORED FOOTAGE. </li>
+  <li  class=""> Theodore picks his head up from the pistol, looks at
+    Rupert. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> Bring me the bread and it is yours. </li>
+  <li  class=""> Rupert starts to walk again, then stops. </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> Why would you not use the pistol to </li>
+  <li  class=""> go inside and demand food? </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> There are stronger and stranger </li>
+  <li  class=""> things than a pistol inside that </li>
+  <li  class=""> house. </li>
+  <li  class=""> Rupert pauses, then finally gets on his way to the
+    house. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. THE LIVING ROOM - DAY - MATTHEW'S DREAM </li>
+  <li  class=""> CONSTANCE sits in front of an open WINDOW. Her dry,
+    grey hair </li>
+  <li  class=""> falls down the back of her chair. A TEA CUP sits on
+    a stool </li>
+  <li  class=""> right next to her. </li>
+  <li  class=""> She starts HUMMING the same TUNE we heard at the
+    beginning of </li>
+  <li  class=""> Chapter II. </li>
+  <li  class=""> Suddenly, the tea cup begins to float upward. CAMERA
+    ZOOMS </li>
+  <li  class=""> into the cup, following its slow and continuous
+    descent. </li>
+  <li  class=""> As we move in closer to the cup, Constance's hoarse
+    humming </li>
+  <li  class=""> gets louder. Finally, the cup stops mid-air. </li>
+  <li  class=""> SUDDEN O/S SOUND: SOMEONE WHEEZES IN PAIN.
+    CONSTANCE'S </li>
+  <li  class=""> HUMMING STOPS. </li>
+  <li  class=""> CAMERA PANS TO THE RIGHT: a white BED SHEET is
+    wrapped around </li>
+  <li  class=""> Eleanor's neck, strangling her while she's on all
+    fours. The </li>
+  <li  class=""> sheet tightens on its own, her face reddens... </li>
+  <li  class=""> HARD CUT TO: </li>
+  <li  class=""> INT. MATTHEW'S ROOM - NIGHT - REALITY </li>
+  <li  class=""> C.U. ON: Matthew's eye opens wide. Camera pulls
+    back: his </li>
+  <li  class=""> face shakes, his chest goes up and down as he
+    breathes </li>
+  <li  class=""> heavily. </li>
+  <li  class=""> TITLE FADES IN/OUT: </li>
+  <li  class=""> CHAPTER III </li>
+  <li  class=""> TWO WEEKS BEFORE THE FUNERAL </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE ATTIC - NIGHT </li>
+  <li  class=""> PROFILE C.U. ON: Eleanor looks straight ahead,
+    lovingly </li>
+  <li  class=""> gazing at someone off screen. Her neck does NOT show
+    any </li>
+  <li  class=""> scars yet. </li>
+  <li  class=""> Mary's face enters the frame, approaches Eleanor's.
+    The two </li>
+  <li  class=""> girls look at each other, sink into each other's
+    eyes. They </li>
+  <li  class=""> are inches away. </li>
+  <li  class=""> Finally, Mary lays her head into Eleanor's shoulder.
+    Their </li>
+  <li  class=""> necks embrace. Their eyes close. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. MATTHEW'S ROOM - LATER </li>
+  <li  class=""> Awake in his bed, Matthew hears the slight sound of
+    WOOD </li>
+  <li  class=""> SCREECHING coming from the hallway. </li>
+  <li  class=""> The floor screeches a couple times more. Matthew
+    looks at the </li>
+  <li  class=""> doorway of his room. His eyes scan through complete
+    darkness. </li>
+  <li  class=""> INT. THE FARM HOUSE - MARY'S ROOM - LATER </li>
+  <li  class=""> LOW ANGLE: illuminated by feeble candle light, Mary
+    grabs a </li>
+  <li  class=""> BLACK BOOK. </li>
+  <li  class=""> MARY (V.O.) </li>
+  <li  class=""> Rule number three: at nighttime, </li>
+  <li  class=""> the oldest member of the Family </li>
+  <li  class=""> breaks the silence, to narrate a </li>
+  <li  class=""> story that can infuse those who </li>
+  <li  class=""> listen with moral fortitude. </li>
+  <li  class=""> HER POV: Mary places her BLACK BIBLE in her lap. She
+    opens it </li>
+  <li  class=""> and starts turning the pages. </li>
+  <li  class=""> After setting her mind on one specific page, she
+    takes out a </li>
+  <li  class=""> small but sharp KNIFE and cuts a rectangle in the
+    book. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> EXT. THE FIELD - MORNING </li>
+  <li  class=""> Theodore stands, looking into the distance, toward
+    the O/S </li>
+  <li  class=""> sound of: a WOODEN WHEEL rolling against the dirt.
+  </li>
+  <li  class=""> The wheel gets louder and closer, until it stops
+    right in </li>
+  <li  class=""> front of Theodore. </li>
+  <li  class=""> REVERSE: a FARMER - 40s, disheveled clothes -
+    holding a </li>
+  <li  class=""> WHEELBARROW, with BAGS OF FLOUR in it. </li>
+  <li  class=""> They stare each other down. Finally, Theodore takes
+    a step to </li>
+  <li  class=""> his right, allowing the Farmer to move forward.
+  </li>
+  <li  class=""> THEODORE'S POV - CLOSE ON: the bags of flour shake
+    as the </li>
+  <li  class=""> wheelbarrow rolls over a few bumps. </li>
+  <li  class=""> INT. OUTSIDE MARY'S ROOM - MORNING </li>
+  <li  class=""> We see: the door to her room is closed. Muffled
+    voices from </li>
+  <li  class=""> the inside barely reach our hearing, until Matthew
+    walks by </li>
+  <li  class=""> and presses his ear against the door. </li>
+  <li  class=""> NOTE: voices are muffled, through Matthew's
+    perspective. </li>
+  <li  class=""> AGNES </li>
+  <li  class=""> (shaken) </li>
+  <li  class=""> Can we not rely on your promise? </li>
+  <li  class=""> </li>
+  <li  class=""> MARY </li>
+  <li  class=""> There is nothing I have to promise, </li>
+  <li  class=""> for all I do is fear our Lord's </li>
+  <li  class=""> greatness. </li>
+  <li  class=""> RANDOLPH </li>
+  <li  class=""> Mary, He is not blind to such </li>
+  <li  class=""> abomination. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> She is nothing but company, I beg </li>
+  <li  class=""> you to believe- </li>
+  <li  class=""> AGNES </li>
+  <li  class=""> Enough. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> I beg you- </li>
+  <li  class=""> RANDOLPH </li>
+  <li  class=""> Your mother said enough. </li>
+  <li  class=""> Matthew pulls his face away from the door, perplexed
+    by the </li>
+  <li  class=""> conversation. </li>
+  <li  class=""> INT. THE LIVING ROOM - MORNING </li>
+  <li  class=""> Matthew sits on the first step of the staircase.
+  </li>
+  <li  class=""> HIS POV: we see Constance and Osbert, sitting side
+    by side in </li>
+  <li  class=""> front of an open window. </li>
+  <li  class=""> He twists his neck slightly. We hear a STOMPING
+    sound from </li>
+  <li  class=""> upstairs. He turns his head to it. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE HALLWAY ON THE UPPER FLOOR - MORNING </li>
+  <li  class=""> MATTHEW'S POV: at the end of another, short
+    staircase is the </li>
+  <li  class=""> DOOR TO THE ATTIC. </li>
+  <li  class=""> He starts to walk up the stairs, avoiding any
+    imaginable </li>
+  <li  class=""> noise. </li>
+  <li  class=""> HIS POV: camera tracks in as he approaches the door.
+    His hand </li>
+  <li  class=""> pushes it up slightly. </li>
+  <li  class=""> INT. THE ATTIC </li>
+  <li  class=""> C.U. ON: the door slightly lifts from the ground.
+    Matthew's </li>
+  <li  class=""> eye peeks in. </li>
+  <li  class=""> HIS POV: ELEANOR comforts a crying MARY. They
+    whisper </li>
+  <li  class=""> inaudibly, with their faces only inches apart. </li>
+  <li  class=""> Matthew lifts the door a little more, as we see...
+  </li>
+  <li  class=""> ON THE STAIRCASE </li>
+  <li  class=""> C.U. ON: his right foot stretches, as he attempts to
+    reach </li>
+  <li  class=""> higher and higher. His foot slips slightly. </li>
+  <li  class=""> IN THE ATTIC </li>
+  <li  class=""> Matthew's face contorts as he lets out a soft
+    "ouch". The </li>
+  <li  class=""> door falls back in its place. </li>
+  <li  class=""> Mary and Eleanor snap and pull away from each other.
+    They </li>
+  <li  class=""> both look at the door - now closed - in panic. </li>
+  <li  class=""> They hear O.S. SOUNDS OF: someone walking down the
+    staircase. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. CONSTANCE'S ROOM - NIGHT </li>
+  <li  class=""> Randolph and Agnes walk slowly into the room, bowing
+    their </li>
+  <li  class=""> heads down in sign of respect. </li>
+  <li  class=""> They walk closer and closer to the camera,
+    eventually </li>
+  <li  class=""> kneeling down in front of our eyes. </li>
+  <li  class=""> Constance's hand enters the frame, Agnes kisses her.
+  </li>
+  <li  class=""> AGNES </li>
+  <li  class=""> Good day, mother. The Lord never </li>
+  <li  class=""> misses to bless our household with </li>
+  <li  class=""> peace and grace, but we face an </li>
+  <li  class=""> enemy that does not bend to His </li>
+  <li  class=""> Word. </li>
+  <li  class=""> CONSTANCE (O.S.) </li>
+  <li  class=""> Speak freely. </li>
+  <li  class=""> RANDOLPH </li>
+  <li  class=""> It is about Mary. Our daughter's </li>
+  <li  class=""> ears are deaf to the Lord's </li>
+  <li  class=""> preachings. She continues to engage </li>
+  <li  class=""> in disturbed acts with the </li>
+  <li  class=""> housemaid. </li>
+  <li  class=""> AGNES </li>
+  <li  class=""> They look at one another. They long </li>
+  <li  class=""> for one another's touch. And they </li>
+  <li  class=""> do so in bright sunlight, trying to </li>
+  <li  class=""> make rule of it. </li>
+  <li  class=""> Agnes chokes on her words. </li>
+  <li  class=""> RANDOLPH </li>
+  <li  class=""> All she does is deny, there is no </li>
+  <li  class=""> reasoning with her. </li>
+  <li  class=""> OSBERT (O.S.) </li>
+  <li  class=""> The Lord does not excuse such </li>
+  <li  class=""> abominable behaviors. </li>
+  <li  class=""> RANDOLPH </li>
+  <li  class=""> Rightfully so. </li>
+  <li  class=""> He holds Agnes' hand. </li>
+  <li  class=""> AGNES </li>
+  <li  class=""> Randolph and I ask for your </li>
+  <li  class=""> intervention, mother. To teach the </li>
+  <li  class=""> maid and Mary good lesson. </li>
+  <li  class=""> Camera turns, revealing Constance and Osbert in a
+    LOW ANGLE. </li>
+  <li  class=""> They sit on two chairs, next to one another. </li>
+  <li  class=""> Silence. Randolph and Agnes hold, in hope of a
+    positive </li>
+  <li  class=""> answer. </li>
+  <li  class=""> CONSTANCE </li>
+  <li  class=""> Have your brother come to the farm. </li>
+  <li  class=""> Agnes slightly turns her face to Randolph. He bows
+    his head </li>
+  <li  class=""> to Constance, then leaves the room. </li>
+  <li  class=""> Agnes holds her mother's hand tightly, pressing her
+    lips </li>
+  <li  class=""> against it. </li>
+  <li  class=""> INT. MATTHEW'S ROOM - NIGHT </li>
+  <li  class=""> Matthew stands in front of his open window, praying
+    with his </li>
+  <li  class=""> elbows laid on the sill. </li>
+  <li  class=""> In the hallway, Mary notices him as she walks past
+    his room. </li>
+  <li  class=""> She stops about the threshold. </li>
+  <li  class=""> MARY (O.S.) </li>
+  <li  class=""> Matthew. </li>
+  <li  class=""> He turns his head, notices his sister behind him.
+  </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> It is past bed time. Why do you </li>
+  <li  class=""> linger? </li>
+  <li  class=""> A beat. </li>
+  <li  class=""> MATTHEW </li>
+  <li  class=""> I was but saying my night prayer. </li>
+  <li  class=""> A smile of love and compassion appears on her face.
+  </li>
+  <li  class=""> MARY </li>
+  <li  class=""> Hurry, I'll get you into bed. </li>
+  <li  class=""> Matthew crosses himself, then walks to his bed.
+    Better: he </li>
+  <li  class=""> painfully LIMPS to it. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> What bothers your foot? </li>
+  <li  class=""> MATTHEW </li>
+  <li  class=""> Something got caught in it. </li>
+  <li  class=""> He sits on the bed. Mary walks over and grabs his
+    foot. </li>
+  <li  class=""> HER POV: a SPLINTER shows through a bloody CUT.
+  </li>
+  <li  class=""> She looks at it, her mind goes back to the "ouch"
+    she heard </li>
+  <li  class=""> from the attic. </li>
+  <li  class=""> Her hand subconsciously tightens around his foot.
+  </li>
+  <li  class=""> MATTHEW (CONT'D) </li>
+  <li  class=""> (painful) </li>
+  <li  class=""> Let go, it hurts. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> You have a bad splinter. </li>
+  <li  class=""> Mary takes out the knife we saw her using to cut the
+    Bible </li>
+  <li  class=""> and brings it closer to his foot. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> Don't move. </li>
+  <li  class=""> The blade almost touches Matthew's skin, when he
+    retracts. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> (looks at him) </li>
+  <li  class=""> Do you trust me? </li>
+  <li  class=""> He nods yes, slightly irresolute. </li>
+  <li  class=""> EXTREME CLOSE UP: Mary inserts the tip of her knife
+    under his </li>
+  <li  class=""> skin. Slowly but surely, she's able to take the
+    splinter out. </li>
+  <li  class=""> Matthew's face wrinkles in pain. Finally, he lets
+    out a sigh </li>
+  <li  class=""> of relief. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> EXT. OUTSIDE THE PROPERTY </li>
+  <li  class=""> Theodore stands only a few feet away from the house.
+  </li>
+  <li  class=""> Suddenly, RANDOLPH appears in the dark, holding a
+    CANDLE </li>
+  <li  class=""> LANTERN and approaching the house. </li>
+  <li  class=""> Behind him, THREE BEAMS OF LIGHT follow. The sight
+    terrifies </li>
+  <li  class=""> Theodore. </li>
+  <li  class=""> Randolph steps to the side. As the three lights
+    approach, the </li>
+  <li  class=""> figures holding them become clearer: THREE PEOPLE,
+    all </li>
+  <li  class=""> wearing black CAPES. </li>
+  <li  class=""> They now stand in front of Theodore. </li>
+  <li  class=""> CLOSE UPS ON: they take their hoods off, revealing
+    their </li>
+  <li  class=""> faces. The first one is JAMES; then, ANN; finally,
+    EUSTACE. </li>
+  <li  class=""> Theodore bows his head. The sight of Eustace's face
+    shakes </li>
+  <li  class=""> him to the bone. </li>
+  <li  class=""> BACK TO: </li>
+  <li  class=""> INT. MATTHEW'S ROOM </li>
+  <li  class=""> CLOSE ON: Mary wraps a bandage around Matthew's
+    foot. Red </li>
+  <li  class=""> blood shows through it. </li>
+  <li  class=""> She tightens the bandage - perhaps a little too
+    much. </li>
+  <li  class=""> MATTHEW </li>
+  <li  class=""> It is too tight. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> You ought to keep it like this if </li>
+  <li  class=""> you don't want it to bleed. </li>
+  <li  class=""> The boy gets into bed, lets his sister tuck him in.
+  </li>
+  <li  class=""> The two look at each other for a few, tense seconds.
+  </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> Let dreams take good care of you. </li>
+  <li  class=""> </li>
+  <li  class=""> She leans over and kisses him on his forehead. He
+    closes his </li>
+  <li  class=""> eyes right away. </li>
+  <li  class=""> O.S. SOUND: OUTSIDE, FOOTSTEPS APPROACH THE HOUSE.
+  </li>
+  <li  class=""> She walks over to the window. </li>
+  <li  class=""> HER POV: Eustace, James and Ann wait outside the
+    entrance </li>
+  <li  class=""> door. Randolph stands right next to them. </li>
+  <li  class=""> Agnes opens the door, greeting her brother Eustace
+    with a </li>
+  <li  class=""> warm hug. </li>
+  <li  class=""> BACK TO Mary: she pales in horror. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. CONSTANCE'S ROOM - LATER THAT NIGHT </li>
+  <li  class=""> Eustace sits on a chair next to his wife Ann. Their
+    son James </li>
+  <li  class=""> stands in a corner, biting into an apple. The three
+    of them </li>
+  <li  class=""> still wear their capes, the hoods off. </li>
+  <li  class=""> EUSTACE </li>
+  <li  class=""> You do realize that you are asking </li>
+  <li  class=""> a lot of my family? </li>
+  <li  class=""> Camera reveals Agnes and Randolph standing in a
+    corner of the </li>
+  <li  class=""> room, holding hands. </li>
+  <li  class=""> Constance and Osbert sit on their two chairs. </li>
+  <li  class=""> AGNES </li>
+  <li  class=""> Eleanor is a fine worker. I would </li>
+  <li  class=""> not ask you to take her if it was </li>
+  <li  class=""> not for the distraction she causes </li>
+  <li  class=""> to our daughter. </li>
+  <li  class=""> ANN </li>
+  <li  class=""> Why would we harbor such a sinful </li>
+  <li  class=""> presence in our household? </li>
+  <li  class=""> RANDOLPH </li>
+  <li  class=""> Taking her away from temptation </li>
+  <li  class=""> might heal her, Ann. She can </li>
+  <li  class=""> provide good help. </li>
+  <li  class=""> Eustace scratches his face, deep in thought. </li>
+  <li  class=""> AGNES </li>
+  <li  class=""> Please, Eustace. </li>
+  <li  class=""> He locks eyes with Constance. They connect,
+    like-minded as </li>
+  <li  class=""> ever. </li>
+  <li  class=""> EUSTACE </li>
+  <li  class=""> We seek to eradicate the evil </li>
+  <li  class=""> flower by cutting the stem. But the </li>
+  <li  class=""> roots are too deep- I am afraid it </li>
+  <li  class=""> will grow again. </li>
+  <li  class=""> He and his wife Ann exchange a knowing look. </li>
+  <li  class=""> EUSTACE (CONT'D) </li>
+  <li  class=""> Correction is needed before we move </li>
+  <li  class=""> her. </li>
+  <li  class=""> CONSTANCE </li>
+  <li  class=""> (smiles, through exhaling) </li>
+  <li  class=""> Knees and prayers. </li>
+  <li  class=""> Eustace nods yes. </li>
+  <li  class=""> INT. MATTHEW'S ROOM - LATER THAT NIGHT </li>
+  <li  class=""> DISTANT SOUND OF: MUFFLED VOICES COMING FROM THE
+    LIVING ROOM. </li>
+  <li  class=""> CAMERA tracks from the hallway into the room, slowly
+  </li>
+  <li  class=""> approaching Matthew's bed. </li>
+  <li  class=""> C.U. ON: his foot rests on top of the sheets. As the
+    voices </li>
+  <li  class=""> continue, the bandage TIGHTENS around it,
+    unbeknownst to him. </li>
+  <li  class=""> Matthew's neck twists on his pillow. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE LIVING ROOM </li>
+  <li  class=""> UNKNOWN POV: we TRACK through the property,
+    approaching the </li>
+  <li  class=""> living room. The floor squeaks under UNKNOWN
+    footsteps. </li>
+  <li  class=""> MARY(O.S.) </li>
+  <li  class=""> (painful) </li>
+  <li  class=""> "..set your affection on things </li>
+  <li  class=""> above, not on things on the earth. </li>
+  <li  class=""> For you are dead, and your life is </li>
+  <li  class=""> hid with Christ in God. When </li>
+  <li  class=""> Christ, who is our life, shall </li>
+  <li  class=""> appear, then shall you also appear </li>
+  <li  class=""> with him in glory" </li>
+  <li  class=""> CONSTANCE(O.S.) </li>
+  <li  class=""> You continue now. </li>
+  <li  class=""> CAMERA peeks into the living room: Constance and
+    Osbert sit </li>
+  <li  class=""> on two chairs, while Randolph and Agnes stand on
+    their side. </li>
+  <li  class=""> Eustace, Ann and James also watch the scene. </li>
+  <li  class=""> In front of them, Mary and Eleanor are kneeling on
+    the </li>
+  <li  class=""> ground. Their HANDS and ANKLES are tied behind their
+    back. A </li>
+  <li  class=""> small, WOODEN SUPPORT elevates their ankles from the
+    ground, </li>
+  <li  class=""> overwhelming their knees with the weight of their
+    entire </li>
+  <li  class=""> body. </li>
+  <li  class=""> ELEANOR </li>
+  <li  class=""> (through tears) </li>
+  <li  class=""> I... I can't... </li>
+  <li  class=""> Constance and Osbert look at her, inflexible. </li>
+  <li  class=""> ELEANOR (CONT'D) </li>
+  <li  class=""> I do not know the verses. </li>
+  <li  class=""> CONSTANCE </li>
+  <li  class=""> (to Mary) </li>
+  <li  class=""> Go ahead. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> It hurts too much... </li>
+  <li  class=""> EUSTACE </li>
+  <li  class=""> That is the price of correction. </li>
+  <li  class=""> Mary turns her face to her uncle, her eyes begging
+    for mercy. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> (pauses) </li>
+  <li  class=""> "Mortify...mortify therefore your </li>
+  <li  class=""> members which are upon the earth; </li>
+  <li  class=""> fornication, uncleanness, </li>
+  <li  class=""> inordinate affection, evil </li>
+  <li  class=""> concupiscence, and covetousness, </li>
+  <li  class=""> which is idolatry." </li>
+  <li  class=""> The room goes quiet, as Mary's eyes close and squint
+    from the </li>
+  <li  class=""> pain. </li>
+  <li  class=""> CONSTANCE </li>
+  <li  class=""> You have shown good faith, Mary. </li>
+  <li  class=""> Mary looks at her. Through a hand gesture, Constance
+  </li>
+  <li  class=""> instructs James to come around. </li>
+  <li  class=""> He frees Mary's wrists and ankles. As she painfully
+    stands </li>
+  <li  class=""> up, two flattened PILES OF RAW RICE show underneath
+    each of </li>
+  <li  class=""> her knees. </li>
+  <li  class=""> Mary looks at her knees: the grains have pierced
+    through her </li>
+  <li  class=""> skin. </li>
+  <li  class=""> She walks to Constance, shaking like a leaf in the
+    wind. </li>
+  <li  class=""> Constance caresses her face, brushing a few tears
+    off her </li>
+  <li  class=""> cheeks in a moment of twisted kindness. </li>
+  <li  class=""> Mary walks past her. Eleanor listens to the sound of
+    her </li>
+  <li  class=""> footsteps leaving the room. </li>
+  <li  class=""> Constance slightly turns to the doorway. HER POV:
+    MATTHEW </li>
+  <li  class=""> stands on the doorway in the back. He runs away as
+    soon as he </li>
+  <li  class=""> locks eyes with the camera. </li>
+  <li  class=""> CONSTANCE (CONT'D) </li>
+  <li  class=""> It is time to rest now. </li>
+  <li  class=""> Back into the room. Eleanor starts to push her
+    wooden support </li>
+  <li  class=""> away, when... </li>
+  <li  class=""> CONSTANCE (CONT'D) </li>
+  <li  class=""> (stops her, aggressive) </li>
+  <li  class=""> We all convey that our poorly </li>
+  <li  class=""> instructed friend should spend the </li>
+  <li  class=""> night thinking of the next words to </li>
+  <li  class=""> say. Do we not? </li>
+  <li  class=""> EUSTACE </li>
+  <li  class=""> Yes. </li>
+  <li  class=""> AGNES </li>
+  <li  class=""> You speak well, mother. </li>
+  <li  class=""> Mary observes Eleanor putting the one knee she'd
+    slightly </li>
+  <li  class=""> lifted up back on the rice. She freezes, helpless.
+  </li>
+  <li  class=""> CONSTANCE (O.S.) </li>
+  <li  class=""> Do you convey, Mary? </li>
+  <li  class=""> MARY </li>
+  <li  class=""> Y-yes. </li>
+  <li  class=""> Everyone gets ready to leave the room. Mary keeps
+    her eyes on </li>
+  <li  class=""> Eleanor, but quickly looks away in fear of being
+    spotted. </li>
+  <li  class=""> Eustace and James exchange a knowing look. James
+    places </li>
+  <li  class=""> himself right behind Eleanor, to guard her. </li>
+  <li  class=""> The room empties, except for James and Eleanor.
+    Camera stays </li>
+  <li  class=""> on Eleanor's face. </li>
+  <li  class=""> The girl's eyes close tightly. Her own hands
+    instinctively </li>
+  <li  class=""> join in tense prayer. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> EXT. THE FIELD - MORNING </li>
+  <li  class=""> Eleanor steps out of the house and into the field,
+    holding a </li>
+  <li  class=""> tray with an utterly unappetizing bowl of GRUEL on
+    it. Every </li>
+  <li  class=""> step carries a lot of pain from the punishment she
+    received </li>
+  <li  class=""> the night before. </li>
+  <li  class=""> She walks to Theodore, who hears her footsteps
+    approaching, </li>
+  <li  class=""> but doesn't turn. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> What have I done to deserve such </li>
+  <li  class=""> fare? </li>
+  <li  class=""> Eleanor stands still, in silence. </li>
+  <li  class=""> THEODORE (CONT'D) </li>
+  <li  class=""> For years I've been guarding this </li>
+  <li  class=""> household, day and night. And when </li>
+  <li  class=""> darkness blankets all things, the </li>
+  <li  class=""> ear has to be sharp, to recognize </li>
+  <li  class=""> the footsteps of those who come </li>
+  <li  class=""> undesired. Food sharpens your </li>
+  <li  class=""> senses... </li>
+  <li  class=""> He turns around, looks at her directly. </li>
+  <li  class=""> THEODORE (CONT'D) </li>
+  <li  class=""> ...but they say lack of it makes </li>
+  <li  class=""> mine sharper. </li>
+  <li  class=""> (looks at Eleanor's tray) </li>
+  <li  class=""> That is the price they pay for </li>
+  <li  class=""> exceptional service. The kind that </li>
+  <li  class=""> makes you forget how warm the bread </li>
+  <li  class=""> was after a restful night of sleep. </li>
+  <li  class=""> He looks at her knees, notices one of them BLEEDING
+    through </li>
+  <li  class=""> her work dress. </li>
+  <li  class=""> ELEANOR'S POV: he pulls the right leg of his pants
+    from the </li>
+  <li  class=""> bottom opening, up to his thigh. Aged scars and
+    marks carve </li>
+  <li  class=""> his knee, almost to the bone. </li>
+  <li  class=""> THEODORE (CONT'D) </li>
+  <li  class=""> Fear and weakness keep us here. Not </li>
+  <li  class=""> devotion. </li>
+  <li  class=""> (he re-adjusts his pants) </li>
+  <li  class=""> Take that tray out of my sight. </li>
+  <li  class=""> (MORE) </li>
+  <li  class=""> Feed it to the chickens, if you </li>
+  <li  class=""> wish. </li>
+  <li  class=""> Theodore turns his back to Eleanor, who slowly walks
+    away </li>
+  <li  class=""> with the gruel. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE CHICKEN COOP </li>
+  <li  class=""> Eleanor enters the space, leaving the door open.
+    Inside, tens </li>
+  <li  class=""> of CHICKENS roost all around. They are alive and
+    well. </li>
+  <li  class=""> She grabs some feed from the side and refills a
+    FEEDER that </li>
+  <li  class=""> sits in the middle of the coop. Suddenly, something
+    moves </li>
+  <li  class=""> inside the feeder. </li>
+  <li  class=""> She slowly dips her hand and sifts through it.
+    Finally, a </li>
+  <li  class=""> seemingly DEAD RAT lies underneath layers of feed.
+    His body </li>
+  <li  class=""> is crashed and soaked in liquid. </li>
+  <li  class=""> Eleanor leans forward, into the rat. She inches her
+    finger </li>
+  <li  class=""> close to its chest, almost touching it... </li>
+  <li  class=""> THE RODENT TWITCHES AND SCRATCHES HER FINGER.
+    ELEANOR </li>
+  <li  class=""> RECOILS. </li>
+  <li  class=""> She plummets to the ground, causing the door of the
+    coop to </li>
+  <li  class=""> slam closed. She gasps in agony - her heart skipped
+    a beat. </li>
+  <li  class=""> Silence again. She looks around in the coop:
+    sunlight barely </li>
+  <li  class=""> shines through. An idea crosses her mind. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. THE FARM HOUSE - THE KITCHEN - LATER </li>
+  <li  class=""> Eleanor lightly spreads flour on the work table.
+  </li>
+  <li  class=""> She arranges more flour, salt and yeast in a copper
+    bowl. She </li>
+  <li  class=""> makes a well in the centre, adds oil and water.
+  </li>
+  <li  class=""> She starts mixing it into a dough, eventually
+    tipping it onto </li>
+  <li  class=""> the flour on the table. She kneads it until smooth.
+  </li>
+  <li  class=""> LATER </li>
+  <li  class=""> CLOSE ON: a red cloth covers the proved dough.
+    Eleanor's </li>
+  <li  class=""> hands uncover it and mould it into a ball. </li>
+  <li  class=""> THEODORE (CONT'D) </li>
+  <li  class=""> She opens it and places it inside a STONE-LINED
+    OVEN. Now </li>
+  <li  class=""> it's time to wait. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. OUTSIDE THE PROPERTY - MORNING </li>
+  <li  class=""> James lies on the ground, enjoying the morning sun
+    and </li>
+  <li  class=""> chewing on a piece of grass with his eyes closed.
+  </li>
+  <li  class=""> O/S SOUND: FOOTSTEPS NEAR HIM. </li>
+  <li  class=""> James turns around: Matthew walks in his proximity,
+    looking </li>
+  <li  class=""> at the grass. His eyes get lost in the void as he
+    kicks a few </li>
+  <li  class=""> weeds. </li>
+  <li  class=""> JAMES </li>
+  <li  class=""> Does your mind carry troubles? </li>
+  <li  class=""> MATTHEW </li>
+  <li  class=""> I saw Eleanor and sister Mary being </li>
+  <li  class=""> punished last night. </li>
+  <li  class=""> James stops chewing on the grass. </li>
+  <li  class=""> MATTHEW (CONT'D) </li>
+  <li  class=""> What was the cause of it? </li>
+  <li  class=""> James sits up. HIS POV: he looks at Theodore
+    standing in the </li>
+  <li  class=""> distance. </li>
+  <li  class=""> JAMES </li>
+  <li  class=""> (points to Theodore) </li>
+  <li  class=""> Do you ever wonder what keeps him </li>
+  <li  class=""> around? </li>
+  <li  class=""> Matthew looks at Theodore as well. </li>
+  <li  class=""> JAMES (CONT'D) </li>
+  <li  class=""> He attempted to escape once. He ran </li>
+  <li  class=""> away in the middle of the day, </li>
+  <li  class=""> toward the other side of the field. </li>
+  <li  class=""> To his dismay, father Eustace, </li>
+  <li  class=""> mother Ann and I live right at the </li>
+  <li  class=""> end of it. </li>
+  <li  class=""> (pauses) </li>
+  <li  class=""> My father caught him, took him back </li>
+  <li  class=""> to the farm and made sure he </li>
+  <li  class=""> wouldn't run ever again. </li>
+  <li  class=""> He turns to Matthew. </li>
+  <li  class=""> JAMES (CONT'D) </li>
+  <li  class=""> He forced him to kneel on beans for </li>
+  <li  class=""> a week and then bashed his knees </li>
+  <li  class=""> with a pry bar. </li>
+  <li  class=""> Matthew winces. </li>
+  <li  class=""> JAMES (CONT'D) </li>
+  <li  class=""> Cousin Mary and the Maid play a </li>
+  <li  class=""> dangerous game and were punished </li>
+  <li  class=""> accordingly. </li>
+  <li  class=""> James goes back to lying on the ground. </li>
+  <li  class=""> JAMES (CONT'D) </li>
+  <li  class=""> They are lucky rice was all they </li>
+  <li  class=""> had to kneel on. </li>
+  <li  class=""> Matthew takes in his words, shocked. </li>
+  <li  class=""> JAMES' POV: he turns his head to Matthew one last
+    time, </li>
+  <li  class=""> noticing the bandage against his foot. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> EXT. OUTSIDE THE PROPERTY - NIGHT </li>
+  <li  class=""> Pitch black. Theodore now stands only a few feet
+    away from </li>
+  <li  class=""> the main door, holding a candle lantern in his hand.
+    Camera </li>
+  <li  class=""> tracks into him when... </li>
+  <li  class=""> AUDIO: THE DOOR SUDDENLY OPENS BEHIND HIM! </li>
+  <li  class=""> He reaches for his pistol as quickly as he can,
+    holding the </li>
+  <li  class=""> lantern right in front of his face: Eleanor stands
+    in front </li>
+  <li  class=""> of him, frozen. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> (aiming the pistol at her) </li>
+  <li  class=""> You ought not to leave the house at </li>
+  <li  class=""> such a late hour. </li>
+  <li  class=""> She reaches into a SACK hanging on her side, taking
+    out a </li>
+  <li  class=""> small, fresh, delicious BREAD LOAF. </li>
+  <li  class=""> Theodore looks at the bread in awe, speechless.
+  </li>
+  <li  class=""> ELEANOR </li>
+  <li  class=""> I want to make you a deal. </li>
+  <li  class=""> Theodore lowers his pistol - she's got his
+    attention. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. THE FARM HOUSE - THE LIVING ROOM - MORNING
+  </li>
+  <li  class=""> UNKNOWN POV, partially obstructed by the doorway:
+    Mary walks </li>
+  <li  class=""> down the hallway and reaches for the kitchen at the
+    end of </li>
+  <li  class=""> it. </li>
+  <li  class=""> She looks behind herself once, then twice. Then, she
+    slightly </li>
+  <li  class=""> scratches on the door and makes her way in as it
+    opens. </li>
+  <li  class=""> INT. RIGHT OUTSIDE THE KITCHEN </li>
+  <li  class=""> UNKNOWN POV, THROUGH THE KEY HOLE: inside, Eleanor
+    and Mary </li>
+  <li  class=""> stand side by side, giving their back to the door.
+  </li>
+  <li  class=""> Mary is looking at Eleanor, who turns her face to
+    whisper </li>
+  <li  class=""> something. We DO NOT hear their dialogue. </li>
+  <li  class=""> After a few seconds of deep thinking, Mary caresses
+    Eleanor's </li>
+  <li  class=""> lower back and nods yes. The latter places the usual
+    gruel on </li>
+  <li  class=""> her lunch tray. </li>
+  <li  class=""> Tray in hand, she walks out from the back door.
+  </li>
+  <li  class=""> INT. THE LIVING ROOM </li>
+  <li  class=""> NOTE: the window frame partially obstructs the view.
+  </li>
+  <li  class=""> Through it, we see Eleanor walking through the field
+    and to </li>
+  <li  class=""> Theodore. She looks back, making sure no-one's
+    watching. </li>
+  <li  class=""> She gives Theodore his gruel and exchanges a few
+    words with </li>
+  <li  class=""> him, too. Finally, she walks away. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. MATTHEW'S ROOM - NIGHT </li>
+  <li  class=""> Deep into the night. Matthew sits on his bed,
+    holding his </li>
+  <li  class=""> injured foot. The intense pressure tempts him to
+    loosen the </li>
+  <li  class=""> bandage. </li>
+  <li  class=""> He stands in front of his window, praying past his
+    bed time </li>
+  <li  class=""> once again. </li>
+  <li  class=""> HIS POV: through the window, he notices A BEAM OF
+    LIGHT </li>
+  <li  class=""> moving across the field. He watches it disappear
+    into the </li>
+  <li  class=""> night. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> EXT. OUTSIDE THE PROPERTY - NIGHT </li>
+  <li  class=""> ALL IMAGES IN SLOW-MOTION </li>
+  <li  class=""> MARY and ELEANOR walk arm-in-arm. Mary holds a
+    CANDLE </li>
+  <li  class=""> LANTERN, while a thin, WHITE BED SHEET is wrapped
+    around </li>
+  <li  class=""> Eleanor's work clothes. Total darkness surrounds
+    them. </li>
+  <li  class=""> The girls walk - almost march - straight ahead,
+    toward </li>
+  <li  class=""> CAMERA. They move closer and closer to us, as we...
+  </li>
+  <li  class=""> FADE TO: </li>
+  <li  class=""> INT. THE FARM HOUSE - THE KITCHEN - DAY </li>
+  <li  class=""> BACK TO REGULAR MOTION </li>
+  <li  class=""> CLOSE ON: stacks of bread loaves sit on the counter.
+  </li>
+  <li  class=""> On the work table, Eleanor works on a new one.
+    There's a </li>
+  <li  class=""> certain lightness to her routine now. </li>
+  <li  class=""> She walks toward camera, so close that her body
+    fills up the </li>
+  <li  class=""> screen. </li>
+  <li  class=""> EUSTACE (O.S.) </li>
+  <li  class=""> This kitchen has never been so </li>
+  <li  class=""> indulgent with the people it feeds. </li>
+  <li  class=""> Eleanor jumps and turns around, noticing Eustace in
+    the </li>
+  <li  class=""> doorway. He looks at the bread loaves on the
+    counter. </li>
+  <li  class=""> ELEANOR </li>
+  <li  class=""> (stutters) </li>
+  <li  class=""> I thought our guests have been </li>
+  <li  class=""> finding the food pleasant... </li>
+  <li  class=""> EUSTACE </li>
+  <li  class=""> Pleasantry is a dangerous road. You </li>
+  <li  class=""> ought not to celebrate the ordinary </li>
+  <li  class=""> days more than the holy ones. </li>
+  <li  class=""> (pauses) </li>
+  <li  class=""> Perhaps, another correction is </li>
+  <li  class=""> needed. </li>
+  <li  class=""> Eustace fixes the girl with his eyes. She trembles,
+    unsure of </li>
+  <li  class=""> what to say. </li>
+  <li  class=""> MARY (O.S.) </li>
+  <li  class=""> I will give her my Bible. </li>
+  <li  class=""> Eustace turns: Mary stands right behind him. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> Gluttonous are the thoughts of </li>
+  <li  class=""> those who do not seek comfort in </li>
+  <li  class=""> God's Word. She will learn to </li>
+  <li  class=""> embrace His teachings. </li>
+  <li  class=""> Mary and Eustace lock eyes - they seem to be on the
+    same side </li>
+  <li  class=""> on this one. </li>
+  <li  class=""> EUSTACE </li>
+  <li  class=""> So be it. </li>
+  <li  class=""> (to Eleanor) </li>
+  <li  class=""> May your food be the reflection of </li>
+  <li  class=""> what you read. </li>
+  <li  class=""> Eleanor nods obediently. </li>
+  <li  class=""> She and Mary exchange a knowing look, before the
+    latter </li>
+  <li  class=""> leaves the room. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> EXT. THE FIELD - LATER </li>
+  <li  class=""> Eleanor walks to Theodore, holding the usual tray.
+    This time, </li>
+  <li  class=""> only the GRUEL sits on it. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> (notices bread is missing) </li>
+  <li  class=""> No. </li>
+  <li  class=""> ELEANOR </li>
+  <li  class=""> I can't stand another correction. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> But you can stand losing your </li>
+  <li  class=""> privileges? </li>
+  <li  class=""> ELEANOR </li>
+  <li  class=""> Please, listen to reason. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> No. </li>
+  <li  class=""> ELEANOR </li>
+  <li  class=""> I will make more next week. </li>
+  <li  class=""> He turns his back to her. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> Enjoy the day while it is bright </li>
+  <li  class=""> out and you are free to wander. </li>
+  <li  class=""> </li>
+  <li  class=""> Silence. She stands still, not sure of where to go
+    from </li>
+  <li  class=""> there. </li>
+  <li  class=""> As Theodore's coat slightly opens, the sun shines
+    off the </li>
+  <li  class=""> grip of his pistol, reflecting on its gold finish.
+  </li>
+  <li  class=""> THEODORE (CONT'D) </li>
+  <li  class=""> Let us end this. </li>
+  <li  class=""> He turns around. </li>
+  <li  class=""> THEODORE (CONT'D) </li>
+  <li  class=""> Let us rid ourselves of our </li>
+  <li  class=""> troubles, once and for all. </li>
+  <li  class=""> ELEANOR </li>
+  <li  class=""> How? </li>
+  <li  class=""> The closes his coat again, tucking the pistol away.
+  </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> How could Thomas not doubt, before </li>
+  <li  class=""> seeing and touching Christ's </li>
+  <li  class=""> wounds? </li>
+  <li  class=""> C.U.: his hand reaches into his pocket, feels
+    SOMETHING </li>
+  <li  class=""> inside of it. </li>
+  <li  class=""> THEODORE (CONT'D) </li>
+  <li  class=""> (back to Eleanor) </li>
+  <li  class=""> Make one more loaf. And I will </li>
+  <li  class=""> instruct you. </li>
+  <li  class=""> She studies him in silence. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. THE FARM HOUSE - THE LIVING ROOM - DUSK </li>
+  <li  class=""> The whole Family is gathered, kneeled down in front
+    of a </li>
+  <li  class=""> CROSS. It's the last prayer of the day. </li>
+  <li  class=""> ALL TOGETHER </li>
+  <li  class=""> "My soul doth magnify the Lord. </li>
+  <li  class=""> And my spirit hath rejoiced in God </li>
+  <li  class=""> my Saviour. For he hath regarded: </li>
+  <li  class=""> the low estate of his handmaiden: </li>
+  <li  class=""> for behold, from henceforth all </li>
+  <li  class=""> generations shall call me blessed." </li>
+  <li  class=""> CLOSE ON: Matthew reciting the canticle. </li>
+  <li  class=""> MATTHEW </li>
+  <li  class=""> (over other voices) </li>
+  <li  class=""> "For he that is mighty hath done me </li>
+  <li  class=""> great things: and holy is his Name. </li>
+  <li  class=""> And his mercy is on them that fear </li>
+  <li  class=""> him from generation to generation. </li>
+  <li  class=""> He hath shewed strength with his </li>
+  <li  class=""> arm; he hath scattered the proud in </li>
+  <li  class=""> the imagination of their hearts." </li>
+  <li  class=""> His eyes look around the room and end on: </li>
+  <li  class=""> MATTHEW'S POV: Mary reciting the canticle. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> (over other voices) </li>
+  <li  class=""> "He hath put down the mighty from </li>
+  <li  class=""> their seat and exalted them of low </li>
+  <li  class=""> degree. He hath filled the hungry </li>
+  <li  class=""> with good things; and the rich he </li>
+  <li  class=""> hath sent empty away." </li>
+  <li  class=""> MATTHEW'S POV: Eleanor, in the back of the room,
+    separated </li>
+  <li  class=""> from the family, prays as well. She holds Mary's
+    black Bible </li>
+  <li  class=""> under her arm. </li>
+  <li  class=""> ELEANOR </li>
+  <li  class=""> (over other voices) </li>
+  <li  class=""> "He hath holpen his servant Israel, </li>
+  <li  class=""> in remembrance of his mercy; as he </li>
+  <li  class=""> spake to our fathers, to Abraham, </li>
+  <li  class=""> and to his seed for ever." </li>
+  <li  class=""> WIDE ON THE WHOLE FAMILY - they cross themselves as
+    they say: </li>
+  <li  class=""> ALL TOGETHER </li>
+  <li  class=""> "Glory be to the Father, and to the </li>
+  <li  class=""> Son: and to the Holy Ghost; as it </li>
+  <li  class=""> was in the beginning, is now, and </li>
+  <li  class=""> ever shall be: world without end. </li>
+  <li  class=""> Amen." </li>
+  <li  class=""> The service is over. They all stand up and greet
+    each other. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. THE FARM HOUSE - EVENING </li>
+  <li  class=""> MONTAGE - SHOTS OF: </li>
+  <li  class=""> clothes, pray. </li>
+  <li  class=""> sheets. </li>
+  <li  class=""> is peckish. </li>
+  <li  class=""> END OF MONTAGE </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. MATTHEW'S ROOM - LATE INTO THE NIGHT </li>
+  <li  class=""> FAR SOUND OF: CONSTANCE'S HUMMING TUNE KICKS IN.
+  </li>
+  <li  class=""> Matthew rolls in his bed, as far from being asleep
+    as humanly </li>
+  <li  class=""> possible. </li>
+  <li  class=""> He opens his eyes and looks left and right, closely
+    listening </li>
+  <li  class=""> to the distant humming. </li>
+  <li  class=""> Matthew winces. He grabs his injured foot at the end
+    of the </li>
+  <li  class=""> bed. </li>
+  <li  class=""> HIS POV: the bandage is strangling his foot and
+    constricting </li>
+  <li  class=""> the blood flow. </li>
+  <li  class=""> He hurries to unravel the bandage and loosen it -
+    just like </li>
+  <li  class=""> his sister told him not to. He breathes in relief.
+  </li>
+  <li  class=""> He stands up and slowly walks to the window sill.
+  </li>
+  <li  class=""> MATTHEW'S POV: through his window, he looks at
+    Theodore right </li>
+  <li  class=""> outside the main entrance door. He is talking to
+    SOMEONE, we </li>
+  <li  class=""> don't see who. </li>
+  <li  class=""> THE HUMMING FADES AWAY. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> EXT. OUTSIDE THE PROPERTY - SIMULTANEOUS </li>
+  <li  class=""> ELEANOR and MARY stand in front of Theodore. Mary
+    holds her </li>
+  <li  class=""> CANDLE LANTERN, while Eleanor is still wrapped up in
+    her BED </li>
+  <li  class=""> SHEET. </li>
+  <li  class=""> Eleanor takes a round-shaped BUNDLE, covered in a
+    cloth, out </li>
+  <li  class=""> of her garments and gives it to Theodore. The latter
+    hides it </li>
+  <li  class=""> quickly. </li>
+  <li  class=""> He reaches into his pocket for the GREY POUCH we saw
+    in the </li>
+  <li  class=""> previous Chapters of our story. </li>
+  <li  class=""> He digs into the pouch and takes out one BLACK
+    BERRY. He </li>
+  <li  class=""> blows some dust off it, then holds it right next to
+    his face. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> (into camera) </li>
+  <li  class=""> Test it, then come back to the </li>
+  <li  class=""> house. Do not indulge. </li>
+  <li  class=""> He offers the berry to Eleanor, who grabs it and
+    thanks him </li>
+  <li  class=""> with a gentle kiss on his cheek. </li>
+  <li  class=""> Finally, the two ladies walk into the dark, to the
+    chicken </li>
+  <li  class=""> coop. </li>
+  <li  class=""> INT. THE KITCHEN - LATER </li>
+  <li  class=""> James walks in, holding a red GREASE LAMP - sleep
+    hasn't </li>
+  <li  class=""> gotten a hold on him after all. </li>
+  <li  class=""> He scans the room, looks for something. Finally, he
+    sets his </li>
+  <li  class=""> eyes on a FRUIT BOWL. </li>
+  <li  class=""> He grabs the usual apple and takes a bite from it -
+    sweet </li>
+  <li  class=""> relief to his hunger. </li>
+  <li  class=""> Then, he walks back into... </li>
+  <li  class=""> INT. THE LIVING ROOM </li>
+  <li  class=""> As he walks toward the staircase, he steps on
+    something </li>
+  <li  class=""> weird. He stops. </li>
+  <li  class=""> HIS POV: he brings the lamp closer to the ground,
+    where he </li>
+  <li  class=""> notices a small, BLOODY FOOTPRINT. </li>
+  <li  class=""> James looks a few inches away from it and notices
+    another </li>
+  <li  class=""> one. And another one again. He discovers a whole
+    sequence </li>
+  <li  class=""> that leads up to the entrance door. </li>
+  <li  class=""> He observes one closely. That foot size can only
+    belong to </li>
+  <li  class=""> one person... </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. CONSTANCE'S ROOM </li>
+  <li  class=""> James opens the door quickly, careless of the late
+    hour. We </li>
+  <li  class=""> only see his face. </li>
+  <li  class=""> JAMES </li>
+  <li  class=""> (to the room) </li>
+  <li  class=""> Someone left the house. </li>
+  <li  class=""> INT. THE CHICKEN COOP - LATER </li>
+  <li  class=""> Mary and Eleanor crack the door open. Their lantern
+    sheds a </li>
+  <li  class=""> feeble light on the inside, where the chickens roost
+    in </li>
+  <li  class=""> peace. </li>
+  <li  class=""> They walk in, making as little noise as possible.
+    They both </li>
+  <li  class=""> kneel down to the ground. </li>
+  <li  class=""> Eleanor puts her sheet to the side and reaches for
+    the berry </li>
+  <li  class=""> inside her pocket. She approaches one of the
+    chickens. </li>
+  <li  class=""> MARY (O.S.) </li>
+  <li  class=""> Wait. </li>
+  <li  class=""> Camera pans to her face. A moment of indecision.
+  </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> What happens when they see it? </li>
+  <li  class=""> ELEANOR </li>
+  <li  class=""> We'll say the rats did it. </li>
+  <li  class=""> She extends her hand to one of the chickens,
+    offering the </li>
+  <li  class=""> berry to it. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> Stop. </li>
+  <li  class=""> Eleanor looks at Mary, perplexed. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> Let's run away, tonight. And avoid </li>
+  <li  class=""> us all troubles. </li>
+  <li  class=""> A bird comes closer to the berry in Eleanor's hand,
+    but she </li>
+  <li  class=""> slightly retracts it. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> EXT. THE FIELD </li>
+  <li  class=""> Theodore has walked away from the house, deep into
+    the field. </li>
+  <li  class=""> He chews on the last few pieces of a BREAD LOAF,
+    then </li>
+  <li  class=""> nervously looks at the chicken coop: the girls
+    haven't come </li>
+  <li  class=""> out yet. </li>
+  <li  class=""> AUDIO: GRASS MOVES BEHIND HIS BACK. </li>
+  <li  class=""> He immediately turns and whips his pistol out,
+    holding his </li>
+  <li  class=""> LANTERN up with his free hand. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> Who is there? </li>
+  <li  class=""> No visible presence, only the sound of his heavy
+    breathing. </li>
+  <li  class=""> Full darkness surrounds him now. </li>
+  <li  class=""> BACK TO: </li>
+  <li  class=""> INT. THE CHICKEN COOP </li>
+  <li  class=""> Mary and Eleanor lock eyes. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> Uncle Eustace spends his nights in </li>
+  <li  class=""> the house. No one watches the other </li>
+  <li  class=""> end of the field. </li>
+  <li  class=""> ELEANOR </li>
+  <li  class=""> What about Theodore? </li>
+  <li  class=""> MARY </li>
+  <li  class=""> He will not see us in the dark. And </li>
+  <li  class=""> his legs aren't strong enough to </li>
+  <li  class=""> run. </li>
+  <li  class=""> Eleanor pauses, sinks deep into her thoughts. </li>
+  <li  class=""> ELEANOR </li>
+  <li  class=""> He deserves to leave, too. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> This is for us and us only. </li>
+  <li  class=""> Eleanor caresses the berry in her hand, meditating
+    on her </li>
+  <li  class=""> next words. </li>
+  <li  class=""> ELEANOR </li>
+  <li  class=""> (to herself) </li>
+  <li  class=""> I am tired. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> Me, too. </li>
+  <li  class=""> ELEANOR </li>
+  <li  class=""> No: I am tired of a life spent </li>
+  <li  class=""> hiding. </li>
+  <li  class=""> She quickly extends her hand, offering the berry to
+    the </li>
+  <li  class=""> chicken once again. </li>
+  <li  class=""> The bird takes it in one bite, swallowing it right
+    away. Mary </li>
+  <li  class=""> observes speechless. </li>
+  <li  class=""> ELEANOR (CONT'D) </li>
+  <li  class=""> You know they will not cease to </li>
+  <li  class=""> torment us until they find us. And </li>
+  <li  class=""> that is not what I long for. </li>
+  <li  class=""> AN UNKNOWN PRESENCE slightly peeks their head into
+    the coop, </li>
+  <li  class=""> unbeknownst to them. Camera looks at the women
+    through the </li>
+  <li  class=""> door crack. </li>
+  <li  class=""> ELEANOR (CONT'D) </li>
+  <li  class=""> I am not afraid. </li>
+  <li  class=""> Mary's face looks away, disappointed. </li>
+  <li  class=""> Eleanor smiles and crawls to her. She grabs her
+    sheet from </li>
+  <li  class=""> the side and throws it over Mary, covering her and
+    herself </li>
+  <li  class=""> with it. </li>
+  <li  class=""> Underneath the sheet, their heads press against one
+    another. </li>
+  <li  class=""> Finally, they kiss. </li>
+  <li  class=""> Mary caresses the back of Eleanor's neck. Then, she
+    takes the </li>
+  <li  class=""> MAID CAP off of her and pulls the blanket. </li>
+  <li  class=""> SLOW MO: Eleanor closes her eyes as the cloth gently
+    rubs off </li>
+  <li  class=""> her hair and falls off her head. </li>
+  <li  class=""> REGULAR MOTION: the two girls, uncovered, look into
+    each </li>
+  <li  class=""> other's eyes. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE CHICKEN COOP - LATER </li>
+  <li  class=""> Eleanor and Mary sit in front of each other, wearing
+    their </li>
+  <li  class=""> garments a little more loose. The lantern sits on
+    Eleanor's </li>
+  <li  class=""> sheet right next to them. </li>
+  <li  class=""> Eleanor takes Mary's Bible from underneath her
+    garments. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> What is the next story? </li>
+  <li  class=""> Eleanor opens the book. HER POV: it has been
+    hollowed out </li>
+  <li  class=""> right where Mary put her knife at the beginning of
+    Chapter </li>
+  <li  class=""> III. </li>
+  <li  class=""> A different book has been placed in it. She caresses
+    its </li>
+  <li  class=""> cover: "Sorcerers and Prophets of the Pagan World",
+    the same </li>
+  <li  class=""> one we saw Abiel holding in his office. </li>
+  <li  class=""> She tosses the Bible to the side and opens the new
+    book. </li>
+  <li  class=""> ELEANOR </li>
+  <li  class=""> "The story of Cassandra." </li>
+  <li  class=""> Eleanor looks up, into Mary's loving eyes. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> Go ahead. </li>
+  <li  class=""> Eleanor clears her voice. </li>
+  <li  class=""> ELEANOR </li>
+  <li  class=""> (reads from the book) </li>
+  <li  class=""> "Cassandra was the princess of </li>
+  <li  class=""> Troy, the daughter of King Priam </li>
+  <li  class=""> and Queen Hecuba. Her dark brown </li>
+  <li  class=""> hair and eyes gave her divine </li>
+  <li  class=""> beauty, but people around her </li>
+  <li  class=""> perceived her as insane..." </li>
+  <li  class=""> CAMERA shows the two women through the door crack
+    again. </li>
+  <li  class=""> ELEANOR(CONT'D) </li>
+  <li  class=""> "...Apollo, the God of Music and </li>
+  <li  class=""> Medicine, noticed her beauty and </li>
+  <li  class=""> fell for her. Although he courted </li>
+  <li  class=""> her, she would not concede herself </li>
+  <li  class=""> to him. He then advanced a </li>
+  <li  class=""> proposition: he would reward her </li>
+  <li  class=""> with the gift of prophecy, if she </li>
+  <li  class=""> only complied with his desires." </li>
+  <li  class=""> Mary keeps listening, the lantern dimly lighting her
+    face. </li>
+  <li  class=""> ELEANOR(CONT'D) </li>
+  <li  class=""> "...she accepted, and immediately </li>
+  <li  class=""> gained extraordinary knowledge and </li>
+  <li  class=""> prophetic powers. Yet, when asked </li>
+  <li  class=""> to fulfill her promise, she refused </li>
+  <li  class=""> to lie in bed with him. The God, </li>
+  <li  class=""> wroth in his heart, gave her great </li>
+  <li  class=""> punishment: she was doomed to never </li>
+  <li  class=""> be believed by those who listened </li>
+  <li  class=""> to her prophecies. Her words would </li>
+  <li  class=""> forever fall on deaf ears." </li>
+  <li  class=""> A beat. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> Read on. I like the sound of your </li>
+  <li  class=""> voice. </li>
+  <li  class=""> We see Eleanor turning the page to the next chapter.
+    HER POV: </li>
+  <li  class=""> on the book, page one-hundred and ten reads: </li>
+  <li  class=""> ELEANOR </li>
+  <li  class=""> "The Story of Tiresias." </li>
+  <li  class=""> SFX: THE DOOR CREEKS. </li>
+  <li  class=""> CAMERA PANS TO REVEAL: MATTHEW stands at the
+    threshold, </li>
+  <li  class=""> wearing a black cape. </li>
+  <li  class=""> BACK TO: </li>
+  <li  class=""> EXT. THE FIELD - SIMULTANEOUS </li>
+  <li  class=""> Theodore stands in the darkness, alert as ever. The
+    grass </li>
+  <li  class=""> moves again behind him... </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> (yells) </li>
+  <li  class=""> Who is there!? </li>
+  <li  class=""> He turns around, gesturing his pistol like crazy.
+  </li>
+  <li  class=""> Finally, his eyes land on SOMEONE. He freezes,
+    hypnotized in </li>
+  <li  class=""> pure terror. </li>
+  <li  class=""> CONSTANCE (O.S.) </li>
+  <li  class=""> Where are they? </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> (stutters) </li>
+  <li  class=""> I... I was looking- </li>
+  <li  class=""> CONSTANCE (O.S.) </li>
+  <li  class=""> Do not lie. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> (pauses) </li>
+  <li  class=""> The coop. </li>
+  <li  class=""> Theodore lowers his pistol - it feels useless. </li>
+  <li  class=""> CONSTANCE (O.S.) </li>
+  <li  class=""> Eustace will take care of you. </li>
+  <li  class=""> He shakes, as Constance walks past him to the coop.
+  </li>
+  <li  class=""> BACK TO: </li>
+  <li  class=""> INT. THE CHICKEN COOP - SIMULTANEOUS </li>
+  <li  class=""> The two ladies lock eyes with Matthew, frightened.
+  </li>
+  <li  class=""> MARY </li>
+  <li  class=""> What are you doing here? </li>
+  <li  class=""> He's at a loss for words. </li>
+  <li  class=""> MARY'S POV: she looks at his foot. Blood covers most
+    of it. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> Go back to the house. Now. </li>
+  <li  class=""> He hurries out of the coop. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> (stops him) </li>
+  <li  class=""> You must not speak of this. </li>
+  <li  class=""> Matthew nods a frantic yes. He approaches the door
+    again, </li>
+  <li  class=""> when... </li>
+  <li  class=""> SOUND: THE DOOR SLAMS OPEN! THE CHICKENS RECOIL.
+  </li>
+  <li  class=""> Suddenly, CONSTANCE makes her way into the coop,
+    causing the </li>
+  <li  class=""> three to jump in horror. </li>
+  <li  class=""> Mary retreats and inadvertently pulls the sheet,
+    causing the </li>
+  <li  class=""> lantern to flip and turn off. </li>
+  <li  class=""> Complete darkness. All we hear is Mary's shallow
+    breathing. </li>
+  <li  class=""> SOUND OF: A SHARP, PAINFUL WHEEZE. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> Eleanor? </li>
+  <li  class=""> We hear Mary's hand moving on the ground and
+    reaching for the </li>
+  <li  class=""> lantern. She lights a MATCH and turns the candle
+    back on, </li>
+  <li  class=""> brightening up the coop once again. </li>
+  <li  class=""> She looks straight ahead and gasps in fear. CAMERA
+    PANS TO: </li>
+  <li  class=""> Eleanor's arched-backward body is LEVITATING right
+    in front </li>
+  <li  class=""> of Constance. </li>
+  <li  class=""> Matthew observes, petrified and powerless - the
+    sight is </li>
+  <li  class=""> beyond his comprehension. </li>
+  <li  class=""> Eleanor's body reaches mid-air and stops. Her hair
+    cascades </li>
+  <li  class=""> toward the ground, her eyes and mouth freeze open.
+    She's in </li>
+  <li  class=""> trance. </li>
+  <li  class=""> Constance runs her wrinkled fingers all over the
+    maid's </li>
+  <li  class=""> floating body. Finally, she wraps her hand around
+    Eleanor's </li>
+  <li  class=""> neck, pressing TWO FINGERNAILS into her front neck.
+  </li>
+  <li  class=""> CONSTANCE </li>
+  <li  class=""> (to Eleanor) </li>
+  <li  class=""> Silence. </li>
+  <li  class=""> Every second that passes, Constance's fingernails
+    press </li>
+  <li  class=""> deeper into her neck, wrenching her trachea. </li>
+  <li  class=""> Mary's lips tremble - she's scared of speaking.
+  </li>
+  <li  class=""> MATTHEW </li>
+  <li  class=""> "Mortify...mortify therefore your </li>
+  <li  class=""> members which are upon the earth." </li>
+  <li  class=""> Mary looks at her brother in shock. </li>
+  <li  class=""> MATTHEW (CONT'D) </li>
+  <li  class=""> "...fornication, uncleanness, </li>
+  <li  class=""> inordinate affection, evil </li>
+  <li  class=""> concupiscence, and covetousness, </li>
+  <li  class=""> which is idolatry." </li>
+  <li  class=""> Eleanor's breathing becomes increasingly huskier.
+    Constance - </li>
+  <li  class=""> creepily pleased - looks at Matthew. </li>
+  <li  class=""> Her finger nails cut into Eleanor's neck, lacerating
+    it. The </li>
+  <li  class=""> girl attempts to scream, but NO SOUND comes out: her
+    voice </li>
+  <li  class=""> has been taken away. </li>
+  <li  class=""> SLOW-MO - AERIAL VIEW: Eleanor free-falls toward the
+    ground, </li>
+  <li  class=""> waves of intense pain rushing through her body.
+  </li>
+  <li  class=""> REGULAR MOTION: her body lands on the ground,
+    lifting a layer </li>
+  <li  class=""> of dust. </li>
+  <li  class=""> Eleanor's eyes blink - she's out of trance. </li>
+  <li  class=""> Silence. </li>
+  <li  class=""> CONSTANCE </li>
+  <li  class=""> Pick up your book, Mary. </li>
+  <li  class=""> CAMERA stays on Eleanor. In the back, Mary picks up
+    the </li>
+  <li  class=""> hollowed Bible and the other book and walks away in
+    tears. </li>
+  <li  class=""> Matthew watches the maid lying on the floor, as
+    Constance's </li>
+  <li  class=""> hand rests on his shoulder. </li>
+  <li  class=""> CONSTANCE (O.S.) (CONT'D) </li>
+  <li  class=""> (to Eleanor) </li>
+  <li  class=""> You will part this house soon. </li>
+  <li  class=""> Mary, Constance and Matthew exit, and the coop turns
+    quiet </li>
+  <li  class=""> again. Eleanor is alone now. </li>
+  <li  class=""> Two sheens of blood trickle down her throat, when...
+  </li>
+  <li  class=""> AUDIO: A CHICKEN SHRIEKS IN PAIN! </li>
+  <li  class=""> Eleanor turns her head to the sound. </li>
+  <li  class=""> CAMERA TRACKS, REVEALING: on the ground, one chicken
+    lies </li>
+  <li  class=""> DEAD, its body covered in the same dark BLOOD we saw
+    on </li>
+  <li  class=""> Constance at the beginning of the film. </li>
+  <li  class=""> A PAIR OF HANDS enter the frame and pick up the
+    chicken - </li>
+  <li  class=""> it's THEODORE. </li>
+  <li  class=""> He looks at Eleanor, then at the dead bird once
+    again. His </li>
+  <li  class=""> knees give out, as he breaks into tears. </li>
+  <li  class=""> Finally, his shaking hand reaches into his pocket.
+    He takes </li>
+  <li  class=""> out ANOTHER BERRY and places it into Eleanor's hand.
+  </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. THE LIVING ROOM - SAME </li>
+  <li  class=""> Osbert and Constance sit right next to each other,
+    looking </li>
+  <li  class=""> out of the window in blissful contentment. Matthew
+    sits at </li>
+  <li  class=""> their side, avoiding eye-contact at all costs. </li>
+  <li  class=""> HIS POV: on the far end of the room, a shaking
+    Eleanor wipes </li>
+  <li  class=""> dust off the walls. Suddenly, she brings her hand to
+    her </li>
+  <li  class=""> neck, exhaling heavily and trying to make a sound.
+  </li>
+  <li  class=""> INT. MARY'S ROOM - LATER </li>
+  <li  class=""> CLOSE ON: Mary applies some ice to her own knee,
+    pained and </li>
+  <li  class=""> covered in bruises. Looks like a fresh correction.
+  </li>
+  <li  class=""> Matthew makes his way into the room. His sister
+    notices him, </li>
+  <li  class=""> wishes he wasn't there. </li>
+  <li  class=""> MATTHEW </li>
+  <li  class=""> (stutters) </li>
+  <li  class=""> I am sorry. I meant no harm in my </li>
+  <li  class=""> act. </li>
+  <li  class=""> She gives him no attention. </li>
+  <li  class=""> MATTHEW (CONT'D) </li>
+  <li  class=""> I pay the price of my curiosity. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> A splinter was not all you caught </li>
+  <li  class=""> in the attic, was it? </li>
+  <li  class=""> He remains silent. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> You told mother and father. </li>
+  <li  class=""> MATTHEW </li>
+  <li  class=""> I did not. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> You are the cause of this. </li>
+  <li  class=""> MATTHEW </li>
+  <li  class=""> I am not. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> (stern) </li>
+  <li  class=""> Stop it. </li>
+  <li  class=""> They lock eyes. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> Believe me, you are paying no </li>
+  <li  class=""> price. </li>
+  <li  class=""> She goes back to icing her knee. He bows his head
+    down, </li>
+  <li  class=""> sinking in guilt. </li>
+  <li  class=""> MATTHEW </li>
+  <li  class=""> (trembling voice) </li>
+  <li  class=""> I don't want to dream in this house </li>
+  <li  class=""> any more. </li>
+  <li  class=""> He picks up his teary-eyed face. Mary locks eyes
+    with him. </li>
+  <li  class=""> MATTHEW (CONT'D) </li>
+  <li  class=""> Tell me what punishment you seek </li>
+  <li  class=""> for me, and I will follow. </li>
+  <li  class=""> She ponders for a few seconds. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> Can you deliver a message? </li>
+  <li  class=""> MATTHEW </li>
+  <li  class=""> Yes. </li>
+  <li  class=""> APRIL </li>
+  <li  class=""> MARY </li>
+  <li  class=""> Do I have your promise that you </li>
+  <li  class=""> will say this only to the person I </li>
+  <li  class=""> instruct you to and no one else? </li>
+  <li  class=""> MATTHEW </li>
+  <li  class=""> You do. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> That you will not question or </li>
+  <li  class=""> investigate any of the words I tell </li>
+  <li  class=""> you? </li>
+  <li  class=""> MATTHEW </li>
+  <li  class=""> I swear in the name of God. </li>
+  <li  class=""> A few drops of melted ice trickle down Mary's knee.
+    She looks </li>
+  <li  class=""> at Matthew, carefully planning her next words. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> EXT. THE FIELD - LATER </li>
+  <li  class=""> Camera follows Matthew walking up to Theodore, who's
+    pale as </li>
+  <li  class=""> ever before. </li>
+  <li  class=""> He stops right in front of him. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> (weak) </li>
+  <li  class=""> Yes? </li>
+  <li  class=""> MATTHEW </li>
+  <li  class=""> Sister Mary says the house is too </li>
+  <li  class=""> alert now. She must wait. </li>
+  <li  class=""> Theodore looks down. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> Very well, then. </li>
+  <li  class=""> He turns his back, looking away from the kid,
+    when... </li>
+  <li  class=""> MATTHEW </li>
+  <li  class=""> There is more. </li>
+  <li  class=""> THEODORE </li>
+  <li  class=""> (turns to him) </li>
+  <li  class=""> Yes? </li>
+  <li  class=""> MATTHEW </li>
+  <li  class=""> She said.... The day the one </li>
+  <li  class=""> chicken dies, the others must </li>
+  <li  class=""> follow, too. </li>
+  <li  class=""> Theodore listens, trying to decode those words.
+  </li>
+  <li  class=""> Then, something snaps in his mind - he understands.
+  </li>
+  <li  class=""> He stares at Matthew in the eyes, then nods yes.
+  </li>
+  <li  class=""> Without saying a word, the boy starts to walk back
+    to the </li>
+  <li  class=""> house. </li>
+  <li  class=""> INT. THE FARM HOUSE - THE LIVING ROOM - SIMULTANEOUS
+  </li>
+  <li  class=""> THROUGH THE WINDOW: in the distance, we see Matthew
+    walking </li>
+  <li  class=""> away from Theodore. </li>
+  <li  class=""> Contentment turns into surprise and dismay on
+    Constance's </li>
+  <li  class=""> face, as she watches her grandson regressing to the
+    house. </li>
+  <li  class=""> A breeze comes in through the window... </li>
+  <li  class=""> END OF MARY'S FLASHBACK </li>
+  <li  class=""> BACK TO: </li>
+  <li  class=""> INT. THE CONSTABLE'S OFFICE - THE INTERROGATION ROOM
+    - NIGHT </li>
+  <li  class=""> PRESENT TIME </li>
+  <li  class=""> A draught enters the room through a slight gap in
+    the windows </li>
+  <li  class=""> and causes a few of the candles on Abiel's desk to
+    turn off. </li>
+  <li  class=""> He takes a match out of his pocket and lights it
+    with his </li>
+  <li  class=""> trembling hand. </li>
+  <li  class=""> MARY (O.S.) </li>
+  <li  class=""> Will you answer an inquiry of mine, </li>
+  <li  class=""> Constable? </li>
+  <li  class=""> Abiel brings the match closer to the candle and
+    lights them. </li>
+  <li  class=""> His head nods yes to Mary. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> What words did your deputy whisper </li>
+  <li  class=""> in your ear before he left the </li>
+  <li  class=""> room? </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> "For this purpose the Son of God </li>
+  <li  class=""> was manifested: that he might </li>
+  <li  class=""> destroy the works of the devil." </li>
+  <li  class=""> He shakes the match off. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> Do you believe in that? </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> It is my duty to. </li>
+  <li  class=""> A beat. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> Lucifer was an angel before we cast </li>
+  <li  class=""> the name of Devil upon him. </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> What is that to say? </li>
+  <li  class=""> MARY </li>
+  <li  class=""> That the Son of God needs an enemy </li>
+  <li  class=""> in order to perform His good. </li>
+  <li  class=""> Once again, Abiel takes a quick glance at "Sorcerers
+    and </li>
+  <li  class=""> Prophets of the Pagan World", still sitting on his
+    desk. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> You are torn once again. </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> I am afraid of what I might believe </li>
+  <li  class=""> in if I indulge my curiosity. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> Is it better to learn a lesson </li>
+  <li  class=""> through ignorance or knowledge? </li>
+  <li  class=""> Abiel taps his fingers on his desk. </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> What is the story of Tiresias? </li>
+  <li  class=""> Mary's chair screeches slightly. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. THE FARM HOUSE - THE KITCHEN - DAY </li>
+  <li  class=""> MARY'S FLASHBACK RESUMES </li>
+  <li  class=""> IMAGES ARE IN SLOW MOTION AND WITH HEAVY MOTION
+    BLUR. </li>
+  <li  class=""> We are back to the last moment we saw from Chapter
+    I: James </li>
+  <li  class=""> walks away from the kitchen, holding an apple in his
+    hand. </li>
+  <li  class=""> From the end of the hallway, Osbert and Eustace
+    advance. </li>
+  <li  class=""> C.U.: James looks at the two men in the eyes and
+    solemnly </li>
+  <li  class=""> nods yes. Osbert and Eustace walk past him. </li>
+  <li  class=""> IMAGES BACK TO REGULAR MOTION </li>
+  <li  class=""> Osbert and Eustace bore their eyes into Eleanor and
+    Mary. </li>
+  <li  class=""> Mary straightens her chin up and takes a few steps
+    closer to </li>
+  <li  class=""> Eleanor, to the point where their shoulders almost
+    touch. </li>
+  <li  class=""> The room remains quiet, as the girls stare the men
+    down and </li>
+  <li  class=""> vice versa. </li>
+  <li  class=""> MARY (V.O.) </li>
+  <li  class=""> That who opposes God's rule on a </li>
+  <li  class=""> holy day, encounters the highest </li>
+  <li  class=""> form of punishment. </li>
+  <li  class=""> Mary's hand approaches Eleanor's. Their fingers
+    brush against </li>
+  <li  class=""> each other. </li>
+  <li  class=""> ABIEL (V.O.) </li>
+  <li  class=""> Which is? </li>
+  <li  class=""> CUT TO BLACK: </li>
+  <li  class=""> OVER BLACK </li>
+  <li  class=""> We hear sounds of someone forcefully removing
+    clothes from </li>
+  <li  class=""> someone else. Feet stomp, objects fall to the
+    ground. </li>
+  <li  class=""> TO: </li>
+  <li  class=""> INT. THE FARM HOUSE - MARY'S ROOM - DUSK </li>
+  <li  class=""> Mary stands in front of a mirror. All we see is her
+    face. </li>
+  <li  class=""> CAMERA ZOOMS OUT: we now look at Mary's full
+    reflection in </li>
+  <li  class=""> the mirror. She wears ELEANOR'S WORK OUTFIT, except
+    for the </li>
+  <li  class=""> maid cap. Her eyes are red and swollen from crying.
+  </li>
+  <li  class=""> Agnes picks up Eleanor's MAID CAP and places it on
+    Mary's </li>
+  <li  class=""> head. She fixes her daughter's hair under it. </li>
+  <li  class=""> MARY (V.O.) </li>
+  <li  class=""> Disavowal. </li>
+  <li  class=""> Agnes gazes at Mary, taking in her new work look.
+    Finally, </li>
+  <li  class=""> she steps away. </li>
+  <li  class=""> Mary contemplates herself in the mirror. A quick
+    smile </li>
+  <li  class=""> surfaces, fading away in an instance. </li>
+  <li  class=""> TITLE FADES IN/OUT: </li>
+  <li  class=""> CHAPTER IV </li>
+  <li  class=""> THE FUNERAL DINNER </li>
+  <li  class=""> INT. THE FARM HOUSE - THE LIVING ROOM </li>
+  <li  class=""> Eleanor stands in a corner, shaking after having
+    been </li>
+  <li  class=""> stripped down to her bare skin. </li>
+  <li  class=""> James walks over, holding a dirty YELLOW SACK. He
+    fixes her </li>
+  <li  class=""> with his glowering look, flipping the sack upside
+    down. </li>
+  <li  class=""> Tens, hundreds of RAW BEANS fall to the ground. As
+    they stack </li>
+  <li  class=""> up in heaps, his lips wrinkle in a grin. </li>
+  <li  class=""> Eleanor reluctantly kneels down to them. The second
+    her knees </li>
+  <li  class=""> touch the beans, excruciating pain permeates through
+    every </li>
+  <li  class=""> fiber of her being, cutting her breath short. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. THE FARM HOUSE - THE KITCHEN - EVENING </li>
+  <li  class=""> CLOSE ON: a copper TEA KETTLE sits on a burner on
+    the stove, </li>
+  <li  class=""> with steam coming out of it. </li>
+  <li  class=""> Mary's hands enter frame, lift the lid of the kettle
+    and </li>
+  <li  class=""> inserts some TEA LEAVES in it. </li>
+  <li  class=""> On the kitchen counter: she arranges eight TEA CUPS
+    on a </li>
+  <li  class=""> tray. They look just like the one we saw her
+    removing from </li>
+  <li  class=""> Constance's nightstand at the beginning of our
+    story. </li>
+  <li  class=""> Then, she moves to another tray, where some bread
+    loaves have </li>
+  <li  class=""> been arranged previously. </li>
+  <li  class=""> INT. THE FARM HOUSE - LIVING ROOM - NIGHT </li>
+  <li  class=""> Candles dimly light the scene. WE OPEN ON: aerial
+    view of the </li>
+  <li  class=""> open casket, Constance's body lying inside it. </li>
+  <li  class=""> The FAMILY sits at a large table in the middle of
+    the room. </li>
+  <li  class=""> On it, dinner is set: </li>
+  <li  class=""> covered in TOMATOES, NUTS and HERBS of all kinds.
+  </li>
+  <li  class=""> Matthew slightly turns his body and looks at a
+    corner of the </li>
+  <li  class=""> room with preoccupation. </li>
+  <li  class=""> MATTHEW'S POV: Eleanor is kneeling naked on the
+    beans. Her </li>
+  <li  class=""> back is all he can see. Matthew shifts his attention
+    to his </li>
+  <li  class=""> uncle Eustace, who's fiddling with a PRY BAR. </li>
+  <li  class=""> From the end of the hallway, Mary walks in holding
+    her tray </li>
+  <li  class=""> of bread loaves. As she enters the room, all eyes
+    converge to </li>
+  <li  class=""> her. </li>
+  <li  class=""> She walks around the table, distributing one loaf to
+    each </li>
+  <li  class=""> member of the family. </li>
+  <li  class=""> After receiving their bread, the Family bows their
+    heads and </li>
+  <li  class=""> gather in silent prayer, while Mary moves to another
+    corner </li>
+  <li  class=""> of the room - she's not allowed to dine with them.
+    She and </li>
+  <li  class=""> Matthew briefly lock eyes. </li>
+  <li  class=""> Each member of the Family crosses themselves, to end
+    the </li>
+  <li  class=""> prayer. Now, it's time to eat. </li>
+  <li  class=""> CLOSE UPS of the Family devouring their food: </li>
+  <li  class=""> No words - only the sound of their ravenous eating.
+    Every </li>
+  <li  class=""> bite they take, Eleanor winces in her corner. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> LATER </li>
+  <li  class=""> As the Family takes the last bites of their food,
+    Osbert </li>
+  <li  class=""> grabs a silver spoon and gently brushes his glass
+    with it, </li>
+  <li  class=""> all while looking at Mary. </li>
+  <li  class=""> She turns to him, nods and promptly walks toward the
+    kitchen. </li>
+  <li  class=""> Eleanor slightly tilts her body to follow Mary's
+    footsteps </li>
+  <li  class=""> moving across the room. </li>
+  <li  class=""> INT. THE FARM HOUSE - THE KITCHEN - SECONDS LATER
+  </li>
+  <li  class=""> CLOSE ON: Mary removes the tea kettle from the
+    burner and </li>
+  <li  class=""> pours warm TEA in the cups. </li>
+  <li  class=""> INSERT: she reaches into her side-pocket and takes
+    out the </li>
+  <li  class=""> grey pouch. </li>
+  <li  class=""> She pours the content into her hand: eight black
+    berries. </li>
+  <li  class=""> She drops one in the first cup and watches it
+    dissolve in the </li>
+  <li  class=""> tea, as if it never was there. She lifts up the cup
+    and </li>
+  <li  class=""> smells it. </li>
+  <li  class=""> She adds a single berry to each one of them, up to
+    the eighth </li>
+  <li  class=""> one. As she is about to drop the last berry, she
+    stops. </li>
+  <li  class=""> She picks her head up, thinks this through. Then, a
+    change of </li>
+  <li  class=""> mind: she drops the berry to the floor, squishing it
+    with her </li>
+  <li  class=""> foot. </li>
+  <li  class=""> Finally, she twists the last, untouched cup to make
+    it face a </li>
+  <li  class=""> different direction. </li>
+  <li  class=""> INT. THE LIVING ROOM </li>
+  <li  class=""> Mary walks in with her tray of steaming tea cups.
+  </li>
+  <li  class=""> She places one in front of every member of the
+    Family, giving </li>
+  <li  class=""> the one she did not put the berry in to her brother
+    Matthew. </li>
+  <li  class=""> The people at the table pass around a SILVER BOWL
+    containing </li>
+  <li  class=""> sugar, adding some to their liking. </li>
+  <li  class=""> The bowl comes to Agnes, who doesn't put any and
+    quickly </li>
+  <li  class=""> passes it to Matthew, sitting next to her. </li>
+  <li  class=""> He takes his spoon, excited, and pours one, then
+    two, then </li>
+  <li  class=""> three, then four spoonfuls of sugar. </li>
+  <li  class=""> MARY'S POV: she observes her brother, making sure he
+    drinks </li>
+  <li  class=""> from his cup and his cup only. </li>
+  <li  class=""> Right before she's about to sip on her cup, though,
+    Agnes </li>
+  <li  class=""> notices her son indulging his craving for sugar and
+    quickly </li>
+  <li  class=""> snatches both the sugar bowl and his tea cup away
+    from him. </li>
+  <li  class=""> Mary's mind races. </li>
+  <li  class=""> Agnes replaces Matthew's cup with hers, fixing him
+    with her </li>
+  <li  class=""> stern gaze. Bowing his head in guilt, he sips on his
+    mother's </li>
+  <li  class=""> cup. </li>
+  <li  class=""> Mary's blood freezes: something in her plan cracked.
+  </li>
+  <li  class=""> She almost steps forward to prevent her little
+    brother from </li>
+  <li  class=""> drinking, but she knows it's too late. </li>
+  <li  class=""> She looks at Eleanor, hoping to meet her eyes:
+    nothing. The </li>
+  <li  class=""> maid's face remains fixed on the wall in front of
+    her. </li>
+  <li  class=""> Mary tries to calm herself down, avoiding any sudden
+    or </li>
+  <li  class=""> noticeable movement. She remains in her corner,
+    listening to </li>
+  <li  class=""> the sound of all the diners slurping on their teas.
+  </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> LATER </li>
+  <li  class=""> The tea cups are empty, dinner's over. </li>
+  <li  class=""> Osbert stands up. Everyone turns their attention to
+    him. </li>
+  <li  class=""> He clears his voice, readies himself to finally
+    break the </li>
+  <li  class=""> silence. Yet, a sudden COUGH takes over, forcing him
+    to bend </li>
+  <li  class=""> over to the table. Eleanor and Mary gasp. </li>
+  <li  class=""> Randolph holds Osbert by his arm, helping him back
+    up. He </li>
+  <li  class=""> manages to pull himself together and to stand
+    straight again. </li>
+  <li  class=""> It seems like everything is okay. </li>
+  <li  class=""> In her corner, Mary closes her eyes, trembling. So
+    does </li>
+  <li  class=""> Eleanor. Osbert is about to talk when... </li>
+  <li  class=""> O.S. SOUND: COUGHS AND GAG REFLEXES! </li>
+  <li  class=""> ANGLE ON: Matthew spits DARK BLOOD from his mouth
+    and drops </li>
+  <li  class=""> dead on the plate in front of him. </li>
+  <li  class=""> All FREEZE. </li>
+  <li  class=""> One by one, all the members of the Family experience
+    the same </li>
+  <li  class=""> reaction from the poison. </li>
+  <li  class=""> Gushes of dark blood cascade on the leftovers,
+    glasses and </li>
+  <li  class=""> plates fall and break to the ground. </li>
+  <li  class=""> Osbert holds his throat, as he coughs huge amounts
+    of blood </li>
+  <li  class=""> out of his mouth. Finally, he drops dead. </li>
+  <li  class=""> After the turmoil, silence. </li>
+  <li  class=""> Mary opens her eyes again and witnesses the
+    murderous </li>
+  <li  class=""> spectacle in front of her. </li>
+  <li  class=""> She looks at Eleanor, who stands up from the beans
+    and runs </li>
+  <li  class=""> toward her, careless of the numbing pain to her
+    knees. </li>
+  <li  class=""> As they embrace, Eleanor notices Mary's eyes are
+    still set on </li>
+  <li  class=""> the dinner table. Eleanor turns her face to it.
+  </li>
+  <li  class=""> Covered in blood and frozen in shock, Agnes observes
+    the </li>
+  <li  class=""> spectacle around her: she survived. </li>
+  <li  class=""> She turns her head to the two girls, now hugging in
+    front of </li>
+  <li  class=""> her eyes. She almost says something, when she
+    remembers: </li>
+  <li  class=""> silence. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> (on the verge of tears) </li>
+  <li  class=""> He only wanted some sugar... He </li>
+  <li  class=""> didn't do anything. </li>
+  <li  class=""> Agnes' eyebrows wrinkle in a mixture of surprise and
+    genuine </li>
+  <li  class=""> disappointment. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> I should not be speaking, should I? </li>
+  <li  class=""> Agnes' remains silent - obviously. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> Look around. Your father... Your </li>
+  <li  class=""> son was murdered, and the only </li>
+  <li  class=""> thing you can think of is our </li>
+  <li  class=""> precious rule. </li>
+  <li  class=""> Mary slams her hand against the table, rubs it on
+    the table </li>
+  <li  class=""> cloth right next to Osbert's dead body. </li>
+  <li  class=""> She lifts it up to her mother: it's covered in FRESH
+    BLOOD. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> This is what silence did to our </li>
+  <li  class=""> family. This is the real price of </li>
+  <li  class=""> correction. </li>
+  <li  class=""> Agnes' lips tremble, almost looking like she could
+    say </li>
+  <li  class=""> something... </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> Speak, mother. No-one is watching, </li>
+  <li  class=""> no-one cares. </li>
+  <li  class=""> Agnes is completely frozen. Her complexion pales
+    more and </li>
+  <li  class=""> more every second. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> Speak, I say. Speak. </li>
+  <li  class=""> Agnes shakes her head no. Eleanor holds Mary's arm
+    tighter. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> (shouts) </li>
+  <li  class=""> SPEAK, MOTHER! SPEAK! SP- </li>
+  <li  class=""> SUDDEN O.S. SOUND: A PISTOL GOES OFF! </li>
+  <li  class=""> A bullet unexpectedly strikes Agnes in her chest,
+    killing her </li>
+  <li  class=""> on the spot. </li>
+  <li  class=""> Mary and Eleanor freeze in silence, holding each
+    other </li>
+  <li  class=""> tighter. </li>
+  <li  class=""> CAMERA TRACKS across the room: the two women's eyes
+    open wide </li>
+  <li  class=""> in horror, as we reveal RUPERT on the opposite end,
+    firmly </li>
+  <li  class=""> holding Theodore's gold-finished pistol in his left
+    hand. </li>
+  <li  class=""> He points the pistol at Eleanor. </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> I told her I would come back. </li>
+  <li  class=""> Silence. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> How did you get in? </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> No eyes watch this household any </li>
+  <li  class=""> more. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> EXT. THE FIELD - DAY </li>
+  <li  class=""> FLASHBACK </li>
+  <li  class=""> CLOSE ON: Theodore limps away from the house,
+    devouring the </li>
+  <li  class=""> blood-stained bread loaves Rupert picked up from the
+    kitchen </li>
+  <li  class=""> that very morning. </li>
+  <li  class=""> Every step is a torture for his weak knees. But food
+    makes </li>
+  <li  class=""> him forget all things. </li>
+  <li  class=""> END OF FLASHBACK </li>
+  <li  class=""> BACK TO: </li>
+  <li  class=""> INT. THE FARM HOUSE - THE LIVING ROOM - NIGHT </li>
+  <li  class=""> Rupert looks around the room, gazing at the Family's
+    dead </li>
+  <li  class=""> bodies. </li>
+  <li  class=""> MARY (O.S.) </li>
+  <li  class=""> You don't have to do this... </li>
+  <li  class=""> He looks at Mary. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> (begs) </li>
+  <li  class=""> Please. Go home. </li>
+  <li  class=""> RUPERT </li>
+  <li  class=""> (to Eleanor) </li>
+  <li  class=""> Let me ask you something. </li>
+  <li  class=""> A beat. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> If my face didn't scare you enough </li>
+  <li  class=""> when you opened the door... </li>
+  <li  class=""> He extends his right arm, as if going for a
+    handshake with </li>
+  <li  class=""> his bloody, four-fingered hand. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> (desperate) </li>
+  <li  class=""> ...what would this have done? </li>
+  <li  class=""> He retracts his hand and lowers his pistol. </li>
+  <li  class=""> He takes another bullet out of his pocket, wraps it
+    in a </li>
+  <li  class=""> piece of cloth. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> (to Mary) </li>
+  <li  class=""> I have heard about home... </li>
+  <li  class=""> Rupert loads the pistol with gun powder, then
+    finally rams </li>
+  <li  class=""> the bullet down the barrel. Mary and Eleanor observe
+    the </li>
+  <li  class=""> whole process, held in suspense. </li>
+  <li  class=""> He raises the weapon once again, aiming at the two
+    ladies. </li>
+  <li  class=""> RUPERT (CONT'D) </li>
+  <li  class=""> ...I simply do not know where it is </li>
+  <li  class=""> any more. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> You can stay here. We will leave. </li>
+  <li  class=""> He stands impassible - Mary's words don't sway him.
+  </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> They hide gold in this house, a lot </li>
+  <li  class=""> of it. I'll tell you where it is... </li>
+  <li  class=""> Rupert meets Eleanor's dead eyed, hopeless
+    expression. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> We will leave- is that right, </li>
+  <li  class=""> Eleanor? </li>
+  <li  class=""> Eleanor doesn't move. She's completely frozen, her
+    eyes fixed </li>
+  <li  class=""> on Rupert. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> Eleanor? </li>
+  <li  class=""> SOUND: THE PISTOL GOES OFF AGAIN! </li>
+  <li  class=""> The second bullet hits Eleanor on her forehead. Her
+    head </li>
+  <li  class=""> blows up, spattering Mary's face with blood. </li>
+  <li  class=""> Mary shakes, holding her beloved's open skull. She
+    bores her </li>
+  <li  class=""> eyes into Rupert's, who's still holding his smoking
+    pistol up </li>
+  <li  class=""> in the air, when... </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> (through tears) </li>
+  <li  class=""> Who broke the silence? </li>
+  <li  class=""> Rupert's eyebrows wrinkle in confusion. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> Who called you to bring business </li>
+  <li  class=""> upon this house? Whose voice did </li>
+  <li  class=""> you hear? </li>
+  <li  class=""> Rupert stares and slowly lowers his pistol. His head
+    slightly </li>
+  <li  class=""> shakes no, his face pales in horror. </li>
+  <li  class=""> SUDDEN O.S. SOUND of WOOD SQUEAKING and FOOTSTEPS
+    moving </li>
+  <li  class=""> across the room. </li>
+  <li  class=""> Mary remains locked in her position, as the
+    footsteps move </li>
+  <li  class=""> closer and closer to her. </li>
+  <li  class=""> Finally, a set of wrinkled, thin fingers winds
+    around her </li>
+  <li  class=""> shoulders. A BLACKENED index finger stands out.
+  </li>
+  <li  class=""> Rupert fixes the figure behind Mary with his eyes
+    wide open. </li>
+  <li  class=""> CONSTANCE (O.S.) </li>
+  <li  class=""> (to him) </li>
+  <li  class=""> Leave. Your horrible figure is no </li>
+  <li  class=""> longer of use. </li>
+  <li  class=""> Rupert slightly nods yes. His hand loosens its grip
+    on the </li>
+  <li  class=""> pistol, letting it fall to the ground. </li>
+  <li  class=""> Finally, he turns around and walks away calmly, as
+    if </li>
+  <li  class=""> controlled by a higher power. </li>
+  <li  class=""> SOUND OF: THE ENTRANCE DOOR OPENS AND CLOSES. CAMERA
+    stays on </li>
+  <li  class=""> Mary - we DO NOT see Constance above her waist.
+  </li>
+  <li  class=""> They are alone now. </li>
+  <li  class=""> CONSTANCE (CONT'D) </li>
+  <li  class=""> Your actions were cunning, but </li>
+  <li  class=""> useless. And you will become the </li>
+  <li  class=""> example for those who seek to </li>
+  <li  class=""> outmatch the Lord through pride and </li>
+  <li  class=""> arrogance. </li>
+  <li  class=""> She places a book in front of Mary's eyes, of which
+    we do not </li>
+  <li  class=""> see the front cover. </li>
+  <li  class=""> CONSTANCE (O.S.) (CONT'D) </li>
+  <li  class=""> For our story, I will draw </li>
+  <li  class=""> inspiration from the book that you </li>
+  <li  class=""> and your murderous companion like </li>
+  <li  class=""> to read in times of great </li>
+  <li  class=""> distraction. </li>
+  <li  class=""> Mary loosens her grip on Eleanor's head, letting her
+    body </li>
+  <li  class=""> fall to the ground. </li>
+  <li  class=""> As if hypnotized by Constance's twisted logic, she
+    grabs the </li>
+  <li  class=""> book and turns the pages, landing on: "The Story of
+  </li>
+  <li  class=""> Tiresias." </li>
+  <li  class=""> MARY </li>
+  <li  class=""> "There was a time in Thebes, when </li>
+  <li  class=""> Athena, the Goddess of Wisdom and </li>
+  <li  class=""> Warfare, loved a Nymph, who was the </li>
+  <li  class=""> mother of a young boy named </li>
+  <li  class=""> Tiresias. She loved the Nymph above </li>
+  <li  class=""> all others and she did so to great </li>
+  <li  class=""> distraction... </li>
+  <li  class=""> Constance's fingers move closer to Mary's face,
+    caressing her </li>
+  <li  class=""> cheeks. She lets it happen, powerless. </li>
+  <li  class=""> CONSTANCE (O.S.) </li>
+  <li  class=""> Read on. I like the sound of your </li>
+  <li  class=""> voice. </li>
+  <li  class=""> CLOSE UP ON: Eleanor's body lies on the ground, her
+    face </li>
+  <li  class=""> pressed against the hard floor. </li>
+  <li  class=""> MARY (O.S.) </li>
+  <li  class=""> One day, the twain went to the </li>
+  <li  class=""> beautiful Spring of the Horse, on </li>
+  <li  class=""> Helicon. They undid their robes and </li>
+  <li  class=""> bathed together.. </li>
+  <li  class=""> Mary slightly chokes on her words. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> It was the noontime hour and a </li>
+  <li  class=""> great quiet held that hill. Only </li>
+  <li  class=""> Tiresias, on whose cheek the down </li>
+  <li  class=""> was just darkening, still ranged </li>
+  <li  class=""> with his dogs the holy place. </li>
+  <li  class=""> And, thirst beyond telling, he came </li>
+  <li  class=""> unto the flowing spring, wretched </li>
+  <li  class=""> man! And unwillingly saw that which </li>
+  <li  class=""> is not lawful to be seen: a </li>
+  <li  class=""> Goddess, an Immortal. Thus... </li>
+  <li  class=""> Constance's fingers move closer and closer to Mary's
+    eyes. </li>
+  <li  class=""> The girl does not move a muscle. </li>
+  <li  class=""> MARY (O.S.) (CONT'D) </li>
+  <li  class=""> ...she pierced his eyes and blinded </li>
+  <li  class=""> him in front of his mother, who </li>
+  <li  class=""> complained to the Goddess. "The </li>
+  <li  class=""> laws of Cronus - Athena responded - </li>
+  <li  class=""> demand that whoever sees any of the </li>
+  <li  class=""> immortals, when the God himself </li>
+  <li  class=""> chooses not, at a heavy price shall </li>
+  <li  class=""> he behold." Yet, softened by his </li>
+  <li  class=""> mother's despair, the Goddess </li>
+  <li  class=""> decided to reward the boy with the </li>
+  <li  class=""> gift of great knowledge and </li>
+  <li  class=""> prophecy." </li>
+  <li  class=""> Mary lowers her book, sinking in fear. Constance's
+    finger now </li>
+  <li  class=""> cover her eyes entirely. </li>
+  <li  class=""> CONSTANCE </li>
+  <li  class=""> How misguided it is to fight me </li>
+  <li  class=""> like you would the heir of Lucifer. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> Who are you? </li>
+  <li  class=""> CONSTANCE </li>
+  <li  class=""> I am God's most faithful Minister. </li>
+  <li  class=""> Mary grabs the pages she just read from the book and
+    tears </li>
+  <li  class=""> them off. </li>
+  <li  class=""> Constance's fingers press on Mary's eyes, starting
+    to push </li>
+  <li  class=""> them into her skull... </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. THE FARM HOUSE - LATER </li>
+  <li  class=""> The entrance opens slowly. </li>
+  <li  class=""> ABIEL and his two DEPUTIES make their way in,
+    holding </li>
+  <li  class=""> FLINTLOCK RIFLES with CANDLE LANTERNS hanging from
+    the </li>
+  <li  class=""> barrels. </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> (whispers) </li>
+  <li  class=""> It is here. </li>
+  <li  class=""> They walk on their toes, carefully, making their way
+    into... </li>
+  <li  class=""> THE LIVING ROOM </li>
+  <li  class=""> They all boggle at the horrifying spectacle of the
+    Family's </li>
+  <li  class=""> dead corpses. Abiel walks to the open casket: NO
+    BODY lies in </li>
+  <li  class=""> it any more. </li>
+  <li  class=""> ABIEL'S POV: his eyes scan the room, landing on
+    Matthew's </li>
+  <li  class=""> lifeless eyes and blood-covered face. </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> God. </li>
+  <li  class=""> SUDDEN SOUND: THE UPSTAIRS FLOOR SQUEAKS. </li>
+  <li  class=""> ABIEL (CONT'D) </li>
+  <li  class=""> (looking up) </li>
+  <li  class=""> Check all the rooms on this floor. </li>
+  <li  class=""> The Deputies part ways, start searching the house.
+  </li>
+  <li  class=""> CAMERA TRACKS: we follow Abiel BEHIND HIS BACK, as
+    he walks </li>
+  <li  class=""> through the hallway and onto... </li>
+  <li  class=""> THE STAIRCASE - CONTINUOUS </li>
+  <li  class=""> He cautiously walks up. His footsteps against the
+    floor are </li>
+  <li  class=""> all we hear in the eerily quiet house... </li>
+  <li  class=""> TO: </li>
+  <li  class=""> THE UPSTAIRS HALLWAY - CONTINUOUS </li>
+  <li  class=""> He reaches the second floor. He starts walking
+    through the </li>
+  <li  class=""> hallway, when something in the room at the very end
+    of it </li>
+  <li  class=""> catches his attention. </li>
+  <li  class=""> Beyond his shoulders, a DARK FIGURE stands in
+    Constance's </li>
+  <li  class=""> room, looking out the window. Abiel cocks the hammer
+    of his </li>
+  <li  class=""> rifle. </li>
+  <li  class=""> He moves forward, his breathing growing increasingly
+    heavier. </li>
+  <li  class=""> As we get closer to the room, we notice that the
+    person in it </li>
+  <li  class=""> is Mary. She is almost unnaturally still. </li>
+  <li  class=""> Abiel continues walking, until he finally reaches
+    the </li>
+  <li  class=""> threshold of... </li>
+  <li  class=""> CONSTANCE'S ROOM - CONTINUOUS </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> (to Mary) </li>
+  <li  class=""> Raise your hands above your head </li>
+  <li  class=""> and turn slowly. </li>
+  <li  class=""> A beat. Abiel can hear his own heartbeat. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> (toward the open window) </li>
+  <li  class=""> Yours are my eyes, yours are my </li>
+  <li  class=""> clothes. In you I rest, in your </li>
+  <li  class=""> light I see now... </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> Don't play games. Turn. Around. </li>
+  <li  class=""> CAMERA CUTS - CLOSE ON: a drop of sweat trickles
+    down Abiel's </li>
+  <li  class=""> forehead. </li>
+  <li  class=""> MARY (O.S.) </li>
+  <li  class=""> Unholy was the night I searched </li>
+  <li  class=""> you, my head and body hidden in the </li>
+  <li  class=""> sheets. And now fear takes me, fear </li>
+  <li  class=""> that in you I will not find shelter </li>
+  <li  class=""> anymore. </li>
+  <li  class=""> CLOSE ON: a strong, almost out-of-this-world
+    moonlight shines </li>
+  <li  class=""> on Mary's body. We see her blood-stained hands.
+  </li>
+  <li  class=""> MARY (O.S.) (CONT'D) </li>
+  <li  class=""> Too close was your presence, too </li>
+  <li  class=""> warm was your breath. All that was </li>
+  <li  class=""> earthly, all that was mortal, I </li>
+  <li  class=""> embraced it. </li>
+  <li  class=""> Abiel moves closer to the bed, keeping his rifle
+    carefully </li>
+  <li  class=""> pointed at Mary's back. </li>
+  <li  class=""> On the bed, his sees the book: "Sorcerers and
+    Prophets of the </li>
+  <li  class=""> Pagan World." </li>
+  <li  class=""> MARY (O.S.) (CONT'D) </li>
+  <li  class=""> Earth is far gone. I am but your </li>
+  <li  class=""> breath now. </li>
+  <li  class=""> Abiel listens to her words, powerless in a mix of
+    fear and </li>
+  <li  class=""> confusion. Only his rifle keeps him sane. </li>
+  <li  class=""> MARY (CONT'D) </li>
+  <li  class=""> Yours are my eyes, yours are my </li>
+  <li  class=""> clothes. In you I rest, in your </li>
+  <li  class=""> light I see now. </li>
+  <li  class=""> A beat. </li>
+  <li  class=""> She turns her body slowly, one inch at a time. </li>
+  <li  class=""> Finally, she reveals herself in full to us: her eyes
+    have </li>
+  <li  class=""> been CARVED OUT. Strips of dry blood carve her
+    cheeks </li>
+  <li  class=""> underneath her dark and now empty EYE SOCKETS. </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> (haunted by the sight) </li>
+  <li  class=""> Who are you? </li>
+  <li  class=""> Silence. </li>
+  <li  class=""> She doesn't know how to answer, almost as if she was
+    a </li>
+  <li  class=""> different person. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> Let me mourn for a day. Only one </li>
+  <li  class=""> day more. </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> WE SEE, just like in the beginning of the film:
+  </li>
+  <li  class=""> ROOM. </li>
+  <li  class=""> MARY (V.O.) </li>
+  <li  class=""> Let silence facilitate my prayer. </li>
+  <li  class=""> 2. In the same room, Mary dips dry bread in the
+    water. </li>
+  <li  class=""> MARY (V.O.) </li>
+  <li  class=""> Place food to my feet. </li>
+  <li  class=""> 3. Camera TRACKS INTO Mary's face, as she's sitting
+    in the </li>
+  <li  class=""> interrogation room. </li>
+  <li  class=""> MARY (V.O.) </li>
+  <li  class=""> Then listen to my story. Allow me </li>
+  <li  class=""> to serve as an example. </li>
+  <li  class=""> BACK INTO CONSTANCE'S ROOM </li>
+  <li  class=""> Abiel still aims the rifle at Mary, as they stand in
+    front of </li>
+  <li  class=""> each other. </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> Why would I listen? </li>
+  <li  class=""> MARY </li>
+  <li  class=""> I see the doubts that cloud your </li>
+  <li  class=""> mind. I know the voice that called </li>
+  <li  class=""> you here. </li>
+  <li  class=""> He loosens his grip on the weapon, pulls his face
+    slightly </li>
+  <li  class=""> away from it. </li>
+  <li  class=""> He finally lowers the rifle - his mind is racing.
+  </li>
+  <li  class=""> END OF MARY'S FLASHBACK </li>
+  <li  class=""> CUT TO: </li>
+  <li  class=""> INT. OUTSIDE THE INTERROGATION ROOM - NIGHT </li>
+  <li  class=""> Deputy 1 and 2 stand a few feet apart from each
+    other, </li>
+  <li  class=""> holding their rifles in their hands. Eldred paces
+    the room. </li>
+  <li  class=""> Suddenly, the door of the interrogation room opens.
+    The </li>
+  <li  class=""> deputies tighten their grips on the rifles, while
+    Eldred </li>
+  <li  class=""> excitedly walks up to it. </li>
+  <li  class=""> Out of the door comes Abiel, shaken as ever. He
+    closes it </li>
+  <li  class=""> behind himself, looking down. </li>
+  <li  class=""> Finally, he picks his head up and locks eyes with
+    Eldred. A </li>
+  <li  class=""> few seconds of silence. </li>
+  <li  class=""> Abiel opens his mouth as if to speak, but can't. He
+    lowers </li>
+  <li  class=""> his head. </li>
+  <li  class=""> EXT. OUTSIDE THE CONSTABLE'S OFFICE - NIGHT </li>
+  <li  class=""> Deputy 1 and Deputy 2 drag Mary, still wearing a
+    BLACK CLOTH </li>
+  <li  class=""> over her eye sockets, across the field and to a
+    GALLOWS. </li>
+  <li  class=""> Right next to it, we see Abiel and Eldred, the
+    ladder holding </li>
+  <li  class=""> a ROLLED-OUT PAPER and a TORCH. </li>
+  <li  class=""> ELDRED </li>
+  <li  class=""> (reads from it) </li>
+  <li  class=""> After extensive interrogation, </li>
+  <li  class=""> Maiden Mary - having her </li>
+  <li  class=""> recollection of the facts met the </li>
+  <li  class=""> accusations that this office had </li>
+  <li  class=""> previously charged her with, in </li>
+  <li  class=""> accordance with the laws that God </li>
+  <li  class=""> and His divine Intellect have </li>
+  <li  class=""> instructed all men with - is now </li>
+  <li  class=""> sentenced to death. </li>
+  <li  class=""> Abiel looks at Mary: she shakes, disoriented, as if
+    the cloth </li>
+  <li  class=""> impeded her view even more now. </li>
+  <li  class=""> As Eldred recites the sentence, the Deputies place
+    Mary on a </li>
+  <li  class=""> stool right underneath the gallows. </li>
+  <li  class=""> ELDRED (CONT'D) </li>
+  <li  class=""> For she has been found responsible </li>
+  <li  class=""> of familicide and of indulging in </li>
+  <li  class=""> acts that are contrary to nature, </li>
+  <li  class=""> she will hang. </li>
+  <li  class=""> (looks at Mary) </li>
+  <li  class=""> Do you repent of your sins and </li>
+  <li  class=""> defer yourself to God's merciful </li>
+  <li  class=""> and infinite Goodness? </li>
+  <li  class=""> MARY </li>
+  <li  class=""> I do. </li>
+  <li  class=""> The Deputies arrange a NOOSE round Mary's neck.
+    Eldred rolls </li>
+  <li  class=""> the paper back. </li>
+  <li  class=""> ELDRED </li>
+  <li  class=""> (looks at Mary) </li>
+  <li  class=""> May He guide our hand and be the </li>
+  <li  class=""> ultimate Judge of your actions. </li>
+  <li  class=""> He hands Abiel his torch, then walks away from the
+    scene with </li>
+  <li  class=""> Abiel and Mary are alone now. He takes a step closer
+    to the </li>
+  <li  class=""> stool and reaches for Mary's eye cover. He undoes
+    the knot </li>
+  <li  class=""> and frees her eye sockets from the cloth. </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> That hum. The voice that woke me </li>
+  <li  class=""> that night... </li>
+  <li  class=""> MARY </li>
+  <li  class=""> What shall be the question that </li>
+  <li  class=""> finally appeases you? </li>
+  <li  class=""> He steps on the stool as well to reach for the
+    noose. He </li>
+  <li  class=""> tightens it around her neck. </li>
+  <li  class=""> Abiel looks at her - the face of someone who's been
+    seeking </li>
+  <li  class=""> this moment for a long time. </li>
+  <li  class=""> ABIEL </li>
+  <li  class=""> (into her ear) </li>
+  <li  class=""> Does He really exist? </li>
+  <li  class=""> The scene goes quiet, as Mary imagines: </li>
+  <li  class=""> MONTAGE - FLASHBACKS: </li>
+  <li  class=""> kisses his forehead right after having taken the
+    splinter out </li>
+  <li  class=""> of his foot. </li>
+  <li  class=""> mother to splash water on him. His eyes are closed,
+    his lips </li>
+  <li  class=""> wrinkled in a smile. </li>
+  <li  class=""> shoulder. Their necks embrace each other. Their eyes
+    close. </li>
+  <li  class=""> END OF MONTAGE </li>
+  <li  class=""> Back to Mary on the stool. Her lips slowly wrinkle
+    in a </li>
+  <li  class=""> smile. Fear fades away from her expression. </li>
+  <li  class=""> MARY </li>
+  <li  class=""> (back into his ear) </li>
+  <li  class=""> He does. You simply cannot see Him </li>
+  <li  class=""> with your eyes open. </li>
+  <li  class=""> He steps off the stool and looks at the girl from
+    below. </li>
+  <li  class=""> His foot presses against the stool. A few seconds,
+    then he </li>
+  <li  class=""> gently pushes it. </li>
+  <li  class=""> FROM AFAR: the stool falls flat on the ground, Mary
+    drops </li>
+  <li  class=""> quickly and her neck bends. She now hangs lifeless.
+  </li>
+  <li  class=""> Abiel's silhouette stands out against the light of
+    his own </li>
+  <li  class=""> torch, gazing at Mary in the silent night. </li>
+  <li  class=""> Credits start to roll. </li>
+  <li  class=""> THE END. </li>
+  <!--bindings={
+
+</ul>
+</body>
+</html>

@@ -1,0 +1,36 @@
+.body{margin-left: 10%; margin-right: 10%; top:2%; bottom: 2%}
+h3{
+    font:45px;
+
+}
+h4{
+    font:36px;
+}
+.three-column{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr ;
+    padding:2% 5%;
+    border-bottom:2px solid white;
+}
+.center{
+    text-align: center;
+}
+.sceneheader, .character { padding-top: 1.5ex; }
+.version { display: none;}
+.description { padding-right: 10%; }
+
+.character { margin-left: 20%; text-align: center; margin-right: 20%; padding-top:15px}
+
+.dialog, .short-dialog { margin-left: 20%;  }
+.short-dialog{ padding-bottom:10px}
+.parenthetical { margin-left: 20%; }
+
+/* special case: dialogue followed by a parenthetical; the extra line needs to be suppressed */
+
+.dialogue + .parenthetical { padding-bottom: 0; }
+
+.transition { padding-top: 3ex; margin-left: 65%; padding-bottom: 1.5ex; }
+.scene-header{ font-weight:900; padding-top: 20px; padding-bottom:20px}
+.shot{ text-align: right; font-weight: 900;}
+.hidden{display:none}
+li { font: 12px Courier, fixed; list-style-type: none; line-height: normal; }

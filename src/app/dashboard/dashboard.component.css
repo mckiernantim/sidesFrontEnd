@@ -1,0 +1,22 @@
+
+.main{
+    display:grid;
+    height:100vh;
+    grid-template-columns: 3fr 1fr;
+   
+    grid-template-rows: 300px;
+    text-align: center;
+    border:5px solid black;
+    color:#c2185a;
+    background: #dfdfdf;
+    text-shadow:1px 1px black;
+    overflow:auto;
+}
+.button-container {
+    background-color: #dfdfdf;
+    padding: 10% 10% 0% 10%
+     
+}
+.success{
+    background-color:#1f601f;
+}

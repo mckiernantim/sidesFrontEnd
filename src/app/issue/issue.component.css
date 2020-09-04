@@ -1,0 +1,114 @@
+.screenbox{
+    background-color: whitesmoke;
+    color: black;
+    text-align: center;
+
+}
+li {
+  font: 16px Courier, fixed;
+  list-style-type: none;
+  line-height: normal;
+}
+
+span.page-number {
+  text-decoration: none !important;
+}
+
+.false {
+  text-decoration: line-through;
+}
+
+.true {
+  text-decoration: none;
+}
+.last-line{
+    color:red !important;
+    text-decoration: underline;
+}
+
+.page-number {
+  text-align: right;
+  margin-left: 400px;
+  text-decoration: none !important;
+  ;
+}
+
+.page-number-hidden {
+  opacity: 0;
+  page-break-after: always;
+}
+
+.scene-header {
+  padding-top: 1ex;
+  display: inline-block;
+  margin-left: 50px
+}
+
+.version {
+  display: none;
+}
+
+.description {
+  line-height: 1;
+}
+
+.first-description {
+  padding-top: 1.2ex;
+
+}
+
+.first {
+  margin-top: 95px
+}
+
+.character {
+
+  padding-top: 1.2ex
+}
+
+.hidden {
+  display: none
+}
+
+.dialog,
+.short-dialog {
+    margin-right:8%;
+    margin-left: 8%;
+}
+
+.transition {
+  padding-top: 3ex;
+  margin-left: 65%;
+  padding-bottom: 1.5ex;
+}
+
+.scene-header {
+  font-weight: 900;
+}
+
+.shot {
+  text-align: right;
+  font-weight: 900;
+}
+
+.hidden {
+  display: none
+}
+
+.scene-number-left {
+  margin-left: -50px;
+  float: left;
+  text-align: left;
+  font-weight: 900;
+}
+
+.scene-number-right {
+  margin-right: 0px;
+  float: right;
+  text-align: right;
+  font-weight: 900;
+}
+.button-container{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+}
