@@ -1,25 +1,28 @@
-<div>
-    <ul *ngIf="modalReady">
-        <h1>Lend us a hand!</h1>
-        <h3>Our AI is still learning how to read scripts and it looks like we ran into a few issues</h3>
-       <div class="screenbox">
-        <li *ngFor="let line of currentProblem.modalText; "> 
-           <div [ngClass]="getClass(line.css)">{{line.text}}</div> 
-        </li>
-        <li>
-            <div class={{currentProblem.finalText.css}}> {{currentProblem.finalText.text}}</div>
-        </li>
-    </div>
-    <div>Is the line in red DESCRIPTION or SOMETHING ELSE</div>
-    <div class="button-container">
-       
-        <div>
-            <button (click)="updateScriptDoc(currentProblem.index,'dialog')">something else</button>
-        </div>
-        <div>
-            <button (click)="updateScriptDoc(currentProblem.index,'first-description')">description</button>
-        </div>
-    </div>
-    </ul>
+<div class="modal">
+  <h1>Select a layout</h1>
+  <h1 *ngIf='selectionMade'>you picked {{selected}}</h1>
+  <div *ngIf="!selectionMade" class="selections-container">
+    <div class=button-wrapper>
+      <div class="icon" style= "background-image:url(../../assets/vert.png)"></div>
+    <button class="layout-button" id="standard" (click) = "selectOption($event.target.id)">Standard</button>
+  </div>
+  <div class=button-wrapper>
+    <div class="icon" style= "background-image:url(../../assets/horiz.png)"></div>
+    <button class="layout-button" id="landscape"  (click) = "selectOption($event.target.id)"> Landscape</button>
+  </div>
+</div>
+<div class="" *ngIf="selectionMade">
+  <h1>Add a call sheet?</h1>
+   <form  #callSheet name="callSheet" id="callSheet"> 
+  <input enctype="multipart/form-data" type="file" (change)="handleFileInput($event.target.files)" >
+ 
+</form>
+</div>
+<div *ngIf="docUploaded">
+  <iframe src="{{file}}">
 
+  </iframe>
+</div>
+<button class="close-button" (click)="addCallSheet()">Get my sides!</button>
+<button class="close-button" (click)="dialogRef.close({selected:this.selected})">Nah, just get my sides</button>
 </div>

@@ -29,20 +29,28 @@ import { CompleteComponent } from './complete/complete.component';
 import { IssueComponent } from './issue/issue.component';
 import { MatDialogModule } from '@angular/material/dialog';
 
+// Firebase
+import { AngularFireModule } from '@angular/fire';
+import { environment } from '../environments/environment';
+import { AngularFirestoreModule } from '@angular/fire/firestore';
+import { DualDialogComponent } from './dual-dialog/dual-dialog.component'
 @NgModule({
   declarations: [
     AppComponent,
     UploadComponent,
-    DashboardLeftComponent,
+
     DashboardRightComponent,
     DashboardComponent,
     NavbarComponent,
     NavComponent,
     ScriptComponent,
     CompleteComponent,
-    IssueComponent
+    IssueComponent,
+    DualDialogComponent
   ],
   imports: [
+    AngularFireModule.initializeApp(environment.firebaseConfig, 'sideWays'),
+    AngularFirestoreModule,
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,

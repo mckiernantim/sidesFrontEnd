@@ -15,13 +15,10 @@ export class DashboardComponent implements OnInit {
   data:any;
   ngOnInit(): void {
     this.file = localStorage.getItem("name")
-    
- 
-}
+  }
   getSheet(){
   
   this.upload.getFile(this.file).subscribe(data =>{ 
-
     var url = window.URL.createObjectURL(data);
         window.open(url);
     this.router.navigate([""])

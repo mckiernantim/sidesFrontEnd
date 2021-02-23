@@ -1,7 +1,14 @@
-import { text } from 'body-parser/lib/types/text';
-import { Component, OnInit, Inject, AfterViewInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+
+import {
+  Component, OnInit, Inject,
+  AfterViewInit, ViewChild,
+  ElementRef, ChangeDetectorRef, inject
+}
+  from '@angular/core';
 import { UploadService } from '../upload.service';
 import { MatDialogRef, MatDialog, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { reduce } from 'rxjs/operators';
 
 
 @Component({
@@ -10,97 +17,64 @@ import { MatDialogRef, MatDialog, MAT_DIALOG_DATA } from '@angular/material/dial
   styleUrls: ['./issue.component.css']
 })
 export class IssueComponent implements OnInit, AfterViewInit {
-scriptData: any[];
-problems:any[];
-selected:any[];
-modalProblems:any[]=[];
-currentProblem:any;
-problemIndex:number=0
-lineInQuestion:string;
-modalReady:boolean = false
-  constructor(public  upload:UploadService,     
-    public dialogRef: MatDialogRef<IssueComponent>,  
-    @Inject(MAT_DIALOG_DATA) public data:any) { }
+  @ViewChild('callSheet') el: ElementRef;
+  dualReady: boolean = false;
+  dualEdit: boolean = false;
+  pdfIssues: boolean = false;
+  file:File;
+  callsheet:any;
+  selected: string;
+  docUploaded:boolean = false;
+  // modalReady: boolean = false
+  selectionMade: boolean = false;
+  constructor(public upload: UploadService,
+    public dialogRef: MatDialogRef<IssueComponent>, public cdr: ChangeDetectorRef,
+    @Inject(MAT_DIALOG_DATA) public data: string) { }
 
   ngOnInit(): void {
-    
+
+
   }
   ngAfterViewInit(): void {
-    
+    // figure out why the filter is not matching the sceneIndex - this should be easy
 
-  
-    this.scriptData = this.upload.lineArr
-  
-    // scenes that have problem lines
-    this.problems = this.data.scenes
-    console.log(this.problems)
 
-    this.selected =this.data.selected
-    console.log(this.selected)
-    
-    this.getProblems()
-    this.updateProblem()
+
+    // this.toggleDual()
+    this.cdr.detectChanges();
+    // this.getProblems()
+
 
     //Called after ngAfterContentInit when the component's view has been initialized. Applies to components only.
     //Add 'implements AfterViewInit' to the class.
-    
   }
-  getProblems(){
-    for(let i = 0; i < this.selected.length; i++){
 
-      let scenes = this.problems.filter(scene => scene.sceneNumber === this.selected[i].sceneIndex +1)
-       console.log(scenes)
-       scenes.forEach(scene =>{
-       scene.lineCSS =[];
-        for(let i = 0 ; i <scene.text.length; i++){
-           scene.lineCSS.push(this.scriptData[scene.lastCharIndex+i].category)
-        }
-       })
-       this.modalProblems.push(scenes)
-    }
-    console.log(this.modalProblems)
-    console.log("PROBLEMS FROM MODAL")
-    this.modalProblems = this.modalProblems.flat();
-    this.modalReady=true
+  addCallSheet() {
+  
+  console.log(this.selected, this.callsheet)
+    this.dialogRef.close({
+    selected: this.selected,
+    callsheet:this.file})
+  }
 
-  }
-  updateProblem(){
-    this.currentProblem = this.modalProblems[this.problemIndex];
-    console.log(this.currentProblem)
-    console.log(this.problemIndex)
-    console.log(this.modalProblems)
-    this.currentProblem.modalText= [];
-    for(let i=0;i<this.currentProblem.lineCSS.length;i++){
-   
-      this.currentProblem.modalText.push({
-        text:this.currentProblem.text[i],
-        css:this.currentProblem.lineCSS[i]
-      })
-   }
-   this.currentProblem.finalText ={
-    css:this.currentProblem.modalText[this.currentProblem.modalText.length-1].css + " last-line",
-    text:this.currentProblem.modalText[this.currentProblem.modalText.length-1].text
-   }
 
-  this.currentProblem.modalText.pop()
-    
-    
-  }
-  iterateProblem(){
+handleFileInput(file){
+this.file = file[0]
+console.log(this.file)
+this.docUploaded = true;
+console.log(this.docUploaded)
 
-    if(this.problemIndex+1 < this.modalProblems.length){
-    this.problemIndex+=1;
-    this.updateProblem()
-    }else 
-    this.dialogRef.close()
-  }
-  updateScriptDoc(index, str){
-   
-    this.upload.lineArr[index].category=str;
-    this.iterateProblem()
-  }
-  getClass(str){
-    return str
+ this.upload.postCallSheet(this.file).subscribe(data =>{
+  console.log(data)
+  this.callsheet = this.file
+
+
+})
+
 }
+  selectOption(option) {
+    this.selectionMade = true;
+    this.selected = option
+  }
 
 }

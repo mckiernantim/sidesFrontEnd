@@ -9,16 +9,20 @@ import { response } from 'express';
 })
 export class UploadService {
   script: string 
-   httpOptions = {
-  headers:null,
-  params:null,
-  responseType:null 
+  httpOptions = {
+    headers:null,
+    params:null,
+    responseType:null 
   };
   lineArr: any;
+  lineCount:any
   pagesArr:any;
   issues:any;
-//   THIS NEEDS TO BE UN COMMENTED AND ADDED BEFORE ALL THE URL TARGETS IN THE GET METHODS
-  url: string = "https://sides3.herokuapp.com"
+  coverSheet: any
+
+  url:string = "https://sides3.herokuapp.com";
+
+  // url:string = "http://localhost:8080"
 
  
   constructor(public httpClient:HttpClient) { }
@@ -41,6 +45,14 @@ export class UploadService {
     // headers.append('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     return this.httpClient.get(this.url+ '/download', {responseType: "blob", params:{name:this.script}})
   } 
+  makeJSON(data){
+
+    console.log("firing make json from service")
+    
+    return  this.httpClient.post(this.url+'/download', data)
+  
+    
+  }
 resetHttpOptions(){
     this.httpOptions = {
       headers:"",
@@ -53,31 +65,49 @@ postFile(fileToUpload: File): Observable<any> {
  
   this.resetHttpOptions()
   this.script = localStorage.getItem('name')
-  const endpoint ='/api';
+     console.log(fileToUpload)
     const formData: FormData = new FormData();
     formData.append('script', fileToUpload, fileToUpload.name);
+    console.log(formData)
     return this.httpClient
       .post(this.url+"/api", formData, this.httpOptions )
       .pipe(map
         (data =>{
           return data
-        }))}
+        }))
+  }
+     
         
-  generatePdf(sceneArr, name){
-  console.log("calling generatePDF")
-  sceneArr.push(name)
-// change this to just refrence the page breaks and then add x out to all other lines
+  generatePdf(sceneArr,name,layout){
+   
+  sceneArr.push(name);
+  
+  let title = sceneArr[sceneArr.length-1] 
+  sceneArr.pop()
+  sceneArr.unshift(title)
 
-  // let document= []
-  // document.push(name)
-  // sceneArr.forEach(pageArr => {
-  //   for (let i = 0; i < pageArr.length-1; i++){
-  //     document.push(this.lineArr[pageArr[i].index])
-  // }
-  // })
- console.log(sceneArr)
-  return  this.httpClient.post(this.url+"/pdf", sceneArr)
+
+  sceneArr[sceneArr.length-1].push(this.pagesArr[this.pagesArr.length-1].page)
+  sceneArr.push(layout)
+  console.log("calling generatePDF")
+  console.log(sceneArr[sceneArr.length-1])
+  return  this.httpClient.post(this.url+"/pdf", sceneArr )
 }
+
+lsls
+postCallSheet(fileToUpload: File):Observable<any>{
+  this.resetHttpOptions()
+  console.log(fileToUpload.name)
+  const formData: FormData = new FormData();
+  this.coverSheet = fileToUpload
+  formData.append('callSheet', fileToUpload, fileToUpload.name);
+
+  return this.httpClient.post(this.url+"/callsheet", formData, this.httpOptions)
+  
+}
+
+
+
 
 }
 

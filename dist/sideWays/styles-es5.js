@@ -527,11 +527,11 @@
   /***/
   function _(module, exports, __webpack_require__) {
     __webpack_require__(
-    /*! /Users/timmckiernan/Desktop/sideWays/node_modules/@angular/material/prebuilt-themes/purple-green.css */
+    /*! /Users/timmckiernan/Desktop/sideWays-angular-app/node_modules/@angular/material/prebuilt-themes/purple-green.css */
     "./node_modules/@angular/material/prebuilt-themes/purple-green.css");
 
     module.exports = __webpack_require__(
-    /*! /Users/timmckiernan/Desktop/sideWays/src/styles.css */
+    /*! /Users/timmckiernan/Desktop/sideWays-angular-app/src/styles.css */
     "./src/styles.css");
     /***/
   }

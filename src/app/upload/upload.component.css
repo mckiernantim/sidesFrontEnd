@@ -15,6 +15,12 @@ h4{
 .center{
     text-align: center;
 }
+.warning-box{
+    background-color: #c2185a;
+
+    text-align: center;
+    margin: 0 auto;
+}
 .sceneheader, .character { padding-top: 1.5ex; }
 .version { display: none;}
 .description { padding-right: 10%; }
