@@ -14,6 +14,8 @@ import { NavbarComponent } from './navbar/navbar.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NavComponent } from './nav/nav.component';
 import { LayoutModule } from '@angular/cdk/layout';
+// material stuff
+
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -28,12 +30,15 @@ import { FormsModule } from '@angular/forms';
 import { CompleteComponent } from './complete/complete.component';
 import { IssueComponent } from './issue/issue.component';
 import { MatDialogModule } from '@angular/material/dialog';
+import {MatCardModule} from '@angular/material/card';
+import { MatProgressSpinnerModule} from "@angular/material/progress-spinner"
 
 // Firebase
 import { AngularFireModule } from '@angular/fire';
 import { environment } from '../environments/environment';
 import { AngularFirestoreModule } from '@angular/fire/firestore';
-import { DualDialogComponent } from './dual-dialog/dual-dialog.component'
+import { DualDialogComponent } from './dual-dialog/dual-dialog.component';
+import { FooterComponent } from './footer/footer.component'
 @NgModule({
   declarations: [
     AppComponent,
@@ -46,7 +51,8 @@ import { DualDialogComponent } from './dual-dialog/dual-dialog.component'
     ScriptComponent,
     CompleteComponent,
     IssueComponent,
-    DualDialogComponent
+    DualDialogComponent,
+    FooterComponent
   ],
   imports: [
     AngularFireModule.initializeApp(environment.firebaseConfig, 'sideWays'),
@@ -56,6 +62,8 @@ import { DualDialogComponent } from './dual-dialog/dual-dialog.component'
     HttpClientModule,
     BrowserAnimationsModule,
     LayoutModule,
+    FormsModule,
+
     MatToolbarModule,
     MatButtonModule,
     MatSidenavModule,
@@ -66,7 +74,9 @@ import { DualDialogComponent } from './dual-dialog/dual-dialog.component'
     MatPaginatorModule,
     MatSortModule,
     MatDialogModule,
-    FormsModule,
+    MatCardModule,
+    MatProgressSpinnerModule,
+    
  
   ],
   providers: [ 

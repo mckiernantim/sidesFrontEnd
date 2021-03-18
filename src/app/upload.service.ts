@@ -1,9 +1,10 @@
 
 import { Injectable } from '@angular/core';
-import { Observable } from "rxjs"
+import { Observable, of } from "rxjs"
 import { catchError, map } from 'rxjs/operators';  
 import { HttpClientModule, HttpClient, HttpHeaders, HttpParams} from "@angular/common/http"
 import { response } from 'express';
+import { Console } from 'console';
 @Injectable({
   providedIn: 'root'
 })
@@ -19,10 +20,13 @@ export class UploadService {
   pagesArr:any;
   issues:any;
   coverSheet: any
-
-  url:string = "https://sides3.herokuapp.com";
-
-  // url:string = "http://localhost:8080"
+  msg:any
+ 
+  urls=[
+  "https://sides3.herokuapp.com",
+  "http://localhost:8080"
+]
+url:string=this.urls[0]
 
  
   constructor(public httpClient:HttpClient) { }
@@ -60,6 +64,13 @@ resetHttpOptions(){
       responseType:null
     }
   }
+  toggleUrl(){
+    if(this.url!=this.urls[0]){
+      this.url=this.urls[0]
+    } else
+    {this.url = this.urls[1]}
+    console.log(this.url)
+  }
   // get classified data 
 postFile(fileToUpload: File): Observable<any> {
  
@@ -78,23 +89,15 @@ postFile(fileToUpload: File): Observable<any> {
   }
      
         
-  generatePdf(sceneArr,name,layout){
-   
-  sceneArr.push(name);
+  generatePdf(sceneArr){
   
-  let title = sceneArr[sceneArr.length-1] 
-  sceneArr.pop()
-  sceneArr.unshift(title)
-
-
-  sceneArr[sceneArr.length-1].push(this.pagesArr[this.pagesArr.length-1].page)
-  sceneArr.push(layout)
+ 
   console.log("calling generatePDF")
-  console.log(sceneArr[sceneArr.length-1])
+ console.log(sceneArr[2])
   return  this.httpClient.post(this.url+"/pdf", sceneArr )
 }
 
-lsls
+
 postCallSheet(fileToUpload: File):Observable<any>{
   this.resetHttpOptions()
   console.log(fileToUpload.name)

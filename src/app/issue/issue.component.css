@@ -1,7 +1,8 @@
 .modal{
   justify-content: center;
   display: grid;
-  background-color: #dfdfdf;
+  padding:2%;
+  text-align:center
 }
 .selections-container{
     display:grid;
@@ -10,7 +11,7 @@
     justify-items:center;
 }
 .button-wrapper{
-  border:2px solid green;
+  
   padding:10px;
 
 }

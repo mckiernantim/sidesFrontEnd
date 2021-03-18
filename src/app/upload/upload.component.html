@@ -1,72 +1,109 @@
-<div class="form-group center">
-  <div>
-    <h1>Welcome to SideWays</h1>
+<div *ngIf="working" class="spinner-overlay center">
+  <mat-card-content>
+    <mat-progress-spinner style="display:none" mode="indeterminate" value="0"></mat-progress-spinner>
+    <h3 class="spinner-text">Processing Script</h3>
+    <div class="loading-image">
+      <img class="spinning-bot" src="../../assets/icons//robotWhite.png">
+    </div>
+    <h3 class="spinner-text">Sit Tight.</h3>
+  </mat-card-content>
+</div>
+<div class="form-group two-column left red">
+  <div class="left-cell">
 
-    <ul>
-      <li>
-        <h3>We're bringing the efficency of modern AI to film production.</h3>
-      </li>
-      <li>
-        <h3> AD's and PA's spend thousands of hours every year lining out sides to hand out on set.</h3>
-      </li>
-      <li>
-        <h3> Thats a lot of time that could be spent on other things.</h3>
-      </li>
+    <div class='text-area'>
+      <div class="upload-headline">
+        <h1 class="big-text" style="padding-bottom:1%">Welcome</h1>
 
-    </ul>
+        <h1 class="big-text"> to Sides-Ways</h1>
+      </div>
+      <div class='upload-description'>
+
+        <p>
+          AD's and PA's spend thousands of hours every year lining out sides to hand out on set.
+          Thats a lot of time that could be spent on other things.
+          <span>Enter: Sides-Ways</span>
+        </p>
+      </div>
+
+    </div>
+    <div class="left upload-description right-cell">
+      <div class="details">
+       
+        <div class="feature-block">
+          <h4 class="feature-headline">Simple</h4>
+          <br>
+          <h4>We make sides for sets. Thats it.</h4>
+          <h4>No subscriptions. NOTHING saved. Just sides. </h4>
+        </div>
+        <div class="feature-block">
+          <h4 class="feature-headline">Safe</h4>
+          <br>
+          <h4>We're backed by Heroku and Google.</h4>
+          <h4>Your IP is protected at all times.</h4>
+        </div>
+        <div class="feature-block">
+          <h4 class="feature-headline">Secure</h4>
+          <br>
+          <h4>No one EVER sees script. We record nothing.</h4>
+          <h4>We dont even have a database</h4>
+        </div>
+      </div>
+
+    </div>
+    <div class="learn-more bold">
+      <h3>Learn more <span class="arrow">→</span> </h3>
+    </div>
+  </div>
+
+  <div class='center right-cell'>
+
+    <mat-card class="upload-card">
+      <mat-card-header>
+        <div>
+          <img class="card-image" src="../../assets/icons/redLogoFlat.png">
+        </div>
+      </mat-card-header>
+
+      <mat-card-content>
+        <h3>Upload your script</h3>
+        <h3> We'll prep your sides</h3>
+      </mat-card-content>
+      <mat-card-actions>
+        <label class="uploadButton">
+          <span>UPLOAD SCRIPT</span>
+          <input name="script" enctype="multipart/form-data" type="file" id="script"
+            (change)="handleFileInput($event.target.files)">
+        </label>
+
+
+
+      </mat-card-actions>
+    </mat-card>
+  </div>
+  <div class="developer-tools">
+
+
+    <h4>Tools for nerds (ignore this stuff):</h4>
+    <h5 class="yellow">current target : {{this.upload.url}} </h5>
+
+
+    <button (click)=this.upload.toggleUrl()>Toggle Development Mode</button>
 
   </div>
-  <div class="three-column center">
-
-    <h4>Safe.
-      <br>
-      We dont save your script.
-      <br>Your IP is protected.
-    </h4>
-    <h4>Simple.
-      <br>We make sides and get better at making sides.
-      <br>
-      No subscriptions. No Logins.
-      <br>
-      Just sides. </h4>
-
-    <h4>Secure.
-      <br>
-      We're backed by <a style="color:red" href="https://www.heroku.com/policy/security">Heroku.
-      </a>
-      <br>The web's most trusted cloud infrastructure</h4>
-  </div>
-  <div class="warning-box">
-    <h1>DAKOTA!</h1>
-    <h3>First off thanks for helping us out.  Hopefully with you input we can refine this bad boy more and get it to the market</h3>
-    <h3> The only thing we ask is that the file not have a watermark and have proper formatting and we should be good to go</h3>
-    <h1>thanks brother!</h1>
-     </div>
-     <div class='center'>
-   
-     <h3>Upload your script here and we'll prep your sides</h3>
-       <label for="file"></label>
-       <div>
-         <input name="script" enctype="multipart/form-data" type="file" id="script"
-           (change)="handleFileInput($event.target.files)">
-       </div>
-     </div>
-  <!-- <div class="three-column center">
+</div>
+<!-- <div class="three-column center">
     <h1>{{totalScenes}} Scenes stablished</h1>
     <h1>{{totalCharacters}} Characters met </h1>
     <h1>{{totalLines}} Lines Crawled</h1>
   </div> -->
-  <div>
-    <h2>SideWays</h2>
+<!-- <div>
+    <h2>SidesWays</h2>
 
     <h3>Thanks for helping us learn and grow!
       
       Please email and issues or problems with your script - or any ideas at all actually - to <a style="color:red"
-        href="mailto:sidewaystesters@gmail.com">sideWaysHelp@gmail.com</a>
+        href="mailto:sideswaystesters@gmail.com">sidesWaysHelp@gmail.com</a>
     </h3>
 
-  </div>
-
-</div>
-<div>
-</div>
+  </div> -->

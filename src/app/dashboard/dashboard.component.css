@@ -1,22 +1,24 @@
 
 .main{
-    display:grid;
-    height:100vh;
-    grid-template-columns: 3fr 1fr;
-   
+    height: 100vh;
     grid-template-rows: 300px;
     text-align: center;
-    border:5px solid black;
-    color:#c2185a;
-    background: #dfdfdf;
-    text-shadow:1px 1px black;
-    overflow:auto;
+   
+   
+    color: var(--white);
+    background: var(--red);
+    /* text-shadow: 1px 1px black; */
+    overflow: auto;
+    
 }
-.button-container {
-    background-color: #dfdfdf;
-    padding: 10% 10% 0% 10%
-     
+.white-logo{
+    background-image: url("../../assets/icons/logoFlatWhite.png");
+    background-size: contain;
+    background-repeat:no-repeat;
+
+    margin:0 auto;
+    height:250px;
+    width:250px;
 }
-.success{
-    background-color:#1f601f;
-}
+
+

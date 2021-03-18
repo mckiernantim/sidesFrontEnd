@@ -1,4 +1,126 @@
 /* You can add global styles to this file, and also import other style files */
-@import '@angular/material/prebuilt-themes/pink-bluegrey.css';
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+
+.app{
+    margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif;
+    background: rgb(255,0,29);
+    background: radial-gradient(circle, rgba(255,0,29,1) 0%, rgba(247,85,85,1) 57%); 
+    color: var(--white)
+
+}
+.mat-card{
+    margin:  0 auto important !important;
+}
+.yellow{
+    color:yellow;
+}
+.red{
+    background-color: var(--red);
+}
+
+h1{
+    font-size: 45px;
+}
+h2{
+    font-size:24px
+}
+h3{
+    font-size: 20px;
+}
+h4{
+    font-size: 18px;
+}
+p{
+    font-size: 14px;
+}
+.bold{
+    font-weight: 900;
+}
+:root{
+    --red:hsl(0deg 91% 65%);
+    --offWhite:hsl(355deg 87% 97%);
+    --white:hsl(0deg 0% 100%);
+    --pink:hsl(358deg 88% 66%);
+    --grey:hsl(0deg 0% 85%);
+}
+.two-column{
+    display:grid;
+    grid-template-columns:1fr 1fr
+}
+
+.full-vh{
+    height:85vh
+}
+.red{
+
+
+}
+.mat-progress-spinner circle{
+stroke:var(--white)!important
+}
+.spinning-bot{
+    animation: mat-progress-spinner-linear-rotate 1200ms linear infinite;
+    height:450px;
+    width:300px;
+}
+
+mat-progress-spinner{
+    width: 100px;
+    height: 100px;
+    margin: 42% auto;
+    color:var(--white) !important
+}
+mat-card{
+    background-color: var(--white)  !important;
+    color: var(--red) !important
+
+}
+.upload-card{
+    width:40%;
+    height:auto;
+    margin:0 auto;
+
+    display: block;
+    position: relative;
+    padding: 16px;
+    border-radius: 15px 15px 15px 15px !important;
+    box-shadow: var(--grey) 1px 1px 1px 1px
+}
+.center{
+    text-align: center;
+}
+.left{
+    text-align:left
+}
+.right{
+    text-align: right;
+}
+.section-border-bottom{
+    margin: 0 auto;
+    border-bottom:.5px solid var(--offWhite);
+    width:90%
+
+}
+.section-border-top{
+    margin: 0 auto;
+    border-top:.5px solid var(--offWhite);
+    width:90%
+
+}
+
+.spinner-overlay{
+    position: absolute;
+    top: 15%;
+    left: 27%;
+    margin: 0 auto;
+    height: auto;
+    width: 550px;
+    z-index: 10000;
+    padding: 5%;
+    background-color: var(--pink);
+    padding-bottom: 0!important;
+    border: 10px solid var(--offWhite);
+}
+
+
+

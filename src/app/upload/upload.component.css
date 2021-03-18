@@ -1,19 +1,104 @@
-.body{margin-left: 10%; margin-right: 10%; top:2%; bottom: 2%}
-h3{
-    font:45px;
+.arrow{
+    padding-left:1%;
+   
+}
 
+.body{margin-left: 10%; margin-right: 10%; top:2%; bottom: 2%}
+.big-text{
+    
+    font-size: 3.5em;
+    padding-top: 20px;
+    font-weight: bold;
+}
+.feature-block:nth-of-type(2){
+    border-right: 1px solid var(--white);
+    border-left: 1px solid var(--white)
+}
+.developer-tools{
+   
+    padding-top: 5%;
+}
+.learn-more{
+    font-size:1.4em
+}
+.small-border{
+    border-top: 2px solid var(--white);
+    margin-top: 6%;
+    margin-bottom: 1%;
+    width:15%
+
+} 
+.details{
+    padding-top:0;
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr
 }
 h4{
     font:36px;
 }
-.three-column{
-    display:grid;
-    grid-template-columns:1fr 1fr 1fr ;
-    padding:2% 5%;
-    border-bottom:2px solid white;
+.left-cell{
+    padding-top: 10%;
+    padding-left: 15%;
+    
+    width: 70%;
+    margin: 0 auto;
 }
-.center{
-    text-align: center;
+.right-cell{
+    padding-right:15%;
+    padding-top:10%
+}
+.text-area{
+    width: 85%;
+}
+.upload-headline{
+    padding-bottom: 25px;
+    height: auto;
+}
+.upload-description{
+    width:95%;
+    font-size:1.1em
+}
+.feature-headline{
+    font-size:1.7em;
+    padding-top:2%;
+}
+.upload-description h4{
+  margin:0 0 0 0
+}
+.upload-card{
+    width: 60%;
+    height: auto;
+    margin: 0 auto;
+    padding-bottom: 10% !important;
+    display: block;
+    position: relative;
+    padding: 16px;
+    border-radius: 15px 15px 15px 15px !important;
+}
+.two-column{
+    display:grid;
+    min-height: 75vh;
+   
+    height:auto;
+ 
+    grid-template-columns:1fr 1fr ;
+    padding:2% 3%;
+    
+}
+.feature-block{
+    width:85%;
+    padding-right: 5%;
+    padding-left: 5%;
+}
+.card-image{
+    width:75%;
+    height:auto;
+    margin-left: -5%
+}
+.loading-image{
+    width:auto;
+    height:auto;
+    margin: 0 auto;
 }
 .warning-box{
     background-color: #c2185a;
@@ -21,22 +106,35 @@ h4{
     text-align: center;
     margin: 0 auto;
 }
-.sceneheader, .character { padding-top: 1.5ex; }
-.version { display: none;}
-.description { padding-right: 10%; }
+label.uploadButton input[type="file"] {
+    position:absolute;
+    top: -1000px;
+}
 
-.character { margin-left: 20%; text-align: center; margin-right: 20%; padding-top:15px}
+/***** Example custom styling *****/
+.uploadButton {
+    border: 2px solid #AAA;
+    border-radius: 4px;
+    padding: 2px 5px;
+    margin: 2px;
+    background: #DDD;
+    display: inline-block;
+}
+.uploadButton:hover {
+    background: #CCC;
+}
+.uploadButton:active {
+    background: #CCF;
+}
+.uploadButton :invalid + span {
+    color: #A44;
+}
+.uploadButton :valid + span {
+    color: #4A4;
+}
+.spinner-text{
 
-.dialog, .short-dialog { margin-left: 20%;  }
-.short-dialog{ padding-bottom:10px}
-.parenthetical { margin-left: 20%; }
-
-/* special case: dialogue followed by a parenthetical; the extra line needs to be suppressed */
-
-.dialogue + .parenthetical { padding-bottom: 0; }
-
-.transition { padding-top: 3ex; margin-left: 65%; padding-bottom: 1.5ex; }
-.scene-header{ font-weight:900; padding-top: 20px; padding-bottom:20px}
-.shot{ text-align: right; font-weight: 900;}
-.hidden{display:none}
-li { font: 12px Courier, fixed; list-style-type: none; line-height: normal; }
+    margin: 0 auto;
+    color:var(--white);
+    font-size:2.4em
+}

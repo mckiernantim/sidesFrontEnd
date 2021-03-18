@@ -17,6 +17,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   totalScenes:Subscription
   totalCharacters:Subscription
   dataSubscription: Subscription
+  working:boolean;
   constructor(public db:AngularFirestore, public upload:UploadService, public router:Router) {
     this.db =db;
     
@@ -34,6 +35,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   lines:any[]
   $script_data:Observable<any>
   ngOnInit(): void { 
+    this.working = false;
  }
   ngOnDestroy(): void {
     //Called once, before the instance is destroyed.
@@ -47,6 +49,8 @@ export class UploadComponent implements OnInit, OnDestroy {
  return missingTwo
 }
   handleFileInput(files: FileList) {
+    console.log("firing over script")
+    this.working = true
     this.fileToUpload = files.item(0);
     localStorage.setItem('name', this.fileToUpload.name.replace(/.pdf/, ""))
     this.$script_data = this.upload.postFile(this.fileToUpload)
@@ -58,13 +62,16 @@ export class UploadComponent implements OnInit, OnDestroy {
       let two = this.addTwo(data[0])
       data[0][two].category = "page-number"
      }
-      
+       
+      // data [0] = lineArr
       this.upload.lineArr = data[0]
       let x = this.upload.lineArr.filter(line => line.category =="scene-header")
       console.log(this.upload.lineArr)
+      // data[1] = pagesArr
       this.upload.pagesArr = data[1]
       this.upload.lineCount = data[2].map(line => line.totalLines)
- 
+      alert( "your IP is safe. " + data[3] + " was just deleted from our servers.")
+      data.pop()
       this.router.navigate(["download"])
 
     })
