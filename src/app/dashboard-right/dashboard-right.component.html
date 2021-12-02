@@ -14,26 +14,24 @@
       <div class="mat-elevation-z8">
         <table mat-table [dataSource]="dataSource" matSort>
 
-          <!-- ID Column -->
+ 
           <ng-container matColumnDef="number">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Scene Number </th>
-            <td mat-cell *matCellDef="let scene; let i=index"> {{scene.sceneNumber}} </td>
+            <th class="table-scene-num" mat-header-cell *matHeaderCellDef mat-sort-header> Scene Number </th>
+            <td class="table-scene-num" mat-cell *matCellDef="let scene; let i=index"> {{scene.sceneNumber}} </td>
           </ng-container>
-          <ng-container matColumnDef="page number">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Page Number </th>
-            <td mat-cell *matCellDef="let scene; let i=index"> {{scene.pageNumber}} </td>
+          <ng-container matColumnDef="page number" >
+            <th class="table-page-num" mat-header-cell *matHeaderCellDef mat-sort-header> Page Number </th>
+            <td class="table-page-num" mat-cell *matCellDef="let scene; let i=index"> {{scene.pageNumber}} </td>
           </ng-container>
-
-          <!-- Progress Column -->
           <ng-container matColumnDef="text">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Title </th>
-            <td mat-cell *matCellDef="let scene"> {{scene.text}} </td>
+            <th class="table-scene-header" mat-header-cell *matHeaderCellDef mat-sort-header> Scene Header </th>
+            <td class="table-scene-header" mat-cell *matCellDef="let scene"> {{scene.text}} </td>
           </ng-container>
-          <ng-container matColumnDef="preview">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Text </th>
-            <td mat-cell *matCellDef="let scene"> {{scene.preview}} </td>
+          <ng-container matColumnDef="preview" >
+            <th class="table-preview" mat-header-cell *matHeaderCellDef mat-sort-header> Text </th>
+            <td class="table-preview" mat-cell *matCellDef="let scene" > {{scene.preview}} </td>
           </ng-container>
-          <ng-container matColumnDef="select">
+          <ng-container matColumnDef="select" >
             <th mat-header-cell *matHeaderCellDef mat-sort-header> Select </th>
             <td mat-cell *matCellDef="let scene; let i=index">
               <input type="checkbox" name={{i+1}} (change)="toggleSelected($event, scene)"
@@ -63,7 +61,6 @@
           <form>
             <h2>Add Watermark</h2>
         <input type='text' id=watermark [(ngModel)]=this.watermark [ngModelOptions]="{standalone: true}">
-        
         <button (click)="addWaterMark(this.watermark)">update</button>
       </form>
       </div>
@@ -77,16 +74,16 @@
           <pre>{{scene.sceneNumber}}     {{scene.text}}     {{scene.sceneNumber}}</pre>
         </li>
       </ul>
-      <div>
+    <div>
         <button (click)="openDialog()">getPDF</button>
       </div>
     </div>
     <div>
-      <button (click)="this.lineOut.makeX(this.finalDocument)">test the line out</button>
+      <button (click)="this.logUpload()">test the line out</button>
     </div>
 
   </div>
-  <div *ngIf="dataReady" class="main-container">
+  <!-- <div *ngIf="dataReady" class="main-container">
     stats for nerds
     <br>
     Length: {{this.totalPages.length}}
@@ -108,11 +105,11 @@
       </div>
 
     </div>
-    <!-- <div *ngFor="let page of this.upload.pagesArr">
+    <div *ngFor="let page of this.upload.pagesArr">
       text : {{page[0].text}}       page: {{page[0].page}}
     
   </div> -->
 
 
   </div>
-</div>
+

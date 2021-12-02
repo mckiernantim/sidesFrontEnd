@@ -1,9 +1,10 @@
 .selections-container{
     display: grid;
     grid-template-columns: 1fr 1fr;
+    background-color: lightcoral;
 
 }
 .layout-button{
     max-width:200px;
-    
 }
+

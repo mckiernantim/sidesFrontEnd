@@ -15,6 +15,7 @@ export class DashboardComponent implements OnInit {
   data:any;
   ngOnInit(): void {
     this.file = localStorage.getItem("name")
+
   }
   getSheet(){
   

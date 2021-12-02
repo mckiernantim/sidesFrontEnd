@@ -1,119 +1,145 @@
-
+import { AngularFirestore } from '@angular/fire/firestore';
 import { Injectable } from '@angular/core';
-import { Observable, of } from "rxjs"
-import { catchError, map } from 'rxjs/operators';  
-import { HttpClientModule, HttpClient, HttpHeaders, HttpParams} from "@angular/common/http"
-import { response } from 'express';
-import { Console } from 'console';
+import { Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+import {
+  HttpClientModule,
+  HttpClient,
+  HttpHeaders,
+  HttpParams,
+} from '@angular/common/http';
+import { FeedbackTicket } from './feedback/feedbackTicket';
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class UploadService {
-  script: string 
+  script: string;
   httpOptions = {
-    headers:null,
-    params:null,
-    responseType:null 
+    headers: null,
+    params: null,
+    responseType: null,
   };
   lineArr: any;
-  lineCount:any
-  pagesArr:any;
-  issues:any;
-  coverSheet: any
-  msg:any
- 
-  urls=[
-  "https://sides3.herokuapp.com",
-  "http://localhost:8080"
-]
-url:string=this.urls[0]
+  lineCount: any;
+  pagesArr: any;
+  issues: any;
+  coverSheet: any;
+  msg: any;
+  _db:AngularFirestore
+  funData: Observable<any>;
+  feedback:Observable<any>;
 
- 
-  constructor(public httpClient:HttpClient) { }
-  getPDF(name){
-    let params = new HttpParams();
-    params.append("name", name)
-    this.httpOptions.params = params
-    this.httpOptions.headers=new Headers();
-    this.httpOptions.responseType = "blob"
-    return this.httpClient.get( this.url+"/complete", {responseType:"blob", params:{name:this.script}})
-}
-  getFile(name){
-    let params = new HttpParams();
-    params.append("name", name)
-    this.httpOptions.params = params
-    this.httpOptions.headers =new Headers();
-    this.httpOptions.responseType = "blob"
-
-    // console.log(name)
-    // headers.append('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    return this.httpClient.get(this.url+ '/download', {responseType: "blob", params:{name:this.script}})
-  } 
-  makeJSON(data){
-
-    console.log("firing make json from service")
-    
-    return  this.httpClient.post(this.url+'/download', data)
-  
-    
+  urls = ['https://sides3.herokuapp.com', 'http://localhost:8080'];
+  url: string = this.urls[0];
+  // AngularFirestore will manage all of our fundata and our tickets for feedback
+  constructor(public httpClient: HttpClient, db:AngularFirestore) {
+    this._db = db;
+    this.feedback = db.collection("feedbackTickets").valueChanges()
+    this.funData = db.collection("funData").valueChanges()
   }
-resetHttpOptions(){
+  postFeedback(ticket:FeedbackTicket){
+    // not sure why this doesn't work with custom class 
+    const { text, title, category, date } = ticket
+    try {
+      this._db.collection("feedbackTickets").add({
+        text: text,
+        title: title,
+        category: category,
+        date: date 
+      })
+      .then((doc) => { 
+        alert(`ticket #${doc.id} has been recorded` )});
+    } catch (err) {
+      console.log(err);
+      alert(err)
+    }
+}
+
+  getCover(data) {
+    data.png = localStorage.getItem('callsheet');
+    return this.httpClient.post(this.url + '/cover', data);
+  }
+  getPDF(name, callsheet) {
+    let params = new HttpParams()
+      .append('name', name)
+      .append('callsheet', callsheet);
+    this.httpOptions.params = params;
+    this.httpOptions.headers = new Headers();
+    this.httpOptions.responseType = 'blob';
+    return this.httpClient.get(this.url + '/complete', {
+      responseType: 'blob',
+      params: { name: name, callsheet: callsheet },
+    });
+  }
+
+  getFile(name) {
+    let params = new HttpParams();
+    params.append('name', name);
+    this.httpOptions.params = params;
+    this.httpOptions.headers = new Headers();
+    this.httpOptions.responseType = 'blob';
+    return this.httpClient.get(this.url + '/download', {
+      responseType: 'blob',
+      params: { name: this.script },
+    });
+  }
+
+
+   
+  makeJSON(data) {
+    return this.httpClient.post(this.url + '/download', data);
+  }
+  resetHttpOptions() {
     this.httpOptions = {
-      headers:"",
-      params:null,
-      responseType:null
+      headers: '',
+      params: null,
+      responseType: null,
+    };
+  }
+  toggleUrl() {
+    if (this.url != this.urls[0]) {
+      this.url = this.urls[0];
+    } else {
+      this.url = this.urls[1];
     }
   }
-  toggleUrl(){
-    if(this.url!=this.urls[0]){
-      this.url=this.urls[0]
-    } else
-    {this.url = this.urls[1]}
-    console.log(this.url)
-  }
-  // get classified data 
-postFile(fileToUpload: File): Observable<any> {
- 
-  this.resetHttpOptions()
-  this.script = localStorage.getItem('name')
-     console.log(fileToUpload)
+  // get classified data
+  postFile(fileToUpload: File): Observable<any> {
+    this.resetHttpOptions();
+    this.script = localStorage.getItem('name');
     const formData: FormData = new FormData();
     formData.append('script', fileToUpload, fileToUpload.name);
-    console.log(formData)
     return this.httpClient
-      .post(this.url+"/api", formData, this.httpOptions )
-      .pipe(map
-        (data =>{
-          return data
-        }))
+      .post(this.url + '/api', formData, this.httpOptions)
+      .pipe(
+        map((data) => {
+          return data;
+        })
+      );
   }
-     
-        
-  generatePdf(sceneArr){
-  
- 
-  console.log("calling generatePDF")
- console.log(sceneArr[2])
-  return  this.httpClient.post(this.url+"/pdf", sceneArr )
+
+  generatePdf(sceneArr) {
+    let params = new HttpParams()
+      .append('name', sceneArr.name)
+      .append('callsheet', sceneArr.layout);
+    this.httpOptions.headers = new Headers();
+    this.httpOptions.params = params;
+    this.httpOptions.responseType = 'blob';
+    return this.httpClient.post(this.url + '/pdf', sceneArr, {
+      params: params,
+    });
+  }
+
+  postCallSheet(fileToUpload: File): Observable<any> {
+    this.resetHttpOptions();
+    const formData: FormData = new FormData();
+    this.coverSheet = fileToUpload;
+    formData.append('callSheet', fileToUpload, fileToUpload.name);
+    return this.httpClient.post(
+      this.url + '/callsheet',
+      formData,
+      this.httpOptions
+    );
+  }
+
 }
-
-
-postCallSheet(fileToUpload: File):Observable<any>{
-  this.resetHttpOptions()
-  console.log(fileToUpload.name)
-  const formData: FormData = new FormData();
-  this.coverSheet = fileToUpload
-  formData.append('callSheet', fileToUpload, fileToUpload.name);
-
-  return this.httpClient.post(this.url+"/callsheet", formData, this.httpOptions)
-  
-}
-
-
-
-
-}
-
-  
-
-

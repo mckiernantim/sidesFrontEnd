@@ -1,13 +1,17 @@
 /* You can add global styles to this file, and also import other style files */
+html,body{
+    overflow-x: hidden;
+    height:105%;
+}
 
 
 .app{
     margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif;
-    background: rgb(255,0,29);
-    background: radial-gradient(circle, rgba(255,0,29,1) 0%, rgba(247,85,85,1) 57%); 
+    background: rgb(#e6605c);
+    /* background: radial-gradient(circle, rgba(255,0,29,1) 0%, rgba(247,85,85,1) 57%);  */
     color: var(--white)
 
-}
+}z
 .mat-card{
     margin:  0 auto important !important;
 }
@@ -40,7 +44,7 @@ p{
     --red:hsl(0deg 91% 65%);
     --offWhite:hsl(355deg 87% 97%);
     --white:hsl(0deg 0% 100%);
-    --pink:hsl(358deg 88% 66%);
+    --pink:#e6605c;
     --grey:hsl(0deg 0% 85%);
 }
 .two-column{
@@ -51,17 +55,14 @@ p{
 .full-vh{
     height:85vh
 }
-.red{
 
-
-}
 .mat-progress-spinner circle{
 stroke:var(--white)!important
 }
 .spinning-bot{
     animation: mat-progress-spinner-linear-rotate 1200ms linear infinite;
     height:450px;
-    width:300px;
+    width:auto
 }
 
 mat-progress-spinner{
@@ -120,6 +121,14 @@ mat-card{
     background-color: var(--pink);
     padding-bottom: 0!important;
     border: 10px solid var(--offWhite);
+}
+.mat-card-header-text{
+    display:none
+}
+@media only screen and (max-width: 769px){ 
+    .two-column{
+        grid-template-columns: 1fr;
+    }
 }
 
 

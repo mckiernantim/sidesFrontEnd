@@ -1,0 +1,43 @@
+.image-right{
+    text-align: end;
+   padding-right: 10%;
+}
+.image-left{
+    text-align: left;
+    padding-left: 10%;
+}
+.container{
+    padding:5%
+}
+.left{
+    padding-left:10%
+}
+.right {
+    padding-right:10%
+}
+p{
+    padding: 7% 8% 5% 5%;
+}
+.half-width{
+    width:45%;
+    display: inline-block
+}
+@media only screen and (max-width: 769px){ 
+    .two-column{
+        grid-template-columns: 1fr;
+    }
+    .image-left, .image-right {
+        display:none;
+    }
+    .mobile-image{
+        height:225px;
+        padding:5%;
+        width: auto;
+    }
+    .left, .right {
+    padding:0%;
+}   
+p{
+    padding:0
+}
+}

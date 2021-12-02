@@ -1,0 +1,13 @@
+.flex-center{
+    display: flex;
+    flex-direction: row;
+    align-content: space-around;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    
+}
+.form-container{
+    max-width:70%;
+    margin: 0 auto;
+    
+}

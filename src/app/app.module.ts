@@ -1,3 +1,4 @@
+import { UploadService } from './upload.service';
 import { Observable } from 'rxjs';
 import { HttpClientModule } from '@angular/common/http';
 
@@ -8,12 +9,13 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { UploadComponent } from './upload/upload.component';
 import { DashboardLeftComponent } from './dashboard-left/dashboard-left.component';
-import { DashboardRightComponent } from './dashboard-right/dashboard-right.component';
+import { DashboardRightComponent } from './dashboard-right/dashboard-right-component'
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { NavbarComponent } from './navbar/navbar.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NavComponent } from './nav/nav.component';
 import { LayoutModule } from '@angular/cdk/layout';
+
 // material stuff
 
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -38,7 +40,11 @@ import { AngularFireModule } from '@angular/fire';
 import { environment } from '../environments/environment';
 import { AngularFirestoreModule } from '@angular/fire/firestore';
 import { DualDialogComponent } from './dual-dialog/dual-dialog.component';
-import { FooterComponent } from './footer/footer.component'
+import { FooterComponent } from './footer/footer.component';
+import { AboutComponent } from './about/about.component';
+import { DonateComponent } from './donate/donate.component';
+import { FeedbackComponent } from './feedback/feedback.component';
+import { FourOfourComponent } from './four-ofour/four-ofour.component'
 @NgModule({
   declarations: [
     AppComponent,
@@ -52,7 +58,11 @@ import { FooterComponent } from './footer/footer.component'
     CompleteComponent,
     IssueComponent,
     DualDialogComponent,
-    FooterComponent
+    FooterComponent,
+    AboutComponent,
+    DonateComponent,
+    FeedbackComponent,
+    FourOfourComponent
   ],
   imports: [
     AngularFireModule.initializeApp(environment.firebaseConfig, 'sideWays'),
@@ -80,7 +90,8 @@ import { FooterComponent } from './footer/footer.component'
  
   ],
   providers: [ 
-    DatePipe],
+    DatePipe,
+    UploadService],
   entryComponents: [
     IssueComponent
   ],

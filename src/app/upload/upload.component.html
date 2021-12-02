@@ -1,109 +1,116 @@
 <div *ngIf="working" class="spinner-overlay center">
   <mat-card-content>
-    <mat-progress-spinner style="display:none" mode="indeterminate" value="0"></mat-progress-spinner>
+    <mat-progress-spinner
+      style="display: none"
+      mode="indeterminate"
+      value="0"
+    ></mat-progress-spinner>
     <h3 class="spinner-text">Processing Script</h3>
     <div class="loading-image">
-      <img class="spinning-bot" src="../../assets/icons//robotWhite.png">
+      <img class="spinner" src="../../assets/animations/ScriptBot_Animation.gif" />
     </div>
     <h3 class="spinner-text">Sit Tight.</h3>
   </mat-card-content>
 </div>
+
 <div class="form-group two-column left red">
   <div class="left-cell">
-
-    <div class='text-area'>
-      <div class="upload-headline">
-        <h1 class="big-text" style="padding-bottom:1%">Welcome</h1>
-
-        <h1 class="big-text"> to Sides-Ways</h1>
+    <div class="text-area">
+      <div class="mobile-headline">
+        <h1 class="mobile-h1">Welcome to Sides-ways</h1>
       </div>
-      <div class='upload-description'>
-
+      <div class="upload-headline">
+        <h1 class="big-text" style="padding-bottom: 1%">Welcome</h1>
+        <h1 class="big-text">to Sides-Ways</h1>
+      </div>
+      <div class="upload-description">
         <p>
-          AD's and PA's spend thousands of hours every year lining out sides to hand out on set.
-          Thats a lot of time that could be spent on other things.
+          AD's and PA's spend thousands of hours every year lining out sides to
+          hand out on set. Thats a lot of time that could be spent on other
+          things.
           <span>Enter: Sides-Ways</span>
         </p>
       </div>
-
     </div>
     <div class="left upload-description right-cell">
       <div class="details">
-       
         <div class="feature-block">
+
+
+          -
           <h4 class="feature-headline">Simple</h4>
-          <br>
+          <br />
           <h4>We make sides for sets. Thats it.</h4>
-          <h4>No subscriptions. NOTHING saved. Just sides. </h4>
+          <h4>No subscriptions. NOTHING saved. Just sides.</h4>
         </div>
         <div class="feature-block">
           <h4 class="feature-headline">Safe</h4>
-          <br>
+          <br />
           <h4>We're backed by Heroku and Google.</h4>
           <h4>Your IP is protected at all times.</h4>
         </div>
         <div class="feature-block">
           <h4 class="feature-headline">Secure</h4>
-          <br>
+          <br />
           <h4>No one EVER sees script. We record nothing.</h4>
           <h4>We dont even have a database</h4>
         </div>
       </div>
-
     </div>
     <div class="learn-more bold">
-      <h3>Learn more <span class="arrow">→</span> </h3>
+      <h3>Learn more <span class="arrow">→</span></h3>
     </div>
   </div>
 
-  <div class='center right-cell'>
-
+  <div class="center right-cell">
     <mat-card class="upload-card">
       <mat-card-header>
         <div>
-          <img class="card-image" src="../../assets/icons/redLogoFlat.png">
+          <img class="card-image" src="../../assets/icons/redLogoFlat.png" />
         </div>
       </mat-card-header>
 
       <mat-card-content>
-        <h3>Upload your script</h3>
-        <h3> We'll prep your sides</h3>
-      </mat-card-content>
-      <mat-card-actions>
-        <label class="uploadButton">
-          <span>UPLOAD SCRIPT</span>
-          <input name="script" enctype="multipart/form-data" type="file" id="script"
-            (change)="handleFileInput($event.target.files)">
-        </label>
+        <div class="feature-block">
+          <h3 class="feature-headline">Upload your script</h3>
 
+          <h3>We'll prep your sides</h3>
+          <p>Built for pdfs made with Final draft, Studio Binder, or Celtx.</p>
+          <div class="warning-text">
+            <p>
+              <strong>For best results scripts must have a cover page, 
+                numbered pages, and properly formatted headers.
+                All PDFS should be formatted to industry standrd before you even GET here. 
+                <br>
+                We make sides, not scripts*.
+              </strong>
+            </p>
+          </div>
+        </div>
+     </mat-card-content>
+     <mat-card-actions>
+       <label class="uploadButton">
+         <span>UPLOAD SCRIPT</span>
+         <input
+           name="script"
+           enctype="multipart/form-data"
+           type="file"
+           id="script"
+           (change)="handleFileInput($event.target.files)"
+         />
+       </label>
+     </mat-card-actions>
+     <div class="footnote">
+       <p>*or screenwriters.</p>
+     </div>
+   </mat-card>
+ </div>
+ <div class="developer-tools">
+   <h4>Tools for nerds (ignore this stuff):</h4>
+   <h5 class="yellow">current target : {{ this.upload.url }}</h5>
 
-
-      </mat-card-actions>
-    </mat-card>
-  </div>
-  <div class="developer-tools">
-
-
-    <h4>Tools for nerds (ignore this stuff):</h4>
-    <h5 class="yellow">current target : {{this.upload.url}} </h5>
-
-
-    <button (click)=this.upload.toggleUrl()>Toggle Development Mode</button>
-
-  </div>
+   <button (click)="this.upload.toggleUrl()">Toggle Development Mode</button>
+ </div>
 </div>
-<!-- <div class="three-column center">
-    <h1>{{totalScenes}} Scenes stablished</h1>
-    <h1>{{totalCharacters}} Characters met </h1>
-    <h1>{{totalLines}} Lines Crawled</h1>
-  </div> -->
-<!-- <div>
-    <h2>SidesWays</h2>
 
-    <h3>Thanks for helping us learn and grow!
-      
-      Please email and issues or problems with your script - or any ideas at all actually - to <a style="color:red"
-        href="mailto:sideswaystesters@gmail.com">sidesWaysHelp@gmail.com</a>
-    </h3>
-
-  </div> -->
+  

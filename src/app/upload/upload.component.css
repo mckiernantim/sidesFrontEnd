@@ -36,11 +36,15 @@
 h4{
     font:36px;
 }
+.footnote{
+    text-align: right;
+    font-size: .45em; 
+}
 .left-cell{
     padding-top: 10%;
     padding-left: 15%;
     
-    width: 70%;
+    width: 80%;
     margin: 0 auto;
 }
 .right-cell{
@@ -53,6 +57,9 @@ h4{
 .upload-headline{
     padding-bottom: 25px;
     height: auto;
+}
+.mobil-headling{
+    display:none;
 }
 .upload-description{
     width:95%;
@@ -137,4 +144,57 @@ label.uploadButton input[type="file"] {
     margin: 0 auto;
     color:var(--white);
     font-size:2.4em
+}
+.warning-text{
+    background-color: var(--red);
+    color:var(--white);
+    padding:10px;
+    border-radius:20px
+}
+
+
+
+@media only screen and (max-width: 769px){ 
+    .spinner-overlay{
+        width:50px;
+        height:50px
+    }
+    .two-column{
+        grid-template-columns: 1fr;
+    }
+    .upload-description{
+        display:none;
+    }
+    .mat-card{
+        width:85%;
+    }
+    .upload-headline, .learn-more, .developer-tools{
+        display:none;
+    }
+    .mobile-headline{
+        display:flex;
+        font-weight:bolder
+    }
+    .mobile-h1{
+        line-height: normal;
+        font-size:50px;
+    }
+    .left-cell{
+        width:100%;
+        padding-top:0%;
+        padding-left:15%
+    }.right-cell{
+        padding:0%
+    }
+    .spinner{
+        height:250px;
+        width:250px
+    }
+    .spinner-overlay{
+        height:auto;
+        width:auto;
+        top:30%;
+        left:10%
+    }
+ 
 }

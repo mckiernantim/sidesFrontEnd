@@ -65,3 +65,23 @@ li{
   .slider.round:before {
     border-radius: 50%;
   }
+
+
+  @media screen and (max-width: 768px) {
+  .mat-cell{
+    text-overflow: ellipsis; 
+    overflow: hidden; 
+    white-space: nowrap;
+    text-align: left;
+    width:10px;
+   }
+   .table-preview, .table-page-num{
+     display: none;
+   }
+   .table-scene-header{
+     max-width: 196px;
+   }
+   .mat-paginator{
+     max-width: 380px;
+   }
+}

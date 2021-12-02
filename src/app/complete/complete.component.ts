@@ -1,27 +1,29 @@
 import { UploadService } from './../upload.service';
 import { Component, OnInit } from '@angular/core';
+import { docChanges } from '@angular/fire/firestore';
+import { FeedbackComponent } from '../feedback/feedback.component';
 
 @Component({
   selector: 'app-complete',
   templateUrl: './complete.component.html',
-  styleUrls: ['./complete.component.css']
+  styleUrls: ['./complete.component.css'],
 })
 export class CompleteComponent implements OnInit {
-name:string = localStorage.getItem("name")
+  name: string = localStorage.getItem('name');
+  layout: string = localStorage.getItem('layout');
+  callsheet: string = localStorage.getItem('callsheet');
+  constructor(public upload: UploadService) {}
 
-  constructor( public upload:UploadService) { }
-
-
+  // we download as soon as we land
   ngOnInit(): void {
-
-this.downloadPDF()
- 
+    this.downloadPDF();
   }
-downloadPDF():void{
-
-    this.upload.getPDF(this.name).subscribe(data => {
-    var url = window.URL.createObjectURL(data);
-    window.open(url);
-})
-}
+  downloadPDF(): void {
+  
+    let _dataSubscriptiopn = this.upload.getPDF(this.name, this.layout);
+    _dataSubscriptiopn.subscribe((data) => {
+      var url = window.URL.createObjectURL(data);
+      window.open(url);
+    });
+  }
 }

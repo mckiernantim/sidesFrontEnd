@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 
 @Component({
   selector: 'app-navbar',
@@ -6,9 +6,29 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent implements OnInit {
+  options: any[] = []
 
-  constructor() { }
+  @ViewChild('homeButton') homeButton: ElementRef;
+  constructor() {
+    this.options = [{
+      text: "Home",
+    selected: true
+    }, {
+      text: "About",
+    selected: false    }, {
+      text: "Donate",
+    selected: false
+    }];
+    this.homeButton
 
+  }
+  toggleHidden(num) {
+    // this.options[num] = this.toggle(this.options[num])
+  }
+
+  toggle(target){
+    return target.selected ? false : true
+  }
   ngOnInit(): void {
   }
 
