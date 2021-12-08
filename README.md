@@ -1,5 +1,5 @@
 # SidesWays
-  ![Sides-ways-logo](src/assets/icons/logoFlat.png){:height="50px", width="50px"}
+
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 9.1.1.
 Angular rules.  
 Try it out.
@@ -21,3 +21,4 @@ Sides-Ways is a front end portal built with angular 9, Firenase, Node and Expres
   <li> Server sends file back to user - all documents are deleted ensuring safe IP </li>
 </ol>
 
+  ![Sides-ways-logo](src/assets/icons/logoFlat.png){:height="50px", width="50px"}
