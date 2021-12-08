@@ -1,5 +1,5 @@
 import { UploadService } from './../upload.service';
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { FeedbackTicket } from './feedbackTicket';
 import { FormsModule } from '@angular/forms';
 @Component({
@@ -15,9 +15,11 @@ export class FeedbackComponent implements OnInit {
     'Script lining',
     'Scene-headers',
     'Page-numbers',
+    'Incorrect Spacing'
   ];
-  model: FeedbackTicket
-  
+  model: FeedbackTicket;
+  date:number = Date.now()
+  @Input()title:string
   constructor(public upload: UploadService) {}
   ngOnInit(): void {
     this.resetForm()
@@ -29,9 +31,9 @@ export class FeedbackComponent implements OnInit {
   }
   resetForm(){
     this.model = new FeedbackTicket(
-      '',
-      '',
+      this.title,
       this.categories[0],
+      'Describe any issues',
       Date.now().toString(),
       false
     );

@@ -1,11 +1,12 @@
 <div class="container flex-center">
   <div>
+    <h1>Processing complete on {{name}} </h1>
     <div>
-      <h1>Thanks helping us with SideWays! </h1>
-      <h1>Please let us know if you had any issues an help us tighten this beast up</h1>
+      <h2>Thanks helping us with SideWays! </h2>
+      <h2>Please let us know if you had any issues and help us tighten this beast up</h2>
   <br>
       <div class="form-container">
-        <app-feedback></app-feedback>
+        <app-feedback [title] = this.name></app-feedback>
       </div>
     </div>
     <div>
@@ -13,11 +14,12 @@
         <br>
         and if you go the time <a routerLink="">Do it again!</a>
       </h3>
-
     </div>
-
-    <div>
-      <button (click)="downloadPDF()">Download PDF</button>
+    <div> 
+      <button (click)="downloadPDF()">Download Sides for {{name}}</button>
     </div>
   </div>
 </div>
+
+
+      

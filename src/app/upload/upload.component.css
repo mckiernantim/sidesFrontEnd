@@ -76,7 +76,7 @@ h4{
     width: 60%;
     height: auto;
     margin: 0 auto;
-    padding-bottom: 10% !important;
+    padding-bottom: 1% !important;
     display: block;
     position: relative;
     padding: 16px;
@@ -93,7 +93,6 @@ h4{
     
 }
 .feature-block{
-    width:85%;
     padding-right: 5%;
     padding-left: 5%;
 }
@@ -151,7 +150,9 @@ label.uploadButton input[type="file"] {
     padding:10px;
     border-radius:20px
 }
-
+.mobile-images{
+    display:none;
+}
 
 
 @media only screen and (max-width: 769px){ 

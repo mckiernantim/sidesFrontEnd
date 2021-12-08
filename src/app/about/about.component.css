@@ -17,12 +17,32 @@
 }
 p{
     padding: 7% 8% 5% 5%;
+
 }
 .half-width{
     width:45%;
-    display: inline-block
+    display: inline-block;
+    margin-left:5%
+}
+.mobile-image{
+    display:none;
+}
+.mobile {
+    display:none;
+};
+.desktop{
+    display:block;
+}
+.bottom{
+    padding: 0 10%;
 }
 @media only screen and (max-width: 769px){ 
+    .mobile{
+        display:block;
+    }
+    .desktop{
+        display:none;
+    }
     .two-column{
         grid-template-columns: 1fr;
     }
@@ -33,11 +53,15 @@ p{
         height:225px;
         padding:5%;
         width: auto;
+        display:inline-block;
     }
     .left, .right {
     padding:0%;
-}   
-p{
+    }   
+    p{
     padding:0
-}
+    }
+    .bottom{
+        padding: none;
+    }
 }
