@@ -1,5 +1,5 @@
 # SidesWays
-  ![Sides-ways-logo](src/assets/icons/logoFlat.png =50X50)
+  ![Sides-ways-logo](src/assets/icons/logoFlat.png){:height="50px", width="50px"}
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 9.1.1.
 Angular rules.  
 Try it out.
