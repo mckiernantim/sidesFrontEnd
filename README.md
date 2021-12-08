@@ -1,5 +1,5 @@
 # SidesWays
-![/src/assets/icons/logoFlat.png]
+![Sides-ways-logo][(/src/assets/icons/logoFlat.png)
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 9.1.1.
 Angular rules.  
 Try it out.
