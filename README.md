@@ -1,28 +1,22 @@
-# SideWays
+# SidesWays
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 9.1.1.
+Angular rules.  
+Try it out.
 
-## Development server
+## Summary  
+Live [here](https://scriptthing.firebaseapp.com)
+Sides-Ways is a front end portal built with angular 9, Firenase, Node and Express to create documents for film and television sets
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
 
-## Code scaffolding
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+## How does it work?
+<ol>
+  <li> The user uplaoads a properlly formatted pdf. </li>
+  <li> The Server converts the file to classified JSON and returns it using PDF.js and propriteray classification algorithm. </li>
+  <li> User selects scenes to shoot and possible watermark Via Angular Responive Forms </li>
+  <li> User selects a page layout, adds a cover sheet, and sends data back to server </li>
+  <li> Server creates PDF using Pupeteer.js, Headless Chrome Browser, and adds cover page via GraphicksMagick </li>
+  <li> Server sends file back to user - all documents are deleted ensuring safe IP </li>
+</ol>
 
-## Build
-
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
-# sidesFrontEnd
