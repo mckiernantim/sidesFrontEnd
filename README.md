@@ -21,4 +21,4 @@ Sides-Ways is a front end portal built with angular 9, Firenase, Node and Expres
   <li> Server sends file back to user - all documents are deleted ensuring safe IP </li>
 </ol>
 
-  ![Sides-ways-logo](src/assets/icons/logoFlat.png){:height="50px", width="50px"}
+  ![Sides-ways-logo](src/assets/icons/logoFlat.png)
