@@ -10,6 +10,7 @@ import { Router } from '@angular/router';
   styleUrls: ['./upload.component.css'],
 })
 export class UploadComponent implements OnInit, OnDestroy {
+  
   fileToUpload: File;
   funData: Observable<any>;
   feedback: Observable<any>;
@@ -24,6 +25,9 @@ export class UploadComponent implements OnInit, OnDestroy {
     characters:number,
     scenes:number
   }
+  // we should change this to a line array at some point
+  lines: any[];
+  $script_data: Observable<any>;
 
   constructor(
     public db: AngularFirestore,
@@ -35,33 +39,32 @@ export class UploadComponent implements OnInit, OnDestroy {
     this.feedback = this.upload.feedback;
     this.totalLines;
     this.funData.subscribe((doc) => {
-      
-      
-       
-    });
+     });
     this.feedback.subscribe((doc) => {
       console.log(doc);
     });
-  }
-  lines: any[];
-  $script_data: Observable<any>;
+  };
+
   ngOnInit(): void {
     this.working = false;
     console.log(this.feedback);
     console.log(this.funData);
     console.log(this.totalLines, this.totalScenes, this.totalTickets);
-  }
+  };
+  
   ngOnDestroy(): void {
     //Called once, before the instance is destroyed.
     //Add 'implements OnDestroy' to the class.
     // this.dataSubscription.unsubscribe()
-  }
+  };
+  
   addTwo(arr) {
     let missingTwo = arr.findIndex(
       (ind) => ind.text === '2.' && ind.category == 'page-number-hidden'
     );
     return missingTwo;
-  }
+  };
+  
   handleFileInput(files: FileList) {
     console.log('firing over script');
     this.working = true;
