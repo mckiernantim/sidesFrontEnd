@@ -32,24 +32,25 @@ import { FormsModule } from '@angular/forms';
 import { CompleteComponent } from './complete/complete.component';
 import { IssueComponent } from './issue/issue.component';
 import { MatDialogModule } from '@angular/material/dialog';
-import {MatCardModule} from '@angular/material/card';
+import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule} from "@angular/material/progress-spinner"
 
 // Firebase
 import { AngularFireModule } from '@angular/fire';
 import { environment } from '../environments/environment';
 import { AngularFirestoreModule } from '@angular/fire/firestore';
+import { AngularFireAuthModule } from '@angular/fire/auth';
 import { DualDialogComponent } from './dual-dialog/dual-dialog.component';
 import { FooterComponent } from './footer/footer.component';
 import { AboutComponent } from './about/about.component';
 import { DonateComponent } from './donate/donate.component';
 import { FeedbackComponent } from './feedback/feedback.component';
 import { FourOfourComponent } from './four-ofour/four-ofour.component'
+import { AuthGuardService } from './auth-guard.service';
 @NgModule({
   declarations: [
     AppComponent,
     UploadComponent,
-
     DashboardRightComponent,
     DashboardComponent,
     NavbarComponent,
@@ -66,6 +67,7 @@ import { FourOfourComponent } from './four-ofour/four-ofour.component'
   ],
   imports: [
     AngularFireModule.initializeApp(environment.firebaseConfig, 'sideWays'),
+    AngularFireModule,
     AngularFirestoreModule,
     BrowserModule,
     AppRoutingModule,
@@ -91,7 +93,9 @@ import { FourOfourComponent } from './four-ofour/four-ofour.component'
   ],
   providers: [ 
     DatePipe,
-    UploadService],
+    UploadService,
+    AuthGuardService
+  ],
   entryComponents: [
     IssueComponent
   ],

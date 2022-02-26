@@ -8,11 +8,20 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { UploadComponent } from './upload/upload.component';
+import { AuthGuard } from './guards/auth.guard';
 
 
 const routes: Routes = [
-  { path: 'download', component: DashboardComponent },
-  { path: 'complete', component: CompleteComponent },
+  { 
+    path: 'download', 
+    component: DashboardComponent,
+   
+ },
+  { path: 'complete', 
+    component: CompleteComponent,
+    canActivate : [AuthGuard],
+    
+ },
   { path: 'About', component: AboutComponent },
   { path: 'Donate', component: DonateComponent },
   { path: '', component: UploadComponent },

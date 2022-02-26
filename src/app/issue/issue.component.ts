@@ -12,6 +12,7 @@ import {
   Input,
 } from '@angular/core';
 import { UploadService } from '../upload.service';
+import { AuthService } from '../auth.service';
 import {
   MatDialogRef,
   MatDialog,
@@ -30,6 +31,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
   dualReady: boolean = false;
   dualEdit: boolean = false;
   pdfIssues: boolean = false;
+  loggedIn: boolean = false;
   file: File;
   callsheet: any;
   selected: string;
@@ -43,6 +45,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
     public upload: UploadService,
     public dialogRef: MatDialogRef<IssueComponent>,
     public cdr: ChangeDetectorRef,
+    public auth: AuthService,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {}
 
@@ -52,6 +55,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
     this.callsheetReady = false;
     this.callsheet = undefined;
     this.awaitingData = false;
+    this.loggedIn = false;
     this.data.waitingForScript
       ? (this.waitingForScript = true)
       : (this.waitingForScript = false);
@@ -74,6 +78,9 @@ export class IssueComponent implements OnInit, AfterViewInit {
       callsheet: this.file,
     });
   }
+  async googleSignIn (){
+   this.auth.loginWithGoogle()
+  } 
 
   handleFileInput(file) {
     file === 'no callsheet'
