@@ -1,13 +1,13 @@
+p {
+ font-size:12px
+}
 .arrow{
     padding-left:1%;
-   
 }
 
 .body{margin-left: 10%; margin-right: 10%; top:2%; bottom: 2%}
 .big-text{
-    
     font-size: 3.5em;
-    padding-top: 20px;
     font-weight: bold;
 }
 .feature-block:nth-of-type(2){
@@ -20,6 +20,9 @@
 }
 .learn-more{
     font-size:1.4em
+}
+.learn-more-box {
+    padding-top:15px;
 }
 .small-border{
     border-top: 2px solid var(--white);
@@ -41,15 +44,22 @@ h4{
     font-size: .45em; 
 }
 .left-cell{
-    padding-top: 10%;
+    display:grid;
+    grid-template-areas: 
+    "big big "
+    "b c d"
+    "b c d";
+    padding-top: 15px;
     padding-left: 15%;
-    
     width: 80%;
+    height:500px;
     margin: 0 auto;
 }
 .right-cell{
+    /* padding-top:5%; */
     padding-right:15%;
-    padding-top:10%
+    display:flex;
+    height: 550px;
 }
 .text-area{
     width: 85%;
@@ -64,6 +74,9 @@ h4{
 .upload-description{
     width:95%;
     font-size:1.1em
+}
+.mat-card-header {
+    justify-content: space-around;
 }
 .feature-headline{
     font-size:1.7em;
@@ -84,10 +97,8 @@ h4{
 }
 .two-column{
     display:grid;
-    min-height: 75vh;
-   
-    height:auto;
- 
+    max-height:95vh;
+    height:75vh;
     grid-template-columns:1fr 1fr ;
     padding:2% 3%;
     
@@ -97,8 +108,7 @@ h4{
     padding-left: 5%;
 }
 .card-image{
-    width:75%;
-    height:auto;
+    height:200px;
     margin-left: -5%
 }
 .loading-image{

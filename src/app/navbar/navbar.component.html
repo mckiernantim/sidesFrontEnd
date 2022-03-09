@@ -1,6 +1,6 @@
 <div class="navbar red">
   <h3 class="nav-item left logo">SIDES-WAYS</h3>
-  {{this.auth.userData ? this.auth.userData.email : 'not logged in'}} 
+
   <ul class="nav-links right">
     <li *ngFor="let option of options; let i = index" class="right nav-item">
       <a class="right" id="{{option.text}}" (click)="toggleHidden($event.target.id)"

@@ -1,5 +1,5 @@
 /* You can add global styles to this file, and also import other style files */
-html,body{
+body{
     overflow-x: hidden;
     height:105%;
 }
@@ -52,8 +52,9 @@ p{
     grid-template-columns:1fr 1fr
 }
 
-.full-vh{
-    height:85vh
+.full-vh {
+    height:100%;
+
 }
 
 .mat-progress-spinner circle{

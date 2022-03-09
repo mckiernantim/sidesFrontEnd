@@ -7,4 +7,15 @@
 .layout-button{
     max-width:200px;
 }
+.app {
+    height:90vh;
+    display: grid;
+    grid-area: 
+    "nav"
+    "body"
+    "footer";
+}
+.full-nav {
+    height: 100%;
+}
 
