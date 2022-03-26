@@ -43,17 +43,14 @@ export interface ProblemArr {
 })
 export class DashboardRightComponent implements OnInit {
   // STATE BOOLEANS
-
   dataReady: boolean = false;
   active: boolean = true;
   waitingForScript: boolean = false;
   finalDocReady: boolean = false;
-  coverReady:boolean = false;
+  coverReady: boolean = false;
   linesReady: boolean;
   waterMarkState: boolean;
-
   // DATA FOR SCRIPT
-
   scriptData;
   displayedColumns: string[] = [
     'number',
@@ -63,13 +60,11 @@ export class DashboardRightComponent implements OnInit {
     'select',
   ];
   dataSource: MatTableDataSource<any>;
-
   scenes: any[];
   initialSelection: any[] = [];
   selected: any[];
   pages: any[];
   // DOCUMENT OPTIONS
-
   characters: any;
   charactersCount: number;
   scenesCount: number;
@@ -141,13 +136,14 @@ export class DashboardRightComponent implements OnInit {
 
     if (this.scriptData) {
       // GET CHARS
-      this.characters = this.scriptData.filter((line) => { 
-        return line.category === 'character'});
+      this.characters = this.scriptData.filter((line) => {
+        return line.category === 'character';
+      });
       this.characters = [
         ...new Set(this.characters.map((line) => line.text.replace(/\s/g, ''))),
       ];
     }
- 
+
     // GET SCENES
     if (this.totalPages && this.scriptData) {
       this.scenes = this.scriptData.filter((line) => {
@@ -155,51 +151,23 @@ export class DashboardRightComponent implements OnInit {
       });
       for (let i = 0; i < this.scenes.length; i++) {
         // give scenes extra data for later
-        let last;
-        if (this.scenes[i + 1] || i == this.scenes.length - 1) {
-    
-          if (this.scenes[i + 1]) {
-            last = this.scenes[i + 1].index;
-            this.scenes[i].lastLine =
-              this.scriptData[this.scenes[i + 1].index - 1].index;
-            this.scenes[i].lastPage =
-              this.scriptData[this.scenes[i].lastLine].page;
-            this.scenes[i].index === 0
-              ? (this.scenes[i].firstLine = 0)
-              : (this.scenes[i].firstLine =
-                  this.scriptData[this.scenes[i].index - 1].index);
-            this.scenes[i].lastLine =
-              this.scriptData[this.scenes[i + 1].index - 1].index;
-            this.scenes[i].preview = this.getPreview(i);
-          } else {
-            last = this.scriptData[this.scriptData.length - 1].index;
-            this.scenes[i].lastLine = this.scriptData[last].index;
-            this.scenes[i].lastPage = this.scriptData[last].page;
-            this.scenes[i].firstLine =
-              this.scriptData[this.scenes[i].index - 1].index;
-            this.scenes[i].preview = this.getPreview(i);
-          }
-        }
-
-        // POPULATE TABLE   <----------------------------------
+       this.setLastLines(i);
+        // POPULATE TABLE
         this.dataSource = new MatTableDataSource(this.scenes);
-
         this.dataSource.paginator = this.paginator;
         this.dataSource.sort = this.sort;
         this.length = this.scriptData.length;
       }
-
     }
-    let probsArr = [];
-
-    this.scriptProblems.forEach((line) => {
-      let ind = line.index;
-      let scene = this.scriptData[ind].sceneIndex;
-      let problem = this.scenes.map((scene) => scene.sceneIndex).indexOf(scene);
-      // MAP OVER THIS AN FLAG SCENES IF THEY HAVE  PROBLEM LINE
-      probsArr.push(problem);
-      // filter through script problems and then go to scenes and add problem flags for each index at proper location
-    });
+    // let probsArr = [];
+    // this.scriptProblems.forEach((line) => {
+    //   let ind = line.index;
+    //   let scene = this.scriptData[ind].sceneIndex;
+    //   let problem = this.scenes.map((scene) => scene.sceneIndex).indexOf(scene);
+    //   // MAP OVER THIS AN FLAG SCENES IF THEY HAVE  PROBLEM LINE
+    //   probsArr.push(problem);
+    //   // filter through script problems and then go to scenes and add problem flags for each index at proper location
+    // });
     this.length = this.scriptData.length;
     // assign PAGENUMBER values to page 0 and 1 in order for future
     for (let i = 0; i < 200; i++) {
@@ -221,12 +189,12 @@ export class DashboardRightComponent implements OnInit {
     let newText = '';
     newText = this.scriptData[line.lastCharIndex].text;
     let ind = line.index;
-
     for (let i = line.lastCharIndex + 1; i < ind + 1; i++) {
       newText = newText + '\n' + this.scriptData[i].text;
       if (
-        this.scriptData[i].category ===
-          ('more' || 'page-number' || 'page-number-hidden') ||
+        this.scriptData[i].category === 'more' || 
+        this.scriptData[i].category === 'page-number' || 
+        this.scriptData[i].category === 'page-number-hidden' ||
         this.scriptData[i].subCategory === 'parenthetical'
       ) {
       }
@@ -270,6 +238,7 @@ export class DashboardRightComponent implements OnInit {
 
   //  pass the scene to be made and the breaks ponts for the scene to be changed to visible true
   makeVisible(sceneArr, breaks) {
+    // loop through and find breaks
     this.finalDocument.breaks = breaks;
     breaks = breaks.sort((a, b) => a.first - b.first);
     let merged = [].concat.apply([], sceneArr);
@@ -286,6 +255,7 @@ export class DashboardRightComponent implements OnInit {
           merged[i].bar = 'bar';
         }
         if (merged[i].lastLine && merged[i].visible) {
+          // THIS IS WHERE OUR ISSUE IS - OUR LAST LINE IS DEFAULTING TO
           let target = inds.indexOf(merged[i].lastLine);
           merged[target].end = 'END';
         }
@@ -306,6 +276,7 @@ export class DashboardRightComponent implements OnInit {
         item.visible = 'true';
         (item.cont = 'hideCont'), (item.end = 'hideEnd');
         item.xPos = 87;
+        item
       }
     });
     return merged;
@@ -353,7 +324,7 @@ export class DashboardRightComponent implements OnInit {
     });
     //  SORT FULL PAGES
     fullPages = fullPages.sort((a, b) => (a[0].page > b[0].page ? 1 : -1));
-    // MAKE THE LINES VISIBLE 
+    // MAKE THE LINES VISIBLE
     let final = this.makeVisible(fullPages, sceneBreaks);
     if (numPages.length > 1) {
       let lastPage = numPages[numPages.length - 1];
@@ -410,7 +381,7 @@ export class DashboardRightComponent implements OnInit {
     for (let i = 0; i < finalDocument.data.length; i++) {
       // ESTABLISH FIRST AND LAST FOR CONT ARROWS
       let first,
-      last = undefined;
+        last = undefined;
       // LOOP FOR LINES
       for (let j = 0; j < finalDocument.data[i].length; j++) {
         let current = finalDocument.data[i][j];
@@ -425,21 +396,23 @@ export class DashboardRightComponent implements OnInit {
         ) {
           current.end = 'END';
         }
-        // ESTABLISH AN END Y FOR OUR CURRENT 
+        // ESTABLISH AN END Y FOR OUR CURRENT
         current.end ? (current.endY = current.yPos - 5) : current;
         // get first and last lines
         if (
           finalDocument.data[i] &&
           conditions.includes(
             finalDocument.data[i][finalDocument.data[i].length - j - 1].category
-          ) && !last
+          ) &&
+          !last
         ) {
           last = finalDocument.data[i][finalDocument.data[i].length - j - 1];
         }
         if (
-          finalDocument.data[i + 1] &&  
+          finalDocument.data[i + 1] &&
           finalDocument.data[i + 1][j] &&
-          !first && conditions.includes(finalDocument.data[i + 1][j].category)
+          !first &&
+          conditions.includes(finalDocument.data[i + 1][j].category)
         ) {
           first = finalDocument.data[i + 1][j];
         }
@@ -466,16 +439,16 @@ export class DashboardRightComponent implements OnInit {
     this.finalDocument = finalDocument;
     this.finalDocReady = true;
     this.upload.generatePdf(finalDocument).subscribe((data) => {
-      this.upload.getCover(data).subscribe(coverData => {
-        if(coverData){
+      this.upload.getCover(data).subscribe((coverData) => {
+        if (coverData) {
           this.dialog.closeAll();
           this.coverReady = true;
         }
-        if(this.coverReady){
+        if (this.coverReady) {
           this.router.navigate(['complete']);
         }
-      })
-   });
+      });
+    });
   }
   logUpload() {
     console.log(this.upload);
@@ -543,12 +516,32 @@ export class DashboardRightComponent implements OnInit {
       });
     } else this.getPdf(this.selected, this.script, this.totalPages, '');
   }
+  setLastLines(i) {
+    let last;
+    let currentScene = this.scenes[i];
+    let sceneInd;
+    let next = this.scenes[i + 1];
+    if (next || i == this.scenes.length - 1) {
+      if (next) {
+        last = next.index;
+        sceneInd = currentScene.sceneIndex;
+       
+        currentScene.index === 0
+          ? (currentScene.firstLine = 0)
+          : (currentScene.firstLine = this.scriptData[currentScene.index - 1].index);
+        currentScene.lastLine = this.scriptData[next.index - 1].index;
+        currentScene.preview = this.getPreview(i);
+        let finalFourLines =  this.scriptData.filter(item => item.sceneIndex === currentScene.sceneIndex).slice(-4);
+        currentScene.lastLine = finalFourLines.sort((a,b) => b.yPos - a.yPos).slice(-1)[0].index;
+        currentScene.lastPage = this.scriptData[currentScene.lastLine].page;
+        this.scriptData[currentScene.index].lastLine = currentScene.lastLine;
+        currentScene.firstLine = this.scriptData[currentScene.index - 1].index;
+      } else {
+        last = this.scriptData[this.scriptData.length - 1].index;
+        currentScene.lastLine = this.scriptData[last].index;
+        currentScene.lastPage = this.scriptData[currentScene.lastLine].page;
+        currentScene.preview = this.getPreview(i);
+      }
+    }
+  }
 }
-      
-
-        
-
-    
-
-
-  

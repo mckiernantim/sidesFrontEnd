@@ -2,6 +2,6 @@
 
   context('Window', () => {
     beforeEach(() => {
-      cy.visit('https://example.cypress.io/commands/window')
+      cy.visit('https://localhost:4200')
     })
   })

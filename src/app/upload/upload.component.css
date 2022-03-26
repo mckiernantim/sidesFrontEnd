@@ -1,5 +1,95 @@
+
+
+.type {
+  position: relative;
+  overflow:hidden;
+  white-space: nowrap;
+}
+
+
+/* Animation */
+.type-effect {
+  animation: animated-text  .75s steps(30,end)  normal both
+}
+.delay-0{
+    animation-delay: 1s !important
+}
+.delay-1{
+    animation-delay: 1.25s !important
+}
+.delay-2{
+    animation-delay: 1.75s !important
+}
+.delay-3{
+    animation-delay: 2.25s !important
+}
+.delay-4{
+    animation-delay: 3s !important
+}
+
+#border {
+   animation: animated-cursor 600ms steps(30,end) infinite;
+}
+
+/* text animation */
+
+@keyframes animated-text{
+  from{width: 0px;}
+  to{width: 100%;}
+}
+
+/* cursor animations */
+
+@keyframes animated-cursor{
+  from{border-bottom-color: rgba(0,255,0,.75);}
+  to{border-bottom-color: transparent;}
+}
+body{
+    padding: 40px;
+    background-color: #121212;  
+  }
+  
+  #parent {
+    height: 40px;
+    white-space: nowrap;
+    overflow: hidden; 
+    font-family: 'Source Code Pro', monospace;  
+    font-size: 28px;
+    color: rgba(255,255,255,.70);
+    position: relative;
+  }
+  
+  #border {
+    border-bottom: solid 3px rgba(0,255,0,.75);
+    position: absolute;
+    right: -7px;
+    width: 20px;
+  }
+  
+  /* Animation */
+  #parent {
+    animation: animated-text 2s steps(30,end) 1s 1 normal both
+  }
+  
+  #border {
+     animation: animated-cursor 600ms steps(30,end) infinite;
+  }
+  
+  /* text animation */
+  
+  @keyframes animated-text{
+    from{width: 0;}
+    to{width: 480px;}
+  }
+  
+  /* cursor animations */
+  
+  @keyframes animated-cursor{
+    from{border-bottom-color: rgba(0,255,0,.75);}
+    to{border-bottom-color: transparent;}
+  }
 p {
- font-size:12px
+ font-size:15px
 }
 .arrow{
     padding-left:1%;
@@ -46,20 +136,22 @@ h4{
 .left-cell{
     display:grid;
     grid-template-areas: 
-    "big big "
+    "big big"
     "b c d"
     "b c d";
     padding-top: 15px;
+    justify-content: space-evenly;
+    align-content: space-evenly;
     padding-left: 15%;
     width: 80%;
-    height:500px;
+    height:auto;
     margin: 0 auto;
 }
 .right-cell{
     /* padding-top:5%; */
     padding-right:15%;
     display:flex;
-    height: 550px;
+    height: auto;
 }
 .text-area{
     width: 85%;
@@ -87,10 +179,12 @@ h4{
 }
 .upload-card{
     width: 60%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
     height: auto;
     margin: 0 auto;
     padding-bottom: 1% !important;
-    display: block;
     position: relative;
     padding: 16px;
     border-radius: 15px 15px 15px 15px !important;
@@ -98,7 +192,7 @@ h4{
 .two-column{
     display:grid;
     max-height:95vh;
-    height:75vh;
+    height:auto;
     grid-template-columns:1fr 1fr ;
     padding:2% 3%;
     
@@ -122,41 +216,41 @@ h4{
     text-align: center;
     margin: 0 auto;
 }
-label.uploadButton input[type="file"] {
+label.upload-button input[type="file"] {
     position:absolute;
     top: -1000px;
 }
 
 /***** Example custom styling *****/
-.uploadButton {
+.upload-button {
     border: 2px solid #AAA;
     border-radius: 4px;
     padding: 2px 5px;
     margin: 2px;
-    background: #DDD;
     display: inline-block;
 }
-.uploadButton:hover {
+.upload-button:hover {
     background: #CCC;
 }
-.uploadButton:active {
+.upload-button:active {
     background: #CCF;
 }
-.uploadButton :invalid + span {
+.upload-button :invalid + span {
     color: #A44;
 }
-.uploadButton :valid + span {
+.upload-button :valid + span {
     color: #4A4;
 }
 .spinner-text{
 
     margin: 0 auto;
     color:var(--white);
-    font-size:2.4em
+    font-size:2.4em;
+    font-weight: bolder !important;
 }
 .warning-text{
-    background-color: var(--red);
-    color:var(--white);
+    background-color: var(--white);
+    color:var(--black);
     padding:10px;
     border-radius:20px
 }

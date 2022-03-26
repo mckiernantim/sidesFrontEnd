@@ -1,15 +1,28 @@
 /* You can add global styles to this file, and also import other style files */
+* {
+    font-family: 'Courier New', Courier, monospace /* Replace with your custom font */!important; 
+    /* Add !important to overwrite all elements */
+  }
+p,h1,h2,h3,h4 {
+      font-weight: 400 !important;
+  }
 body{
     overflow-x: hidden;
     height:105%;
+    font-family: 'Courier New', Courier, monospace !important;
+}
+.mat-typography {
+    font-family: 'Courier New', Courier, monospace !important;
 }
 
 
 .app{
-    margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif;
-    background: rgb(#e6605c);
+
+    margin: 0; 
+    font-family: 'Courier New', Courier, monospace;
+    background: rgb(#dac5c4);
     /* background: radial-gradient(circle, rgba(255,0,29,1) 0%, rgba(247,85,85,1) 57%);  */
-    color: var(--white)
+    color: var(--black)
 
 }z
 .mat-card{
@@ -18,8 +31,8 @@ body{
 .yellow{
     color:yellow;
 }
-.red{
-    background-color: var(--red);
+.white{
+    background-color: var(--white);
 }
 
 h1{
@@ -41,9 +54,9 @@ p{
     font-weight: 900;
 }
 :root{
-    --red:hsl(0deg 91% 65%);
-    --offWhite:hsl(355deg 87% 97%);
-    --white:hsl(0deg 0% 100%);
+    --white:rgb(240, 234, 234);
+
+    --black:rgb(0, 0, 0);
     --pink:#e6605c;
     --grey:hsl(0deg 0% 85%);
 }
@@ -73,8 +86,8 @@ mat-progress-spinner{
     color:var(--white) !important
 }
 mat-card{
-    background-color: var(--white)  !important;
-    color: var(--red) !important
+    background-color: var(--black)  !important;
+    color: var(--white) !important
 
 }
 .upload-card{
@@ -99,13 +112,13 @@ mat-card{
 }
 .section-border-bottom{
     margin: 0 auto;
-    border-bottom:.5px solid var(--offWhite);
+    border-bottom:.5px solid var(--black);
     width:90%
 
 }
 .section-border-top{
     margin: 0 auto;
-    border-top:.5px solid var(--offWhite);
+    border-top:.5px solid var(--black);
     width:90%
 
 }
@@ -119,9 +132,9 @@ mat-card{
     width: 550px;
     z-index: 10000;
     padding: 5%;
-    background-color: var(--pink);
+    background-color:rgb(230 97 91);
     padding-bottom: 0!important;
-    border: 10px solid var(--offWhite);
+    border: 10px solid var(--black);
 }
 .mat-card-header-text{
     display:none

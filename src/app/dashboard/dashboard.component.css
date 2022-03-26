@@ -3,10 +3,7 @@
     height: 100vh;
     grid-template-rows: 300px;
     text-align: center;
-   
-   
-    color: var(--white);
-    background: var(--red);
+    /* background: var(--white); */
     /* text-shadow: 1px 1px black; */
     overflow: auto;
     

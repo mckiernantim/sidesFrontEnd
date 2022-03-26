@@ -38,7 +38,6 @@ export class IssueComponent implements OnInit, AfterViewInit {
   callsheetReady: boolean = false;
   docUploaded: boolean = false;
   awaitingData: boolean = false;
-  // modalReady: boolean = false
   selectionMade: boolean = false;
   waitingForScript: boolean = false;
   constructor(
@@ -61,18 +60,10 @@ export class IssueComponent implements OnInit, AfterViewInit {
       : (this.waitingForScript = false);
   }
   ngAfterViewInit(): void {
-    // figure out why the filter is not matching the sceneIndex - this should be easy
-
-    // this.toggleDual()
     this.cdr.detectChanges();
-    // this.getProblems()
-
-    //Called after ngAfterContentInit when the component's view has been initialized. Applies to components only.
-    //Add 'implements AfterViewInit' to the class.
   }
 
   addCallSheet() {
-
     this.dialogRef.close({
       selected: this.selected,
       callsheet: this.file,
@@ -81,7 +72,6 @@ export class IssueComponent implements OnInit, AfterViewInit {
   async googleSignIn (){
    this.auth.loginWithGoogle()
   } 
-
   handleFileInput(file) {
     file === 'no callsheet'
       ? (this.callsheetReady = true)
@@ -93,8 +83,6 @@ export class IssueComponent implements OnInit, AfterViewInit {
         this.awaitingData = false;
       });
     }
-      
-
   selectOption(option) {
     this.selectionMade = true;
     this.selected = option;

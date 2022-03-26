@@ -12,25 +12,32 @@
     <h3 class="spinner-text">Sit Tight.</h3>
   </mat-card-content>
 </div>
-<div class="form-group two-column left red">
+<div class="form-group two-column left black">
   <div class="left-cell">
     <div class="text-area">
       <div class="upload-headline">
-        <h1 class="big-text" style="padding-bottom: 1%">
+        <h1 class="big-text type type-effect" style="padding-bottom: 1%">
           Welcome to
         </h1>
-        <h1 class="big-text">
-            to Sides-Ways
+        <h1 class="big-text type type-effect delay-0">
+           Sides-Ways
         </h1>
         </div>
       <div class="upload-description">
-        <p>
-          AD's and PA's spend thousands of hours every year lining out sides to
-          hand out on set. Thats a lot of time that could be spent on other
-          things.
-          <span>Enter: Sides-Ways</span>
+        <p>EXT.  FILM SET WHEREVER:</p>
+        <p class ="type type-effect delay-1"> 
+          AD's and PA's spend thousands of hours every year
         </p>
-      </div>
+          <p class="type type-effect delay-2">
+            lining out sides to
+            hand out on set.</p>
+            <p class="type type-effect delay-3">
+              Thats a lot of time.
+            </p>
+            <p class="type type-effect delay-4">
+              <span>Enter: Sides-Ways</span>
+            </p>
+        </div>
     </div>
     <div class="left upload-description">
       <div class="details">
@@ -63,7 +70,7 @@
     <mat-card class="upload-card">
       <mat-card-header>
         <div>
-          <img class="card-image" src="../../assets/icons/redLogoFlat.png" />
+          <img class="card-image" src="../../assets/icons/logoFlatWhite.png" />
         </div>
       </mat-card-header>
       <mat-card-content>
@@ -84,7 +91,7 @@
         </div>
      </mat-card-content>
      <mat-card-actions>
-       <label class="uploadButton">
+       <label class="upload-button">
          <span>UPLOAD SCRIPT</span>
          <input
            name="script"
@@ -100,12 +107,13 @@
      </div>
    </mat-card>
  </div>
- <!-- <div class="developer-tools">
+ 
+ <div class="developer-tools">
    <h4>Tools for nerds (ignore this stuff):</h4>
+   <button (click)="this.upload.toggleUrl()" >Toggle Development Mode</button>
    <h5 class="yellow">current target : {{ this.upload.url }}</h5>
 
-   <button (click)="this.upload.toggleUrl()">Toggle Development Mode</button>
- </div> -->
+ </div>
 </div>
 
   
