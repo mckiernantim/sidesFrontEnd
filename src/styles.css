@@ -28,8 +28,8 @@ body{
 .mat-card{
     margin:  0 auto important !important;
 }
-.yellow{
-    color:yellow;
+.red-text{
+    color:red;
 }
 .white{
     background-color: var(--white);

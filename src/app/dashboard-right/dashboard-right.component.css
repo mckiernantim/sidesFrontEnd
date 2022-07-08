@@ -10,7 +10,9 @@ tr, th{
   color:whitesmoke
 }
 
-
+.mat-form-field{
+  color:black
+}
 .switch {
     position: relative;
     display: inline-block;

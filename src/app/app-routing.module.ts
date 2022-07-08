@@ -1,5 +1,4 @@
 import { FourOfourComponent } from './four-ofour/four-ofour.component';
-
 import { DonateComponent } from './donate/donate.component';
 import { AboutComponent } from './about/about.component';
 import { CompleteComponent } from './complete/complete.component';
@@ -20,8 +19,7 @@ const routes: Routes = [
   { path: 'complete', 
     component: CompleteComponent,
     canActivate : [AuthGuard],
-    
- },
+  },
   { path: 'About', component: AboutComponent },
   { path: 'Donate', component: DonateComponent },
   { path: '', component: UploadComponent },

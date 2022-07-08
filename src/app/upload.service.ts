@@ -113,6 +113,7 @@ export class UploadService {
       .post(this.url + '/api', formData, this.httpOptions)
       .pipe(
         map((data) => {
+          console.log(data)
           return data;
         })
       );
