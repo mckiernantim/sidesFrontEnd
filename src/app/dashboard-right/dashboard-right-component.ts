@@ -1,5 +1,5 @@
 import { LineOutService } from './../line-out.service';
-
+import { saveAs } from 'file-saver';
 import { Observable } from 'rxjs';
 import { IssueComponent } from './../issue/issue.component';
 import { Router } from '@angular/router';
@@ -183,7 +183,7 @@ export class DashboardRightComponent implements OnInit {
     this.dataReady = true;
     this.cdr.detectChanges();
   }
-
+  
   // lets get lookback tighter  - should be able to refrence lastCharacterIndex
   lookBack(line) {
     let newText = '';
@@ -354,6 +354,7 @@ export class DashboardRightComponent implements OnInit {
       let lastPage = numPages[numPages.length - 1];
       final.push(lastPage);
     }
+    saveAs()
     // CROSS OUT PROPER LINES
 
     // CREATE OBJECT FOR FINAL
@@ -363,6 +364,7 @@ export class DashboardRightComponent implements OnInit {
       numPages: numPages.length,
       layout: layout,
     };
+    
     let page = [];
     for (let i = 0; i < final.length; i++) {
       //  if the target has NO text and isnt to be skipped 
@@ -455,6 +457,7 @@ export class DashboardRightComponent implements OnInit {
     }
     this.finalDocument = finalDocument;
     this.finalDocReady = true;
+   
     this.upload.generatePdf(finalDocument).subscribe((data) => {
       this.upload.getCover(data).subscribe((coverData) => {
         if (coverData) {

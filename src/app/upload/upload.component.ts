@@ -60,8 +60,8 @@ export class UploadComponent implements OnInit, OnDestroy {
   
   addTwo(arr) {
     let missingTwo = arr.findIndex(
-      (ind) => ind.text === '2.' && ind.category == 'page-number-hidden'
-    );
+      (ind) => ind.text.match('2.') && ind.category == 'page-number-hidden'
+    ) || "2.";
     return missingTwo;
   };
   

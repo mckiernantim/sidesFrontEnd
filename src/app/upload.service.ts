@@ -1,3 +1,4 @@
+import { saveAs } from 'file-saver';
 import { AngularFirestore } from '@angular/fire/firestore';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
@@ -9,6 +10,7 @@ import {
   HttpParams,
 } from '@angular/common/http';
 import { FeedbackTicket } from './feedback/feedbackTicket';
+
 @Injectable({
   providedIn: 'root',
 })
@@ -59,6 +61,7 @@ export class UploadService {
     data.png = localStorage.getItem('callsheet');
     return this.httpClient.post(this.url + '/cover', data);
   }
+
   getPDF(name, callsheet) {
     let params = new HttpParams()
       .append('name', name)
@@ -83,7 +86,15 @@ export class UploadService {
       params: { name: this.script },
     });
   }
-
+ getTestJSON(name){
+  
+   let params = new HttpParams();
+    params.append('name', name);
+    this.httpOptions.params = params;
+    this.httpOptions.headers = new Headers();
+    this.httpOptions.responseType = 'blob';
+    return this.httpClient.post(this.url + '/testing', this.script )
+  }
 
    
   makeJSON(data) {
@@ -103,6 +114,7 @@ export class UploadService {
       this.url = this.urls[1];
     }
   }
+ 
   // get classified data
   postFile(fileToUpload: File): Observable<any> {
     this.resetHttpOptions();
