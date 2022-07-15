@@ -354,7 +354,7 @@ export class DashboardRightComponent implements OnInit {
       let lastPage = numPages[numPages.length - 1];
       final.push(lastPage);
     }
-    saveAs()
+
     // CROSS OUT PROPER LINES
 
     // CREATE OBJECT FOR FINAL
