@@ -46,7 +46,7 @@
         !awaitingData && 
         selectionMade && 
         callsheetReady &&
-        !loggedIn" 
+        !this.auth.userData" 
         class="button-wrapper">
     <h1>Sign in to continue</h1>
     <p>We know.  Tracking sucks.  But while we develop we need to track our users and while SidesWays is free we need you to log in.  Sign in below with a google account to continue.</p>
@@ -59,7 +59,7 @@
     !awaitingData && 
     selectionMade && 
     callsheetReady &&
-    loggedIn
+    this.auth.userData
     "
     class="button-wrapper">
     <button class="close-button" (click)="dialogRef.close({selected:this.selected, callsheet:this.callsheet})">Get My

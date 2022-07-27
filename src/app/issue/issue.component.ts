@@ -31,7 +31,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
   dualReady: boolean = false;
   dualEdit: boolean = false;
   pdfIssues: boolean = false;
-  loggedIn: boolean = true;
+  loggedIn: boolean = false;
   file: File;
   callsheet: any;
   selected: string;
@@ -54,10 +54,11 @@ export class IssueComponent implements OnInit, AfterViewInit {
     this.callsheetReady = false;
     this.callsheet = undefined;
     this.awaitingData = false;
-    this.loggedIn = true;
+    this.loggedIn = false;
     this.data.waitingForScript
       ? (this.waitingForScript = true)
       : (this.waitingForScript = false);
+    
   }
   ngAfterViewInit(): void {
     this.cdr.detectChanges();
