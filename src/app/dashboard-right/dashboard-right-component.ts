@@ -202,7 +202,6 @@ export class DashboardRightComponent implements OnInit {
     return newText;
   }
 
-
   toggleWatermark() {
     if (this.waterMarkState == false) {
       this.waterMarkState = true;
@@ -245,53 +244,63 @@ export class DashboardRightComponent implements OnInit {
     // loop through and find breaks
     this.finalDocument.breaks = breaks;
     breaks = breaks.sort((a, b) => a.first - b.first);
+    // merge all pages to one array
     let merged = [].concat.apply([], sceneArr);
     let counter = 0;
     // find scene breaks and ENDS
     for (let i = 0; i < merged.length; i++) {
       let lineToMakeVisible = merged[i];
-      let currentSceneBreak = breaks[counter] || "last";
+      let currentSceneBreak = breaks[counter] || 'last';
       if (
         // see if our line falls between the first and last from our breaks
         currentSceneBreak &&
         lineToMakeVisible.index > currentSceneBreak.first &&
         lineToMakeVisible.index <= currentSceneBreak.last
       ) {
-          lineToMakeVisible.visible = 'true';
-          // add START bar to scene headers
-          if (lineToMakeVisible.bar === 'noBar') {
-            lineToMakeVisible.bar = 'bar';
+        lineToMakeVisible.visible = 'true';
+        // add START bar to scene headers
+        if (lineToMakeVisible.bar === 'noBar') {
+          lineToMakeVisible.bar = 'bar';
         }
         // IF OUR LINE HAS A LAST LINE ATTRIBUTE THAT MEANS ITS A SCENE HEADER
         // IF IT IS VISIBLE WELL THEN WE NEED TO MAKE SURE THE LAST LINE IS VISIBLE TOO
-        if (lineToMakeVisible.lastLine && lineToMakeVisible.visible === 'true') {
+        if (
+          lineToMakeVisible.lastLine &&
+          lineToMakeVisible.visible === 'true'
+        ) {
           let finalTrueLine = merged.find(
             (line) => line.index === lineToMakeVisible.lastLine
           );
           // if finalTrueLine is a page number we need to fix
-          if (finalTrueLine.category.match('page-number' )) {
+          if (finalTrueLine.category.match('page-number')) {
             // loop forward aftere final line in scene is found.  Find a SCENE-HEADER
-            for (let finalTrue = merged.indexOf(finalTrueLine); finalTrue < merged.length; finalTrue++) {
+            for (
+              let finalTrue = merged.indexOf(finalTrueLine);
+              finalTrue < merged.length;
+              finalTrue++
+            ) {
+              if(!breaks[counter])break
               if (
-                //if the line AFTER our final True line of the scene is a scene header we are good to go 
+                //if the line AFTER our final True line of the scene is a scene header we are good to go
                 // for making an END
                 // we need to continue to loop forward and find the end of the page in the event we end on a hidden page number
-                merged[finalTrue + 1].category &&
+                merged[finalTrue + 1] &&
                 merged[finalTrue + 1].category === 'scene-header'
               ) {
                 merged[finalTrue].end = 'END';
-                counter +=1
+                counter += 1;
                 break;
-              } 
-              // if we come to the end of the page 
-              else if (finalTrue === merged.length) {
+              }
+              // if we come to the end of the page
+              // we need to iterate backwards to find the real final line
+              else {
                 for (let j = finalTrue - 1; j > 0; j--) {
                   if (
                     merged[j].category &&
                     !merged[j].category.match('page-number')
                   ) {
                     merged[j].end = 'END';
-                    counter +=1
+                    counter += 1;
                     break;
                   }
                 }
@@ -299,7 +308,7 @@ export class DashboardRightComponent implements OnInit {
             }
           } else {
             // in the event of a non page-number simply assign it end
-          finalTrueLine.end = 'END';
+            finalTrueLine.end = 'END';
           }
         }
         if (merged[i].index === currentSceneBreak.last) {
@@ -336,7 +345,7 @@ export class DashboardRightComponent implements OnInit {
     let used = [];
     let pages = [];
     let sceneBreaks = [];
-    // FIND SCENE BREAKS FIRST AND RECORD PAGES
+    // FIND SCENE BREAKS FIRST AND RECORD PAGES THAT ARE NEEDED IN pages ARRAY
     sceneArr.forEach((scene) => {
       for (let i = scene.page; i <= scene.lastPage; i++) {
         if (!pages.includes(i)) {
@@ -350,7 +359,6 @@ export class DashboardRightComponent implements OnInit {
         last: scene.lastLine,
         scene: scene.sceneNumber,
         firstPage: scene.page,
-       
       };
 
       sceneBreaks.push(breaks);
@@ -365,10 +373,9 @@ export class DashboardRightComponent implements OnInit {
         bar: 'noBar',
         hideCont: 'hideCont',
         hideEnd: 'hideEnd',
-        yPos:50,
-        category:'injected-break',
-        visible:'true'
-        
+        yPos: 50,
+        category: 'injected-break',
+        visible: 'true',
       });
       fullPages.push(doc);
     });
@@ -380,7 +387,7 @@ export class DashboardRightComponent implements OnInit {
       let lastPage = numPages[numPages.length - 1];
       final.push(lastPage);
     } // CROSS OUT PROPER LINES
-     // CREATE OBJECT FOR FINAL
+    // CREATE OBJECT FOR FINAL
     let finalDocument = {
       data: [],
       name: name,
@@ -410,23 +417,24 @@ export class DashboardRightComponent implements OnInit {
       'short-dialog',
       'parenthetical',
       'more',
-      'injected-break'
-      
+      'injected-break',
     ];
     // LOOP FOR PAGES
     for (let i = 0; i < finalDocument.data.length; i++) {
       // ESTABLISH FIRST AND LAST FOR CONT ARROWS
       let currentPage = finalDocument.data[i];
       let nextPage = finalDocument.data[i + 1] || null;
-      let first,last, nextPageFirst = undefined;
-      if(nextPage) nextPageFirst =  nextPage[0]; 
-       // loop and find the next page first actual line and check it's not page number
+      let first,
+        last,
+        nextPageFirst = undefined;
+      if (nextPage) nextPageFirst = nextPage[0];
+      // loop and find the next page first actual line and check it's not page number
       for (let j = 0; j < 5; j++) {
-        if(finalDocument.data[i+1]) { 
-          let lineToCheck =  finalDocument.data[i+1][j];
+        if (finalDocument.data[i + 1]) {
+          let lineToCheck = finalDocument.data[i + 1][j];
           if (conditions.includes(lineToCheck.category)) {
             nextPageFirst = finalDocument.data[i + 1][j];
-            break
+            break;
           }
         }
       }
@@ -463,18 +471,21 @@ export class DashboardRightComponent implements OnInit {
             last.visible === 'true' &&
             first.category != 'scene-header'
           ) {
-            (first.cont = 'CONTINUE-TOP'), 
-            (last.cont = 'CONTINUE');
+            (first.cont = 'CONTINUE-TOP'), (last.cont = 'CONTINUE');
             first.barY = first.yPos + 10;
             last.barY = 55;
           }
-            // conditional to ADD CONTINUE BAR if scene continues BUT first line of page is false
-          else if (nextPageFirst && nextPageFirst.visible === "true" && last.visible === "true") {
-            last.cont = "CONTINUE";
+          // conditional to ADD CONTINUE BAR if scene continues BUT first line of page is false
+          else if (
+            nextPageFirst &&
+            nextPageFirst.visible === 'true' &&
+            last.visible === 'true'
+          ) {
+            last.cont = 'CONTINUE';
             last.barY = 55;
           }
           break;
-        } 
+        }
       }
     }
     this.finalDocument.doc = finalDocument;
@@ -549,6 +560,9 @@ export class DashboardRightComponent implements OnInit {
       });
     }
   }
+  getLastPage = (scene) => {
+    return this.scriptData[scene.lastLine].page || null;
+  };
   openDialog() {
     if (this.modalData) {
       const dialogRef = this.dialog.open(IssueComponent, {
@@ -577,31 +591,16 @@ export class DashboardRightComponent implements OnInit {
           ? (currentScene.firstLine = 0)
           : (currentScene.firstLine =
               this.scriptData[currentScene.index - 1].index);
-        // currentScene.lastLine = this.scriptData[next.index - 1].index;
         currentScene.preview = this.getPreview(i);
-        // let finalFourLines =  this.scriptData.filter(item => item.sceneIndex === currentScene.sceneIndex).slice(-4);
-        // currentScene.lastLine = finalFourLines.sort((a,b) => b.yPos - a.yPos).slice(-1)[0].index;
-
-        currentScene
-          ? (currentScene.lastPage =
-              this.scriptData[currentScene.lastLine].page || null)
-          : null;
-        // this.scriptData[currentScene.index].lastLine = currentScene.lastLine;
-        // currentScene.firstLine = this.scriptData[currentScene.index - 1].index;
+        currentScene.lastPage = this.getLastPage(currentScene);
       } else {
         // get first and last lines for last scenes
         last =
           this.scriptData[this.scriptData.length - 1].index ||
           this.scriptData.length - 1;
-        currentScene.firstLine = this.scriptData[currentScene.index + 1].index;
-        // const lastLineTypes = ["description","character","parenthetical","dialog", "short-dialog"]
-        // for (let i = last; i > 0; i--) {
-        //   if (lastLineTypes.includes(this.scriptData[i].category)) {
-        //       currentScene.lastLine = this.scriptData[i].index;
-        //       break;
-        //   }
-        // }
-        // currentScene.lastPage = this.scriptData[currentScene.lastLine].page || this.scriptData[currentScene.index].page;
+        currentScene.firstLine = this.scriptData[currentScene.index - 1].index;
+        currentScene.lastLine = last;
+        currentScene.lastPage = this.getLastPage(currentScene);
         currentScene.preview = this.getPreview(i);
       }
     }
