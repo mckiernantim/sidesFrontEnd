@@ -54,7 +54,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
     this.callsheetReady = false;
     this.callsheet = undefined;
     this.awaitingData = false;
-    this.loggedIn = false;
+    this.loggedIn = true;
     this.data.waitingForScript
       ? (this.waitingForScript = true)
       : (this.waitingForScript = false);

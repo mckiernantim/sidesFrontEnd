@@ -375,16 +375,12 @@ export class DashboardRightComponent implements OnInit {
     //  SORT FULL PAGES
     fullPages = fullPages.sort((a, b) => (a[0].page > b[0].page ? 1 : -1));
     // MAKE THE LINES VISIBLE
-    // make visible is receiving the wrong breaks
     let final = this.makeVisible(fullPages, sceneBreaks);
     if (numPages.length > 1) {
       let lastPage = numPages[numPages.length - 1];
       final.push(lastPage);
-    }
-
-    // CROSS OUT PROPER LINES
-
-    // CREATE OBJECT FOR FINAL
+    } // CROSS OUT PROPER LINES
+     // CREATE OBJECT FOR FINAL
     let finalDocument = {
       data: [],
       name: name,
@@ -396,7 +392,7 @@ export class DashboardRightComponent implements OnInit {
     //FINAL IS OUR ASSEMBLED SIDES DOCUMENT WITH TRUE AND FALSE VALUES
     for (let i = 0; i < final.length; i++) {
       //  if the target has NO text and isnt to be skipped
-      // lines are insterted to deliniate page breaks and satisfy below conditiona;
+      // lines are insterted to deliniate page breaks and satisfy below conditional;
       if (final[i].page && !final[i].text && !final[i].skip) {
         finalDocument.data.push(page);
         page = [];
@@ -424,8 +420,7 @@ export class DashboardRightComponent implements OnInit {
       let nextPage = finalDocument.data[i + 1] || null;
       let first,last, nextPageFirst = undefined;
       if(nextPage) nextPageFirst =  nextPage[0]; 
-
-      // loop and find the next page first actual line and check it's not page  number
+       // loop and find the next page first actual line and check it's not page number
       for (let j = 0; j < 5; j++) {
         if(finalDocument.data[i+1]) { 
           let lineToCheck =  finalDocument.data[i+1][j];
@@ -464,8 +459,8 @@ export class DashboardRightComponent implements OnInit {
         if (first && last) {
           if (
             // looks like first page is  not getting visible - why?
-            first.visible == 'true' &&
-            last.visible == 'true' &&
+            first.visible === 'true' &&
+            last.visible === 'true' &&
             first.category != 'scene-header'
           ) {
             (first.cont = 'CONTINUE-TOP'), 
