@@ -230,7 +230,7 @@ export class DashboardRightComponent implements OnInit {
       }
     }
   }
-
+  findSceneHeader(line) {}
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     this.dataSource.filter = filterValue.trim().toLowerCase();
@@ -247,10 +247,12 @@ export class DashboardRightComponent implements OnInit {
     // merge all pages to one array
     let merged = [].concat.apply([], sceneArr);
     let counter = 0;
+    const skippedCategories = ["page-number", "injected-break"]
     // find scene breaks and ENDS
     for (let i = 0; i < merged.length; i++) {
       let lineToMakeVisible = merged[i];
       let currentSceneBreak = breaks[counter] || 'last';
+    
       if (
         // see if our line falls between the first and last from our breaks
         currentSceneBreak &&
@@ -258,7 +260,7 @@ export class DashboardRightComponent implements OnInit {
         lineToMakeVisible.index <= currentSceneBreak.last
       ) {
         lineToMakeVisible.visible = 'true';
-        // add START bar to scene headers
+        // add START bar to scene headers - only Scene Headers have the BAR attriubte
         if (lineToMakeVisible.bar === 'noBar') {
           lineToMakeVisible.bar = 'bar';
         }
@@ -266,20 +268,23 @@ export class DashboardRightComponent implements OnInit {
         // IF IT IS VISIBLE WELL THEN WE NEED TO MAKE SURE THE LAST LINE IS VISIBLE TOO
         if (
           lineToMakeVisible.lastLine &&
+          !lineToMakeVisible.finalScene &&
           lineToMakeVisible.visible === 'true'
         ) {
+          //immedaitely check for last line 
+       //grab the last line of our scene from the header
           let finalTrueLine = merged.find(
             (line) => line.index === lineToMakeVisible.lastLine
           );
           // if finalTrueLine is a page number we need to fix
           if (finalTrueLine.category.match('page-number')) {
-            // loop forward aftere final line in scene is found.  Find a SCENE-HEADER
+            // loop forward after final line in scene is found.  Find a SCENE-HEADER
             for (
               let finalTrue = merged.indexOf(finalTrueLine);
               finalTrue < merged.length;
               finalTrue++
             ) {
-              if(!breaks[counter])break
+              if (!breaks[counter]) break;
               if (
                 //if the line AFTER our final True line of the scene is a scene header we are good to go
                 // for making an END
@@ -307,12 +312,30 @@ export class DashboardRightComponent implements OnInit {
               }
             }
           } else {
-            // in the event of a non page-number simply assign it end
             finalTrueLine.end = 'END';
           }
         }
         if (merged[i].index === currentSceneBreak.last) {
           counter += 1;
+        }
+        if (lineToMakeVisible.finalScene) {
+
+          let actualLastLine;
+          for (let k = 1; k < merged.length; k++) {
+            let lineToCheck = merged[merged.length-k]
+            if (!skippedCategories.includes( lineToCheck.category)) {
+              lineToCheck.end = 'END';
+              lineToCheck.barY = lineToCheck.yPos
+              lineToCheck.finalLineOfScript = true;
+              actualLastLine = merged.length-k;
+              break;
+            }
+          }
+          for (let m = merged.indexOf(lineToMakeVisible); m < actualLastLine; m++) {
+              merged[m].visible = "true"
+              merged[m].cont = "hideCont"
+            }
+          
         }
       } else if (!currentSceneBreak) {
         break;
@@ -325,8 +348,12 @@ export class DashboardRightComponent implements OnInit {
         item.category === 'page-number'
       ) {
         item.visible = 'true';
-        (item.cont = 'hideCont'), (item.end = 'hideEnd');
+        (item.cont = 'hideCont'), 
+        (item.end = 'hideEnd');
         item.xPos = 87;
+      }
+      if(item.category === "injected-break"){
+        item.visible = "false"
       }
     });
     return merged;
@@ -417,7 +444,7 @@ export class DashboardRightComponent implements OnInit {
       'short-dialog',
       'parenthetical',
       'more',
-      'injected-break',
+      "shot"
     ];
     // LOOP FOR PAGES
     for (let i = 0; i < finalDocument.data.length; i++) {
@@ -466,12 +493,12 @@ export class DashboardRightComponent implements OnInit {
         }
         if (first && last) {
           if (
-            // looks like first page is  not getting visible - why?
             first.visible === 'true' &&
             last.visible === 'true' &&
-            first.category != 'scene-header'
+            first.category != 'scene-header' 
           ) {
-            (first.cont = 'CONTINUE-TOP'), (last.cont = 'CONTINUE');
+            first.cont = 'CONTINUE-TOP'; 
+            last.finalLineOfScript ? last.cont = "hideCont" : last.cont = 'CONTINUE';
             first.barY = first.yPos + 10;
             last.barY = 55;
           }
