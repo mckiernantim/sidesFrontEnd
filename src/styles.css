@@ -1,4 +1,5 @@
 /* You can add global styles to this file, and also import other style files */
+
 * {
     font-family: 'Courier New', Courier, monospace /* Replace with your custom font */!important; 
     /* Add !important to overwrite all elements */
@@ -143,6 +144,10 @@ mat-card{
     .two-column{
         grid-template-columns: 1fr;
     }
+}
+
+.mat-form-field-appearance-legacy .mat-form-field-label {
+    color:blue
 }
 
 

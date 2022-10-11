@@ -1,8 +1,10 @@
+import { MatInputModule } from '@angular/material/input';
 import { AngularFirestore } from '@angular/fire/firestore';
 import { Observable, Subscription } from 'rxjs';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { UploadService } from '../upload.service';
 import { Router } from '@angular/router';
+
 
 @Component({
   selector: 'app-upload',

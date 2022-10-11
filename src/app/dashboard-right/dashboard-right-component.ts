@@ -32,9 +32,9 @@ import {
 import { FindValueOperator } from 'rxjs/internal/operators/find';
 import { Console } from 'console';
 
-export interface ProblemArr {
-  title: string;
-  lines: any[];
+export interface pdfServerRes {
+  status:string
+  fileName:string
 }
 @Component({
   selector: 'app-dashboard-right',
@@ -74,7 +74,7 @@ export class DashboardRightComponent implements OnInit {
   pageLengths: any[];
   length: number;
   totalPages: any;
-  layout: string;
+  callSheetPath: string;
   callsheet: any;
   scriptLength: number;
   date: number;
@@ -131,8 +131,12 @@ export class DashboardRightComponent implements OnInit {
 
     // SAVED ON THE SERVICE
 
-    this.scriptData = this.upload.lineArr;
-    this.totalPages = this.upload.pagesArr;
+    this.scriptData = this.upload.lineArr 
+    this.totalPages = this.upload.pagesArr || null;
+    if(!this.scriptData) {
+      alert("script upload failed - rerouting to upload page")
+      this.router.navigate(["/"])
+    }
 
     if (this.scriptData) {
       // GET CHARS
@@ -159,16 +163,8 @@ export class DashboardRightComponent implements OnInit {
       this.dataSource.sort = this.sort;
       this.length = this.scriptData.length;
     }
-    // let probsArr = [];
-    // this.scriptProblems.forEach((line) => {
-    //   let ind = line.index;
-    //   let scene = this.scriptData[ind].sceneIndex;
-    //   let problem = this.scenes.map((scene) => scene.sceneIndex).indexOf(scene);
-    //   // MAP OVER THIS AN FLAG SCENES IF THEY HAVE  PROBLEM LINE
-    //   probsArr.push(problem);
-    //   // filter through script problems and then go to scenes and add problem flags for each index at proper location
-    // });
-    this.length = this.scriptData.length;
+
+    this.length = this.scriptData.length || 0;
     // assign PAGENUMBER values to page 0 and 1 in order for future
     for (let i = 0; i < 200; i++) {
       this.scriptData[i].page == 0
@@ -179,7 +175,7 @@ export class DashboardRightComponent implements OnInit {
     }
   }
   ngAfterViewInit(): void {
-    this.scriptLength = this.totalPages.length - 1;
+    this.scriptLength = this.totalPages.length - 1 || 0;
     this.dataReady = true;
     this.cdr.detectChanges();
   }
@@ -230,7 +226,7 @@ export class DashboardRightComponent implements OnInit {
       }
     }
   }
-  findSceneHeader(line) {}
+
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     this.dataSource.filter = filterValue.trim().toLowerCase();
@@ -240,7 +236,7 @@ export class DashboardRightComponent implements OnInit {
   }
 
   //  pass the scene to be made and the breaks ponts for the scene to be changed to visible true
-  makeVisible(sceneArr, breaks) {
+makeVisible(sceneArr, breaks) {
     // loop through and find breaks
     this.finalDocument.breaks = breaks;
     breaks = breaks.sort((a, b) => a.first - b.first);
@@ -319,7 +315,6 @@ export class DashboardRightComponent implements OnInit {
           counter += 1;
         }
         if (lineToMakeVisible.finalScene) {
-
           let actualLastLine;
           for (let k = 1; k < merged.length; k++) {
             let lineToCheck = merged[merged.length-k]
@@ -358,15 +353,11 @@ export class DashboardRightComponent implements OnInit {
     });
     return merged;
   }
-  // this work is done on the client to prevent IP from being sent back to the server
 
-  getPdf(sceneArr, name, numPages, layout) {
-    // set selected layout
-    localStorage.setItem('layout', layout.selected);
-    // set callsheet
-    layout.callsheet
-      ? localStorage.setItem('callsheet', layout.callsheet)
-      : localStorage.setItem('callsheet', null);
+
+
+  getPdf(sceneArr, name, numPages, callSheetPath = "no callsheet") {
+
     sceneArr = this.sortByNum(sceneArr);
     let fullPages = [];
     let used = [];
@@ -419,7 +410,7 @@ export class DashboardRightComponent implements OnInit {
       data: [],
       name: name,
       numPages: numPages.length,
-      layout: layout,
+      callSheetPath: callSheetPath,
     };
 
     let page = [];
@@ -518,24 +509,24 @@ export class DashboardRightComponent implements OnInit {
     this.finalDocument.doc = finalDocument;
 
     // finalDocument = this.lineOut.makeX(finalDocument)
-    if (this.watermark) {
+    if (this.watermark) {    
       this.waterMarkPages(this.watermark, finalDocument.data);
     }
     this.finalDocument = finalDocument;
     this.finalDocReady = true;
-
-    this.upload.generatePdf(finalDocument).subscribe((data) => {
-      this.upload.getCover(data).subscribe((coverData) => {
-        if (coverData) {
+  /// ***********  UPLOAD THE PDF FIRST THEN ONCE ITS DONE FIRE BACK THE COVER SHEET ***********
+    this.upload.generatePdf(finalDocument).subscribe((data:pdfServerRes) => {
+      if (data.fileName) {
           this.dialog.closeAll();
           this.coverReady = true;
         }
         if (this.coverReady) {
           this.router.navigate(['complete']);
-        }
-      });
-    });
-  }
+       }
+  });
+};
+  
+
   logUpload() {
     console.log(this.upload);
   }
@@ -573,7 +564,7 @@ export class DashboardRightComponent implements OnInit {
     this.waitingForScript = true;
     if (this.waitingForScript) {
       const dialogRef = this.dialog.open(IssueComponent, {
-        width: '800px',
+        width: '60%',
         data: {
           selected: this.selected,
           script: this.script,
@@ -588,20 +579,22 @@ export class DashboardRightComponent implements OnInit {
     }
   }
   getLastPage = (scene) => {
-    return this.scriptData[scene.lastLine].page || null;
+  return this.scriptData[scene.lastLine].page || null;
   };
+  // this function renders an IssueComponent with 60% width
   openDialog() {
     if (this.modalData) {
       const dialogRef = this.dialog.open(IssueComponent, {
-        width: '800px',
+        width: '60%',
         data: { scenes: this.modalData, selected: this.selected },
       });
       dialogRef.afterClosed().subscribe((result) => {
+        let coverSheet = localStorage.getItem("callSheetPath")
         this.waitingForScript = true;
-        result.callsheet = result.callsheet.name;
-        this.callsheet = result.callsheet;
+        console.log(result)
+        this.callsheet = result.callsheet.name || null;
         this.openFinalSpinner();
-        this.getPdf(this.selected, this.script, this.totalPages, result);
+        this.getPdf(this.selected, this.script, this.totalPages, coverSheet );
       });
     } else this.getPdf(this.selected, this.script, this.totalPages, '');
   }

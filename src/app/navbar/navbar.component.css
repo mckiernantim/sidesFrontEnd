@@ -23,11 +23,12 @@
 .navbar{
     /* height: 10%; */
     width: 90%;
-    padding: 1.5% 2.5% 0.0% 2.5%;
+    /* padding: 1.5% 2.5% 0.0% 2.5%; */
     margin: 0 auto;
     display: flex;
-    height:5vh;
-    border-bottom: 1px solid;
+    height: 18vh;
+    /* border-bottom: 1px solid; */
+    align-items: center;
 }
 .nav-links{
     width:100%

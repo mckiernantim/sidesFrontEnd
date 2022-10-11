@@ -134,7 +134,7 @@ export class UploadService {
   generatePdf(sceneArr) {
     let params = new HttpParams()
       .append('name', sceneArr.name)
-      .append('callsheet', sceneArr.layout);
+     
     this.httpOptions.headers = new Headers();
     this.httpOptions.params = params;
     this.httpOptions.responseType = 'blob';
@@ -146,8 +146,14 @@ export class UploadService {
   postCallSheet(fileToUpload: File): Observable<any> {
     this.resetHttpOptions();
     const formData: FormData = new FormData();
-    this.coverSheet = fileToUpload;
-    formData.append('callSheet', fileToUpload, fileToUpload.name);
+    if(fileToUpload) {
+      this.coverSheet = fileToUpload;
+      formData.append('callSheet', fileToUpload, fileToUpload.name);
+    } else {
+      this.coverSheet = null;
+      formData.append("callSheet", null)
+    }
+
     return this.httpClient.post(
       this.url + '/callsheet',
       formData,

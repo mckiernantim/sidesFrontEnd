@@ -73,12 +73,15 @@ export class IssueComponent implements OnInit, AfterViewInit {
   async googleSignIn (){
    this.auth.loginWithGoogle()
   } 
+
+  // need to give option for no callsheet
   handleFileInput(file) {
     file === 'no callsheet'
       ? (this.callsheetReady = true)
       : (this.awaitingData = true);
       this.upload.postCallSheet(file[0]).subscribe((data) => {
         this.callsheet = file[0];
+        localStorage.setItem("callSheetPath", data.filePath)
         this.docUploaded = true;
         this.callsheetReady = true;
         this.awaitingData = false;

@@ -1,18 +1,7 @@
 <!-- this whole component is deprecated -->
 <div class="modal red">
-  <div *ngIf='
-  !waitingForScript && 
-  selectionMade &&
-  !awaitingData'>
-    <h1>
-      Layout: {{this.selected}}
-    </h1>
-    <ul>
-      <h1>Scenes:</h1>
-      <li *ngFor="let text of data.selected" style="list-style-type:none;">{{text.text}}</li>
-    </ul>
-  </div>
 
+<!-- 
   <div *ngIf="
     !waitingForScript && 
     !selectionMade && 
@@ -32,19 +21,27 @@
         <button class="layout-button" id="landscape" (click)="selectOption($event.target.id)"> Landscape</button>
       </div>
     </div>
-  </div>
+  </div> -->
 
-  <div class="" *ngIf=" !waitingForScript && !awaitingData && selectionMade && !callsheetReady ">
-    <h1>Add a call sheet.</h1>
+  <div class="" *ngIf=" !waitingForScript && !awaitingData  && !callsheetReady ">
+    <h2>Add a call sheet?</h2>
     <form #callSheet name="callSheet" id="callSheet">
-      <input enctype="multipart/form-data" type="file" (change)="handleFileInput($event.target.files)">
+      <input enctype="multipart/form-data" type="file"  accept="application/pdf" (change)="handleFileInput($event.target.files)">
+      <button (click)="handleFileInput('no callsheet')" >No thanks</button>
       <!-- <button (click)="handleFileInput('no callsheet')">No callsheet</button> -->
     </form>
+  </div>
+  <div *ngIf='
+  !waitingForScript && 
+  !awaitingData'>
+    <ul>
+      <h3>Selected Scenes:</h3>
+      <li *ngFor="let text of data.selected" style="list-style-type:none;">{{text.scenenumber}} {{text.text}} </li>
+    </ul>
   </div>
   <div *ngIf= " 
         !waitingForScript && 
         !awaitingData && 
-        selectionMade && 
         callsheetReady &&
         !this.auth.userData" 
         class="button-wrapper">
@@ -57,10 +54,10 @@
   <div *ngIf= " 
     !waitingForScript && 
     !awaitingData && 
-    selectionMade && 
     callsheetReady
     "
     class="button-wrapper">
+    
     <button class="close-button" (click)="dialogRef.close({selected:this.selected, callsheet:this.callsheet})">Get My
       Sides</button>
   </div>

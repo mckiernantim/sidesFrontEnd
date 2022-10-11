@@ -75,7 +75,6 @@ import { AuthGuardService } from './auth-guard.service';
     BrowserAnimationsModule,
     LayoutModule,
     FormsModule,
-
     MatToolbarModule,
     MatButtonModule,
     MatSidenavModule,

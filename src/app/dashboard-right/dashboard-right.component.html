@@ -8,13 +8,11 @@
       <h2>{{script}} scenes</h2>
       <mat-form-field style="width:100%">
         <mat-label>Filter</mat-label>
-        <input matInput (keyup)="applyFilter($event)" placeholder="Search your scenes here" #input>
+        <input matInput (keyup)="applyFilter($event)" placeholder="Search your scenes here" #input color="accent">
       </mat-form-field>
 
       <div class="mat-elevation-z8">
         <table mat-table [dataSource]="dataSource" matSort>
-
- 
           <ng-container matColumnDef="number">
             <th class="table-scene-num" mat-header-cell *matHeaderCellDef mat-sort-header> Scene Number </th>
             <td class="table-scene-num" mat-cell *matCellDef="let scene; let i=index"> {{scene.sceneNumber}} </td>
@@ -77,38 +75,6 @@
         <button (click)="openDialog()">getPDF</button>
       </div>
     </div>
-    <div>
-      <button (click)="this.logUpload()">test the line out</button>
-    </div>
-
   </div>
-  <!-- <div *ngIf="dataReady" class="main-container">
-    stats for nerds
-    <br>
-    Length: {{this.totalPages.length}}
-    <br>
-    <div *ngIf="finalDocReady" class="two-column">
-      <h1>Final doc here</h1>
-      <div class="cell" *ngFor="let data of finalDocument.breaks | keyvalue">
-        <h2>Breaks for doc</h2>
-        {{data.key}} : {{data.value}}
-
-      </div>
-      <div class="cell" *ngFor="let data of finalDocument.data ">
-        <div *ngFor="let item of data">
-             {{item.text}}
-             {{item.pageNumber}}
-             {{item.page}}
-      </div>
-
-      </div>
-
-    </div>
-    <div *ngFor="let page of this.upload.pagesArr">
-      text : {{page[0].text}}       page: {{page[0].page}}
-    
-  </div> -->
-
-
-  </div>
+ </div>
 

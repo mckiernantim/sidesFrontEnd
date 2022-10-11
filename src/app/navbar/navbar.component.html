@@ -1,13 +1,15 @@
-<div class="navbar red">
-  <h3 class="nav-item left logo">SIDES-WAYS</h3>
-  <ul class="nav-links right">
-    <li *ngFor="let option of options; let i = index" class="right nav-item">
-      <a class="right" id="{{option.text}}" (click)="toggleHidden($event.target.id)"
-        routerLink="{{option.text}}">{{option.text}}</a>
-    </li>
-    <li *ngIf="this.auth.userData" class="right nav-item">{{this.auth.userData.email}}
-    </li>
-    <button *ngIf="this.auth.userData" class="right nav-item" (click)="this.auth.SignOut()">sign out
-    </button>
-  </ul>
-</div>
+<mat-toolbar color="primary">
+  <div class="navbar red">
+    <h3 class="nav-item left logo">SIDES-WAYS</h3>
+    <ul class="nav-links right">
+      <li *ngFor="let option of options; let i = index" class="right nav-item">
+        <button mat-flat-button color="primary-light" class="right" id="{{option.text}}" (click)="toggleHidden($event.target.id)"
+          routerLink="{{option.text}}">{{option.text.toUpperCase()}}</button>
+      </li>
+      <li *ngIf="this.auth.userData" class="right nav-item">{{this.auth.userData.email}}
+      </li>
+      <button *ngIf="this.auth.userData" class="right nav-item" (click)="this.auth.SignOut()">sign out
+      </button>
+    </ul>
+  </div>
+</mat-toolbar>
