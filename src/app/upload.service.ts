@@ -57,10 +57,6 @@ export class UploadService {
     }
 }
 
-  getCover(data) {
-    data.png = localStorage.getItem('callsheet');
-    return this.httpClient.post(this.url + '/cover', data);
-  }
 
   getPDF(name, callsheet) {
     let params = new HttpParams()

@@ -516,14 +516,15 @@ makeVisible(sceneArr, breaks) {
     this.finalDocReady = true;
   /// ***********  UPLOAD THE PDF FIRST THEN ONCE ITS DONE FIRE BACK THE COVER SHEET ***********
     this.upload.generatePdf(finalDocument).subscribe((data:pdfServerRes) => {
-      if (data.fileName) {
+     alert(data);
+     console.log(data,  "<----- DATA")
+      if (data.status === "complete") {
           this.dialog.closeAll();
-          this.coverReady = true;
-        }
-        if (this.coverReady) {
           this.router.navigate(['complete']);
-       }
-  });
+        } else {
+          alert("something went wrong")
+        }
+      });
 };
   
 

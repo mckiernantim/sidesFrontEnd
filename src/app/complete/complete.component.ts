@@ -1,3 +1,4 @@
+import { saveAs } from 'file-saver';
 import { UploadService } from './../upload.service';
 import { Component, OnInit } from '@angular/core';
 import { docChanges } from '@angular/fire/firestore';
@@ -19,11 +20,14 @@ export class CompleteComponent implements OnInit {
     this.downloadPDF();
   }
   downloadPDF(): void {
-  
-    let _dataSubscriptiopn = this.upload.getPDF(this.name, this.layout);
+  try {
+    let _dataSubscriptiopn = this.upload.getPDF(this.name, "whatever");
     _dataSubscriptiopn.subscribe((data) => {
-      var url = window.URL.createObjectURL(data);
-      window.open(url);
-    });
+       console.log(data)
+       let date =  new Date().toISOString().substring(0,10)
+        saveAs(data, `${this.name}-${date}.zip`, {type:"application/zip"})
+      })
+    } catch (e){ alert(e) }
+
   }
 }
