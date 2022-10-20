@@ -98,8 +98,10 @@ export class DashboardRightComponent implements OnInit {
     public upload: UploadService,
     public router: Router,
     public dialog: MatDialog,
+    public errorDialog: MatDialog,
     public lineOut: LineOutService,
-    private datePipe: DatePipe
+    private datePipe: DatePipe,
+   
   ) {
     // DATA ITEMS FOR FUN
     this.db = db;
@@ -111,6 +113,7 @@ export class DashboardRightComponent implements OnInit {
     this.funData = db.collection('funData');
     this.totalLines;
     this.scriptLength;
+   
   }
 
   ngOnInit(): void {
@@ -128,6 +131,7 @@ export class DashboardRightComponent implements OnInit {
     this.active = true;
     this.scriptProblems = [];
     this.modalData = [];
+  
 
     // SAVED ON THE SERVICE
 
@@ -516,15 +520,23 @@ makeVisible(sceneArr, breaks) {
     this.finalDocReady = true;
   /// ***********  UPLOAD THE PDF FIRST THEN ONCE ITS DONE FIRE BACK THE COVER SHEET ***********
     this.upload.generatePdf(finalDocument).subscribe((data:pdfServerRes) => {
-     alert(data);
-     console.log(data,  "<----- DATA")
-      if (data.status === "complete") {
-          this.dialog.closeAll();
-          this.router.navigate(['complete']);
-        } else {
-          alert("something went wrong")
-        }
+
+      this.dialog.closeAll();
+      this.router.navigate(['complete']);
+    },
+    (err) =>{
+      this.dialog.closeAll();
+     const errorRef =  this.errorDialog.open(IssueComponent, {
+        width: '60%',
+        data: {
+          err
+        },
       });
+      errorRef.afterClosed().subscribe((res) => {
+        console.log(res)
+      })
+    });
+    
 };
   
 

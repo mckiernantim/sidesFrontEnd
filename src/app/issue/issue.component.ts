@@ -40,9 +40,12 @@ export class IssueComponent implements OnInit, AfterViewInit {
   awaitingData: boolean = false;
   selectionMade: boolean = false;
   waitingForScript: boolean = false;
+  error:boolean = false;
+
   constructor(
     public upload: UploadService,
     public dialogRef: MatDialogRef<IssueComponent>,
+    public errorDialogRef: MatDialogRef<IssueComponent>,
     public cdr: ChangeDetectorRef,
     public auth: AuthService,
     @Inject(MAT_DIALOG_DATA) public data: any
@@ -57,7 +60,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
     this.loggedIn = true;
     this.data.waitingForScript
       ? (this.waitingForScript = true)
-      : (this.waitingForScript = false);
+      : (this.waitingForScript = false);;
     
   }
   ngAfterViewInit(): void {
@@ -76,10 +79,12 @@ export class IssueComponent implements OnInit, AfterViewInit {
 
   // need to give option for no callsheet
   handleFileInput(file) {
+    // adds the file and listens for response for callsheet upload
     file === 'no callsheet'
       ? (this.callsheetReady = true)
       : (this.awaitingData = true);
       this.upload.postCallSheet(file[0]).subscribe((data) => {
+        console.log(data)
         this.callsheet = file[0];
         localStorage.setItem("callSheetPath", data.filePath)
         this.docUploaded = true;
