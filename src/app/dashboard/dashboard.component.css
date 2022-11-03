@@ -1,6 +1,6 @@
 
 .main{
-    height: 100vh;
+    height: auto;
     grid-template-rows: 300px;
     text-align: center;
     /* background: var(--white); */
@@ -14,8 +14,8 @@
     background-repeat:no-repeat;
 
     margin:0 auto;
-    height:250px;
-    width:250px;
+    /* height:250px;
+    width:250px; */
 }
 
 @media screen and (max-width: 768px) {

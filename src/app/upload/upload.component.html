@@ -1,10 +1,6 @@
 <div *ngIf="working" class="spinner-overlay center">
   <mat-card-content>
-    <mat-progress-spinner
-      style="display: none"
-      mode="indeterminate"
-      value="0"
-    ></mat-progress-spinner>
+    <mat-progress-spinner style="display: none" mode="indeterminate" value="0"></mat-progress-spinner>
     <h3 class="spinner-text">Processing Script</h3>
     <div class="loading-image">
       <img class="spinner" src="../../assets/animations/ScriptBot_Animation.gif" />
@@ -14,59 +10,35 @@
 </div>
 <div class="form-group two-column left black">
   <div class="left-cell">
-    <div class="text-area">
-      <div class="upload-headline">
-        <h1 class="big-text type type-effect" style="padding-bottom: 1%">
-          Welcome to
-        </h1>
-        <h1 class="big-text type type-effect delay-0">
-           Sides-Ways
-        </h1>
-        </div>
-      <div class="upload-description">
-        <p>EXT.  FILM SET WHEREVER:</p>
-        <p class ="type type-effect delay-1"> 
-          AD's and PA's spend thousands of hours every year
-        </p>
-          <p class="type type-effect delay-2">
-            lining out sides to
-            hand out on set.</p>
-            <p class="type type-effect delay-3">
-              Thats a lot of time.
-            </p>
-            <p class="type type-effect delay-4">
-              <span>Enter: Sides-Ways</span>
-            </p>
-        </div>
-    </div>
-    <div class="left upload-description">
-      <div class="details">
-        <div class="feature-block">
-          <h4 class="feature-headline">Simple</h4>
-          <br />
-          <h4>We make sides for sets. Thats it.</h4>
-          <h4>No subscriptions. NOTHING saved. Just sides.</h4>
-        </div>
-        <div class="feature-block">
-          <h4 class="feature-headline">Safe</h4>
-          <br />
-          <h4>We're backed by Heroku and Google.</h4>
-          <h4>Your IP is protected at all times.</h4>
-        </div>
-        <div class="feature-block">
-          <h4 class="feature-headline">Secure</h4>
-          <br />
-          <h4>No one EVER sees script. We record nothing.</h4>
-          <h4>We dont even have a database</h4>
-       
-        </div>
-        <div class="learn-more-box">
-          <h3>Learn more <span class="arrow">→</span></h3>
+        <div>
+          <div class="typewriter">
+            <h1 class="display-2">
+              <strong >Welcome To 
+                Sides-Ways</strong>
+            </h1>
+          </div>
+          <div>
+
+          </div>
+          <div class="typewriter ">
+            <h2 class="delay-3">
+              We Makes Sides.
+            </h2>
+          </div>
+          <div class="typewriter">
+            <h2 class="delay-4">
+              For Free.
+            </h2>
+          </div>
+          <button mat-raised-button color = "primary" class="delay-6  reveal" routerLink="About">Learn More</button>
         </div>
       </div>
-    </div>
-  </div>
-  <div class="center right-cell">
+
+
+
+
+
+  <div class="center right-cell reveal">
     <mat-card class="upload-card">
       <mat-card-header>
         <div>
@@ -80,41 +52,23 @@
           <p>Built for pdfs made with Final draft, Studio Binder, or Celtx.</p>
           <div class="warning-text">
             <p>
-              <strong>For best results scripts must have a cover page, 
+              <strong>For best results scripts must have a cover page,
                 numbered pages, and properly formatted headers.
-                All PDFS should be formatted to industry standrd before you even GET here. 
+                All PDFS should be formatted to industry standrd before you even GET here.
                 <br>
                 We make sides, not scripts*.
               </strong>
             </p>
           </div>
         </div>
-     </mat-card-content>
-     <mat-card-actions>
-       <label class="upload-button">
-        UPLOAD SCRIPT PDF
-         <input mat-input
-           name="script"
-           enctype="multipart/form-data"
-           type="file"
-           id="script"
-           (change)="handleFileInput($event.target.files)"
-         />
+      </mat-card-content>
+      <mat-card-actions>
     
-       </label>
-     </mat-card-actions>
-     <div class="footnote">
-       <p>*or screenwriters.</p>
-     </div>
-   </mat-card>
- </div>
- 
- <div class="developer-tools">
-   <h4>Tools for nerds (ignore this stuff):</h4>
-   <button mat-raised-button (click)="this.upload.toggleUrl()"  color="primary">TOGGLE DEV</button>
-   <h5 class="red-text">current target : {{ this.upload.url }}</h5>
- 
+        <button type="button" mat-raised-button color ="warn" (click)="fileInput.click()">Upload Script PDF</button>
+<input hidden (change)="handleFileInput($event.target.files)"#fileInput type="file" id="file" accept="application/pdf">
+      </mat-card-actions>
+      <div class="footnote">
+        <p>*or screenwriters.</p>
+      </div>
+    </mat-card>
   </div>
-</div>
-
-  

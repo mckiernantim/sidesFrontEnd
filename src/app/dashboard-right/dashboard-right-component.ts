@@ -592,7 +592,7 @@ makeVisible(sceneArr, breaks) {
     }
   }
   getLastPage = (scene) => {
-  return this.scriptData[scene.lastLine].page || null;
+    return this.scriptData[scene.lastLine].page || null;
   };
   // this function renders an IssueComponent with 60% width
   openDialog() {
@@ -605,7 +605,7 @@ makeVisible(sceneArr, breaks) {
         let coverSheet = localStorage.getItem("callSheetPath")
         this.waitingForScript = true;
         console.log(result)
-        this.callsheet = result.callsheet.name || null;
+        this.callsheet = result.callsheet?.name || null;
         this.openFinalSpinner();
         this.getPdf(this.selected, this.script, this.totalPages, coverSheet );
       });

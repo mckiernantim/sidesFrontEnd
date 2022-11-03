@@ -1,4 +1,4 @@
-<mat-toolbar color="primary">
+<mat-toolbar color="accent-lighter">
   <div class="navbar red">
     <h3 class="nav-item left logo">SIDES-WAYS</h3>
     <ul class="nav-links right">
@@ -6,10 +6,13 @@
         <button mat-flat-button color="primary-light" class="right" id="{{option.text}}" (click)="toggleHidden($event.target.id)"
           routerLink="{{option.text}}">{{option.text.toUpperCase()}}</button>
       </li>
-      <li *ngIf="this.auth.userData" class="right nav-item">{{this.auth.userData.email}}
-      </li>
-      <button *ngIf="this.auth.userData" class="right nav-item" (click)="this.auth.SignOut()">sign out
+      <div *ngIf="this.auth.userData" class="right nav-item">
+      <label>
+        {{this.auth.userData.email}}
+      </label>
+      <button mat-raised-button color="warn"*ngIf="this.auth.userData" class="right nav-item" (click)="this.auth.SignOut()">sign out
       </button>
+      </div>
     </ul>
   </div>
 </mat-toolbar>

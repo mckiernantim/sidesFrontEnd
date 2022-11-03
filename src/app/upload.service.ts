@@ -32,7 +32,7 @@ export class UploadService {
   feedback:Observable<any>;
 
   urls = ['https://sides3.herokuapp.com', 'http://localhost:8080'];
-  url: string = this.urls[0];
+  url: string = this.urls[1];
   // AngularFirestore will manage all of our fundata and our tickets for feedback
   constructor(public httpClient: HttpClient, db:AngularFirestore) {
     this._db = db;
