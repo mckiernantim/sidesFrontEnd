@@ -22,13 +22,7 @@ const aboutTwo:Blurb = {
     image:"",
     title:`second`,
     align:"left",
-    text:`  We are Scott Thomas Reynolds and Tim McKiernan, two actor buds who met in college
-    wasting our time pretending to be animals and learning how to dance the Minuet.
-    
-    Shockingly, we didnt make any money after school.
-     Scott made his way to LA and and works in production.
-
-    Tim made his way to New York and learned to code.
+    text:` We are Scott Thomas Reynolds and Tim McKiernan, two actor buds who met in college wasting our time pretending to be animals and learning how to dance the Minuet. Shockingly, we didnt make any money after school. Scott made his way to LA and and works in production. Tim made his way to New York and learned to code.
    
     
    
@@ -41,10 +35,7 @@ const aboutThree:Blurb = {
     title:"three",
     align:"right",
     text:`
-    Working in production, Scott had to make sides. A lot of sides. SO MANY SIDES. By Hand. 
-    Enter Sides-Ways.
-    
-    Programs that make sides for either stuidply expensive or amazingly not useful.`
+    Working in production, Scott had to make sides. A lot of sides. SO MANY SIDES. By Hand. Enter Sides-Ways. Other programs that make sides are either stupidly expensive or amazingly not useful.`
 }
 const aboutFour:Blurb = {
     image:"",
@@ -53,16 +44,14 @@ const aboutFour:Blurb = {
     text:`
  
     
-    You got a properly formatted script? We can make your sides.
+    You got a properly formatted script? We can make your sides. Upload your PDF and select what scenes you're shooting. Attach a callsheet... and BOOK. We'll process the script and send you the sides. 
     
-    Upload your PDF and select what youre shooting. We'll process the script and send you the sides.
+
+    We're actors. We're Filmmakers. We make SIDES. 
+    Help us pay rent and buy burritos. Use Sides-Ways.
     
-    We're actors. We're Filmmakers. We make sides
-    
-    
-    Help us pay rent and buy burritos
-    
-    Use Sides-Ways
+  
+   
     -Scott and Tim`
 }
 

@@ -139,7 +139,7 @@ mat-card{
 .mat-card-header-text{
     display:none
 }
-@media only screen and (max-width: 769px){ 
+@media only screen and (max-width: 1200px){ 
     .two-column{
         grid-template-columns: 1fr;
     }
