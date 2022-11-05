@@ -1,67 +1,9 @@
-<div class="container ">
-  <div class="left two-column">
-    <div class="mobile">
-      <div class="half-width mobile">
-        <p>
-          {{blurbs[0].text}}
-        </p>
-      </div>
-      <div class="half-width mobile">
-        <p>
-          {{blurbs[1].text}}
-        </p>
-      </div>
-    </div>
+<div class="about-container">
+  <div *ngFor="let blurb of blurbs">
 
-      <div class="desktop">
-        <p>{{blurbs[0].text}}</p>
-      </div>
-      
-      
-      <div class="desktop">
-        <p>{{blurbs[1].text}}</p>
-      </div>
-
-      <div class="image-left desktop">
-        <div>
-          <img style="max-width: 40%" src="../../assets/icons/ScottHea.jpg">
-        </div>
-      </div>
-
-      <div class="image-right">
-        <div>
-          <img style="max-width: 40%" src="../../assets/icons/timHead.jpg">
-        </div>
-      </div>
-    
-
-    <div class="mobile-images mobile">
-      <div>
-        <img class="mobile-image" style="max-width: 40%" src="../../assets/icons/ScottHea.jpg">
-        <img class="mobile-image" style="max-width: 40%" src="../../assets/icons/timHead.jpg">
-      </div>
-    </div>
-
-    <div class="mobile blurb">
-      <p [innerHTML]="blurbs[2].text"></p>
-    </div>
-    <div class="mobile blurb">
-      <p [innerHTML]="blurbs[3].text">
-        </p>
-      </div>
-      <div>
-        <p [innerHTML]="blurbs[2].text"></p>
-      </div>
-    
+    <app-text-block [image]="blurb.image" [text]="blurb.text" [align]="blurb.align"></app-text-block>
   </div>
-  <div class="right two-column desktop">
-   
-    <div class = "desktop bottom">
-      <p [innerHTML]="blurbs[3].text">
-        </p>
-    </div>
-  </div>
-  <div class = "desktop bottom">
-    <p [innerHTML]="blurbs[4].text"></p>
-  </div>
+  <button mat-raised-button href="">DONATE</button>
+  <p> Give us MONEY please. We are free while in BETA, but still need to eat (and drink beer). </p>
+
 </div>

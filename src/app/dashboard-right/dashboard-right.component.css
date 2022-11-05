@@ -2,7 +2,7 @@ li{
     list-style-type: none;
 }
 .cell{
-    padding: 0 5% 5% 5%;
+    padding: 0 5% 1% 5%;
 }
 tr, th{
   text-shadow: black 1px 1px;

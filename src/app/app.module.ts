@@ -47,6 +47,7 @@ import { DonateComponent } from './donate/donate.component';
 import { FeedbackComponent } from './feedback/feedback.component';
 import { FourOfourComponent } from './four-ofour/four-ofour.component'
 import { AuthGuardService } from './auth-guard.service';
+import { TextBlockComponent } from './text-block/text-block.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -63,7 +64,8 @@ import { AuthGuardService } from './auth-guard.service';
     AboutComponent,
     DonateComponent,
     FeedbackComponent,
-    FourOfourComponent
+    FourOfourComponent,
+    TextBlockComponent
   ],
   imports: [
     AngularFireModule.initializeApp(environment.firebaseConfig, 'sideWays'),

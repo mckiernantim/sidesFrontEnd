@@ -83,15 +83,25 @@ export class IssueComponent implements OnInit, AfterViewInit {
     file === 'no callsheet'
       ? (this.callsheetReady = true)
       : (this.awaitingData = true);
-      this.upload.postCallSheet(file[0]).subscribe((data) => {
-        console.log(data)
-        this.callsheet = file[0];
-        localStorage.setItem("callSheetPath", data.filePath)
+      if (file === "no callsheet" ) {
+        localStorage.setItem("callSheetPath", null)
+        this.callsheet = null;
         this.docUploaded = true;
         this.callsheetReady = true;
         this.awaitingData = false;
-      });
+      
+      } else {
+        this.upload.postCallSheet(file[0]).subscribe((data) => {
+          console.log(data)
+          this.callsheet = file[0];
+          localStorage.setItem("callSheetPath", data.filePath)
+          this.docUploaded = true;
+          this.callsheetReady = true;
+          this.awaitingData = false;
+        });
+      }
     }
+
   selectOption(option) {
     this.selectionMade = true;
     this.selected = option;

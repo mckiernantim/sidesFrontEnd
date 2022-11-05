@@ -9,41 +9,85 @@
 
 /* Animation */
 .type-effect {
-  animation: animated-text  .75s steps(30,end)  normal both
+  animation: animated-text  .75s steps(30, end)  normal both
 }
-.delay-0{
-    animation-delay: 1s !important
-}
-.delay-1{
-    animation-delay: 1.25s !important
-}
-.delay-2{
-    animation-delay: 1.75s !important
-}
-.delay-3{
-    animation-delay: 2.25s !important
-}
-.delay-4{
-    animation-delay: 3s !important
-}
+
 
 #border {
    animation: animated-cursor 600ms steps(30,end) infinite;
 }
 
 /* text animation */
+.typewriter h1 {
+    width:0;
+    border-right: .15em solid black;
+    overflow: hidden;
+/* Ensures the content is not revealed until the animation */ /* The typwriter cursor */
+    white-space: nowrap; /* Keeps the content on a single line */
+    margin: 0 auto; /* Gives that scrolling effect as the typing happens */
+    letter-spacing: .15em; /* Adjust as needed */
+    animation: 
+    typing 1.5s steps(40, end),
+    blink-caret .75s step-end infinite;
+    animation-fill-mode: forwards;
+    animation-delay:.5s;
+    line-height: normal;
+    font-size:2.75rem;
 
-@keyframes animated-text{
-  from{width: 0px;}
-  to{width: 100%;}
+  }
+  .typewriter h2 {
+  width:0;
+/* Ensures the content is not revealed until the animation */ /* The typwriter cursor */
+overflow:hidden;
+    white-space: nowrap; /* Keeps the content on a single line */
+    margin: 0 50% 0 0; /* Gives that scrolling effect as the typing happens */
+    letter-spacing: .15em; /* Adjust as needed */
+    animation: 
+    typing .75s steps(20),
+    blink-caret .75s step-end infinite;
+    animation-fill-mode: forwards;
+    animation-delay: 1.5s;
+    line-height: normal;
+    font-size: 2rem;
+    margin:20px 0px
+
+  }
+ 
+  
+.reveal {
+    opacity: 0 ;
+    animation: reveal 1.25s, forwards ease-in;
+    animation-fill-mode: forwards;
+    animation-delay:.5s
 }
+
+.delay-3 {
+    animation-delay:2.5s !important
+}
+  .delay-4 {
+    animation-delay: 4s !important;
+  }
+  .delay-6 {
+    animation-delay: 5s !important;
+  }
+  @keyframes reveal {
+    from {opacity: 0 }
+    to{opacity:100}
+  }
+  /* The typing effect */
+  @keyframes typing {
+    from { width: 0; }
+    to { width: 100%; }
+} 
+@keyframes blink-caret {
+    from, to { border-color: transparent; }
+    50% { border-color: black; }
+  }
+
 
 /* cursor animations */
 
-@keyframes animated-cursor{
-  from{border-bottom-color: rgba(0,255,0,.75);}
-  to{border-bottom-color: transparent;}
-}
+
 body{
     padding: 40px;
     background-color: #121212;  
@@ -194,7 +238,7 @@ h4{
     max-height:95vh;
     height:auto;
     grid-template-columns:1fr 1fr ;
-    padding:2% 3%;
+    padding:1% 0%;
     
 }
 .feature-block{
