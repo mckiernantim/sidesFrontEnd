@@ -52,7 +52,9 @@ overflow:hidden;
     margin:20px 0px
 
   }
- 
+ .blurb {
+    margin-left: 50px
+ }
   
 .reveal {
     opacity: 0 ;

@@ -2,3 +2,10 @@ p {
     font-size: 1.2rem;
 }
 
+
+.blurb {
+    margin-left:25px
+}
+.header p{
+    font-weight: 900 !important;
+}

@@ -1,3 +1,4 @@
+
 import { saveAs } from 'file-saver';
 import { AngularFirestore } from '@angular/fire/firestore';
 import { Injectable } from '@angular/core';
@@ -10,7 +11,7 @@ import {
   HttpParams,
 } from '@angular/common/http';
 import { FeedbackTicket } from './feedback/feedbackTicket';
-
+import { environment } from 'src/environments/environment';
 @Injectable({
   providedIn: 'root',
 })
@@ -19,7 +20,7 @@ export class UploadService {
   httpOptions = {
     headers: null,
     params: null,
-    responseType: null,
+    responseType: null
   };
   lineArr: any;
   lineCount: any;
@@ -31,8 +32,7 @@ export class UploadService {
   funData: Observable<any>;
   feedback:Observable<any>;
 
-  urls = ['https://sides3.herokuapp.com', 'http://localhost:8080'];
-  url: string = this.urls[0];
+  private url:string = environment.url
   // AngularFirestore will manage all of our fundata and our tickets for feedback
   constructor(public httpClient: HttpClient, db:AngularFirestore) {
     this._db = db;
@@ -103,13 +103,13 @@ export class UploadService {
       responseType: null,
     };
   }
-  toggleUrl() {
-    if (this.url != this.urls[0]) {
-      this.url = this.urls[0];
-    } else {
-      this.url = this.urls[1];
-    }
-  }
+  // toggleUrl() {
+  //   if (this.url != this.urls[0]) {
+  //     this.url = this.urls[0];
+  //   } else {
+  //     this.url = this.urls[1];
+  //   }
+  // }
  
   // get classified data
   postFile(fileToUpload: File): Observable<any> {

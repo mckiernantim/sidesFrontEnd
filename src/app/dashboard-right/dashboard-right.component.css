@@ -72,7 +72,11 @@ tr, th{
   .slider.round:before {
     border-radius: 50%;
   }
+.table-container {
+  overflow: auto;
+  max-height:70vh;
 
+}
 
   @media screen and (max-width: 768px) {
   .mat-cell{
@@ -92,3 +96,4 @@ tr, th{
      max-width: 380px;
    }
 }
+
