@@ -1,0 +1,22 @@
+mat-card {
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    overflow:hidden;
+    text-align:center
+
+}
+
+mat-card, img {
+    height:auto;
+    overflow:hidden;
+    margin: 0 auto
+    
+    
+}
+
+h2 {
+    text-align: center;
+}
