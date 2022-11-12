@@ -43,9 +43,15 @@
   .sidenav {
     display: none;
   }
+
 }
 @media (max-width: 767px) {
-  .navbar {
+  .nav-item {
     display:none;
   }
+  .sidenav-container {
+    height: 95%;
+    width: auto;
+}
+
 }
