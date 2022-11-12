@@ -1,9 +1,17 @@
-import { MatInputModule } from '@angular/material/input';
+import { SpinningBotComponent } from './../spinning-bot/spinning-bot.component';
+import { MatDialogModule } from '@angular/material/dialog';
+import  { MatGridList } from '@angular/material/grid-list'
 import { AngularFirestore } from '@angular/fire/firestore';
 import { Observable, Subscription } from 'rxjs';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { UploadService } from '../upload.service';
 import { Router } from '@angular/router';
+import {
+  MatDialog,
+  MAT_DIALOG_DATA,
+  MatDialogRef,
+} from '@angular/material/dialog';
+
 
 
 @Component({
@@ -12,7 +20,7 @@ import { Router } from '@angular/router';
   styleUrls: ['./upload.component.css'],
 })
 export class UploadComponent implements OnInit, OnDestroy {
-  
+
   fileToUpload: File;
   funData: Observable<any>;
   feedback: Observable<any>;
@@ -34,7 +42,9 @@ export class UploadComponent implements OnInit, OnDestroy {
   constructor(
     public db: AngularFirestore,
     public upload: UploadService,
-    public router: Router
+    public router: Router,
+    public dialog:MatDialog
+  
   ) {
     this.db = db;
     this.funData = this.upload.funData;
@@ -49,11 +59,12 @@ export class UploadComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.working = false;
+    localStorage.setItem("name", null)
     console.log(this.feedback);
     console.log(this.funData);
     console.log(this.totalLines, this.totalScenes, this.totalTickets);
   };
-  
+
   ngOnDestroy(): void {
     //Called once, before the instance is destroyed.
     //Add 'implements OnDestroy' to the class.
@@ -66,11 +77,23 @@ export class UploadComponent implements OnInit, OnDestroy {
     ) || "2.";
     return missingTwo;
   };
+  openDialog(data) {
+    if (this.working) {
+      const dialogRef = this.dialog.open(SpinningBotComponent, {
+        width: '60%',
+        data:data
+      });
+      dialogRef.afterClosed().subscribe((result) => {
+
+      });
+    };
+  }
   
   handleFileInput(files: FileList) {
     console.log('firing over script');
     this.working = true;
     this.fileToUpload = files.item(0);
+    this.openDialog( this.fileToUpload.name )
     localStorage.setItem('name', this.fileToUpload.name.replace(/.pdf/, ''));
     // upload our script
     this.$script_data = this.upload.postFile(this.fileToUpload);
@@ -91,6 +114,8 @@ export class UploadComponent implements OnInit, OnDestroy {
         'your IP is safe. ' + data[3] + ' was just deleted from our servers.'
       );
       data.pop();
+      this.dialog.closeAll()
+
       this.router.navigate(['download']);
     });
   }

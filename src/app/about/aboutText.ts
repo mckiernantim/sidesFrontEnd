@@ -6,11 +6,11 @@ export interface Blurb {
  
 }
 const aboutHeaderOne = {
-    text: `INT:  SCOTT"S HOUSE, PROBABLY.  LA.  COVID LOCKDOWN`,
+    text: `INT:  SCOTT'S HOUSE, PROBABLY -  LA. - COVID LOCKDOWN - DAY`,
     align: "header"
 }
 const aboutHeaderTwo = {
-    text: `INT:  TIM'S APARTMENT.  RIDGEWOOD, QUEENS.`,
+    text: `INT:  TIM'S APARTMENT -   RIDGEWOOD, QUEENS - LATE DAY`,
     align: "header"
 }
 const aboutOne : Blurb = {
@@ -54,7 +54,7 @@ const aboutFour:Blurb = {
     text:`
  
     
-    You got a properly formatted script? We can make your sides. Upload your PDF and select what scenes you're shooting. Attach a callsheet... and BOOK. We'll process the script and send you the sides. 
+    You got a properly formatted script? We can make your sides. Upload your PDF and select what scenes you're shooting. Attach a callsheet... and BOOM. We'll process the script and send you the sides. 
     `
 }
 const aboutFive:Blurb = {
@@ -72,7 +72,7 @@ const aboutSix:Blurb = {
     align:"blurb",
     text:
     ` We're actors. We're Filmmakers. We make SIDES. 
-    Help us learn to do it better. 
+    Help us learn to do it better.   Use Sides-Ways to make your sides.
 `
    
 }
