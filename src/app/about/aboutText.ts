@@ -29,13 +29,7 @@ const aboutTwo:Blurb = {
     image:"",
     title:`second`,
     align:"left",
-    text:`  We are Scott Thomas Reynolds and Tim McKiernan, two actor buds who met in college
-    wasting our time pretending to be animals and learning how to dance the Minuet.
-    
-    Shockingly, we didnt make any money after school.
-     Scott made his way to LA and and works in production.
-
-    Tim made his way to New York and learned to code.
+    text:` We are Scott Thomas Reynolds and Tim McKiernan, two actor buds who met in college wasting our time pretending to be animals and learning how to dance the Minuet. Shockingly, we didnt make any money after school. Scott made his way to LA and and works in production. Tim made his way to New York and learned to code.
    
     
    
@@ -48,10 +42,7 @@ const aboutThree:Blurb = {
     title:"three",
     align:"right",
     text:`
-    Working in production, Scott had to make sides. A lot of sides. SO MANY SIDES. By Hand. 
-    Enter Sides-Ways.
-    
-    Programs that make sides for either stuidply expensive or amazingly not useful.`
+    Working in production, Scott had to make sides. A lot of sides. SO MANY SIDES. By Hand. Enter Sides-Ways. Other programs that make sides are either stupidly expensive or amazingly not useful.`
 }
 const aboutFour:Blurb = {
     image:"",
