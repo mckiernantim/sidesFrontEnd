@@ -19,6 +19,7 @@ import { LayoutModule } from '@angular/cdk/layout';
 // material stuff
 
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatGridListModule} from '@angular/material/grid-list'
 import { MatButtonModule } from '@angular/material/button';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatIconModule } from '@angular/material/icon';
@@ -48,6 +49,8 @@ import { FeedbackComponent } from './feedback/feedback.component';
 import { FourOfourComponent } from './four-ofour/four-ofour.component'
 import { AuthGuardService } from './auth-guard.service';
 import { TextBlockComponent } from './text-block/text-block.component';
+import { MainNavComponent } from './main-nav/main-nav.component';
+import { SpinningBotComponent } from './spinning-bot/spinning-bot.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -65,7 +68,9 @@ import { TextBlockComponent } from './text-block/text-block.component';
     DonateComponent,
     FeedbackComponent,
     FourOfourComponent,
-    TextBlockComponent
+    TextBlockComponent,
+    MainNavComponent,
+    SpinningBotComponent
   ],
   imports: [
     AngularFireModule.initializeApp(environment.firebaseConfig, 'sideWays'),
@@ -89,6 +94,8 @@ import { TextBlockComponent } from './text-block/text-block.component';
     MatDialogModule,
     MatCardModule,
     MatProgressSpinnerModule,
+    MatGridListModule
+  
     
  
   ],

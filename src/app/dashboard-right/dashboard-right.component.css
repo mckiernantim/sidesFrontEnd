@@ -74,6 +74,9 @@ tr, th{
   }
 
 
+table{
+  width:100%;
+}
   @media screen and (max-width: 768px) {
   .mat-cell{
     text-overflow: ellipsis; 

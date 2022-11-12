@@ -1,5 +1,4 @@
 import { LineOutService } from './../line-out.service';
-import { saveAs } from 'file-saver';
 import { Observable } from 'rxjs';
 import { IssueComponent } from './../issue/issue.component';
 import { Router } from '@angular/router';
@@ -20,17 +19,16 @@ import {
   MAT_DIALOG_DATA,
   MatDialogRef,
 } from '@angular/material/dialog';
-import { SelectionModel } from '@angular/cdk/collections';
+
 import { Subscription } from 'rxjs';
-import { last, first, flatMap, catchError } from 'rxjs/operators';
-import text from 'body-parser/lib/types/text';
+
+
 import { DatePipe } from '@angular/common';
 import {
   AngularFirestore,
   AngularFirestoreCollection,
 } from '@angular/fire/firestore';
-import { FindValueOperator } from 'rxjs/internal/operators/find';
-import { Console } from 'console';
+
 
 export interface pdfServerRes {
   status:string
@@ -54,9 +52,7 @@ export class DashboardRightComponent implements OnInit {
   scriptData;
   displayedColumns: string[] = [
     'number',
-    'page number',
     'text',
-    'preview',
     'select',
   ];
   dataSource: MatTableDataSource<any>;

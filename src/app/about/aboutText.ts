@@ -5,7 +5,14 @@ export interface Blurb {
     image?:string,
  
 }
-
+const aboutHeaderOne = {
+    text: `INT:  SCOTT'S HOUSE, PROBABLY -  LA. - COVID LOCKDOWN - DAY`,
+    align: "header"
+}
+const aboutHeaderTwo = {
+    text: `INT:  TIM'S APARTMENT -   RIDGEWOOD, QUEENS - LATE DAY`,
+    align: "header"
+}
 const aboutOne : Blurb = {
     image:"",
     title:`first`,
@@ -53,17 +60,36 @@ const aboutFour:Blurb = {
     text:`
  
     
-    You got a properly formatted script? We can make your sides.
-    
-    Upload your PDF and select what youre shooting. We'll process the script and send you the sides.
-    
-    We're actors. We're Filmmakers. We make sides
-    
-    
-    Help us pay rent and buy burritos
-    
-    Use Sides-Ways
-    -Scott and Tim`
+    You got a properly formatted script? We can make your sides. Upload your PDF and select what scenes you're shooting. Attach a callsheet... and BOOM. We'll process the script and send you the sides. 
+    `
+}
+const aboutFive:Blurb = {
+    image:"",
+    title:"fifth",
+    align:"blurb",
+    text:
+    `Sides-ways is currently in our free open Beta. We need users to throws scripts our way so we can figure out anything we missed during production.
+    We're commited to creating an affordable, useful solution for generating film set documentaition.  
+   `
+}
+const aboutSix:Blurb = {
+    image:"",
+    title:"sixth",
+    align:"blurb",
+    text:
+    ` We're actors. We're Filmmakers. We make SIDES. 
+    Help us learn to do it better.   Use Sides-Ways to make your sides.
+`
+   
+}
+const aboutSeven:Blurb = {
+    image:"",
+    title:"sixth",
+    align:"blurb",
+    text:
+    `- Scott and Tim` 
+
+   
 }
 
 export const blurbs:Blurb[] = [ aboutOne, aboutOneFive, aboutTwo, aboutThree, aboutFour]
