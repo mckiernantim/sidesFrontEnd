@@ -1,6 +1,6 @@
 
 import { saveAs } from 'file-saver';
-import { AngularFirestore } from '@angular/fire/firestore';
+import { AngularFirestore, DocumentReference } from '@angular/fire/firestore';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
@@ -12,25 +12,32 @@ import {
 } from '@angular/common/http';
 import { FeedbackTicket } from './feedback/feedbackTicket';
 import { environment } from 'src/environments/environment';
+
 @Injectable({
   providedIn: 'root',
 })
+
 export class UploadService {
+  // values from script
   script: string;
+  // lines
+  lineArr: string[];
+  lineCount: any;
+  pagesArr: any[];
+  // old DB valies
+  issues: any;
+  coverSheet: any;
+  // db and return values
+  _db:AngularFirestore
+  funData: Observable<any>;
+  feedback:Observable<any>;
+
   httpOptions = {
     headers: null,
     params: null,
     responseType: null
   };
-  lineArr: any;
-  lineCount: any;
-  pagesArr: any;
-  issues: any;
-  coverSheet: any;
   msg: any;
-  _db:AngularFirestore
-  funData: Observable<any>;
-  feedback:Observable<any>;
 
   private url:string = environment.url
   // AngularFirestore will manage all of our fundata and our tickets for feedback
@@ -49,8 +56,14 @@ export class UploadService {
         category: category,
         date: date 
       })
-      .then((doc) => { 
-        alert(`ticket #${doc.id} has been recorded` )});
+      .then((doc:DocumentReference<FeedbackTicket>) => { 
+        console.log(doc)
+        alert(`
+         We've recorded your issues with: ${title}
+        Thanks for helping make SidesWays better.
+      `)
+
+        })
     } catch (err) {
       console.log(err);
       alert(err)

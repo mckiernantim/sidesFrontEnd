@@ -1,12 +1,15 @@
 import { UploadService } from './../upload.service';
 import { Component, Input, OnInit } from '@angular/core';
 import { FeedbackTicket } from './feedbackTicket';
-import { FormsModule } from '@angular/forms';
+import { Form } from '@angular/forms';
+
 @Component({
   selector: 'app-feedback',
   templateUrl: './feedback.component.html',
   styleUrls: ['./feedback.component.css'],
-})
+}) 
+
+
 export class FeedbackComponent implements OnInit {
   categories = [
     'Select',
@@ -18,7 +21,7 @@ export class FeedbackComponent implements OnInit {
     'Incorrect Spacing'
   ];
   model: FeedbackTicket;
-  date:number = Date.now()
+  date:number = 0;
   @Input()title:string
   constructor(public upload: UploadService) {}
   ngOnInit(): void {
@@ -26,6 +29,7 @@ export class FeedbackComponent implements OnInit {
   }
 
   onSubmit() {
+    this.model.date = new Date().toISOString()
     this.upload.postFeedback(this.model);
     this.resetForm()
   }

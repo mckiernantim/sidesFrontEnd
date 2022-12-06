@@ -316,6 +316,7 @@ label.upload-button input[type="file"] {
         opacity: 1;
         width:100%;
         animation: none;
+        text-align: center;
     }
     .typewriter h2, .learn-more-button{
         display: none;
