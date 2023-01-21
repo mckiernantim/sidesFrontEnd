@@ -40,6 +40,7 @@ import { MatProgressSpinnerModule} from "@angular/material/progress-spinner"
 import { AngularFireModule } from '@angular/fire';
 import { environment } from '../environments/environment';
 import { AngularFirestoreModule } from '@angular/fire/firestore';
+import { AngularFireAnalyticsModule } from '@angular/fire/analytics'
 import { AngularFireAuthModule } from '@angular/fire/auth';
 import { DualDialogComponent } from './dual-dialog/dual-dialog.component';
 import { FooterComponent } from './footer/footer.component';
@@ -74,6 +75,7 @@ import { SpinningBotComponent } from './spinning-bot/spinning-bot.component';
   ],
   imports: [
     AngularFireModule.initializeApp(environment.firebaseConfig, 'sideWays'),
+    AngularFireAnalyticsModule,
     AngularFireModule,
     AngularFirestoreModule,
     BrowserModule,
