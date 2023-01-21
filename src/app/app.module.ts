@@ -53,62 +53,56 @@ import { TextBlockComponent } from './text-block/text-block.component';
 import { MainNavComponent } from './main-nav/main-nav.component';
 import { SpinningBotComponent } from './spinning-bot/spinning-bot.component';
 @NgModule({
-  declarations: [
-    AppComponent,
-    UploadComponent,
-    DashboardRightComponent,
-    DashboardComponent,
-    NavbarComponent,
-    NavComponent,
-    ScriptComponent,
-    CompleteComponent,
-    IssueComponent,
-    DualDialogComponent,
-    FooterComponent,
-    AboutComponent,
-    DonateComponent,
-    FeedbackComponent,
-    FourOfourComponent,
-    TextBlockComponent,
-    MainNavComponent,
-    SpinningBotComponent
-  ],
-  imports: [
-    AngularFireModule.initializeApp(environment.firebaseConfig, 'sideWays'),
-    AngularFireAnalyticsModule,
-    AngularFireModule,
-    AngularFirestoreModule,
-    BrowserModule,
-    AppRoutingModule,
-    HttpClientModule,
-    BrowserAnimationsModule,
-    LayoutModule,
-    FormsModule,
-    MatToolbarModule,
-    MatButtonModule,
-    MatSidenavModule,
-    MatIconModule,
-    MatListModule,
-    MatInputModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatSortModule,
-    MatDialogModule,
-    MatCardModule,
-    MatProgressSpinnerModule,
-    MatGridListModule
-  
-    
- 
-  ],
-  providers: [ 
-    DatePipe,
-    UploadService,
-    AuthGuardService
-  ],
-  entryComponents: [
-    IssueComponent
-  ],
-  bootstrap: [AppComponent]
+    declarations: [
+        AppComponent,
+        UploadComponent,
+        DashboardRightComponent,
+        DashboardComponent,
+        NavbarComponent,
+        NavComponent,
+        ScriptComponent,
+        CompleteComponent,
+        IssueComponent,
+        DualDialogComponent,
+        FooterComponent,
+        AboutComponent,
+        DonateComponent,
+        FeedbackComponent,
+        FourOfourComponent,
+        TextBlockComponent,
+        MainNavComponent,
+        SpinningBotComponent
+    ],
+    imports: [
+        AngularFireModule.initializeApp(environment.firebaseConfig, 'sideWays'),
+        AngularFireAnalyticsModule,
+        AngularFireModule,
+        AngularFirestoreModule,
+        BrowserModule,
+        AppRoutingModule,
+        HttpClientModule,
+        BrowserAnimationsModule,
+        LayoutModule,
+        FormsModule,
+        MatToolbarModule,
+        MatButtonModule,
+        MatSidenavModule,
+        MatIconModule,
+        MatListModule,
+        MatInputModule,
+        MatTableModule,
+        MatPaginatorModule,
+        MatSortModule,
+        MatDialogModule,
+        MatCardModule,
+        MatProgressSpinnerModule,
+        MatGridListModule
+    ],
+    providers: [
+        DatePipe,
+        UploadService,
+        AuthGuardService
+    ],
+    bootstrap: [AppComponent]
 })
 export class AppModule { }
