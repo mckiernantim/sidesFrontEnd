@@ -1,6 +1,5 @@
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { AuthService } from '../auth.service';
-import { User } from 'firebase';
 @Component({
   selector: 'app-navbar',
   templateUrl: './navbar.component.html',
@@ -30,7 +29,7 @@ export class NavbarComponent implements OnInit {
     return target.selected ? false : true
   }
   ngOnInit(): void {
-    
+
   }
 
 }

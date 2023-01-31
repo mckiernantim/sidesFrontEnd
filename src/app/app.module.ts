@@ -1,7 +1,5 @@
 import { UploadService } from './upload.service';
-import { Observable } from 'rxjs';
 import { HttpClientModule } from '@angular/common/http';
-
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { DatePipe } from '@angular/common'
@@ -37,11 +35,10 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule} from "@angular/material/progress-spinner"
 
 // Firebase
-import { AngularFireModule } from '@angular/fire';
+import { provideFirebaseApp, getApp, initializeApp } from '@angular/fire/app';
+import { getFirestore, provideFirestore } from '@angular/fire/firestore';
+import { AngularFireModule } from '@angular/fire/compat';
 import { environment } from '../environments/environment';
-import { AngularFirestoreModule } from '@angular/fire/firestore';
-import { AngularFireAnalyticsModule } from '@angular/fire/analytics'
-import { AngularFireAuthModule } from '@angular/fire/auth';
 import { DualDialogComponent } from './dual-dialog/dual-dialog.component';
 import { FooterComponent } from './footer/footer.component';
 import { AboutComponent } from './about/about.component';
@@ -52,6 +49,7 @@ import { AuthGuardService } from './auth-guard.service';
 import { TextBlockComponent } from './text-block/text-block.component';
 import { MainNavComponent } from './main-nav/main-nav.component';
 import { SpinningBotComponent } from './spinning-bot/spinning-bot.component';
+import { AdminComponent } from './admin/admin.component';
 @NgModule({
     declarations: [
         AppComponent,
@@ -71,13 +69,12 @@ import { SpinningBotComponent } from './spinning-bot/spinning-bot.component';
         FourOfourComponent,
         TextBlockComponent,
         MainNavComponent,
-        SpinningBotComponent
+        SpinningBotComponent,
+        AdminComponent
     ],
     imports: [
-        AngularFireModule.initializeApp(environment.firebaseConfig, 'sideWays'),
-        AngularFireAnalyticsModule,
-        AngularFireModule,
-        AngularFirestoreModule,
+        provideFirebaseApp(() => initializeApp(environment.firebaseConfig, "sides-ways" )),
+        provideFirestore(() => getFirestore()),
         BrowserModule,
         AppRoutingModule,
         HttpClientModule,
@@ -85,6 +82,7 @@ import { SpinningBotComponent } from './spinning-bot/spinning-bot.component';
         LayoutModule,
         FormsModule,
         MatToolbarModule,
+        MatCardModule,
         MatButtonModule,
         MatSidenavModule,
         MatIconModule,

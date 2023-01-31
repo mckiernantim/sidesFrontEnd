@@ -5,8 +5,8 @@
    <div>
      <label for="category">Category</label>
      <br>
-     <select class="form-control" name="category" id="category" required [(ngModel)]="model.category">
-       <option *ngFor="let cat of categories"  [ngValue]="cat">{{cat}}</option>
+     <select class="form-control" name="category" id="category" required [(ngModel)]="currentTicket.category">
+       <option *ngFor="let cat of categories"  [ngValue]="cat">{{ cat }}</option>
      </select>
      <br>
      <button mat-raised-button color="primary-light" type="submit" [disabled]="feedbackForm.form.pristine || !feedbackForm.valid">Submit</button>
@@ -14,7 +14,7 @@
     <div>
       <label for="">Description</label>
       <br>
-      <textarea class="form-control"  required id="text" required [(ngModel)]="model.text" placeholder="Describe any issues" name="text"></textarea>
+      <textarea class="form-control"  required id="text" required [(ngModel)]="currentTicket.text" placeholder="Describe any issues" name="text"></textarea>
     </div>
   </form>
 </div>

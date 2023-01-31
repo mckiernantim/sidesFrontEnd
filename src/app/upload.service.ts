@@ -1,6 +1,6 @@
 
 import { saveAs } from 'file-saver';
-import { AngularFirestore, DocumentReference } from '@angular/fire/firestore';
+import { AngularFirestore, DocumentReference, AngularFirestoreDocument } from '@angular/fire/compat/Firestore';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
@@ -12,6 +12,7 @@ import {
 } from '@angular/common/http';
 import { FeedbackTicket } from './feedback/feedbackTicket';
 import { environment } from 'src/environments/environment';
+
 
 @Injectable({
   providedIn: 'root',
@@ -28,7 +29,7 @@ export class UploadService {
   issues: any;
   coverSheet: any;
   // db and return values
-  _db:AngularFirestore
+  _db:AngularFirestore;
   funData: Observable<any>;
   feedback:Observable<any>;
 
@@ -40,23 +41,24 @@ export class UploadService {
   msg: any;
 
   private url:string = environment.url
-  // AngularFirestore will manage all of our fundata and our tickets for feedback
+  // Firestore will manage all of our fundata and our tickets for feedback
   constructor(public httpClient: HttpClient, db:AngularFirestore) {
     this._db = db;
     this.feedback = db.collection("feedbackTickets").valueChanges()
     this.funData = db.collection("funData").valueChanges()
   }
   postFeedback(ticket:FeedbackTicket){
-    // not sure why this doesn't work with custom class 
+    // not sure why this doesn't work with custom class
     const { text, title, category, date } = ticket
     try {
       this._db.collection("feedbackTickets").add({
         text: text,
         title: title,
         category: category,
-        date: date 
+        date: date,
+        email:localStorage.getItem("user")
       })
-      .then((doc:DocumentReference<FeedbackTicket>) => { 
+      .then((doc:DocumentReference<FeedbackTicket>) => {
         console.log(doc)
         alert(`
          We've recorded your issues with: ${title}
@@ -96,7 +98,7 @@ export class UploadService {
     });
   }
  getTestJSON(name){
-  
+
    let params = new HttpParams();
     params.append('name', name);
     this.httpOptions.params = params;
@@ -105,7 +107,7 @@ export class UploadService {
     return this.httpClient.post(this.url + '/testing', this.script )
   }
 
-   
+
   makeJSON(data) {
     return this.httpClient.post(this.url + '/download', data);
   }
@@ -123,8 +125,8 @@ export class UploadService {
   //     this.url = this.urls[1];
   //   }
   // }
- 
-  // get classified data
+
+  // get classified data => returns observable for stuff to plug into
   postFile(fileToUpload: File): Observable<any> {
     this.resetHttpOptions();
     this.script = localStorage.getItem('name');
@@ -142,7 +144,7 @@ export class UploadService {
   generatePdf(sceneArr) {
     let params = new HttpParams()
       .append('name', sceneArr.name)
-     
+
     this.httpOptions.headers = new Headers();
     this.httpOptions.params = params;
     this.httpOptions.responseType = 'blob';

@@ -4,6 +4,7 @@ export class FeedbackTicket {
       public category: string,
       public text: string,
       public date: string,
-      private submitted:boolean
+      private submitted:boolean,
+      public email:string
     ) {}
   } 
