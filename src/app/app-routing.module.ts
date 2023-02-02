@@ -12,15 +12,15 @@ import { AuthGuard } from './guards/auth.guard';
 
 
 const routes: Routes = [
-  { 
-    path: 'download', 
+  {
+    path: 'download',
     component: DashboardComponent,
   },
-  // {
-  //   path:"super-secret",
-  //   component: AdminComponent,
-  // },
-  { path: 'complete', 
+  {
+    path:"super-secret",
+    component: AdminComponent,
+  },
+  { path: 'complete',
     component: CompleteComponent,
     canActivate : [AuthGuard],
   },

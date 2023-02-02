@@ -29,13 +29,13 @@
     "firebase": "^9.0",
     "fs": "0.0.1-security",
     "rxjs": "~6.6.6",
+    "stream-browserify": "^3.0.0",
     "stripe": "^8.222.0",
     "tslib": "^2.5.0",
     "zone.js": "^0.11.8"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^13.3.10",
-    "@angular/cli": "^13.3.10",
     "@angular/compiler-cli": "~13.3.12",
     "@angular/language-service": "~13.3.12",
     "@types/jasmine": "~3.5.0",

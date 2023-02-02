@@ -36,8 +36,9 @@ import { MatProgressSpinnerModule} from "@angular/material/progress-spinner"
 
 // Firebase
 import { provideFirebaseApp, getApp, initializeApp } from '@angular/fire/app';
-import { getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { AngularFireModule } from '@angular/fire/compat';
+import { AngularFireAnalyticsModule } from '@angular/fire/compat/analytics';
+import { AngularFirestoreModule } from '@angular/fire/compat/firestore';
 import { environment } from '../environments/environment';
 import { DualDialogComponent } from './dual-dialog/dual-dialog.component';
 import { FooterComponent } from './footer/footer.component';
@@ -73,8 +74,10 @@ import { AdminComponent } from './admin/admin.component';
         AdminComponent
     ],
     imports: [
-        provideFirebaseApp(() => initializeApp(environment.firebaseConfig, "sides-ways" )),
-        provideFirestore(() => getFirestore()),
+      AngularFireModule,
+       AngularFireModule.initializeApp(environment.firebaseConfig),
+        AngularFireAnalyticsModule,
+        AngularFirestoreModule,
         BrowserModule,
         AppRoutingModule,
         HttpClientModule,
@@ -99,7 +102,7 @@ import { AdminComponent } from './admin/admin.component';
     providers: [
         DatePipe,
         UploadService,
-        AuthGuardService
+        AuthGuardService,
     ],
     bootstrap: [AppComponent]
 })

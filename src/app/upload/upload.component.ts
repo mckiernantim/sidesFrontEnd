@@ -1,5 +1,5 @@
 import { SpinningBotComponent } from './../spinning-bot/spinning-bot.component';
-import { Firestore } from '@angular/fire/firestore';
+
 import { Observable, Subscription, throwError, pipe,  } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { Component, OnInit, OnDestroy } from '@angular/core';
@@ -10,7 +10,7 @@ import {
   MAT_DIALOG_DATA,
   MatDialogRef,
 } from '@angular/material/dialog';
-import { FeedbackTicket } from "./../feedback/feedbackTicket"
+
 
 
 @Component({
@@ -21,8 +21,6 @@ import { FeedbackTicket } from "./../feedback/feedbackTicket"
 export class UploadComponent implements OnInit, OnDestroy {
 
   fileToUpload: File;
-  funData: Observable<any>;
-  feedback: Observable<FeedbackTicket[]>;
   totalTickets: Subscription;
   totalLines: Subscription;
   totalScenes: Subscription;
@@ -39,28 +37,19 @@ export class UploadComponent implements OnInit, OnDestroy {
   $script_data: Observable<any>;
 
   constructor(
-    public db: Firestore,
+
     public upload: UploadService,
     public router: Router,
     public dialog:MatDialog
 
   ) {
-    this.db = db;
-    this.funData = this.upload.funData;
-    this.feedback = this.upload.feedback;
     this.totalLines;
-    this.funData.subscribe((doc) => {
-     });
-    this.feedback.subscribe((doc) => {
-      console.log(doc);
-    });
+
   };
 
   ngOnInit(): void {
     this.working = false;
     localStorage.setItem("name", null)
-    console.log(this.feedback);
-    console.log(this.funData);
     console.log(this.totalLines, this.totalScenes, this.totalTickets);
   };
 
@@ -82,9 +71,7 @@ export class UploadComponent implements OnInit, OnDestroy {
         width: '60%',
         data:data
       });
-      dialogRef.afterClosed().subscribe((result) => {
-
-      });
+      dialogRef.afterClosed().subscribe((result) => {});
     };
   }
 

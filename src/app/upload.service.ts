@@ -71,6 +71,7 @@ export class UploadService {
       alert(err)
     }
 }
+  
 
 
   getPDF(name, callsheet) {
@@ -118,13 +119,7 @@ export class UploadService {
       responseType: null,
     };
   }
-  // toggleUrl() {
-  //   if (this.url != this.urls[0]) {
-  //     this.url = this.urls[0];
-  //   } else {
-  //     this.url = this.urls[1];
-  //   }
-  // }
+
 
   // get classified data => returns observable for stuff to plug into
   postFile(fileToUpload: File): Observable<any> {
