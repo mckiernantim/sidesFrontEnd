@@ -1,15 +1,7 @@
-<div>
-  <div>
-    <div *ngFor = "let ticket of badTix| async">
-      <h2>{{ ticket.title }}</h2>
-      <p>{{ ticket.text }}</p>
-
-      <div *ngIf="ticket.handled">
-        Submitted
-      </div>
-      <div *ngIf="!ticket.handled"> Not submitted </div>
-    </div>
-  </div>
-</div>
-
-<button (click) = "eraseBadData()"> fix dumb tickets</button>
+<main class = "admin-container">
+  <app-admin-main
+  [selected] = selected
+  (updateSelectedTicket) = "updateSelectedTicket($event)">
+</app-admin-main>
+  <app-admin-side-bar [tickets] = tickets ></app-admin-side-bar>
+</main>

@@ -1,0 +1,8 @@
+.admin-container {
+  display:grid;
+  grid-template-areas:
+    "a a b"
+    "a a b"
+    "a a b";
+    padding:2.5%;
+}
