@@ -44,7 +44,10 @@ export class UploadService {
   // Firestore will manage all of our fundata and our tickets for feedback
   constructor(public httpClient: HttpClient, db:AngularFirestore) {
     this._db = db;
-    this.feedback = db.collection("feedbackTickets").valueChanges()
+    
+    this.feedback = db.collection("feedbackTickets", ticketRef => ticketRef
+    .where('text', '!=', "Describe any issues")).valueChanges();
+
     this.funData = db.collection("funData").valueChanges()
   }
   postFeedback(ticket:FeedbackTicket){
@@ -71,7 +74,7 @@ export class UploadService {
       alert(err)
     }
 }
-  
+
 
 
   getPDF(name, callsheet) {

@@ -51,6 +51,8 @@ import { TextBlockComponent } from './text-block/text-block.component';
 import { MainNavComponent } from './main-nav/main-nav.component';
 import { SpinningBotComponent } from './spinning-bot/spinning-bot.component';
 import { AdminComponent } from './admin/admin.component';
+import { AdminMainComponent } from './admin/admin-main/admin-main.component';
+import { AdminSideBarComponent } from './admin/admin-side-bar/admin-side-bar.component';
 @NgModule({
     declarations: [
         AppComponent,
@@ -71,7 +73,9 @@ import { AdminComponent } from './admin/admin.component';
         TextBlockComponent,
         MainNavComponent,
         SpinningBotComponent,
-        AdminComponent
+        AdminComponent,
+        AdminMainComponent,
+        AdminSideBarComponent
     ],
     imports: [
       AngularFireModule,
