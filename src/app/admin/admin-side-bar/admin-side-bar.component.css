@@ -1,0 +1,20 @@
+.side-admin-container{
+  overflow: scroll;
+}
+
+.not-handled {
+  background-color:red !important;
+}
+
+.ticket{
+  margin:20px;
+  background-color:green;
+  padding:10px;
+}
+
+mat-card {
+  cursor: pointer;
+}
+.ticket:hover {
+  transform: scale(1.1);
+}

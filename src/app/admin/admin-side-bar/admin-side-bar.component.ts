@@ -1,5 +1,7 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { FeedbackTicket } from 'src/app/feedback/feedbackTicket';
+import { MatCard } from '@angular/material/card';
+
 
 @Component({
   selector: 'app-admin-side-bar',
@@ -8,4 +10,9 @@ import { FeedbackTicket } from 'src/app/feedback/feedbackTicket';
 })
 export class AdminSideBarComponent {
   @Input() tickets: FeedbackTicket[];
+  @Output() handleClick = new EventEmitter();
+
+  selectNewTicket(ticket) {
+    this.handleClick.emit(ticket)
+  }
 }

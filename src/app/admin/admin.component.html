@@ -1,7 +1,9 @@
-<main class = "admin-container">
-  <app-admin-main
-  [selected] = selected
-  (updateSelectedTicket) = "updateSelectedTicket($event)">
-</app-admin-main>
-  <app-admin-side-bar [tickets] = tickets ></app-admin-side-bar>
+<main class="admin-container">
+  <div class="main-container">
+    <app-admin-main [selected] = selected (updateSelected) = "updateSelectedTicket($event)" >
+    </app-admin-main>
+  </div>
+  <div class="side-bar-container">
+    <app-admin-side-bar [tickets] = allTickets (handleClick) = "selectNewTicket($event)"  ></app-admin-side-bar>
+  </div>
 </main>

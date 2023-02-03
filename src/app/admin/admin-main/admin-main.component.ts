@@ -1,6 +1,6 @@
-import { Component, Input, Output } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { FeedbackTicket } from 'src/app/feedback/feedbackTicket';
-import { EventEmitter } from 'stream';
+
 
 @Component({
   selector: 'app-admin-main',
@@ -12,8 +12,8 @@ export class AdminMainComponent {
   @Output() updateSelected = new EventEmitter();
 
 
-  updateSelectedTicket(updatedValue) {
-
-    this.updateSelected.emit(updatedValue)
+  updateSelectedTicket(val) {
+    this.updateSelected.emit(val)
   }
+  
 }
