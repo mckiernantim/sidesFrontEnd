@@ -1,0 +1,8 @@
+.not-handled {
+  background-color: red;
+}
+
+
+.admin-side-container{
+  overflow: scroll;
+}

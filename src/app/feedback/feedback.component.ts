@@ -1,6 +1,7 @@
 import { UploadService } from './../upload.service';
 import { Component, Input, OnInit } from '@angular/core';
 import { FeedbackTicket } from './feedbackTicket';
+import { AuthService } from "./../auth.service"
 import { Form } from '@angular/forms';
 
 @Component({
@@ -20,26 +21,30 @@ export class FeedbackComponent implements OnInit {
     'Page-numbers',
     'Incorrect Spacing'
   ];
-  model: FeedbackTicket;
+  currentTicket: FeedbackTicket;
   date:number = 0;
   @Input()title:string
-  constructor(public upload: UploadService) {}
+
+  constructor(public upload: UploadService, public auth:AuthService) {}
   ngOnInit(): void {
+    console.log(this.auth.userData)
     this.resetForm()
   }
 
   onSubmit() {
-    this.model.date = new Date().toISOString()
-    this.upload.postFeedback(this.model);
+    this.currentTicket.date = new Date().toISOString()
+    this.currentTicket.email = this.auth.userData.email
+    this.upload.postFeedback(this.currentTicket);
     this.resetForm()
   }
   resetForm(){
-    this.model = new FeedbackTicket(
+    this.currentTicket = new FeedbackTicket(
       this.title,
       this.categories[0],
       'Describe any issues',
       Date.now().toString(),
-      false
+      false,
+      this.auth.userData.email
     );
   }
 }

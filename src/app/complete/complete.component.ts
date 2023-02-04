@@ -1,7 +1,6 @@
 import { saveAs } from 'file-saver';
 import { UploadService } from './../upload.service';
 import { Component, OnInit } from '@angular/core';
-import { docChanges } from '@angular/fire/firestore';
 import { FeedbackComponent } from '../feedback/feedback.component';
 
 @Component({

@@ -27,7 +27,7 @@ import { DatePipe } from '@angular/common';
 import {
   AngularFirestore,
   AngularFirestoreCollection,
-} from '@angular/fire/firestore';
+} from '@angular/fire/compat/firestore';
 
 
 export interface pdfServerRes {
@@ -97,7 +97,7 @@ export class DashboardRightComponent implements OnInit {
     public errorDialog: MatDialog,
     public lineOut: LineOutService,
     private datePipe: DatePipe,
-   
+
   ) {
     // DATA ITEMS FOR FUN
     this.db = db;
@@ -109,7 +109,7 @@ export class DashboardRightComponent implements OnInit {
     this.funData = db.collection('funData');
     this.totalLines;
     this.scriptLength;
-   
+
   }
 
   ngOnInit(): void {
@@ -127,11 +127,11 @@ export class DashboardRightComponent implements OnInit {
     this.active = true;
     this.scriptProblems = [];
     this.modalData = [];
-  
+
 
     // SAVED ON THE SERVICE
 
-    this.scriptData = this.upload.lineArr 
+    this.scriptData = this.upload.lineArr
     this.totalPages = this.upload.pagesArr || null;
     if(!this.scriptData) {
       alert("script upload failed - rerouting to upload page")
@@ -248,7 +248,7 @@ makeVisible(sceneArr, breaks) {
     for (let i = 0; i < merged.length; i++) {
       let lineToMakeVisible = merged[i];
       let currentSceneBreak = breaks[counter] || 'last';
-    
+
       if (
         // see if our line falls between the first and last from our breaks
         currentSceneBreak &&
@@ -267,7 +267,7 @@ makeVisible(sceneArr, breaks) {
           !lineToMakeVisible.finalScene &&
           lineToMakeVisible.visible === 'true'
         ) {
-          //immedaitely check for last line 
+          //immedaitely check for last line
        //grab the last line of our scene from the header
           let finalTrueLine = merged.find(
             (line) => line.index === lineToMakeVisible.lastLine
@@ -330,7 +330,7 @@ makeVisible(sceneArr, breaks) {
               merged[m].visible = "true"
               merged[m].cont = "hideCont"
             }
-          
+
         }
       } else if (!currentSceneBreak) {
         break;
@@ -343,7 +343,7 @@ makeVisible(sceneArr, breaks) {
         item.category === 'page-number'
       ) {
         item.visible = 'true';
-        (item.cont = 'hideCont'), 
+        (item.cont = 'hideCont'),
         (item.end = 'hideEnd');
         item.xPos = 87;
       }
@@ -486,9 +486,9 @@ makeVisible(sceneArr, breaks) {
           if (
             first.visible === 'true' &&
             last.visible === 'true' &&
-            first.category != 'scene-header' 
+            first.category != 'scene-header'
           ) {
-            first.cont = 'CONTINUE-TOP'; 
+            first.cont = 'CONTINUE-TOP';
             last.finalLineOfScript ? last.cont = "hideCont" : last.cont = 'CONTINUE';
             first.barY = first.yPos + 10;
             last.barY = 55;
@@ -509,7 +509,7 @@ makeVisible(sceneArr, breaks) {
     this.finalDocument.doc = finalDocument;
 
     // finalDocument = this.lineOut.makeX(finalDocument)
-    if (this.watermark) {    
+    if (this.watermark) {
       this.waterMarkPages(this.watermark, finalDocument.data);
     }
     this.finalDocument = finalDocument;
@@ -532,9 +532,9 @@ makeVisible(sceneArr, breaks) {
         console.log(res)
       })
     });
-    
+
 };
-  
+
 
   logUpload() {
     console.log(this.upload);

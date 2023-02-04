@@ -27,8 +27,11 @@
               "src/styles.css",
               "src/theme.scss"
             ],
-            "scripts": []
-           
+            "scripts": [],
+            "allowedCommonJsDependencies": [
+              "angular-slickgrid", "stream"
+            ]
+
           },
           "proxyConfig": "src/proxy.conf.json",
           "configurations": {
@@ -42,7 +45,6 @@
               "optimization": true,
               "outputHashing": "all",
               "sourceMap": true,
-              "extractCss": true,
               "namedChunks": false,
               "extractLicenses": true,
               "vendorChunk": false,
@@ -65,9 +67,8 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "sideWays:build"
-        
-          },
+            "browserTarget": "sideWays:build",
+        },
           "configurations": {
             "production": {
               "browserTarget": "sideWays:build:production"
@@ -96,19 +97,6 @@
               "src/styles.css"
             ],
             "scripts": []
-          }
-        },
-        "lint": {
-          "builder": "@angular-devkit/build-angular:tslint",
-          "options": {
-            "tsConfig": [
-              "tsconfig.app.json",
-              "tsconfig.spec.json",
-              "e2e/tsconfig.json"
-            ],
-            "exclude": [
-              "**/node_modules/**"
-            ]
           }
         },
         "e2e": {

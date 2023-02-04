@@ -3,6 +3,7 @@ import { DonateComponent } from './donate/donate.component';
 import { AboutComponent } from './about/about.component';
 import { CompleteComponent } from './complete/complete.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
+import { AdminComponent } from "./admin/admin.component"
 
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
@@ -11,12 +12,15 @@ import { AuthGuard } from './guards/auth.guard';
 
 
 const routes: Routes = [
-  { 
-    path: 'download', 
+  {
+    path: 'download',
     component: DashboardComponent,
-   
- },
-  { path: 'complete', 
+  },
+  {
+    path:"super-secret",
+    component: AdminComponent,
+  },
+  { path: 'complete',
     component: CompleteComponent,
     canActivate : [AuthGuard],
   },

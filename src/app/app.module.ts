@@ -1,7 +1,5 @@
 import { UploadService } from './upload.service';
-import { Observable } from 'rxjs';
 import { HttpClientModule } from '@angular/common/http';
-
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { DatePipe } from '@angular/common'
@@ -37,11 +35,11 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule} from "@angular/material/progress-spinner"
 
 // Firebase
-import { AngularFireModule } from '@angular/fire';
+import { provideFirebaseApp, getApp, initializeApp } from '@angular/fire/app';
+import { AngularFireModule } from '@angular/fire/compat';
+import { AngularFireAnalyticsModule } from '@angular/fire/compat/analytics';
+import { AngularFirestoreModule } from '@angular/fire/compat/firestore';
 import { environment } from '../environments/environment';
-import { AngularFirestoreModule } from '@angular/fire/firestore';
-import { AngularFireAnalyticsModule } from '@angular/fire/analytics'
-import { AngularFireAuthModule } from '@angular/fire/auth';
 import { DualDialogComponent } from './dual-dialog/dual-dialog.component';
 import { FooterComponent } from './footer/footer.component';
 import { AboutComponent } from './about/about.component';
@@ -52,63 +50,64 @@ import { AuthGuardService } from './auth-guard.service';
 import { TextBlockComponent } from './text-block/text-block.component';
 import { MainNavComponent } from './main-nav/main-nav.component';
 import { SpinningBotComponent } from './spinning-bot/spinning-bot.component';
+import { AdminComponent } from './admin/admin.component';
+import { AdminMainComponent } from './admin/admin-main/admin-main.component';
+import { AdminSideBarComponent } from './admin/admin-side-bar/admin-side-bar.component';
 @NgModule({
-  declarations: [
-    AppComponent,
-    UploadComponent,
-    DashboardRightComponent,
-    DashboardComponent,
-    NavbarComponent,
-    NavComponent,
-    ScriptComponent,
-    CompleteComponent,
-    IssueComponent,
-    DualDialogComponent,
-    FooterComponent,
-    AboutComponent,
-    DonateComponent,
-    FeedbackComponent,
-    FourOfourComponent,
-    TextBlockComponent,
-    MainNavComponent,
-    SpinningBotComponent
-  ],
-  imports: [
-    AngularFireModule.initializeApp(environment.firebaseConfig, 'sideWays'),
-    AngularFireAnalyticsModule,
-    AngularFireModule,
-    AngularFirestoreModule,
-    BrowserModule,
-    AppRoutingModule,
-    HttpClientModule,
-    BrowserAnimationsModule,
-    LayoutModule,
-    FormsModule,
-    MatToolbarModule,
-    MatButtonModule,
-    MatSidenavModule,
-    MatIconModule,
-    MatListModule,
-    MatInputModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatSortModule,
-    MatDialogModule,
-    MatCardModule,
-    MatProgressSpinnerModule,
-    MatGridListModule
-  
-    
- 
-  ],
-  providers: [ 
-    DatePipe,
-    UploadService,
-    AuthGuardService
-  ],
-  entryComponents: [
-    IssueComponent
-  ],
-  bootstrap: [AppComponent]
+    declarations: [
+        AppComponent,
+        UploadComponent,
+        DashboardRightComponent,
+        DashboardComponent,
+        NavbarComponent,
+        NavComponent,
+        ScriptComponent,
+        CompleteComponent,
+        IssueComponent,
+        DualDialogComponent,
+        FooterComponent,
+        AboutComponent,
+        DonateComponent,
+        FeedbackComponent,
+        FourOfourComponent,
+        TextBlockComponent,
+        MainNavComponent,
+        SpinningBotComponent,
+        AdminComponent,
+        AdminMainComponent,
+        AdminSideBarComponent
+    ],
+    imports: [
+      AngularFireModule,
+       AngularFireModule.initializeApp(environment.firebaseConfig),
+        AngularFireAnalyticsModule,
+        AngularFirestoreModule,
+        BrowserModule,
+        AppRoutingModule,
+        HttpClientModule,
+        BrowserAnimationsModule,
+        LayoutModule,
+        FormsModule,
+        MatToolbarModule,
+        MatCardModule,
+        MatButtonModule,
+        MatSidenavModule,
+        MatIconModule,
+        MatListModule,
+        MatInputModule,
+        MatTableModule,
+        MatPaginatorModule,
+        MatSortModule,
+        MatDialogModule,
+        MatCardModule,
+        MatProgressSpinnerModule,
+        MatGridListModule
+    ],
+    providers: [
+        DatePipe,
+        UploadService,
+        AuthGuardService,
+    ],
+    bootstrap: [AppComponent]
 })
 export class AppModule { }

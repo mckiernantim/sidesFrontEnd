@@ -1,8 +1,7 @@
 import { SpinningBotComponent } from './../spinning-bot/spinning-bot.component';
-import { MatDialogModule } from '@angular/material/dialog';
-import  { MatGridList } from '@angular/material/grid-list'
-import { AngularFirestore } from '@angular/fire/firestore';
-import { Observable, Subscription } from 'rxjs';
+
+import { Observable, Subscription, throwError, pipe,  } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { UploadService } from '../upload.service';
 import { Router } from '@angular/router';
@@ -22,8 +21,6 @@ import {
 export class UploadComponent implements OnInit, OnDestroy {
 
   fileToUpload: File;
-  funData: Observable<any>;
-  feedback: Observable<any>;
   totalTickets: Subscription;
   totalLines: Subscription;
   totalScenes: Subscription;
@@ -40,28 +37,19 @@ export class UploadComponent implements OnInit, OnDestroy {
   $script_data: Observable<any>;
 
   constructor(
-    public db: AngularFirestore,
+
     public upload: UploadService,
     public router: Router,
     public dialog:MatDialog
-  
+
   ) {
-    this.db = db;
-    this.funData = this.upload.funData;
-    this.feedback = this.upload.feedback;
     this.totalLines;
-    this.funData.subscribe((doc) => {
-     });
-    this.feedback.subscribe((doc) => {
-      console.log(doc);
-    });
+
   };
 
   ngOnInit(): void {
     this.working = false;
     localStorage.setItem("name", null)
-    console.log(this.feedback);
-    console.log(this.funData);
     console.log(this.totalLines, this.totalScenes, this.totalTickets);
   };
 
@@ -70,7 +58,7 @@ export class UploadComponent implements OnInit, OnDestroy {
     //Add 'implements OnDestroy' to the class.
     // this.dataSubscription.unsubscribe()
   };
-  
+
   addTwo(arr) {
     let missingTwo = arr.findIndex(
       (ind) => ind.text.match('2.') && ind.category == 'page-number-hidden'
@@ -83,12 +71,10 @@ export class UploadComponent implements OnInit, OnDestroy {
         width: '60%',
         data:data
       });
-      dialogRef.afterClosed().subscribe((result) => {
-
-      });
+      dialogRef.afterClosed().subscribe((result) => {});
     };
   }
-  
+
   handleFileInput(files: FileList) {
     console.log('firing over script');
     this.working = true;
@@ -97,7 +83,15 @@ export class UploadComponent implements OnInit, OnDestroy {
     localStorage.setItem('name', this.fileToUpload.name.replace(/.pdf/, ''));
     // upload our script
     this.$script_data = this.upload.postFile(this.fileToUpload);
-    this.dataSubscription = this.$script_data.subscribe((data) => {
+    this.dataSubscription = this.$script_data
+    .pipe(
+      catchError(err => {
+        console.log('caught mapping error and rethrowing', err);
+        return throwError(err);
+    }))
+    .subscribe(
+      (data) => {
+      // grab the pages and inseert 'page 2.'  so we know where it is
       this.lines = data[0];
       if (this.addTwo(data[0]).category) {
         let two = this.addTwo(data[0]);
@@ -107,7 +101,7 @@ export class UploadComponent implements OnInit, OnDestroy {
       this.upload.lineArr = data[0];
       this.upload.pagesArr = data[1];
       this.upload.lineCount = [];
-      data[1].forEach((page) => {
+      this.upload.pagesArr.forEach((page) => {
         this.upload.lineCount.push(page.filter((item) => item.totalLines));
       });
       alert(

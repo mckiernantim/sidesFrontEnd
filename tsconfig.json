@@ -1,6 +1,7 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "skipLibCheck": true,
     "baseUrl": "./",
     "outDir": "./dist/out-tsc",
     "sourceMap": true,
@@ -16,11 +17,14 @@
       "es2019",
       "dom"
     ],
-    "types" : ["node", "lodash", "express", "zone.js"]
+    "types" : ["node", "lodash", "express", "zone.js"],
+    "paths" : {
+      "stream": [ "./node_modules/stream-browserify" ]
+    }
   },
   "angularCompilerOptions": {
     "fullTemplateTypeCheck": true,
     "strictInjectionParameters": true,
     "types": [ "node" ]
-  }
+  },
 }

@@ -9,7 +9,7 @@ import { Router } from '@angular/router';
   providedIn: 'root'
 })
 export class AuthGuard implements CanActivate {
-  constructor (public auth: AuthGuardService, public router :Router ) {}
+  constructor (public auth: AuthGuardService, public router: Router ) {}
   canActivate(): boolean  {
     console.log(`here is login state from guard!#!@#@!#`, this.auth.getLoginState())
     if (this.auth.getLoginState()) {
