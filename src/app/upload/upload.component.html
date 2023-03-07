@@ -1,16 +1,10 @@
-
-
-  <div class="form-group two-column left black">
+<div class="form-group two-column left black">
     <div class="left-cell">
           <div>
             <div class="typewriter">
               <h1 class="mat-display-2">
-                <strong >Welcome To 
-                  Sides-Ways</strong>
+                <strong >Welcome To Sides-Ways</strong>
               </h1>
-            </div>
-            <div>
-              
             </div>
             <div class="typewriter ">
               <h2 class="delay-3 mat-display-1">
@@ -20,7 +14,6 @@
             <div class="typewriter">
               <h2 class="delay-4 mat-display-1">
                 We Make Sides
-           
               </h2>
             </div>
             <button mat-raised-button color = "primary" class="delay-6 learn-more-button reveal" routerLink="../About">Learn More</button>
@@ -30,7 +23,7 @@
     <mat-card class="upload-card">
       <mat-card-header>
         <div>
-          <img class="card-image" src="../../assets/icons/logoFlatWhite.png" />
+          <img class="card-image" [src]="this.logo" />
         </div>
       </mat-card-header>
       <mat-card-content>
@@ -42,9 +35,9 @@
           <div class="warning-text">
             <p>
               <strong>
-                For best results, please use unencrypted Production Scripts with proper scene-headers, scene numbers, and a title page. 
-            <br> 
-            PDF scripts should be formatted to industry standard before you even get here. 
+                For best results, please use unencrypted Production Scripts with proper scene-headers, scene numbers, and a title page.
+            <br>
+            PDF scripts should be formatted to industry standard before you even get here.
                 <br>
                 We make sides, not scripts*.
               </strong>
@@ -53,7 +46,7 @@
         </div>
       </mat-card-content>
       <mat-card-actions>
-    
+
         <button type="button" mat-raised-button color ="warn" (click)="fileInput.click()">Upload Script PDF</button>
 <input hidden (change)="handleFileInput($event.target.files)"#fileInput type="file" id="file" accept="application/pdf">
       </mat-card-actions>
@@ -62,3 +55,4 @@
       </div>
     </mat-card>
   </div>
+
