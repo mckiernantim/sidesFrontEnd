@@ -14,10 +14,10 @@ import {
 import { UploadService } from '../upload.service';
 import { AuthService } from '../auth.service';
 import {
-  MatDialogRef,
-  MatDialog,
-  MAT_DIALOG_DATA,
-} from '@angular/material/dialog';
+  MatLegacyDialogRef as MatDialogRef,
+  MatLegacyDialog as MatDialog,
+  MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA,
+} from '@angular/material/legacy-dialog';
 
 
 @Component({

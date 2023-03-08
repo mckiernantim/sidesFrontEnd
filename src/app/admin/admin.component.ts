@@ -3,7 +3,7 @@ import { UploadService} from  "./../upload.service";
 import { FeedbackTicket } from "./../feedback/feedbackTicket";
 import { AngularFirestore, AngularFirestoreCollection, DocumentReference  } from '@angular/fire/compat/firestore';
 import { Observable, Subscription } from 'rxjs';
-import { MatCard } from '@angular/material/card';
+import { MatLegacyCard as MatCard } from '@angular/material/legacy-card';
 import { Router } from '@angular/router';
 
 @Component({

@@ -6,10 +6,10 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { UploadService } from '../upload.service';
 import { Router } from '@angular/router';
 import {
-  MatDialog,
-  MAT_DIALOG_DATA,
-  MatDialogRef,
-} from '@angular/material/dialog';
+  MatLegacyDialog as MatDialog,
+  MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA,
+  MatLegacyDialogRef as MatDialogRef,
+} from '@angular/material/legacy-dialog';
 
 
 

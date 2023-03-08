@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { FeedbackTicket } from 'src/app/feedback/feedbackTicket';
-import { MatCard } from '@angular/material/card';
+import { MatLegacyCard as MatCard } from '@angular/material/legacy-card';
 
 
 @Component({
