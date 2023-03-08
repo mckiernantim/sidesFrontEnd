@@ -12,15 +12,23 @@
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "importHelpers": true,
-    "target": "es2015",
+    "target": "ES2022",
     "lib": [
       "es2019",
       "dom"
     ],
-    "types" : ["node", "lodash", "express", "zone.js"],
-    "paths" : {
-      "stream": [ "./node_modules/stream-browserify" ]
-    }
+    "types": [
+      "node",
+      "lodash",
+      "express",
+      "zone.js"
+    ],
+    "paths": {
+      "stream": [
+        "./node_modules/stream-browserify"
+      ]
+    },
+    "useDefineForClassFields": false
   },
   "angularCompilerOptions": {
     "fullTemplateTypeCheck": true,
