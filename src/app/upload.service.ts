@@ -12,6 +12,7 @@ import {
 } from '@angular/common/http';
 import { FeedbackTicket } from './feedback/feedbackTicket';
 import { environment } from 'src/environments/environment';
+import { idToken } from '@angular/fire/auth';
 
 
 @Injectable({
@@ -44,22 +45,23 @@ export class UploadService {
   // Firestore will manage all of our fundata and our tickets for feedback
   constructor(public httpClient: HttpClient, db:AngularFirestore) {
     this._db = db;
-    
-    this.feedback = db.collection("feedbackTickets", ticketRef => ticketRef
-    .where('text', '!=', "Describe any issues")).valueChanges();
 
-    this.funData = db.collection("funData").valueChanges()
+    this.feedback = db.collection("feedbackTickets", ticketRef => ticketRef
+    .where('text', '!=', "Describe any issues")).valueChanges(idToken);
+
+    this.funData = db.collection("funData").valueChanges({ idField: 'id' })
   }
   postFeedback(ticket:FeedbackTicket){
     // not sure why this doesn't work with custom class
-    const { text, title, category, date } = ticket
+    const { text, title, category, date, handled } = ticket
     try {
       this._db.collection("feedbackTickets").add({
         text: text,
         title: title,
         category: category,
         date: date,
-        email:localStorage.getItem("user")
+        email:localStorage.getItem("user"),
+        handled:handled
       })
       .then((doc:DocumentReference<FeedbackTicket>) => {
         console.log(doc)

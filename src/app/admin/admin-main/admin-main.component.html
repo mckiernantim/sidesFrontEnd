@@ -1,3 +1,14 @@
-<h1>{{ selected.title}}</h1>
-<p>{{ selected.text}}</p>
-<button (click) = "updateSelectedTicket(true)"></button>
+<div class="admin-main-container">
+  <mat-card>
+    <h1 class="admin-main-title">{{ selected.title}}</h1>
+    <h2>{{selected.date}}</h2>
+    <p>{{ selected.text}}</p>
+    <mat-card-actions>
+      <textarea (input)="updatedText = $event.target.value"></textarea>
+      <button (click)="updateSelectedTicket(true)">Respond To Ticket</button>
+    </mat-card-actions>
+  </mat-card>
+</div>
+
+
+

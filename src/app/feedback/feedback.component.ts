@@ -40,6 +40,7 @@ export class FeedbackComponent implements OnInit {
   resetForm(){
     this.currentTicket = new FeedbackTicket(
       this.title,
+      "",
       this.categories[0],
       'Describe any issues',
       Date.now().toString(),
