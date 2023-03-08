@@ -1,7 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
 
 * {
-    font-family: 'Courier New', Courier, monospace /* Replace with your custom font */!important; 
+    font-family: 'Courier New', Courier, monospace /* Replace with your custom font */!important;
     /* Add !important to overwrite all elements */
   }
 p,h1,h2,h3,h4 {
@@ -20,7 +20,7 @@ body{
 
 .app{
 
-    margin: 0; 
+    margin: 0;
     font-family: 'Courier New', Courier, monospace;
     background: rgb(#dac5c4);
     /* background: radial-gradient(circle, rgba(255,0,29,1) 0%, rgba(247,85,85,1) 57%);  */
@@ -38,7 +38,7 @@ body{
 }
 
 h1{
-    font-size: 45px;
+    font-size: 48px;
 }
 h2{
     font-size:24px
@@ -50,10 +50,10 @@ h4{
     font-size: 18px;
 }
 p{
-    font-size: 14px;
+    font-size: 16px;
 }
 .bold{
-    font-weight: 900;
+    font-weight: 700;
 }
 :root{
     --white:rgb(240, 234, 234);
@@ -151,9 +151,11 @@ mat-card{
 
 
 
-@media only screen and (max-width: 1200px){ 
+@media only screen and (max-width: 1200px){
     .two-column{
         grid-template-columns: 1fr;
     }
 }
+
+@media only screen and 
 

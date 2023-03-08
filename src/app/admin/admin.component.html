@@ -3,7 +3,7 @@
     <app-admin-main [selected] = selected (updateSelected) = "updateSelectedTicket($event)" >
     </app-admin-main>
   </div>
-  <div class="side-bar-container">
+  <div class="side-bar-container ">
     <app-admin-side-bar [tickets] = allTickets (handleClick) = "selectNewTicket($event)"  ></app-admin-side-bar>
   </div>
 </main>

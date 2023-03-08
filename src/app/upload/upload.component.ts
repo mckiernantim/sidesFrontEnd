@@ -19,7 +19,7 @@ import {
   styleUrls: ['./upload.component.css'],
 })
 export class UploadComponent implements OnInit, OnDestroy {
-
+  logo:string = "../../assets/icons/logoFlat.png";
   fileToUpload: File;
   totalTickets: Subscription;
   totalLines: Subscription;
@@ -35,16 +35,12 @@ export class UploadComponent implements OnInit, OnDestroy {
   // we should change this to a line array at some point
   lines: any[];
   $script_data: Observable<any>;
-
-  constructor(
-
+  constructor (
     public upload: UploadService,
     public router: Router,
     public dialog:MatDialog
-
-  ) {
+    ) {
     this.totalLines;
-
   };
 
   ngOnInit(): void {
@@ -58,7 +54,7 @@ export class UploadComponent implements OnInit, OnDestroy {
     //Add 'implements OnDestroy' to the class.
     // this.dataSubscription.unsubscribe()
   };
-
+  // create the page '2.' which is hidden in most scripts
   addTwo(arr) {
     let missingTwo = arr.findIndex(
       (ind) => ind.text.match('2.') && ind.category == 'page-number-hidden'

@@ -17,6 +17,7 @@ export class AdminComponent implements OnInit {
   selected:FeedbackTicket;
   tickets:Subscription;
   allTickets:FeedbackTicket[];
+  displayedTickets: FeedbackTicket[];
   constructor(
     public upload:UploadService,
     public router: Router,
@@ -29,6 +30,7 @@ export class AdminComponent implements OnInit {
       this.tickets = this.Feedback$.subscribe(data => {
         this.selected = data[0];
         this.allTickets = data;
+        this.displayedTickets = data;
       })
 		}
 
@@ -37,10 +39,43 @@ ngOnInit() {}
  updateSelectedTicket(event) {
   console.log("ticket upated")
  }
+ filterTickets(val = null) {
+  this.displayedTickets = val ? this.allTickets.filter(ticket => {
+    ticket.category === val;
+  }) : this.allTickets;
+ }
  selectNewTicket(event) {
  this.selected = event
   console.log(event, "parent is triggering")
 
  }
+ createTicket(ticket: FeedbackTicket): void {
+  // Add the new ticket to the database
+  this.db.collection('feedbackTickets').add(ticket)
+    .then(() => {
+      // Show success message and redirect to the admin page
+      alert('Ticket created successfully!');
+      this.router.navigate(['/admin']);
+    })
+    .catch((error) => {
+      // Show error message
+      console.error('Error creating ticket: ', error);
+      alert('An error occurred while creating the ticket. Please try again later.');
+    });
+}
+updateTicket(ticket: FeedbackTicket): void {
+  // Update the ticket in the database
+  this.db.collection('feedbackTickets').doc(ticket.id).update(ticket)
+    .then(() => {
+      // Show success message and redirect to the admin page
+      alert('Ticket updated successfully!');
+      this.router.navigate(['/admin']);
+    })
+    .catch((error) => {
+      // Show error message
+      console.error('Error updating ticket: ', error);
+      alert('An error occurred while updating the ticket. Please try again later.');
+    });
+}
 }
 

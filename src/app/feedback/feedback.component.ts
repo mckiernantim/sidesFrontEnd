@@ -8,7 +8,7 @@ import { Form } from '@angular/forms';
   selector: 'app-feedback',
   templateUrl: './feedback.component.html',
   styleUrls: ['./feedback.component.css'],
-}) 
+})
 
 
 export class FeedbackComponent implements OnInit {
@@ -27,7 +27,7 @@ export class FeedbackComponent implements OnInit {
 
   constructor(public upload: UploadService, public auth:AuthService) {}
   ngOnInit(): void {
-    console.log(this.auth.userData)
+    console.log(this.auth.userData, "HEY THIS IS THE FEEDBACK COMPONENT")
     this.resetForm()
   }
 
@@ -40,6 +40,7 @@ export class FeedbackComponent implements OnInit {
   resetForm(){
     this.currentTicket = new FeedbackTicket(
       this.title,
+      "",
       this.categories[0],
       'Describe any issues',
       Date.now().toString(),

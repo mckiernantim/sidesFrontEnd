@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { FeedbackTicket } from 'src/app/feedback/feedbackTicket';
 
 
+
 @Component({
   selector: 'app-admin-main',
   templateUrl: './admin-main.component.html',
@@ -10,10 +11,10 @@ import { FeedbackTicket } from 'src/app/feedback/feedbackTicket';
 export class AdminMainComponent {
   @Input() selected:FeedbackTicket;
   @Output() updateSelected = new EventEmitter();
-
+  updatedText: string;
 
   updateSelectedTicket(val) {
     this.updateSelected.emit(val)
   }
-  
+
 }
