@@ -27,7 +27,7 @@ body{
     color: var(--black)
 
 }z
-.mat-card{
+.mat-mdc-card{
     margin:  0 auto important !important;
 }
 .red-text{
@@ -72,22 +72,31 @@ p{
 
 }
 
-.mat-progress-spinner circle{
-stroke:var(--white)!important
+.mat-mdc-progress-spinner circle{
+  stroke:var(--white)!important
 }
 .spinning-bot{
     animation: mat-progress-spinner-linear-rotate 1200ms linear infinite;
     height:450px;
     width:auto
 }
-
+.mat-mdc-card-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    box-sizing: border-box;
+    min-height: 52px;
+    padding: 8px;
+    justify-content: center;
+}
 mat-progress-spinner{
     width: 100px;
     height: 100px;
     margin: 42% auto;
     color:var(--white) !important
 }
-mat-card{
+/* TODO(mdc-migration): The following rule targets internal classes of card that may no longer apply for the MDC version. */
+.mat-mdc-card{
     background-color: var(--black)  !important;
     color: var(--white) !important
 
@@ -136,16 +145,19 @@ mat-card{
     padding-bottom: 0!important;
     border: 10px solid var(--black);
 }
-.mat-card-header-text{
+/* TODO(mdc-migration): The following rule targets internal classes of card that may no longer apply for the MDC version. */
+.mat-mdc-card-header-text{
     display:none
 }
-.mat-form-field-appearance-legacy .mat-form-field-label {
+/* TODO(mdc-migration): The following rule targets internal classes of form-field that may no longer apply for the MDC version. */
+.mat-mdc-form-field-appearance-legacy .mat-mdc-form-field-label {
     color:black !important;
 }
 
+/* TODO(mdc-migration): The following rule targets internal classes of form-field that may no longer apply for the MDC version. */
 .search
-  .mat-form-field-appearance-outline.mat-focused
-  .mat-form-field-outline-thick {
+  .mat-mdc-form-field-appearance-outline.mat-mdc-focused
+  .mat-mdc-form-field-outline-thick {
   color: red;
 }
 
@@ -157,5 +169,5 @@ mat-card{
     }
 }
 
-@media only screen and 
+
 

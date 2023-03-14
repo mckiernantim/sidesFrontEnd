@@ -21,7 +21,9 @@
       "node",
       "lodash",
       "express",
-      "zone.js"
+      "zone.js",
+      "jest",
+      "jasmine"
     ],
     "paths": {
       "stream": [

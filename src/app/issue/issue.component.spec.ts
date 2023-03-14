@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { IssueComponent } from './issue.component';
+import 'jasmine'
 
 describe('IssueComponent', () => {
   let component: IssueComponent;

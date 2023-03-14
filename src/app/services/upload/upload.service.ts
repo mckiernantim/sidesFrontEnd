@@ -10,9 +10,11 @@ import {
   HttpHeaders,
   HttpParams,
 } from '@angular/common/http';
-import { FeedbackTicket } from './feedback/feedbackTicket';
+import { FeedbackTicket } from '../../types/feedbackTicket';
 import { environment } from 'src/environments/environment';
 import { idToken } from '@angular/fire/auth';
+import { Line } from '../../types/Line';
+
 
 
 @Injectable({
@@ -23,7 +25,7 @@ export class UploadService {
   // values from script
   script: string;
   // lines
-  lineArr: string[];
+  lineArr: Line[];
   lineCount: any;
   pagesArr: any[];
   // old DB valies
@@ -78,7 +80,7 @@ export class UploadService {
 }
 
 
-
+// final step
   getPDF(name, callsheet) {
     let params = new HttpParams()
       .append('name', name)

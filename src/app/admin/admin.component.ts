@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { UploadService} from  "./../upload.service";
-import { FeedbackTicket } from "./../feedback/feedbackTicket";
+import { UploadService} from  "./../services/upload/upload.service";
+import { FeedbackTicket } from "../types/feedbackTicket";
 import { AngularFirestore, AngularFirestoreCollection, DocumentReference  } from '@angular/fire/compat/firestore';
 import { Observable, Subscription } from 'rxjs';
-import { MatLegacyCard as MatCard } from '@angular/material/legacy-card';
+import { MatCard } from '@angular/material/card';
 import { Router } from '@angular/router';
 
 @Component({

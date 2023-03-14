@@ -3,7 +3,7 @@
   <div class="ticket" *ngFor = "let ticket of tickets" [ngClass] = "{
     'not-handled': !ticket.handled
   }">
-  <mat-card (click) = "selectNewTicket(ticket)">
+  <mat-card appearance="outlined" (click) = "selectNewTicket(ticket)">
     <mat-card-header>
     <div>
       <h2>

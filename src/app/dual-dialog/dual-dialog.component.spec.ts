@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { DualDialogComponent } from './dual-dialog.component';
+import 'jasmine'
 
 describe('DualDialogComponent', () => {
   let component: DualDialogComponent;

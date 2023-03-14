@@ -1,9 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import 'jasmine'
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { MatLegacyCardModule as MatCardModule } from '@angular/material/legacy-card';
+import { MatCardModule, MatCard } from '@angular/material/card';
 import { AdminSideBarComponent } from './admin-side-bar.component';
-import { FeedbackTicket } from 'src/app/feedback/feedbackTicket';
+import { FeedbackTicket } from 'src/app/types/feedbackTicket';
 
 describe('AdminSideBarComponent', () => {
   let component: AdminSideBarComponent;
@@ -31,9 +32,9 @@ describe('AdminSideBarComponent', () => {
 
   it('should render a card for each ticket', () => {
     const tickets: FeedbackTicket[] = [
-      { id: 1, name: 'Ticket 1', description: 'Description 1', status: 'Not handled' },
-      { id: 2, name: 'Ticket 2', description: 'Description 2', status: 'Not handled' },
-      { id: 3, name: 'Ticket 3', description: 'Description 3', status: 'Not handled' }
+      { id: '1', title: 'Ticket 1', text: 'text 1', handled: false, category:"stuff", date:"today" },
+      { id: '2', title: 'Ticket 2', text: 'text 2', handled: false, category:"stuff", date:"today" },
+      { id: '3', title: 'Ticket 3', text: 'text 3', handled: false, category:"stuff", date:"today" }
     ];
     component.tickets = tickets;
     fixture.detectChanges();
@@ -42,7 +43,7 @@ describe('AdminSideBarComponent', () => {
   });
 
   it('should emit a click event when a card is clicked', () => {
-    const ticket: FeedbackTicket = { id: 1, name: 'Ticket 1', description: 'Description 1', status: 'Not handled' };
+    const ticket: FeedbackTicket = { id: '1', title: 'Ticket 1', text: 'text 1', handled: false, category:"stuff", date:"today" };
     spyOn(component.handleClick, 'emit');
     component.selectNewTicket(ticket);
     expect(component.handleClick.emit).toHaveBeenCalledWith(ticket);

@@ -1,8 +1,8 @@
-import { LineOutService } from './../line-out.service';
+import { LineOutService } from '../services/line-out/line-out.service'
 import { Observable } from 'rxjs';
 import { IssueComponent } from './../issue/issue.component';
 import { Router } from '@angular/router';
-import { UploadService } from './../upload.service';
+import { UploadService } from '../services/upload/upload.service';
 import {
   Component,
   OnInit,
@@ -11,14 +11,14 @@ import {
   AfterViewInit,
   ChangeDetectorRef,
 } from '@angular/core';
-import { MatLegacyPaginator as MatPaginator } from '@angular/material/legacy-paginator';
+import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
-import { MatLegacyTableDataSource as MatTableDataSource } from '@angular/material/legacy-table';
+import { MatTableDataSource } from '@angular/material/table';
 import {
-  MatLegacyDialog as MatDialog,
-  MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA,
-  MatLegacyDialogRef as MatDialogRef,
-} from '@angular/material/legacy-dialog';
+  MatDialog,
+  MAT_DIALOG_DATA,
+  MatDialogRef,
+} from '@angular/material/dialog';
 
 import { Subscription } from 'rxjs';
 
@@ -132,6 +132,7 @@ export class DashboardRightComponent implements OnInit {
     // SAVED ON THE SERVICE
 
     this.scriptData = this.upload.lineArr
+    console.log(this.scriptData)
     this.totalPages = this.upload.pagesArr || null;
     if(!this.scriptData) {
       alert("script upload failed - rerouting to upload page")
