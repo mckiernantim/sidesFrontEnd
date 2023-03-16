@@ -4,8 +4,6 @@
       [mode]="(isHandset$ | async) ? 'over' : 'side'"
       [opened]="(isHandset$ | async) === false">
     <mat-toolbar>
-    
-
     </mat-toolbar>
     <mat-nav-list>
       <a mat-list-item routerLink ="/">Home</a>
@@ -24,13 +22,13 @@
         <mat-icon aria-label="Side nav toggle icon"><span class="material-symbols-outlined">
           </span></mat-icon>
       </button>
-    
+
         <span class="logo nav-item">Sides-Ways</span>
         <span class="spacer"></span>
         <button mat-raised-button color="primary-light" class ="nav-item" routerLink ="/" >Home</button>
         <button mat-raised-button color="primary-light" class ="nav-item" routerLink ="/About">About</button>
         <button mat-raised-button color="primary-light" class ="nav-item" routerLink ="/donate">Donate</button>
-    
+
     </mat-toolbar>
     <router-outlet></router-outlet>
   </mat-sidenav-content>

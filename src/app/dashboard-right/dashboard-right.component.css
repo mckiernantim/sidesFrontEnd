@@ -10,7 +10,7 @@ tr, th{
   color:whitesmoke
 }
 
-.mat-form-field{
+.mat-mdc-form-field{
   color:black
 }
 .switch {
@@ -82,7 +82,7 @@ table{
   width:100%;
 }
   @media screen and (max-width: 768px) {
-  .mat-cell{
+  .mat-mdc-cell{
     text-overflow: ellipsis; 
     overflow: hidden; 
     white-space: nowrap;
@@ -113,7 +113,7 @@ table{
    .table-scene-header{
      max-width: 196px;
    }
-   .mat-paginator{
+   .mat-mdc-paginator{
      max-width: 380px;
    }
 }

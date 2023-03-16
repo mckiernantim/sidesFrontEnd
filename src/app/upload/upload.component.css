@@ -218,7 +218,7 @@ h4{
     width:95%;
     font-size:1.1em
 }
-.mat-card-header {
+.mat-mdc-card-header {
     justify-content: space-around;
 }
 .feature-headline{
@@ -345,7 +345,7 @@ label.upload-button input[type="file"] {
     .upload-description{
         display:none;
     }
-    .mat-card{
+    .mat-mdc-card{
         width:85%;
     }
     .upload-headline, .learn-more, .developer-tools{

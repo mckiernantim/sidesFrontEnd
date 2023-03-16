@@ -1,7 +1,7 @@
-import { UploadService } from './../upload.service';
+import { UploadService } from '../services/upload/upload.service';
 import { Component, Input, OnInit } from '@angular/core';
-import { FeedbackTicket } from './feedbackTicket';
-import { AuthService } from "./../auth.service"
+import { FeedbackTicket } from '../types/feedbackTicket';
+import { AuthService } from "../services/auth/auth.service"
 import { Form } from '@angular/forms';
 
 @Component({

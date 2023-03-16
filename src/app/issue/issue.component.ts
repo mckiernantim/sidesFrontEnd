@@ -11,13 +11,13 @@ import {
   inject,
   Input,
 } from '@angular/core';
-import { UploadService } from '../upload.service';
-import { AuthService } from '../auth.service';
+import { UploadService } from '../services/upload/upload.service';
+import { AuthService } from '../services/auth/auth.service';
 import {
-  MatLegacyDialogRef as MatDialogRef,
-  MatLegacyDialog as MatDialog,
-  MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA,
-} from '@angular/material/legacy-dialog';
+  MatDialogRef,
+  MatDialog,
+  MAT_DIALOG_DATA,
+} from '@angular/material/dialog';
 
 
 @Component({
@@ -61,7 +61,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
     this.data.waitingForScript
       ? (this.waitingForScript = true)
       : (this.waitingForScript = false);;
-    
+
   }
   ngAfterViewInit(): void {
     this.cdr.detectChanges();
@@ -75,7 +75,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
   }
   async googleSignIn (){
    this.auth.loginWithGoogle()
-  } 
+  }
 
   // need to give option for no callsheet
   handleFileInput(file) {
@@ -89,7 +89,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
         this.docUploaded = true;
         this.callsheetReady = true;
         this.awaitingData = false;
-      
+
       } else {
         this.upload.postCallSheet(file[0]).subscribe((data) => {
           console.log(data)

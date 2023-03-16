@@ -1,5 +1,5 @@
 import { saveAs } from 'file-saver';
-import { UploadService } from './../upload.service';
+import { UploadService } from '../services/upload//upload.service';
 import { Component, OnInit } from '@angular/core';
 import { FeedbackComponent } from '../feedback/feedback.component';
 

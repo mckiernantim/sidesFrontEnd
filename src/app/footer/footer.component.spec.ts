@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { FooterComponent } from './footer.component';
+import 'jasmine'
 
 describe('FooterComponent', () => {
   let component: FooterComponent;
