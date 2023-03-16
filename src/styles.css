@@ -7,6 +7,9 @@
 p,h1,h2,h3,h4 {
       font-weight: 400 !important;
   }
+  html {
+    height:100vh
+  }
 body{
     overflow-x: hidden;
     height:auto;
@@ -18,11 +21,10 @@ body{
 }
 
 
-.app{
-
+.app {
     margin: 0;
     font-family: 'Courier New', Courier, monospace;
-    background: rgb(#dac5c4);
+
     /* background: radial-gradient(circle, rgba(255,0,29,1) 0%, rgba(247,85,85,1) 57%);  */
     color: var(--black)
 
@@ -64,12 +66,15 @@ p{
 }
 .two-column{
     display:grid;
+    height:auto;
     grid-template-columns:1fr 1fr
 }
 
 .full-vh {
     height:100%;
-
+}
+.ninety-vh {
+    height:90vh
 }
 
 .mat-mdc-progress-spinner circle{

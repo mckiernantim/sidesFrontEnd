@@ -1,0 +1,38 @@
+[debug] [2022-11-05T20:22:48.342Z] ----------------------------------------------------------------------
+[debug] [2022-11-05T20:22:48.343Z] Command:       /usr/local/bin/node /usr/local/bin/firebase deploy
+[debug] [2022-11-05T20:22:48.343Z] CLI Version:   11.8.0
+[debug] [2022-11-05T20:22:48.343Z] Platform:      darwin
+[debug] [2022-11-05T20:22:48.343Z] Node Version:  v16.17.0
+[debug] [2022-11-05T20:22:48.345Z] Time:          Sat Nov 05 2022 16:22:48 GMT-0400 (Eastern Daylight Time)
+[debug] [2022-11-05T20:22:48.345Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2022-11-05T20:22:48.346Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2022-11-05T20:22:48.380Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2022-11-05T20:22:48.380Z] > authorizing via signed-in user (tim@pursuit.org)
+[debug] [2022-11-05T20:22:48.380Z] [iam] checking project scriptthing for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2022-11-05T20:22:48.380Z] > refreshing access token with scopes: []
+[debug] [2022-11-05T20:22:48.381Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2022-11-05T20:22:48.381Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2022-11-05T20:22:48.542Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2022-11-05T20:22:48.543Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2022-11-05T20:22:48.608Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2022-11-05T20:22:48.609Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2022-11-05T20:22:48.655Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/scriptthing:testIamPermissions [none]
+[debug] [2022-11-05T20:22:48.655Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/scriptthing:testIamPermissions x-goog-quota-user=projects/scriptthing
+[debug] [2022-11-05T20:22:48.656Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/scriptthing:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2022-11-05T20:22:49.045Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/scriptthing:testIamPermissions 200
+[debug] [2022-11-05T20:22:49.046Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/scriptthing:testIamPermissions {}
+[debug] [2022-11-05T20:22:49.046Z] [iam] error while checking permissions, command may fail: FirebaseError: Authorization failed. This account is missing the following required permissions on project scriptthing:
+
+  firebase.projects.get
+  firebasehosting.sites.update
+[debug] [2022-11-05T20:22:49.047Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/scriptthing [none]
+[debug] [2022-11-05T20:22:49.362Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/scriptthing 403
+[debug] [2022-11-05T20:22:49.362Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/scriptthing {"error":{"code":403,"message":"The caller does not have permission","status":"PERMISSION_DENIED"}}
+[debug] [2022-11-05T20:22:49.364Z] HTTP Error: 403, The caller does not have permission
+[debug] [2022-11-05T20:22:49.497Z] FirebaseError: HTTP Error: 403, The caller does not have permission
+    at responseToError (/usr/local/lib/node_modules/firebase-tools/lib/responseToError.js:49:12)
+    at RetryOperation._fn (/usr/local/lib/node_modules/firebase-tools/lib/apiv2.js:288:77)
+    at processTicksAndRejections (node:internal/process/task_queues:96:5)
+[error] 
+[error] Error: Failed to get Firebase project scriptthing. Please make sure the project exists and your account has permission to access it.

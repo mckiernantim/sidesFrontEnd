@@ -95,11 +95,6 @@ overflow:hidden;
 /* cursor animations */
 
 
-body{
-    padding: 40px;
-    background-color: #121212;
-  }
-
   #parent {
     height: 40px;
     white-space: nowrap;
@@ -199,10 +194,12 @@ h4{
     margin: 0 auto;
 }
 .right-cell{
-    /* padding-top:5%; */
-    padding-right:15%;
-    display:flex;
+    padding-right: 15%;
+    display: flex;
     height: auto;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
 }
 .text-area{
     width: 85%;
