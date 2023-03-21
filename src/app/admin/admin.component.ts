@@ -29,8 +29,12 @@ export class AdminComponent implements OnInit {
       // this IS thea actual json DATA we need
       this.tickets = this.Feedback$.subscribe(data => {
         this.selected = data[0];
-        this.allTickets = data;
-        this.displayedTickets = data;
+        this.allTickets = data.sort((a,b) => {
+          const timestampA = new Date(a.date).getTime();
+          const timestampB = new Date(b.date).getTime();
+          return timestampA - timestampB;
+        });
+        this.displayedTickets = data
       })
 		}
 
@@ -75,6 +79,20 @@ updateTicket(ticket: FeedbackTicket): void {
       // Show error message
       console.error('Error updating ticket: ', error);
       alert('An error occurred while updating the ticket. Please try again later.');
+    });
+}
+deleteTicket(ticketId: string): void {
+  // Delete the ticket from the database
+  this.db.collection('feedbackTickets').doc(ticketId).delete()
+    .then(() => {
+      // Show success message and redirect to the admin page
+      alert('Ticket deleted successfully!');
+      this.router.navigate(['/admin']);
+    })
+    .catch((error) => {
+      // Show error message
+      console.error('Error deleting ticket: ', error);
+      alert('An error occurred while deleting the ticket. Please try again later.');
     });
 }
 }
