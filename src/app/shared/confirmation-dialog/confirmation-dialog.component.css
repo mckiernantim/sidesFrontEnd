@@ -1,0 +1,10 @@
+.confirmation-button-div {
+  height:300px;
+  width:300px;;
+  border:2px solid yellow;
+ }
+
+ .mat-mdc-dialog-container {
+  height:300px;
+  width:300px
+ }

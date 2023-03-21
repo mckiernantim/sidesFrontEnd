@@ -53,6 +53,7 @@ import { SpinningBotComponent } from './spinning-bot/spinning-bot.component';
 import { AdminComponent } from './admin/admin.component';
 import { AdminMainComponent } from './admin/admin-main/admin-main.component';
 import { AdminSideBarComponent } from './admin/admin-side-bar/admin-side-bar.component';
+import { ConfirmationDialogComponent } from './shared/confirmation-dialog/confirmation-dialog.component';
 @NgModule({
     declarations: [
         AppComponent,
@@ -75,7 +76,8 @@ import { AdminSideBarComponent } from './admin/admin-side-bar/admin-side-bar.com
         SpinningBotComponent,
         AdminComponent,
         AdminMainComponent,
-        AdminSideBarComponent
+        AdminSideBarComponent,
+        ConfirmationDialogComponent
     ],
     imports: [
       AngularFireModule,

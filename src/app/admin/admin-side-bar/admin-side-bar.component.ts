@@ -15,4 +15,5 @@ export class AdminSideBarComponent {
   selectNewTicket(ticket) {
     this.handleClick.emit(ticket)
   }
+  
 }

@@ -7,7 +7,9 @@
     </div>
     <mat-card-actions>
       <textarea (input)="updatedText = $event.target.value"></textarea>
+
       <button (click)="updateSelectedTicket(true)">Respond To Ticket</button>
+      <button (click)="deleteSelectedTicket(selected)">Delete Ticket</button>
     </mat-card-actions>
   </mat-card>
 </div>

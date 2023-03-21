@@ -30,7 +30,7 @@ export class FeedbackComponent implements OnInit {
   onSubmit() {
     this.currentTicket.date = new Date().toISOString()
     this.currentTicket.email = this.auth.userData.email
-    this.feedback.postFeedback(this.currentTicket);
+    this.feedback.postTicket(this.currentTicket);
     this.resetForm()
   }
   resetForm(){

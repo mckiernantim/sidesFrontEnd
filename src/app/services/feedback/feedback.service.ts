@@ -19,7 +19,7 @@ import { Line } from '../../types/Line';
   providedIn: 'root'
 })
 export class FeedbackService {
-  feedback:Observable<any>;
+  $feedback:Observable<any>;
   _db:AngularFirestore;
   categories = [
     'Select',
@@ -32,14 +32,13 @@ export class FeedbackService {
   ];
   constructor(public httpClient: HttpClient, db:AngularFirestore) {
     this._db = db;
-
-    this.feedback = db.collection("feedbackTickets", ticketRef => ticketRef
-    .where('text', '!=', "Describe any issues")).valueChanges(idToken);
+    this.$feedback = db.collection("feedbackTickets", ticketRef => ticketRef
+    .where('text', '!=', "Describe any issues")).valueChanges({ idField: 'id' });
 
 
   }
 
-  postFeedback(ticket:FeedbackTicket){
+  postTicket(ticket:FeedbackTicket){
     // not sure why this doesn't work with custom class
     const { text, title, category, date, handled } = ticket
     try {
@@ -63,5 +62,31 @@ export class FeedbackService {
       console.log(err);
       alert(err)
     }
+}
+updateTicket(ticket: FeedbackTicket): void {
+  // Update the ticket in the database
+  this._db.collection('feedbackTickets').doc(ticket.id).update(ticket)
+    .then(() => {
+      // Show success message and redirect to the admin page
+      alert('Ticket updated successfully!');
+    })
+    .catch((error) => {
+      // Show error message
+      console.error('Error updating ticket: ', error);
+      alert('An error occurred while updating the ticket. Please try again later.');
+    });
+}
+deleteTicket(ticketId: string): void {
+  // Delete the ticket from the database
+  this._db.collection('feedbackTickets').doc(ticketId).delete()
+    .then(() => {
+      // Show success message and redirect to the admin page
+      alert('Ticket deleted successfully!');
+    })
+    .catch((error) => {
+      // Show error message
+      console.error('Error deleting ticket: ', error);
+      alert('An error occurred while deleting the ticket. Please try again later.');
+    });
 }
 }
