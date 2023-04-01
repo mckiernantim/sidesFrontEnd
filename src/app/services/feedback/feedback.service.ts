@@ -41,13 +41,14 @@ export class FeedbackService {
   postTicket(ticket:FeedbackTicket){
     // not sure why this doesn't work with custom class
     const { text, title, category, date, handled } = ticket
+    let userEmail = JSON.parse(localStorage.getItem("user")).email
     try {
       this._db.collection("feedbackTickets").add({
         text: text,
         title: title,
         category: category,
         date: date,
-        email:localStorage.getItem("user"),
+        email:userEmail,
         handled:handled
       })
       .then((doc:DocumentReference<FeedbackTicket>) => {
@@ -88,5 +89,9 @@ deleteTicket(ticketId: string): void {
       console.error('Error deleting ticket: ', error);
       alert('An error occurred while deleting the ticket. Please try again later.');
     });
+}
+sendResponseEmail(ticket:FeedbackTicket, response:string) {
+  // grab string and send it to the email trigger service to the target
+
 }
 }

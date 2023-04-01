@@ -66,11 +66,11 @@ deleteSelectedTicket(event): void {
   });
 
   dialogRef.afterClosed().subscribe(result => {
-    // if (result === 'confirm') {
-    //   this.feedback.deleteTicket(event.id);
-    // }
+    if (result === 'confirm') {
+      this.feedback.deleteTicket(event.id);
+  }
   });
- 
+
   // Delete the ticket from the database
 
   // this.feedback.deleteTicket(ticketId)
