@@ -11,10 +11,15 @@ import { FeedbackTicket } from 'src/app/types/feedbackTicket';
 export class AdminMainComponent {
   @Input() selected:FeedbackTicket;
   @Output() updateSelected = new EventEmitter();
+  @Output() deleteSelected = new EventEmitter();
   updatedText: string;
 
   updateSelectedTicket(val) {
     this.updateSelected.emit(val)
+  }
+  deleteSelectedTicket(val) {
+    console.log(val, "delete is firing an event")
+    this.deleteSelected.emit(val)
   }
 
 }

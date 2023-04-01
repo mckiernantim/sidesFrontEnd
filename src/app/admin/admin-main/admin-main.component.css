@@ -1,8 +1,29 @@
 .not-handled {
   background-color: red;
 }
-
-
 .admin-side-container{
   overflow: scroll;
+}
+.admin-main-container {
+  display:flex;
+  flex-direction: column;
+  background-color: var(--grey)!important;
+  height:100%;
+  justify-content: center;
+}
+.admin-main-card {
+  height: 90%;
+  display: flex;
+  background-color: var(--grey) !important;
+  text-align: left;
+  color: var(--black) !important;
+  padding: 0 5%;
+}
+.admin-main-card-body {
+  border: 2px solid black;
+    padding: 2%;
+    height: 75%;
+}
+h1 {
+  overflow:hidden
 }
