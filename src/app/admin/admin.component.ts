@@ -57,6 +57,38 @@ this.selected = event
   // this.feedback.updateTicket()
  }
 
+ selectNewTicket(event) {
+   this.selected = event
+}
+ createTicket(ticket: FeedbackTicket): void {
+  // Add the new ticket to the database
+  this.db.collection('feedbackTickets').add(ticket)
+    .then(() => {
+      // Show success message and redirect to the admin page
+      alert('Ticket created successfully!');
+      this.router.navigate(['/admin']);
+    })
+    .catch((error) => {
+      // Show error message
+      console.error('Error creating ticket: ', error);
+      alert('An error occurred while creating the ticket. Please try again later.');
+    });
+}
+updateTicket(ticket: FeedbackTicket): void {
+  // Update the ticket in the database
+  this.db.collection('feedbackTickets').doc(ticket.id).update(ticket)
+    .then(() => {
+      // Show success message and redirect to the admin page
+      alert('Ticket updated successfully!');
+      this.router.navigate(['/admin']);
+    })
+    .catch((error) => {
+      // Show error message
+      console.error('Error updating ticket: ', error);
+      alert('An error occurred while updating the ticket. Please try again later.');
+    });
+
+
 
 deleteSelectedTicket(event): void {
  const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
@@ -64,16 +96,11 @@ deleteSelectedTicket(event): void {
       message: `Are you sure you want to delete ticket ${event.title} from ${event.email}?`
     }
   });
-
   dialogRef.afterClosed().subscribe(result => {
     if (result === 'confirm') {
       this.feedback.deleteTicket(event.id);
-  }
+    }
   });
-
-  // Delete the ticket from the database
-
-  // this.feedback.deleteTicket(ticketId)
-}
+ }
 }
 

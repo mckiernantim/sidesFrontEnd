@@ -45,8 +45,40 @@ export class UploadService {
 
   private url:string = environment.url
   // Firestore will manage all of our fundata and our tickets for feedback
-  constructor(public httpClient: HttpClient,) {}
 
+  constructor(public httpClient: HttpClient, db:AngularFirestore) {
+    this._db = db;
+    this.feedback = db.collection("feedbackTickets", ticketRef => ticketRef
+      .where('text', '!=', "Describe any issues")).valueChanges(idToken);
+    this.funData = db.collection("funData").valueChanges({ idField: 'id' })
+  }
+  postFeedback(ticket:FeedbackTicket){
+    // not sure why this doesn't work with custom class
+    const { text, title, category, date, handled } = ticket
+    let  userEmail  = JSON.parse(localStorage.getItem("user")).email;
+    
+    try {
+      this._db.collection("feedbackTickets").add({
+        text: text,
+        title: title,
+        category: category,
+        date: date,
+        email:userEmail,
+        handled:handled
+      })
+      .then((doc:DocumentReference<FeedbackTicket>) => {
+        console.log(doc)
+        alert(`
+         We've recorded your issues with: ${title}
+        Thanks for helping make SidesWays better.
+      `)
+
+        })
+    } catch (err) {
+      console.log(err);
+      alert(err)
+    }
+}
 // final step
   getPDF(name, callsheet) {
     let params = new HttpParams()
@@ -93,9 +125,7 @@ export class UploadService {
       responseType: null,
     };
   }
-
-
-  // get classified data => returns observable for stuff to plug into
+// get classified data => returns observable for stuff to plug into
   postFile(fileToUpload: File): Observable<any> {
     this.resetHttpOptions();
     this.script = localStorage.getItem('name');

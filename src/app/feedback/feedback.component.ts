@@ -23,7 +23,6 @@ export class FeedbackComponent implements OnInit {
     public auth:AuthService,
     public feedback:FeedbackService) {}
   ngOnInit(): void {
-    this.categories = this.feedback.categories
     this.resetForm()
   }
 

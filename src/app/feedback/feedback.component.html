@@ -9,12 +9,12 @@
        <option *ngFor="let cat of categories"  [ngValue]="cat">{{ cat }}</option>
      </select>
      <br>
-     <button mat-raised-button color="primary-light" type="submit" [disabled]="feedbackForm.form.pristine || !feedbackForm.valid">Submit</button>
-   </div>
+    </div>
     <div>
       <label for="">Description</label>
       <br>
       <textarea class="form-control"  required id="text" required [(ngModel)]="currentTicket.text" placeholder="Describe any issues" name="text"></textarea>
+      <button mat-raised-button color="primary-light" type="submit" [disabled]="feedbackForm.form.pristine || !feedbackForm.valid">Submit</button>
     </div>
   </form>
 </div>
