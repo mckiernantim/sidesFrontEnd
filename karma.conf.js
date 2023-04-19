@@ -27,6 +27,19 @@ module.exports = function (config) {
     autoWatch: true,
     browsers: ['Chrome'],
     singleRun: false,
-    restartOnFileChange: true
+    restartOnFileChange: true,
+    files: [
+      { pattern: 'src/test.ts', watched: false, type: 'module' },
+      { pattern: './node_modules/@angular/material/prebuilt-themes/indigo-pink.css', included: true },
+      { pattern: './node_modules/@angular/material/prebuilt-themes/pink-bluegrey.css', included: true },
+      { pattern: 'src/app/**/*.ts', included: false, watched: true },
+      { pattern: 'src/app/**/*.html', included: false, watched: true },
+      { pattern: 'src/assets/**/*', included: false, watched: false },
+      { pattern: 'src/app/**/*.spec.ts', included: true },
+      { pattern: 'src/app/app.component.spec.ts', included: true },
+      { pattern: 'src/environments/environment*.ts', included: false, watched: true },
+      
+      // Add additional entries for each component directory in src/app
+    ]
   });
 };

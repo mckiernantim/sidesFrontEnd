@@ -56,13 +56,15 @@ export class UploadService {
   postFeedback(ticket:FeedbackTicket){
     // not sure why this doesn't work with custom class
     const { text, title, category, date, handled } = ticket
+    let  userEmail  = JSON.parse(localStorage.getItem("user")).email;
+    
     try {
       this._db.collection("feedbackTickets").add({
         text: text,
         title: title,
         category: category,
         date: date,
-        email:localStorage.getItem("user"),
+        email:userEmail,
         handled:handled
       })
       .then((doc:DocumentReference<FeedbackTicket>) => {

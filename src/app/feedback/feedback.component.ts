@@ -27,7 +27,6 @@ export class FeedbackComponent implements OnInit {
 
   constructor(public upload: UploadService, public auth:AuthService) {}
   ngOnInit(): void {
-    console.log(this.auth.userData, "HEY THIS IS THE FEEDBACK COMPONENT")
     this.resetForm()
   }
 

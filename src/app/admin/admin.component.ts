@@ -46,9 +46,7 @@ ngOnInit() {}
  }
  selectNewTicket(event) {
  this.selected = event
-  console.log(event, "parent is triggering")
-
- }
+}
  createTicket(ticket: FeedbackTicket): void {
   // Add the new ticket to the database
   this.db.collection('feedbackTickets').add(ticket)

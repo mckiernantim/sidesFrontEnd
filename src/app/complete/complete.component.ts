@@ -26,7 +26,9 @@ export class CompleteComponent implements OnInit {
        let date =  new Date().toISOString().substring(0,10)
         saveAs(data, `${this.name}-${date}.zip`, {type:"application/zip"})
       })
-    } catch (e){ alert(e) }
-
-  }
+    } 
+    catch (e) { 
+      alert(e) 
+     } 
+    }
 }
