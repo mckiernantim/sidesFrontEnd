@@ -13,6 +13,7 @@ import { FeedbackTicket } from '../../types/feedbackTicket';
 import { environment } from 'src/environments/environment';
 import { idToken } from '@angular/fire/auth';
 import { Line } from '../../types/Line';
+import { AuthService } from '../auth/auth.service';
 
 
 @Injectable({
@@ -30,7 +31,7 @@ export class FeedbackService {
     'Page-numbers',
     'Incorrect Spacing'
   ];
-  constructor(public httpClient: HttpClient, db:AngularFirestore) {
+  constructor(public httpClient: HttpClient, db:AngularFirestore, public auth:AuthService) {
     this._db = db;
     this.$feedback = db.collection("feedbackTickets", ticketRef => ticketRef
     .where('text', '!=', "Describe any issues")).valueChanges({ idField: 'id' });
@@ -41,14 +42,14 @@ export class FeedbackService {
   postTicket(ticket:FeedbackTicket){
     // not sure why this doesn't work with custom class
     const { text, title, category, date, handled } = ticket
-    let userEmail = JSON.parse(localStorage.getItem("user")).email
+    let userEmail = this.auth.userData.email;
     try {
       this._db.collection("feedbackTickets").add({
         text: text,
         title: title,
         category: category,
         date: date,
-        email:userEmail,
+        email: userEmail,
         handled:handled
       })
       .then((doc:DocumentReference<FeedbackTicket>) => {
@@ -77,6 +78,7 @@ updateTicket(ticket: FeedbackTicket): void {
       alert('An error occurred while updating the ticket. Please try again later.');
     });
 }
+
 deleteTicket(ticketId: string): void {
   // Delete the ticket from the database
   this._db.collection('feedbackTickets').doc(ticketId).delete()
@@ -92,6 +94,5 @@ deleteTicket(ticketId: string): void {
 }
 sendResponseEmail(ticket:FeedbackTicket, response:string) {
   // grab string and send it to the email trigger service to the target
-
-}
+  }
 }
