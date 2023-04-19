@@ -5,7 +5,9 @@ import { AngularFirestore, AngularFirestoreCollection, DocumentReference  } from
 import { Observable, Subscription } from 'rxjs';
 import { MatCard } from '@angular/material/card';
 import { Router } from '@angular/router';
-
+import { FeedbackService } from '../services/feedback/feedback.service';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from '../shared/confirmation-dialog/confirmation-dialog.component';
 @Component({
   selector: 'app-admin',
   templateUrl: './admin.component.html',
@@ -18,34 +20,45 @@ export class AdminComponent implements OnInit {
   tickets:Subscription;
   allTickets:FeedbackTicket[];
   displayedTickets: FeedbackTicket[];
-  constructor(
-    public upload:UploadService,
+  constructor (
+    public feedback:FeedbackService,
     public router: Router,
-    public db: AngularFirestore
+    public dialog: MatDialog
 		) {
-			this.db = db;
       // This IS the data stream completely - mroe complex than just data
-			this.Feedback$ = this.upload.feedback;
+			this.Feedback$ = this.feedback.$feedback;
       // this IS thea actual json DATA we need
       this.tickets = this.Feedback$.subscribe(data => {
         this.selected = data[0];
-        this.allTickets = data;
-        this.displayedTickets = data;
+        this.allTickets = data.sort((a,b) => {
+          const timestampA = new Date(a.date).getTime();
+          const timestampB = new Date(b.date).getTime();
+          return timestampA - timestampB;
+        });
+        this.displayedTickets = this.allTickets
       })
 		}
 
 ngOnInit() {}
 
+filterTickets(val = null) {
+ this.displayedTickets = val ? this.allTickets.filter(ticket => {
+   ticket.category === val;
+ }) : this.allTickets;
+}
+selectNewTicket(event) {
+this.selected = event
+ console.log(event, "parent is triggering")
+
+}
  updateSelectedTicket(event) {
-  console.log("ticket upated")
+  alert('update')
+  console.log(event);
+  // this.feedback.updateTicket()
  }
- filterTickets(val = null) {
-  this.displayedTickets = val ? this.allTickets.filter(ticket => {
-    ticket.category === val;
-  }) : this.allTickets;
- }
+
  selectNewTicket(event) {
- this.selected = event
+   this.selected = event
 }
  createTicket(ticket: FeedbackTicket): void {
   // Add the new ticket to the database
@@ -74,6 +87,20 @@ updateTicket(ticket: FeedbackTicket): void {
       console.error('Error updating ticket: ', error);
       alert('An error occurred while updating the ticket. Please try again later.');
     });
-}
+
+
+
+deleteSelectedTicket(event): void {
+ const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+    data: {
+      message: `Are you sure you want to delete ticket ${event.title} from ${event.email}?`
+    }
+  });
+  dialogRef.afterClosed().subscribe(result => {
+    if (result === 'confirm') {
+      this.feedback.deleteTicket(event.id);
+    }
+  });
+ }
 }
 

@@ -29,9 +29,9 @@
             ],
             "scripts": [],
             "allowedCommonJsDependencies": [
-              "angular-slickgrid", "stream"
+              "angular-slickgrid",
+              "stream"
             ]
-
           },
           "proxyConfig": "src/proxy.conf.json",
           "configurations": {
@@ -61,19 +61,32 @@
                   "maximumError": "10kb"
                 }
               ]
+            },
+            "dev": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
             }
-          }
+          },
+          "defaultConfiguration": "dev"
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "sideWays:build",
-        },
+            "browserTarget": "sideWays:build"
+          },
           "configurations": {
             "production": {
               "browserTarget": "sideWays:build:production"
+            },
+            "dev": {
+              "browserTarget": "sideWays:build:dev"
             }
-          }
+          },
+          "defaultConfiguration": "dev"
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
