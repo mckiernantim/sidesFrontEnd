@@ -1,26 +1,26 @@
 .not-handled {
-  background-color: red;
+
 }
 .admin-side-container{
   overflow: scroll;
 }
+
 .admin-main-container {
   display:flex;
-  flex-direction: column;
-  background-color: var(--grey)!important;
-  height:100%;
-  justify-content: center;
+}
+.admin-main-card-h1 {
+  font-size:31px
 }
 .admin-main-card {
   height: 90%;
-  display: flex;
-  background-color: var(--grey) !important;
+  max-width:500px;
+  background-color: inherit !important;
   text-align: left;
-  color: var(--black) !important;
+  overflow: wrap;
   padding: 0 5%;
 }
 .admin-main-card-body {
-  border: 2px solid black;
+    color:black;
     padding: 2%;
     height: 75%;
 }

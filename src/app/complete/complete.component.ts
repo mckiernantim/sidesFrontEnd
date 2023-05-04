@@ -13,8 +13,7 @@ export class CompleteComponent implements OnInit {
   layout: string = localStorage.getItem('layout');
   callsheet: string = localStorage.getItem('callsheet');
   constructor(public upload: UploadService) {}
-
-  // we download as soon as we land
+// we download as soon as we land
   ngOnInit(): void {
     this.downloadPDF();
   }
@@ -24,7 +23,7 @@ export class CompleteComponent implements OnInit {
     _dataSubscriptiopn.subscribe((data) => {
        console.log(data)
        let date =  new Date().toISOString().substring(0,10)
-        saveAs(data, `${this.name}-${date}.zip`, {type:"application/zip"})
+        saveAs(data, `${this.name}-${date}.zip`, { type:"application/zip" } )
       })
     } 
     catch (e) { 

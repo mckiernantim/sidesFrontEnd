@@ -258,7 +258,7 @@ h4{
     height:auto;
     margin: 0 auto;
 }
-.warning-box{
+.w-box{
     background-color: #c2185a;
 
     text-align: center;
@@ -296,12 +296,7 @@ label.upload-button input[type="file"] {
     font-size:2.4em;
     font-weight: bolder !important;
 }
-.warning-text{
-    background-color: var(--white);
-    color:var(--black);
-    padding:10px;
-    border-radius:20px
-}
+
 .mobile-images{
     display:none;
 }

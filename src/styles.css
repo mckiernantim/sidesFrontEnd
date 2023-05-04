@@ -1,21 +1,31 @@
 /* You can add global styles to this file, and also import other style files */
 
 * {
-    font-family: 'Courier New', Courier, monospace /* Replace with your custom font */!important;
+    font-family: 'Courier New', Courier, monospace
+        /* Replace with your custom font */
+        !important;
     /* Add !important to overwrite all elements */
-  }
-p,h1,h2,h3,h4 {
-      font-weight: 400 !important;
-  }
-  html {
-    height:100vh
-  }
-body{
+}
+
+p,
+h1,
+h2,
+h3,
+h4 {
+    font-weight: 400 !important;
+}
+
+html {
+    height: 100vh
+}
+
+body {
     overflow-x: hidden;
-    height:auto;
-    margin:0;
+    height: auto;
+    margin: 0;
     font-family: 'Courier New', Courier, monospace !important;
 }
+
 .mat-typography {
     font-family: 'Courier New', Courier, monospace !important;
 }
@@ -27,64 +37,81 @@ body{
 
     /* background: radial-gradient(circle, rgba(255,0,29,1) 0%, rgba(247,85,85,1) 57%);  */
     color: var(--black)
+}
 
-}z
-.mat-mdc-card{
-    margin:  0 auto important !important;
+.shadow {
+    box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px !important
 }
-.red-text{
-    color:red;
+
+.mat-mdc-card {
+    margin: 0 auto important !important;
+    overflow: wrap;
 }
-.white{
+
+.red-text {
+    color: red;
+}
+
+.white {
     background-color: var(--white);
 }
 
-h1{
+h1 {
     font-size: 48px;
 }
-h2{
-    font-size:24px
+
+h2 {
+    font-size: 24px
 }
-h3{
+
+h3 {
     font-size: 20px;
 }
-h4{
+
+h4 {
     font-size: 18px;
 }
-p{
+
+p {
     font-size: 16px;
 }
-.bold{
+
+.bold {
     font-weight: 700;
 }
-:root{
-    --white:rgb(240, 234, 234);
 
-    --black:rgb(0, 0, 0);
-    --pink:#e6605c;
-    --grey:hsl(0deg 0% 85%);
+:root {
+    --white: rgb(240, 234, 234);
+
+    --black: rgb(0, 0, 0);
+    --pink: #e6605c;
+    --grey: hsl(0deg 0% 85%);
 }
-.two-column{
-    display:grid;
-    height:auto;
-    grid-template-columns:1fr 1fr
+
+.two-column {
+    display: grid;
+    height: auto;
+    grid-template-columns: 1fr 1fr
 }
 
 .full-vh {
-    height:100%;
-}
-.ninety-vh {
-    height:90vh
+    height: 100%;
 }
 
-.mat-mdc-progress-spinner circle{
-  stroke:var(--white)!important
+.ninety-vh {
+    height: 90vh
 }
-.spinning-bot{
+
+.mat-mdc-progress-spinner circle {
+    stroke: var(--white) !important
+}
+
+.spinning-bot {
     animation: mat-progress-spinner-linear-rotate 1200ms linear infinite;
-    height:450px;
-    width:auto
+    height: 450px;
+    width: auto
 }
+
 .mat-mdc-card-actions {
     display: flex;
     flex-direction: row;
@@ -94,50 +121,55 @@ p{
     padding: 8px;
     justify-content: center;
 }
-mat-progress-spinner{
+
+mat-progress-spinner {
     width: 100px;
     height: 100px;
     margin: 42% auto;
-    color:var(--white) !important
-}
-/* TODO(mdc-migration): The following rule targets internal classes of card that may no longer apply for the MDC version. */
-.mat-mdc-card{
-    background-color: var(--black)  !important;
     color: var(--white) !important
-
 }
-.upload-card{
-    width:40%;
-    height:auto;
-    margin:0 auto;
+
+/* TODO(mdc-migration): The following rule targets internal classes of card that may no longer apply for the MDC version. */
+.mat-mdc-card {
+    background-color: var(--black) !important;
+    color: var(--white) !important
+}
+
+.upload-card {
+    width: 40%;
+    height: auto;
+    margin: 0 auto;
     display: block;
     position: relative;
     border-radius: 15px 15px 15px 15px !important;
     box-shadow: var(--grey) 1px 1px 1px 1px
 }
-.center{
+
+.center {
     text-align: center;
 }
-.left{
-    text-align:left
+
+.left {
+    text-align: left
 }
-.right{
+
+.right {
     text-align: right;
 }
-.section-border-bottom{
-    margin: 0 auto;
-    border-bottom:.5px solid var(--black);
-    width:90%
 
-}
-.section-border-top{
+.section-border-bottom {
     margin: 0 auto;
-    border-top:.5px solid var(--black);
-    width:90%
-
+    border-bottom: .5px solid var(--black);
+    width: 90%
 }
 
-.spinner-overlay{
+.section-border-top {
+    margin: 0 auto;
+    border-top: .5px solid var(--black);
+    width: 90%
+}
+
+.spinner-overlay {
     position: absolute;
     top: 15%;
     left: 27%;
@@ -146,33 +178,43 @@ mat-progress-spinner{
     width: 550px;
     z-index: 10000;
     padding: 5%;
-    background-color:rgb(230 97 91);
-    padding-bottom: 0!important;
+    background-color: rgb(230 97 91);
+    padding-bottom: 0 !important;
     border: 10px solid var(--black);
 }
+
 /* TODO(mdc-migration): The following rule targets internal classes of card that may no longer apply for the MDC version. */
-.mat-mdc-card-header-text{
-    display:none
+.mat-mdc-card-header-text {
+    display: none
 }
+
 /* TODO(mdc-migration): The following rule targets internal classes of form-field that may no longer apply for the MDC version. */
 .mat-mdc-form-field-appearance-legacy .mat-mdc-form-field-label {
-    color:black !important;
+    color: black !important;
 }
 
 /* TODO(mdc-migration): The following rule targets internal classes of form-field that may no longer apply for the MDC version. */
-.search
-  .mat-mdc-form-field-appearance-outline.mat-mdc-focused
-  .mat-mdc-form-field-outline-thick {
-  color: red;
+.search .mat-mdc-form-field-appearance-outline.mat-mdc-focused .mat-mdc-form-field-outline-thick {
+    color: red;
 }
 
+.white-card {
 
+    background-color: var(--white);
+    color: var(--black);
+    padding: 10px;
+    border-radius: 20px
+}
+.center-flex {
+    display: flex;
+    flex-direction: column;
+    align-content: space-around;
+    justify-content: center;
+    align-items: center;
+}
 
-@media only screen and (max-width: 1200px){
-    .two-column{
+@media only screen and (max-width: 1200px) {
+    .two-column {
         grid-template-columns: 1fr;
     }
 }
-
-
-
