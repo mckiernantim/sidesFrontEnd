@@ -250,8 +250,7 @@ h4{
     padding-left: 5%;
 }
 .card-image{
-    height:200px;
-    margin-left: -5%
+    display: none;
 }
 .loading-image{
     width:auto;
