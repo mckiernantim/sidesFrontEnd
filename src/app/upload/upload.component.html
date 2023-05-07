@@ -1,31 +1,32 @@
-<div class="form-group two-column left black">
-  <div class="left-cell reveal">
+<div class = "image-container">
 
-    <div>
-      <div>
-        <h1 class="mat-headline-3">
-          <strong>Welcome To Sides-Ways</strong>
-        </h1>
-      </div>
-      <!-- <button mat-raised-button color = "primary" class="delay-6 learn-more-button reveal" routerLink="../About">Learn More</button> -->
-      <div class="white-card shadow">
-        <div>
-          <h2>
-            <strong>We proudly stand with the WGA</strong>
-          </h2>
-        </div>
-        <div>
-          <h3><strong>Production starts with writers</strong></h3>
-        </div>
-        <div>
-          <h3>
-            <strong>
-              AI should should help artists. <br>Not replace them.
-            </strong>
-          </h3>
-        </div>
-      </div>
-      <!-- <div class="typewriter ">
+  <div class="title">
+    <h1 class="mat-headline-3 title reveal title">
+      <strong>Welcome To Sides-Ways</strong>
+    </h1>
+  </div>
+  <div class="form-group two-column left black">
+    <div class="left-cell reveal">
+      <div class="left-container">
+        <!-- <button mat-raised-button color = "primary" class="delay-6 learn-more-button reveal" routerLink="../About">Learn More</button> -->
+        <mat-card class="upload-card white-card shadow">
+          <div>
+            <h2>
+              <strong>We proudly stand with the WGA</strong>
+            </h2>
+          </div>
+          <div>
+            <h3><strong>Production starts with writers.</strong></h3>
+          </div>
+          <div>
+            <h3>
+              <strong>
+                AI should should help artists. <br>Not replace them.
+              </strong>
+            </h3>
+          </div>
+        </mat-card>
+        <!-- <div class="typewriter ">
               <h2 class="delay-3 mat-headline-4">
                 Free Open Beta
               </h2>
@@ -35,16 +36,17 @@
                 We Make Sides
               </h2>
             </div> -->
+      </div>
+      <div></div>
     </div>
-    <div></div>
-  </div>
     <div class="center right-cell reveal">
       <mat-card appearance="outlined" class="upload-card shadow">
         <mat-card-header>
-          <div>
-            <img class="card-image" [src]="this.logo" />
+          <div class="image-container">
+            <!-- <img src="../../assets/icons/vectors/flat-bot.PNG" /> -->
           </div>
         </mat-card-header>
+
         <mat-card-content>
           <div class="feature-block">
             <h3 class="feature-headline">Upload your script <br>
@@ -56,7 +58,7 @@
                 <strong>
                   For best results, please use unencrypted Production Scripts with proper scene-headers, scene numbers,
                   and a title page without a topsheet (we'll handle that laater)
-  
+
                   <br>
                   PDF scripts should be formatted to industry standard before you even get here.
                   <br>
@@ -77,3 +79,4 @@
       </mat-card>
     </div>
   </div>
+</div>

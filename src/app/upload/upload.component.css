@@ -180,26 +180,11 @@ h4{
     font-size: .45em;
 }
 .left-cell{
-    display:grid;
-    grid-template-areas:
-    "big big"
-    "b c d"
-    "b c d";
-    padding-top: 15px;
-    justify-content: space-evenly;
-    align-content: space-evenly;
-    padding-left: 15%;
-    width: 80%;
-    height:auto;
-    margin: 0 auto;
+  
 }
 .right-cell{
-    padding-right: 15%;
-    display: flex;
-    height: auto;
-    flex-direction: row;
-    justify-content: space-around;
-    align-items: center;
+
+  
 }
 .text-area{
     width: 85%;
@@ -299,6 +284,17 @@ label.upload-button input[type="file"] {
 .mobile-images{
     display:none;
 }
+.image-container {
+    width:98%;
+    background-repeat:no-repeat;
+    background-image:url("../../assets/icons/vectors/flat-bot.PNG");
+    background-size:contain;
+    background-position-x: 50%;
+} 
+.card-image{
+    height:150px
+}
+
 
 @media (max-width: 768px) {
   .two-column{
@@ -306,6 +302,9 @@ label.upload-button input[type="file"] {
     width: 95%;
     margin: 0 auto;
     height:60%
+}
+.left-container{
+    width:85vw
 }
 
 }

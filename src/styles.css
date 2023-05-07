@@ -79,6 +79,10 @@ p {
 .bold {
     font-weight: 700;
 }
+.title{ 
+    text-align:center
+}
+
 
 :root {
     --white: rgb(240, 234, 234);
@@ -90,8 +94,11 @@ p {
 
 .two-column {
     display: grid;
+    max-height: 95vh;
     height: auto;
-    grid-template-columns: 1fr 1fr
+    grid-template-columns: 1fr 1fr;
+    padding: 1% 0%;
+    align-items: center;
 }
 .main {
     height:95vh
@@ -201,11 +208,15 @@ mat-progress-spinner {
 }
 
 .white-card {
-
-    background-color: var(--white);
-    color: var(--black);
+    text-align: center;
+    background-color: var(--white) !important;
+    color: var(--black)!important;
     padding: 10px;
     border-radius: 20px
+}
+
+.white-card h3 {
+    margin:0;
 }
 .center-flex {
     display: flex;
