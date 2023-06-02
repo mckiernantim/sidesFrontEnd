@@ -12,7 +12,7 @@ h1,
 h2,
 h3,
 h4 {
-    font-weight: 400 !important;
+    font-weight: bold !important;
 }
 
 html {
@@ -151,7 +151,8 @@ mat-progress-spinner {
     display: block;
     position: relative;
     border-radius: 15px 15px 15px 15px !important;
-    box-shadow: var(--grey) 1px 1px 1px 1px
+    box-shadow: var(--grey) 1px 1px 1px 1px;
+    padding:25px
 }
 
 .center {
@@ -176,6 +177,14 @@ mat-progress-spinner {
     margin: 0 auto;
     border-top: .5px solid var(--black);
     width: 90%
+}
+.center-flex {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    align-content: space-around;
+    justify-content: center;
+    align-items: center;
 }
 
 .spinner-overlay {
@@ -225,6 +234,36 @@ mat-progress-spinner {
     justify-content: center;
     align-items: center;
 }
+.reveal {
+    opacity: 0 ;
+    animation: reveal 1.25s, forwards ease-in;
+    animation-fill-mode: forwards;
+    animation-delay:.5s
+}
+
+.delay-3 {
+    animation-delay:2.5s !important
+}
+  .delay-4 {
+    animation-delay: 4s !important;
+  }
+  .delay-6 {
+    animation-delay: 5s !important;
+  }
+  @keyframes reveal {
+    from {opacity: 0 }
+    to{opacity:100}
+  }
+  /* The typing effect */
+  @keyframes typing {
+    from { width: 0; }
+    to { width: 100%; }
+}
+@keyframes blink-caret {
+    from, to { border-color: transparent; }
+    50% { border-color: black; }
+  }
+
 
 @media only screen and (max-width: 1200px) {
     .two-column {

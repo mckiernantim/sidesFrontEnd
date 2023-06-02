@@ -1,9 +1,9 @@
-import { SpinningBotComponent } from './../spinning-bot/spinning-bot.component';
+import { SpinningBotComponent } from '../spinning-bot/spinning-bot.component';
 
 import { Observable, Subscription, throwError, pipe,  } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { UploadService } from '../services/upload/upload.service';
+import { UploadService } from '../../services/upload/upload.service';
 import { Router } from '@angular/router';
 import {
   MatDialog,
@@ -54,6 +54,7 @@ export class UploadComponent implements OnInit, OnDestroy {
     //Add 'implements OnDestroy' to the class.
     // this.dataSubscription.unsubscribe()
   };
+  
   // create the page '2.' which is hidden in most scripts
   addTwo(arr) {
     let missingTwo = arr.findIndex(

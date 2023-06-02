@@ -5,7 +5,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { Observable, of } from 'rxjs';
 
 import { UploadComponent } from './upload.component';
-import { UploadService } from '../services/upload/upload.service';
+import { UploadService } from '../../services/upload/upload.service';
 import { SpinningBotComponent } from '../spinning-bot/spinning-bot.component';
 
 describe('UploadComponent', () => {

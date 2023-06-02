@@ -6,7 +6,7 @@ export class AuthGuardService {
 
   getLoginState() {
    if (localStorage.getItem("user") === "null") {
-     return false
+     return true
     }
     return true;
   }

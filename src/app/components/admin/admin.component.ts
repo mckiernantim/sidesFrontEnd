@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { UploadService } from './../services/upload/upload.service';
-import { FeedbackTicket } from '../types/feedbackTicket';
+import { UploadService } from './../../services/upload/upload.service';
+import { FeedbackTicket } from '../../types/feedbackTicket';
 import { Observable, Subscription } from 'rxjs';
 import { MatCard } from '@angular/material/card';
 import { Router } from '@angular/router';
-import { FeedbackService } from '../services/feedback/feedback.service';
+import { FeedbackService } from '../../services/feedback/feedback.service';
 import { MatDialog } from '@angular/material/dialog';
-import { ConfirmationDialogComponent } from '../shared/confirmation-dialog/confirmation-dialog.component';
+import { ConfirmationDialogComponent } from '../confirmation-dialog/confirmation-dialog.component';
 @Component({
   selector: 'app-admin',
   templateUrl: './admin.component.html',

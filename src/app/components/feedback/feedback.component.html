@@ -1,11 +1,11 @@
 
-<div class="form-group">
+<div class="form-group black-card">
+  <h3> Title: {{this.title}} {{date | date: "short"}} </h3>
   <form #feedbackForm="ngForm" (ngSubmit)="onSubmit()">
-   <h3> Title: {{this.title}} {{date | date: "short"}} </h3>
-   <div>
+   <div class = "center-flex feedback-container" >
      <label for="category">Category</label>
      <br>
-     <select class="form-control" name="category" id="category" required [(ngModel)]="currentTicket.category">
+     <select class="form-control" name="category" id="category" required (ngModel)="currentTicket.category" *ngIf="categories && categories.length > 0">
        <option *ngFor="let cat of categories"  [ngValue]="cat">{{ cat }}</option>
      </select>
      <br>
@@ -13,7 +13,7 @@
     <div>
       <label for="">Description</label>
       <br>
-      <textarea class="form-control"  required id="text" required [(ngModel)]="currentTicket.text" placeholder="Describe any issues" name="text"></textarea>
+      <textarea class="form-control"  required id="text" required (ngModel)="currentTicket.text" placeholder="Describe any issues" name="text"></textarea>
       <button mat-raised-button color="primary-light" type="submit" [disabled]="feedbackForm.form.pristine || !feedbackForm.valid">Submit</button>
     </div>
   </form>
