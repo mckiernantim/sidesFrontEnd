@@ -11,8 +11,8 @@ import {
   inject,
   Input,
 } from '@angular/core';
-import { UploadService } from '../services/upload/upload.service';
-import { AuthService } from '../services/auth/auth.service';
+import { UploadService } from '../../services/upload/upload.service';
+import { AuthService } from '../../services/auth/auth.service';
 import {
   MatDialogRef,
   MatDialog,

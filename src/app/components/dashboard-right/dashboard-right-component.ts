@@ -1,8 +1,8 @@
-import { LineOutService } from '../services/line-out/line-out.service'
+import { LineOutService } from '../../services/line-out/line-out.service'
 import { Observable } from 'rxjs';
-import { IssueComponent } from './../issue/issue.component';
+import { IssueComponent } from '../issue/issue.component';
 import { Router } from '@angular/router';
-import { UploadService } from '../services/upload/upload.service';
+import { UploadService } from '../../services/upload/upload.service';
 import {
   Component,
   OnInit,
@@ -109,7 +109,6 @@ export class DashboardRightComponent implements OnInit {
     this.funData = db.collection('funData');
     this.totalLines;
     this.scriptLength;
-
   }
 
   ngOnInit(): void {
@@ -127,13 +126,10 @@ export class DashboardRightComponent implements OnInit {
     this.active = true;
     this.scriptProblems = [];
     this.modalData = [];
-
-
     // SAVED ON THE SERVICE
-
     this.scriptData = this.upload.lineArr
-    console.log(this.scriptData)
     this.totalPages = this.upload.pagesArr || null;
+
     if(!this.scriptData) {
       alert("script upload failed - rerouting to upload page")
       this.router.navigate(["/"])

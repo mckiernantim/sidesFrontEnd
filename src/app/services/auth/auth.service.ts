@@ -2,10 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { User } from '../../types/user';
 import {  AngularFireAuth } from '@angular/fire/compat/auth';
 import { GoogleAuthProvider } from '@angular/fire/auth';
-import {
-  AngularFirestore,
-   AngularFirestoreDocument,
-} from '@angular/fire/compat/firestore';
+import { AngularFirestore, AngularFirestoreDocument } from '@angular/fire/compat/Firestore';
 import { Router } from '@angular/router';
 
 @Injectable({

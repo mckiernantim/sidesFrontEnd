@@ -1,5 +1,5 @@
 import { saveAs } from 'file-saver';
-import { UploadService } from '../services/upload/upload.service';
+import { UploadService } from '../../services/upload/upload.service';
 import { Component, OnInit } from '@angular/core';
 import { FeedbackComponent } from '../feedback/feedback.component';
 
@@ -13,8 +13,11 @@ export class CompleteComponent implements OnInit {
   layout: string = localStorage.getItem('layout');
   callsheet: string = localStorage.getItem('callsheet');
   constructor(public upload: UploadService) {}
-// we download as soon as we land
   ngOnInit(): void {
+    
+  }
+  // we download as soon as we land
+  ngAfterViewInit(): void {
     this.downloadPDF();
   }
   downloadPDF(): void {

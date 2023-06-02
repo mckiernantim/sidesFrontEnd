@@ -15,7 +15,14 @@ mat-card {
 mat-card, img {
     height:auto;
     overflow:hidden;
-    margin: 0 auto
+    margin: 0 auto;
+
+    overflow: hidden;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-content: space-around;
+    justify-content: flex-end;
     
     
 }
@@ -23,3 +30,17 @@ mat-card, img {
 h2 {
     text-align: center;
 }
+
+
+@media (max-width: 768px) {
+.loading-image{
+    width:50vw;
+}
+mat-card {
+
+}
+img{
+    width:90%;
+}
+
+  }

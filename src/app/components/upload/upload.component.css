@@ -61,36 +61,6 @@ overflow:hidden;
     margin-left: 50px
  }
 
-.reveal {
-    opacity: 0 ;
-    animation: reveal 1.25s, forwards ease-in;
-    animation-fill-mode: forwards;
-    animation-delay:.5s
-}
-
-.delay-3 {
-    animation-delay:2.5s !important
-}
-  .delay-4 {
-    animation-delay: 4s !important;
-  }
-  .delay-6 {
-    animation-delay: 5s !important;
-  }
-  @keyframes reveal {
-    from {opacity: 0 }
-    to{opacity:100}
-  }
-  /* The typing effect */
-  @keyframes typing {
-    from { width: 0; }
-    to { width: 100%; }
-}
-@keyframes blink-caret {
-    from, to { border-color: transparent; }
-    50% { border-color: black; }
-  }
-
 
 /* cursor animations */
 
@@ -217,7 +187,6 @@ h4{
     justify-content: space-evenly;
     height: auto;
     margin: 0 auto;
-    padding-bottom: 1% !important;
     position: relative;
     padding: 16px;
     border-radius: 15px 15px 15px 15px !important;
@@ -228,6 +197,7 @@ h4{
     height:auto;
     grid-template-columns:1fr 1fr ;
     padding:1% 0%;
+    gap:5%
 
 }
 .feature-block{
@@ -290,6 +260,12 @@ label.upload-button input[type="file"] {
     background-image:url("../../assets/icons/vectors/flat-bot.PNG");
     background-size:contain;
     background-position-x: 50%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 95%;
 } 
 .card-image{
     height:150px
