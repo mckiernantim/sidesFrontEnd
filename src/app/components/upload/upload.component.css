@@ -211,7 +211,7 @@ h4{
   margin:0 0 0 0
 }
 .upload-card{
-    width: 60%;
+    width: 70%;
     display: flex;
     flex-direction: column;
     justify-content: space-evenly;
@@ -287,7 +287,7 @@ label.upload-button input[type="file"] {
 .image-container {
     width:98%;
     background-repeat:no-repeat;
-    background-image:url("../../assets/icons/vectors/flat-bot.PNG");
+    background-image:url("../../../assets/icons/vectors/flat-bot.PNG");
     background-size:contain;
     background-position-x: 50%;
 }
@@ -295,6 +295,9 @@ label.upload-button input[type="file"] {
     height:150px
 }
 
+.wga-block{
+  padding: 20px 20px 30px 20px
+}
 
 @media (max-width: 768px) {
   .two-column{

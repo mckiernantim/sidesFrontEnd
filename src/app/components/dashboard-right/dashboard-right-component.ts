@@ -7,8 +7,6 @@ import {
   Component,
   OnInit,
   ViewChild,
-  Inject,
-  AfterViewInit,
   ChangeDetectorRef,
 } from '@angular/core';
 import { MatPaginator } from '@angular/material/paginator';
@@ -16,13 +14,9 @@ import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import {
   MatDialog,
-  MAT_DIALOG_DATA,
-  MatDialogRef,
 } from '@angular/material/dialog';
 
 import { Subscription } from 'rxjs';
-
-
 import { DatePipe } from '@angular/common';
 import {
   AngularFirestore,
