@@ -1,0 +1,370 @@
+
+
+.type {
+  position: relative;
+  overflow:hidden;
+  white-space: nowrap;
+}
+
+img {
+    width:100%;
+    height:auto;
+    margin:0 auto;
+}
+
+/* Animation */
+.type-effect {
+  animation: animated-text  .75s steps(30, end)  normal both
+}
+
+
+#border {
+   animation: animated-cursor 600ms steps(30,end) infinite;
+}
+
+/* text animation */
+.typewriter h1 {
+    width:0;
+    border-right: .15em solid black;
+    overflow: hidden;
+/* Ensures the content is not revealed until the animation */ /* The typwriter cursor */
+    white-space: nowrap; /* Keeps the content on a single line */
+    margin: 0 auto; /* Gives that scrolling effect as the typing happens */
+    letter-spacing: .15em; /* Adjust as needed */
+    animation:
+    typing 1.5s steps(40, end),
+    blink-caret .75s step-end infinite;
+    animation-fill-mode: forwards;
+    animation-delay:.5s;
+    line-height: normal;
+    font-size:2.75rem;
+
+  }
+  .typewriter h2 {
+  width:0;
+/* Ensures the content is not revealed until the animation */ /* The typwriter cursor */
+overflow:hidden;
+    white-space: nowrap; /* Keeps the content on a single line */
+    margin: 0 50% 0 0; /* Gives that scrolling effect as the typing happens */
+    letter-spacing: .15em; /* Adjust as needed */
+    animation:
+    typing .75s steps(20),
+    blink-caret .75s step-end infinite;
+    animation-fill-mode: forwards;
+    animation-delay: 1.5s;
+    line-height: normal;
+
+    margin:20px 0px
+
+  }
+ .blurb {
+    margin-left: 50px
+ }
+
+.reveal {
+    opacity: 0 ;
+    animation: reveal 1.25s, forwards ease-in;
+    animation-fill-mode: forwards;
+    animation-delay:.5s
+}
+
+.delay-3 {
+    animation-delay:2.5s !important
+}
+  .delay-4 {
+    animation-delay: 4s !important;
+  }
+  .delay-6 {
+    animation-delay: 5s !important;
+  }
+  @keyframes reveal {
+    from {opacity: 0 }
+    to{opacity:100}
+  }
+  /* The typing effect */
+  @keyframes typing {
+    from { width: 0; }
+    to { width: 100%; }
+}
+@keyframes blink-caret {
+    from, to { border-color: transparent; }
+    50% { border-color: black; }
+  }
+
+
+/* cursor animations */
+
+
+  #parent {
+    height: 40px;
+    white-space: nowrap;
+    overflow: hidden;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 28px;
+    color: rgba(255,255,255,.70);
+    position: relative;
+  }
+
+  #border {
+    border-bottom: solid 3px rgba(0,255,0,.75);
+    position: absolute;
+    right: -7px;
+    width: 20px;
+  }
+
+  /* Animation */
+  #parent {
+    animation: animated-text 2s steps(30,end) 1s 1 normal both
+  }
+
+  #border {
+     animation: animated-cursor 600ms steps(30,end) infinite;
+  }
+
+  /* text animation */
+
+  @keyframes animated-text{
+    from{width: 0;}
+    to{width: 480px;}
+  }
+
+  /* cursor animations */
+
+  @keyframes animated-cursor{
+    from{border-bottom-color: rgba(0,255,0,.75);}
+    to{border-bottom-color: transparent;}
+  }
+p {
+ font-size:15px
+}
+.arrow{
+    padding-left:1%;
+}
+
+.body{margin-left: 10%; margin-right: 10%; top:2%; bottom: 2%}
+.big-text{
+    font-size: 3.5em;
+    font-weight: bold;
+}
+.feature-block:nth-of-type(2){
+    border-right: 1px solid var(--white);
+    border-left: 1px solid var(--white)
+}
+.developer-tools{
+
+    padding-top: 5%;
+}
+.learn-more{
+    font-size:1.4em
+}
+.learn-more-box {
+    padding-top:15px;
+}
+.small-border{
+    border-top: 2px solid var(--white);
+    margin-top: 6%;
+    margin-bottom: 1%;
+    width:15%
+
+}
+.details{
+    padding-top:0;
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr
+}
+h4{
+    font:36px;
+}
+.footnote{
+    text-align: right;
+    font-size: .45em;
+}
+.left-cell{
+
+}
+.right-cell{
+
+
+}
+.text-area{
+    width: 85%;
+}
+.upload-headline{
+    padding-bottom: 25px;
+    height: auto;
+}
+.mobil-headling{
+    display:none;
+}
+.upload-description{
+    width:95%;
+    font-size:1.1em
+}
+.mat-mdc-card-header {
+    justify-content: space-around;
+}
+.feature-headline{
+    font-size:1.7em;
+    padding-top:2%;
+}
+.upload-description h4{
+  margin:0 0 0 0
+}
+.upload-card{
+    width: 60%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    height: auto;
+    margin: 0 auto;
+    padding-bottom: 1% !important;
+    position: relative;
+    padding: 16px;
+    border-radius: 15px 15px 15px 15px !important;
+}
+.two-column{
+    display:grid;
+    max-height:95vh;
+    height:auto;
+    grid-template-columns:1fr 1fr ;
+    padding:1% 0%;
+
+}
+.feature-block{
+    padding-right: 5%;
+    padding-left: 5%;
+}
+.card-image{
+    display: none;
+}
+.loading-image{
+    width:auto;
+    height:auto;
+    margin: 0 auto;
+}
+.w-box{
+    background-color: #c2185a;
+
+    text-align: center;
+    margin: 0 auto;
+}
+label.upload-button input[type="file"] {
+    position:absolute;
+    top: -1000px;
+}
+
+/***** Example custom styling *****/
+.upload-button {
+    border: 2px solid #AAA;
+    border-radius: 4px;
+    padding: 2px 5px;
+    margin: 2px;
+    display: inline-block;
+}
+.upload-button:hover {
+    background: #CCC;
+}
+.upload-button:active {
+    background: #CCF;
+}
+.upload-button :invalid + span {
+    color: #A44;
+}
+.upload-button :valid + span {
+    color: #4A4;
+}
+.spinner-text{
+
+    margin: 0 auto;
+    color:var(--white);
+    font-size:2.4em;
+    font-weight: bolder !important;
+}
+
+.mobile-images{
+    display:none;
+}
+.image-container {
+    width:98%;
+    background-repeat:no-repeat;
+    background-image:url("../../assets/icons/vectors/flat-bot.PNG");
+    background-size:contain;
+    background-position-x: 50%;
+}
+.card-image{
+    height:150px
+}
+
+
+@media (max-width: 768px) {
+  .two-column{
+    grid-template-columns: 1fr;
+    width: 95%;
+    margin: 0 auto;
+    height:60%
+}
+.left-container{
+    width:85vw
+}
+
+}
+@media only screen and (max-width: 1024px) {
+    .typewriter h1 {
+        white-space: normal;
+        opacity: 1;
+        width:100%;
+        animation: none;
+        text-align: center;
+    }
+    .typewriter h2, .learn-more-button{
+        display: none;
+    }
+    .left-cell {
+        padding-left:2%
+    }
+    .spinner-overlay{
+        width:50px;
+        height:50px
+    }
+    .two-column{
+        grid-template-columns: 1fr;
+        width: 95%;
+        margin: 0 auto;
+        height:85%
+    }
+    .upload-description{
+        display:none;
+    }
+    .mat-mdc-card{
+        width:85%;
+    }
+    .upload-headline, .learn-more, .developer-tools{
+        display:none;
+    }
+    .mobile-headline{
+        display:flex;
+        font-weight:bolder
+    }
+    .mobile-h1{
+        line-height: normal;
+        font-size:50px;
+    }
+    .left-cell{
+        width:100%;
+        padding-top:0%;
+        padding-left:2%
+    }.right-cell{
+        padding:0%
+    }
+    .spinner{
+        height:250px;
+        width:250px
+    }
+    .spinner-overlay{
+        height:auto;
+        width:auto;
+        top:30%;
+        left:10%
+    }
+
+}

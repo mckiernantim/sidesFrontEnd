@@ -1,13 +1,13 @@
-import { FourOfourComponent } from './four-ofour/four-ofour.component';
-import { DonateComponent } from './donate/donate.component';
-import { AboutComponent } from './about/about.component';
-import { CompleteComponent } from './complete/complete.component';
-import { DashboardComponent } from './dashboard/dashboard.component';
-import { AdminComponent } from "./admin/admin.component"
+import { FourOfourComponent } from './components/four-ofour/four-ofour.component';
+import { DonateComponent } from './components/donate/donate.component';
+import { AboutComponent } from './components/about/about.component';
+import { CompleteComponent } from './components/complete/complete.component';
+import { DashboardComponent } from './components/dashboard/dashboard.component';
+import { AdminComponent } from "./components/admin/admin.component"
 
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
-import { UploadComponent } from './upload/upload.component';
+import { UploadComponent } from './components/upload/upload.component';
 import { AuthGuard } from './guards/auth.guard';
 
 

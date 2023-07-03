@@ -2,17 +2,11 @@
 import { AngularFirestore, DocumentReference, AngularFirestoreDocument } from '@angular/fire/compat/Firestore';
 import { Injectable } from '@angular/core';
 import { Observable, } from 'rxjs';
-import {  map } from 'rxjs/operators';
 import {
-  HttpClientModule,
   HttpClient,
-  HttpHeaders,
-  HttpParams,
 } from '@angular/common/http';
 import { FeedbackTicket } from '../../types/feedbackTicket';
-import { environment } from 'src/environments/environment';
-import { idToken } from '@angular/fire/auth';
-import { Line } from '../../types/Line';
+
 import { AuthService } from '../auth/auth.service';
 
 
@@ -22,22 +16,21 @@ import { AuthService } from '../auth/auth.service';
 export class FeedbackService {
   $feedback:Observable<any>;
   _db:AngularFirestore;
-  categories = [
-    'Select',
-    'Pdf Styling',
-    'Incorrect Text',
-    'Script lining',
-    'Scene-headers',
-    'Page-numbers',
-    'Incorrect Spacing'
-  ];
+  categories: string[]
   constructor(public httpClient: HttpClient, db:AngularFirestore, public auth:AuthService) {
     this._db = db;
+    this.categories = [
+      'Select',
+      'Pdf Styling',
+      'Incorrect Text',
+      'Script lining',
+      'Scene-headers',
+      'Page-numbers',
+      'Incorrect Spacing'
+    ];
     this.$feedback = db.collection("feedbackTickets", ticketRef => ticketRef
     .where('text', '!=', "Describe any issues")).valueChanges({ idField: 'id' });
-
-
-  }
+}
 
   postTicket(ticket:FeedbackTicket){
     // not sure why this doesn't work with custom class

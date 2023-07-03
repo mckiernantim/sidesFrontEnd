@@ -1,7 +1,0 @@
-/* @import url('https://unpkg.com/bootstrap@3.3.7/dist/css/bootstrap.min.css'); */
-.form-fields {
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:25px;
-  padding:20px;
-}
