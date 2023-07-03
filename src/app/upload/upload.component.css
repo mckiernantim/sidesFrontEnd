@@ -180,11 +180,11 @@ h4{
     font-size: .45em;
 }
 .left-cell{
-  
+
 }
 .right-cell{
 
-  
+
 }
 .text-area{
     width: 85%;
@@ -192,6 +192,9 @@ h4{
 .upload-headline{
     padding-bottom: 25px;
     height: auto;
+}
+.wga-container{
+  padding: 10px 10px 30px 10px;
 }
 .mobil-headling{
     display:none;
@@ -290,7 +293,11 @@ label.upload-button input[type="file"] {
     background-image:url("../../assets/icons/vectors/flat-bot.PNG");
     background-size:contain;
     background-position-x: 50%;
-} 
+    height: 90%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
 .card-image{
     height:150px
 }
@@ -337,6 +344,7 @@ label.upload-button input[type="file"] {
     }
     .mat-mdc-card{
         width:85%;
+        padding:20px
     }
     .upload-headline, .learn-more, .developer-tools{
         display:none;

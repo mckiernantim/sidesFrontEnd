@@ -132,7 +132,7 @@ export class DashboardRightComponent implements OnInit {
     // SAVED ON THE SERVICE
 
     this.scriptData = this.upload.lineArr
-    console.log(this.scriptData)
+
     this.totalPages = this.upload.pagesArr || null;
     if(!this.scriptData) {
       alert("script upload failed - rerouting to upload page")
@@ -238,6 +238,7 @@ export class DashboardRightComponent implements OnInit {
 
   //  pass the scene to be made and the breaks ponts for the scene to be changed to visible true
 makeVisible(sceneArr, breaks) {
+
     // loop through and find breaks
     this.finalDocument.breaks = breaks;
     breaks = breaks.sort((a, b) => a.first - b.first);
@@ -365,6 +366,7 @@ makeVisible(sceneArr, breaks) {
     let pages = [];
     let sceneBreaks = [];
     // FIND SCENE BREAKS FIRST AND RECORD PAGES THAT ARE NEEDED IN pages ARRAY
+
     sceneArr.forEach((scene) => {
       for (let i = scene.page; i <= scene.lastPage; i++) {
         if (!pages.includes(i)) {
@@ -516,6 +518,7 @@ makeVisible(sceneArr, breaks) {
     this.finalDocument = finalDocument;
     this.finalDocReady = true;
   /// ***********  UPLOAD THE PDF FIRST THEN ONCE ITS DONE FIRE BACK THE COVER SHEET ***********
+
     this.upload.generatePdf(finalDocument).subscribe((data:pdfServerRes) => {
 
       this.dialog.closeAll();
@@ -589,6 +592,7 @@ makeVisible(sceneArr, breaks) {
     }
   }
   getLastPage = (scene) => {
+    console.log(scene)
     return this.scriptData[scene.lastLine].page || null;
   };
   // this function renders an IssueComponent with 60% width
@@ -614,6 +618,7 @@ makeVisible(sceneArr, breaks) {
     let sceneInd;
     let next = this.scenes[i + 1];
     if (next || i === this.scenes.length - 1) {
+
       if (next) {
         last = next.index;
         sceneInd = currentScene.sceneIndex;
@@ -622,6 +627,7 @@ makeVisible(sceneArr, breaks) {
           : (currentScene.firstLine =
               this.scriptData[currentScene.index - 1].index);
         currentScene.preview = this.getPreview(i);
+
         currentScene.lastPage = this.getLastPage(currentScene);
       } else {
         // get first and last lines for last scenes

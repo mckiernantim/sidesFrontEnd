@@ -21,6 +21,7 @@ import { MatGridListModule} from '@angular/material/grid-list'
 import { MatButtonModule } from '@angular/material/button';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSelectModule } from '@angular/material/select';
 import { MatListModule } from '@angular/material/list';
 import { MatInputModule } from '@angular/material/input';
 import { ScriptComponent } from './script/script.component'
@@ -95,6 +96,7 @@ import { ConfirmationDialogComponent } from './shared/confirmation-dialog/confir
         MatButtonModule,
         MatSidenavModule,
         MatIconModule,
+        MatSelectModule,
         MatListModule,
         MatInputModule,
         MatTableModule,

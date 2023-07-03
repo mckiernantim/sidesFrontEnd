@@ -1,5 +1,4 @@
 <div class = "image-container">
-
   <div class="title">
     <h1 class="mat-headline-3 title reveal title">
       <strong>Welcome To Sides-Ways</strong>
@@ -10,22 +9,25 @@
       <div class="left-container">
         <!-- <button mat-raised-button color = "primary" class="delay-6 learn-more-button reveal" routerLink="../About">Learn More</button> -->
         <mat-card class="upload-card white-card shadow">
-          <div>
-            <h2>
-              <strong>We proudly stand with the WGA</strong>
-            </h2>
-          </div>
-          <div>
-            <h3><strong>Production starts with writers.</strong></h3>
-          </div>
-          <div>
-            <h3>
-              <strong>
-                AI should should help artists. <br>Not replace them.
-              </strong>
-            </h3>
+          <div class="wga-container">
+            <div>
+              <h2>
+                <strong>We proudly stand with the WGA</strong>
+              </h2>
+            </div>
+            <div>
+              <h3><strong>Production starts with writers.</strong></h3>
+            </div>
+            <div>
+              <h3>
+                <strong>
+                  AI should should help artists. <br>Not replace them.
+                </strong>
+              </h3>
+            </div>
           </div>
         </mat-card>
+
         <!-- <div class="typewriter ">
               <h2 class="delay-3 mat-headline-4">
                 Free Open Beta
@@ -56,8 +58,8 @@
             <div class="warning-text">
               <p>
                 <strong>
-                  For best results, please use unencrypted Production Scripts with proper scene-headers, scene numbers,
-                  and a title page without a topsheet (we'll handle that laater)
+                 Please use unencrypted Production Scripts with proper scene-headers, scene numbers,
+                  and a title page without a topsheet (we'll handle that later)
 
                   <br>
                   PDF scripts should be formatted to industry standard before you even get here.
@@ -67,14 +69,28 @@
               </p>
             </div>
           </div>
-        </mat-card-content>
+          <!-- <div class="feature-block">
+            <h3 class="feature-headline">
+             Currently undergoing some maintenence
+             </h3>
+            <h4>    Sorry for the inconvenience but in order to upgrade our infrastructure and optimize our set up sides-ways will be offline until 7/2/23
+            </h4>
+            <div class="warning-text">
+              <p>
+                <strong>
+                  We'll be back soon
+                </strong>
+              </p>
+            </div>
+          </div> -->
+      </mat-card-content>
         <mat-card-actions>
           <button type="button" mat-raised-button color="warn" (click)="fileInput.click()">Upload Script PDF</button>
           <input hidden (change)="handleFileInput($event.target.files)" #fileInput type="file" id="file"
             accept="application/pdf">
         </mat-card-actions>
         <div class="footnote">
-          <p>*or screenwriters.</p>
+          <!-- <p>*or screenwriters.</p> -->
         </div>
       </mat-card>
     </div>

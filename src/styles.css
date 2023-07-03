@@ -79,7 +79,7 @@ p {
 .bold {
     font-weight: 700;
 }
-.title{ 
+.title{
     text-align:center
 }
 
@@ -230,4 +230,17 @@ mat-progress-spinner {
     .two-column {
         grid-template-columns: 1fr;
     }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-image {
+  animation: rotate 2s linear infinite;
 }

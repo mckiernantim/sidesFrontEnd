@@ -1,20 +1,26 @@
-
 <div class="form-group">
   <form #feedbackForm="ngForm" (ngSubmit)="onSubmit()">
-   <h3> Title: {{this.title}} {{date | date: "short"}} </h3>
-   <div>
-     <label for="category">Category</label>
-     <br>
-     <select class="form-control" name="category" id="category" required [(ngModel)]="currentTicket.category">
-       <option *ngFor="let cat of categories"  [ngValue]="cat">{{ cat }}</option>
-     </select>
-     <br>
+    <h3> Title: {{this.title}} {{date | date: "short"}} </h3>
+    <div class ="form-fields">
+      <mat-form-field>
+        <mat-label>Favorite food</mat-label>
+        <mat-select  class="form-control" name="category" id="category" required [(ngModel)]="currentTicket.category">
+          <mat-option *ngFor="let cat of categories" [value]="cat">
+            {{ cat }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Describe any issues</mat-label>
+        <textarea matInput cdkTextareaAutosize #autosize="cdkTextareaAutosize" cdkAutosizeMinRows="1"
+          cdkAutosizeMaxRows="5"
+          class="form-control"
+          required id="text"
+          required [(ngModel)]="currentTicket.text"
+           name="text"></textarea>
+      </mat-form-field>
     </div>
-    <div>
-      <label for="">Description</label>
-      <br>
-      <textarea class="form-control"  required id="text" required [(ngModel)]="currentTicket.text" placeholder="Describe any issues" name="text"></textarea>
-      <button mat-raised-button color="primary-light" type="submit" [disabled]="feedbackForm.form.pristine || !feedbackForm.valid">Submit</button>
-    </div>
+    <button mat-raised-button color="primary-light" type="submit"
+      [disabled]="feedbackForm.form.pristine || !feedbackForm.valid">Submit</button>
   </form>
 </div>

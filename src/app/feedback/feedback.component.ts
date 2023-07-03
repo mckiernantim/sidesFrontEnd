@@ -21,14 +21,21 @@ export class FeedbackComponent implements OnInit {
   constructor(
     public upload: UploadService,
     public auth:AuthService,
-    public feedback:FeedbackService) {}
-  ngOnInit(): void {
+    public feedback:FeedbackService) {
+    }
+    ngOnInit(): void {
+      this.categories = this.feedback.categories
+      console.log(this.auth.afAuth)
+      console.log(this.categories)
     this.resetForm()
   }
 
+  ngAFterViewInit() {
+    this.resetForm()
+  }
   onSubmit() {
     this.currentTicket.date = new Date().toISOString()
-    this.currentTicket.email = this.auth.userData.email
+    this.currentTicket.email = localStorage.getItem("emial")
     this.feedback.postTicket(this.currentTicket);
     this.resetForm()
   }
@@ -40,7 +47,9 @@ export class FeedbackComponent implements OnInit {
       'Describe any issues',
       Date.now().toString(),
       false,
-      this.auth.userData.email
+      localStorage.getItem("email")
     );
+    console.log(this.currentTicket)
   }
+
 }
