@@ -575,6 +575,7 @@ makeVisible(sceneArr, breaks) {
       });
       dialogRef.afterClosed().subscribe((result) => {
         result;
+       
       });
     }
   }

@@ -22,6 +22,7 @@ export class AuthService {
     this.afAuth.onAuthStateChanged((user) => {
       if (user) {
         this.userData = user;
+        console.log(this.userData)
         localStorage.setItem('user', JSON.stringify(this.userData));
         JSON.parse(localStorage.getItem('user')!);
       } else {

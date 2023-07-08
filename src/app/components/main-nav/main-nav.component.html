@@ -9,6 +9,22 @@
       <a mat-list-item routerLink ="/">Home</a>
       <a mat-list-item routerLink ="./About">About</a>
       <a mat-list-item routerLink ="./Donate">Donate</a>
+      <div class="right nav-item">
+        <label>
+
+        </label>
+
+        <ng-container *ngIf="auth.userData; else imageTemplate">
+          <img src="path_to_image" alt="Image" />
+          <a mat-list-item> {{auth.userData.email }}</a>
+          <button mat-raised-button color="warn" class="right nav-item" (click)="auth.SignOut()">Sign Out</button>
+        </ng-container>
+
+        <ng-template #imageTemplate>
+          <button mat-raised-button color="warn" class="right nav-item" (click)="auth.loginWithGoogle()">Sign in</button>
+        </ng-template>
+
+        </div>
     </mat-nav-list>
   </mat-sidenav>
   <mat-sidenav-content>
@@ -28,6 +44,20 @@
         <button mat-raised-button color="primary-light" class ="nav-item" routerLink ="/" >Home</button>
         <button mat-raised-button color="primary-light" class ="nav-item" routerLink ="/About">About</button>
         <button mat-raised-button color="primary-light" class ="nav-item" routerLink ="/donate">Donate</button>
+        <div class="right nav-item">
+
+          <ng-container *ngIf="auth.userData; else imageTemplate">
+            <div class ="user-login">
+              <img src ="{{auth.userData.photoURL}}"> <span>{{auth.userData.email}}</span>
+              <button mat-raised-button color="warn" class="right nav-item" (click)="auth.SignOut()">Sign Out </button>
+            </div>
+          </ng-container>
+
+
+          <ng-template #imageTemplate>
+            <img src="path_to_image" alt="Image" />
+          </ng-template>
+          </div>
 
     </mat-toolbar>
     <router-outlet></router-outlet>
