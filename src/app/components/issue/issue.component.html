@@ -12,6 +12,7 @@
       <!-- <button (click)="handleFileInput('no callsheet')">No callsheet</button> -->
     </form>
   </div>
+
   <div *ngIf='
   !waitingForScript &&
   !awaitingData'>
@@ -19,27 +20,20 @@
       <h3>Selected Scenes:</h3>
       <li *ngFor="let text of data.selected" style="list-style-type:none;">{{text.scenenumber}} {{text.text}} </li>
     </ul>
+    <div *ngIf = "callsheetReady">
+      <h2>Total:$5</h2>
+    </div>
   </div>
-  <div *ngIf= "
-        !waitingForScript &&
-        !awaitingData &&
-        callsheetReady &&
-        !this.auth.userData"
-        class="button-wrapper">
-    <h1>Sign in to continue</h1>
-    <p>We know.  Tracking sucks.  But while we develop we need to track our users and while SidesWays is free we need you to log in.  Sign in below with a google account to continue.</p>
 
-    <button class="close-button" (click)="googleSignIn()"><i class="fa-brands fa-google"></i>Log in with google
-    </button>
-  </div>
+
   <div *ngIf= "
     !waitingForScript &&
     !awaitingData &&
-    callsheetReady
-    "
+    callsheetReady &&
+    paid"
     class="button-wrapper">
 
-    <button class="close-button" (click)="dialogRef.close({selected:this.selected, callsheet:this.callsheet})">Get My
+    <button disabled = "paid" class="close-button" (click)="dialogRef.close({selected:this.selected, callsheet:this.callsheet})">Get My
       Sides</button>
   </div>
   <div *ngIf="waitingForScript">

@@ -37,7 +37,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import {MatCheckboxModule} from '@angular/material/checkbox';
 
 // Firebase
-import { provideFirebaseApp, getApp, initializeApp } from '@angular/fire/app';
+
 import { AngularFireModule } from '@angular/fire/compat';
 import { AngularFireAnalyticsModule } from '@angular/fire/compat/analytics';
 import { AngularFirestoreModule } from '@angular/fire/compat/Firestore';
@@ -58,6 +58,7 @@ import { AdminMainComponent } from './components/admin/admin-main/admin-main.com
 import { AdminSideBarComponent } from './components/admin/admin-side-bar/admin-side-bar.component';
 import { ConfirmationDialogComponent } from './components/confirmation-dialog/confirmation-dialog.component';
 import { MatFormFieldModule } from '@angular/material/form-field';
+
 @NgModule({
     declarations: [
         AppComponent,
@@ -81,7 +82,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
         AdminComponent,
         AdminMainComponent,
         AdminSideBarComponent,
-        ConfirmationDialogComponent
+        ConfirmationDialogComponent,
     ],
     imports: [
       AngularFireModule,

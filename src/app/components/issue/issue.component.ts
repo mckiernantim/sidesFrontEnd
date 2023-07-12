@@ -32,6 +32,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
   dualEdit: boolean = false;
   pdfIssues: boolean = false;
   loggedIn: boolean = false;
+  paid:boolean = false;
   file: File;
   callsheet: any;
   selected: string;
@@ -52,6 +53,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
   ) {}
 
   ngOnInit(): void {
+    this.paid = false;
     this.callsheet = undefined;
     this.selected = undefined;
     this.callsheetReady = false;

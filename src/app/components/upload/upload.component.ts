@@ -12,7 +12,7 @@ import {
 } from '@angular/material/dialog';
 
 
-
+import { StripeService } from "../../services/stripe/stripe.service"
 @Component({
   selector: 'app-upload',
   templateUrl: './upload.component.html',
@@ -38,7 +38,8 @@ export class UploadComponent implements OnInit, OnDestroy {
   constructor (
     public upload: UploadService,
     public router: Router,
-    public dialog:MatDialog
+    public dialog:MatDialog,
+    public stripe: StripeService
     ) {
     this.totalLines;
   };
@@ -54,7 +55,12 @@ export class UploadComponent implements OnInit, OnDestroy {
     //Add 'implements OnDestroy' to the class.
     // this.dataSubscription.unsubscribe()
   };
-  
+  checkOut():void {
+    this.stripe.startCheckout().subscribe(data => {
+      console.log(data)
+    })
+  }
+
   // create the page '2.' which is hidden in most scripts
   addTwo(arr) {
     let missingTwo = arr.findIndex(

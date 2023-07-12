@@ -46,16 +46,16 @@
         <button mat-raised-button color="primary-light" class ="nav-item" routerLink ="/donate">Donate</button>
         <div class="right nav-item">
 
-          <ng-container *ngIf="auth.userData; else imageTemplate">
+          <!-- <ng-container *ngIf="auth.userData; else imageTemplate">
             <div class ="user-login">
               <img src ="{{auth.userData.photoURL}}"> <span>{{auth.userData.email}}</span>
               <button mat-raised-button color="warn" class="right nav-item" (click)="auth.SignOut()">Sign Out </button>
             </div>
-          </ng-container>
+          </ng-container> -->
 
 
           <ng-template #imageTemplate>
-            <img src="path_to_image" alt="Image" />
+
           </ng-template>
           </div>
 

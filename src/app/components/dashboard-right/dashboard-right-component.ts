@@ -15,13 +15,9 @@ import { MatTableDataSource } from '@angular/material/table';
 import {
   MatDialog,
 } from '@angular/material/dialog';
-
+import { StripeService } from 'src/app/services/stripe/stripe.service';
 import { Subscription } from 'rxjs';
 import { DatePipe } from '@angular/common';
-import {
-  AngularFirestore,
-  AngularFirestoreCollection,
-} from '@angular/fire/compat/firestore';
 
 
 export interface pdfServerRes {
@@ -73,8 +69,8 @@ export class DashboardRightComponent implements OnInit {
   watermark: string;
   script: string = localStorage.getItem('name');
   // DEPCREACEATED WATSON STUFF MAY COME BACK
-  _db: AngularFirestore;
-  funData: AngularFirestoreCollection;
+
+
   subscription: Subscription;
   linesCrawled: Observable<any>;
   problemsData: Observable<any>;
@@ -84,7 +80,7 @@ export class DashboardRightComponent implements OnInit {
   @ViewChild(MatSort, { static: true }) sort: MatSort;
   constructor(
     public cdr: ChangeDetectorRef,
-    public db: AngularFirestore,
+    public stripe: StripeService,
     public upload: UploadService,
     public router: Router,
     public dialog: MatDialog,
@@ -94,13 +90,7 @@ export class DashboardRightComponent implements OnInit {
 
   ) {
     // DATA ITEMS FOR FUN
-    this.db = db;
-    this.problemsData = db.collection('problemLines').valueChanges();
-    this.linesCrawled = db
-      .collection('funData')
-      .doc('totalLines')
-      .valueChanges();
-    this.funData = db.collection('funData');
+
     this.totalLines;
     this.scriptLength;
   }
@@ -509,7 +499,24 @@ makeVisible(sceneArr, breaks) {
     this.upload.generatePdf(finalDocument).subscribe((data:pdfServerRes) => {
 
       this.dialog.closeAll();
-      this.router.navigate(['complete']);
+      this.stripe.startCheckout().subscribe(
+        (res) => {
+          // Handle successful response, if needed
+          console.log('Stripe checkout response:', res);
+  
+        },
+        (error) => {
+          console.error('Stripe checkout error:', error);
+        }
+      )
+
+
+          // Route to download or other action
+
+          // Handle error, if needed
+        this.router.navigate(['complete']);
+
+
     },
     (err) =>{
       this.dialog.closeAll();
@@ -563,6 +570,7 @@ makeVisible(sceneArr, breaks) {
   openFinalSpinner() {
     this.waitingForScript = true;
     if (this.waitingForScript) {
+      // starts process to navigate
       const dialogRef = this.dialog.open(IssueComponent, {
         width: '60%',
         data: {
@@ -575,7 +583,6 @@ makeVisible(sceneArr, breaks) {
       });
       dialogRef.afterClosed().subscribe((result) => {
         result;
-       
       });
     }
   }

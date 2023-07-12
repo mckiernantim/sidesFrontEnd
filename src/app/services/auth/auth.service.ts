@@ -39,6 +39,7 @@ export class AuthService {
  loginWithGoogle() {
     return this.afAuth.signInWithPopup(new GoogleAuthProvider())
       .then((result) => {
+        console.log(result)
         this.ngZone.run(() => {
           return true
         });
