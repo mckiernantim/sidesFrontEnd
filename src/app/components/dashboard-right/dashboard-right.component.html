@@ -1,14 +1,14 @@
 <div class="dash-container">
   <div>
     <h1 class="project-title">Generating sides for
-      {{script}}-{{date | date }}</h1>
+      {{ script }}-{{ date | date }}</h1>
   </div>
   <div class="main-container two-column cell">
 
     <div class="controls-container">
       <div class="selected-container">
         <div>
-          <h2> {{script}} sides</h2>
+          <h2> {{script}} - Selected Scenes </h2>
         </div>
         <div>
           <h2 (change)="toggleWatermark()">Watermarks? <label class="switch">
@@ -38,6 +38,7 @@
       <div>
         <button mat-raised-button color="warn" (click)="openDialog()" [disabled]="selected.length === 0">getPDF</button>
       </div>
+      <app-add-callsheet></app-add-callsheet>
 
     </div>
     <div class="data-feed cell">

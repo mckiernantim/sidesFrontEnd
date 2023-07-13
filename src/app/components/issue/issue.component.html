@@ -3,15 +3,6 @@
   {{ data }}
 </div>
 <!-- this whole component is deprecated -->
-<div class="modal red">
- <div class="" *ngIf=" !waitingForScript && !awaitingData  && !callsheetReady && !error ">
-    <h2>Add a call sheet?</h2>
-    <form #callSheet name="callSheet" id="callSheet">
-      <input enctype="multipart/form-data" type="file"  accept="application/pdf" (change)="handleFileInput($event.target.files)">
-      <button (click)="handleFileInput('no callsheet')" >No thanks</button>
-      <!-- <button (click)="handleFileInput('no callsheet')">No callsheet</button> -->
-    </form>
-  </div>
 
   <div *ngIf='
   !waitingForScript &&
@@ -49,5 +40,5 @@
     Processing Call sheet
     <mat-progress-spinner mode="indeterminate" value="500"></mat-progress-spinner>
   </div>
-</div>
+
 

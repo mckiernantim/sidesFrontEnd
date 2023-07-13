@@ -58,6 +58,7 @@ import { AdminMainComponent } from './components/admin/admin-main/admin-main.com
 import { AdminSideBarComponent } from './components/admin/admin-side-bar/admin-side-bar.component';
 import { ConfirmationDialogComponent } from './components/confirmation-dialog/confirmation-dialog.component';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { AddCallsheetComponent } from './components/add-callsheet/add-callsheet.component';
 
 @NgModule({
     declarations: [
@@ -83,6 +84,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
         AdminMainComponent,
         AdminSideBarComponent,
         ConfirmationDialogComponent,
+        AddCallsheetComponent,
     ],
     imports: [
       AngularFireModule,
