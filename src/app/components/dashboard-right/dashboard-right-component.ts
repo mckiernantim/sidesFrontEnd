@@ -497,7 +497,7 @@ makeVisible(sceneArr, breaks) {
     this.finalDocReady = true;
   /// ***********  UPLOAD THE PDF FIRST THEN ONCE ITS DONE FIRE BACK THE COVER SHEET ***********
     this.upload.generatePdf(finalDocument).subscribe((data:pdfServerRes) => {
-
+      
       this.dialog.closeAll();
       this.stripe.startCheckout().subscribe(
         (res) => {

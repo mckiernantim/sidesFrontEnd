@@ -157,6 +157,7 @@ export class UploadService {
     const formData: FormData = new FormData();
     if(fileToUpload) {
       this.coverSheet = fileToUpload;
+      console.log(this.coverSheet)
       formData.append('callSheet', fileToUpload, fileToUpload.name);
     } else {
       this.coverSheet = null;

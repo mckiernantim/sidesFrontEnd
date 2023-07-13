@@ -18,6 +18,7 @@
           </h2>
         </div>
       </div>
+      <app-add-callsheet></app-add-callsheet>
 
       <div *ngIf="waterMarkState">
         <form>
@@ -38,7 +39,6 @@
       <div>
         <button mat-raised-button color="warn" (click)="openDialog()" [disabled]="selected.length === 0">getPDF</button>
       </div>
-      <app-add-callsheet></app-add-callsheet>
 
     </div>
     <div class="data-feed cell">

@@ -11,20 +11,16 @@
       <h3>Selected Scenes:</h3>
       <li *ngFor="let text of data.selected" style="list-style-type:none;">{{text.scenenumber}} {{text.text}} </li>
     </ul>
+    <div><h3>Callsheet: {{this.upload.coverSheet.name}}</h3></div>
     <div *ngIf = "callsheetReady">
       <h2>Total:$5</h2>
     </div>
   </div>
 
 
-  <div *ngIf= "
-    !waitingForScript &&
-    !awaitingData &&
-    callsheetReady &&
-    paid"
-    class="button-wrapper">
+  <div class="button-wrapper">
 
-    <button disabled = "paid" class="close-button" (click)="dialogRef.close({selected:this.selected, callsheet:this.callsheet})">Get My
+    <button class="close-button" (click)="dialogRef.close({selected:this.selected, callsheet:this.callsheet})">Get My
       Sides</button>
   </div>
   <div *ngIf="waitingForScript">
@@ -36,9 +32,6 @@
     </div>
     <h2>Getting Sides</h2>
   </div>
-  <div *ngIf="awaitingData && selectionMade">
-    Processing Call sheet
-    <mat-progress-spinner mode="indeterminate" value="500"></mat-progress-spinner>
-  </div>
+ 
 
 

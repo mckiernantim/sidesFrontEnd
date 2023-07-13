@@ -32,7 +32,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
   dualEdit: boolean = false;
   pdfIssues: boolean = false;
   loggedIn: boolean = false;
-  paid:boolean = false;
+  paid:boolean = true;
   file: File;
   callsheet: any;
   selected: string;
