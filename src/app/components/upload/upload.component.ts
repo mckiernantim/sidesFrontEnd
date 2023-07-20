@@ -26,6 +26,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   totalScenes: Subscription;
   totalCharacters: Subscription;
   dataSubscription: Subscription;
+  underConstruction:boolean;
   working: boolean;
   displayData: {
     lines:number,
@@ -48,6 +49,7 @@ export class UploadComponent implements OnInit, OnDestroy {
     this.working = false;
     localStorage.setItem("name", null)
     console.log(this.totalLines, this.totalScenes, this.totalTickets);
+    this.underConstruction = true;
   };
 
   ngOnDestroy(): void {
@@ -77,7 +79,18 @@ export class UploadComponent implements OnInit, OnDestroy {
       dialogRef.afterClosed().subscribe((result) => {});
     };
   }
+  skipUploadForTest() {
+  const data = require('../../../../../SidesWaysBackEnd/test-data/dummyScript.json')
+    
+    this.upload.lineArr = data[0];
+    this.upload.pagesArr = data[1];
+    this.upload.lineCount = [];
+    this.upload.pagesArr.forEach((page) => {
+    this.upload.lineCount.push(page.filter((item) => item.totalLines));
+    this.router.navigate(["/download"])
+  })
 
+}
   handleFileInput(files: FileList) {
     console.log('firing over script');
     this.working = true;
@@ -101,6 +114,9 @@ export class UploadComponent implements OnInit, OnDestroy {
         data[0][two].category = 'page-number';
       }
       // points to singleton instance of uploadservice
+      if(this.underConstruction) {
+        data = require('../../../../../SidesWaysBackEnd/test-data/dummyScript.json')
+      }
       this.upload.lineArr = data[0];
       this.upload.pagesArr = data[1];
       this.upload.lineCount = [];
@@ -117,3 +133,4 @@ export class UploadComponent implements OnInit, OnDestroy {
     });
   }
 }
+

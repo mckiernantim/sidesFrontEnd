@@ -590,6 +590,9 @@ makeVisible(sceneArr, breaks) {
     return this.scriptData[scene.lastLine].page || null;
   };
   // this function renders an IssueComponent with 60% width
+  routeToCheckout(){
+    this.router.navigate(['checkout'])
+  }
   openDialog() {
     if (this.modalData) {
       const dialogRef = this.dialog.open(IssueComponent, {

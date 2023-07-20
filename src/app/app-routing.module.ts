@@ -4,7 +4,7 @@ import { AboutComponent } from './components/about/about.component';
 import { CompleteComponent } from './components/complete/complete.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { AdminComponent } from "./components/admin/admin.component"
-
+import { CheckoutComponent } from './components/checkout/checkout.component';
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { UploadComponent } from './components/upload/upload.component';
@@ -28,6 +28,7 @@ const routes: Routes = [
   { path: 'Donate', component: DonateComponent },
   { path: '', component: UploadComponent },
   { path: 'Home', component: UploadComponent },
+  { path: 'Checkout', component: CheckoutComponent },
   { path: "**", component:FourOfourComponent}
  ];
 

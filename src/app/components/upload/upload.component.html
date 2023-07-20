@@ -2,7 +2,7 @@
   <div class="title">
     <h1 class="mat-headline-3 title reveal title">
       <strong>Welcome To Sides-Ways</strong>
-      <button (click) = "checkOut()">checkout</button>
+      <!-- <button (click) = "checkOut()">checkout</button> -->
     </h1>
   </div>
   <div class="form-group two-column left black">
@@ -10,21 +10,19 @@
       <div class="left-container">
         <!-- <button mat-raised-button color = "primary" class="delay-6 learn-more-button reveal" routerLink="../About">Learn More</button> -->
         <mat-card class="upload-card white-card shadow">
+          <h2>
+            <strong style = "color:red">
+              AI should help artists. <br>Not replace them.
+            </strong>
+          </h2>
           <div class="wga-block">
+            <img src = "../../../assets/CA_keyart3_cautiontape_social_6.jpeg"style="width: 300px">
             <div>
               <h2>
-                <strong>We proudly stand with the WGA</strong>
+                <strong>We proudly stand with the WGA and our union brothers and sisters of SAG-AFTRA</strong>
               </h2>
             </div>
             <div>
-              <h3><strong>Production starts with writers.</strong></h3>
-            </div>
-            <div>
-              <h3>
-                <strong>
-                  AI should help artists. <br>Not replace them.
-                </strong>
-              </h3>
             </div>
 
           </div>
@@ -42,41 +40,48 @@
       </div>
       <div></div>
     </div>
-    <div class="center right-cell reveal">
+    <div class="center right-cell reveal" >
       <mat-card appearance="outlined" class="upload-card shadow">
-        <mat-card-header>
-          <div class="image-container">
-            <h1> We'll be back soon..</h1>
-            <p>sorry for the delay</p>
-          </div>
-        </mat-card-header>
-
-        <mat-card-content>
-          <div class="feature-block">
-            <h3 class="feature-headline">Upload your script <br>
-              We'll prep your sides</h3>
-            <p>For best results, use PDF scripts made with Final draft or Celtx.
-            </p>
-            <div class="warning-text">
-              <p>
-                <strong>
-                  Please use unencrypted Production Scripts with proper scene-headers, scene numbers,
-                  and a title page without a topsheet (we'll handle that laater)
-
-                  <br>
-                  PDF scripts should be formatted to industry standard before you even get here.
-                  <br>
-                  We make sides, not scripts*.
-                </strong>
-              </p>
+        <ng-container>
+          <mat-card-header *ngIf="underConstruction; else normalBlock ">
+            <div class="image-container">
+              <h1> We'll be back soon..</h1>
+              <h2>We're in the lab making sides-ways better we'll be back soon </h2>
+              <h3>we stil don't make scripts*</h3>
+              <button (click)="skipUploadForTest()">go</button>
             </div>
-          </div>
-        </mat-card-content>
-        <mat-card-actions>
-          <button type="button" mat-raised-button color="warn" (click)="fileInput.click()">Upload Script PDF</button>
-          <input hidden (change)="handleFileInput($event.target.files)" #fileInput type="file" id="file"
+          </mat-card-header>
+        </ng-container>
+
+        <ng-template #normalBlock>
+          <mat-card-content >
+            <div class="feature-block" >
+              <h3 class="feature-headline">Upload your script <br>
+                We'll prep your sides</h3>
+              <p>For best results, use PDF scripts made with Final draft or Celtx.
+              </p>
+              <div class="warning-text">
+                <p>
+                  <strong>
+                    Please use unencrypted Production Scripts with proper scene-headers, scene numbers,
+                    and a title page without a topsheet (we'll handle that laater)
+  
+                    <br>
+                    PDF scripts should be formatted to industry standard before you even get here.
+                    <br>
+                    We make sides, not scripts*.
+                  </strong>
+                </p>
+              </div>
+            </div>
+          </mat-card-content>
+          
+          <mat-card-actions>
+            <button type="button" mat-raised-button color="warn" (click)="fileInput.click()">Upload Script PDF</button>
+            <input hidden (change)="handleFileInput($event.target.files)" #fileInput type="file" id="file"
             accept="application/pdf">
-        </mat-card-actions>
+          </mat-card-actions>
+        </ng-template>
         <div class="footnote">
           <p>*or screenwriters.</p>
         </div>
