@@ -81,7 +81,9 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
   skipUploadForTest() {
   const data = require('../../../../../SidesWaysBackEnd/test-data/dummyScript.json')
-    
+  if(this.underConstruction) {
+    localStorage.setItem("name", "test-script-fake")
+  }
     this.upload.lineArr = data[0];
     this.upload.pagesArr = data[1];
     this.upload.lineCount = [];
@@ -115,6 +117,7 @@ export class UploadComponent implements OnInit, OnDestroy {
       }
       // points to singleton instance of uploadservice
       if(this.underConstruction) {
+        localStorage.setItem("name", "test-script-fake")
         data = require('../../../../../SidesWaysBackEnd/test-data/dummyScript.json')
       }
       this.upload.lineArr = data[0];

@@ -1,10 +1,10 @@
 <div class="dash-container">
   <div>
     <h1 class="project-title">Generating sides for
-      {{ script }}-{{ date | date }}</h1>
+      {{ script }} - {{ date | date }}</h1>
   </div>
   <div class="main-container two-column cell">
-    <ng-container *ngIf="!checkout; else checkout">
+    <ng-container *ngIf="!checkoutReady; else checkout">
       
       <div class="controls-container">
         <div class="selected-container">
@@ -43,7 +43,7 @@
           </ng-container>
         </ul>
         <div>
-          <button mat-raised-button color="warn" (click)="routeToCheckout()" [disabled]="selected.length === 0">getPDF</button>
+          <button mat-raised-button color="warn" (click)="toggleCheckout()" [disabled]="selected.length === 0">getPDF</button>
         </div>
   
       </div>
@@ -97,8 +97,8 @@
     </ng-container>
     <ng-template #checkout>
       <app-checkout 
-      [selected]="selected"
-      [callsheet]="callsheet"
+      [scriptData]="finalPdfData"
+      (generatePdfEvent)="getPdf(this.selected, this.script, this.totalPages, this.coverSheet)"
       ></app-checkout>
     </ng-template>
   </div>

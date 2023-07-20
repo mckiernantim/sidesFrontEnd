@@ -1,10 +1,13 @@
-<div *ngIf="error">
-  <h3>Soemthing went wrong</h3>
-  {{ data }}
+<div >
+  <ng-container *ngIf="error">
+    <h3>Soemthing went wrong</h3>
+    {{ data }}
+
+  </ng-container>
 </div>
 <!-- this whole component is deprecated -->
 
-  <div *ngIf='
+  <!-- <div *ngIf='
   !waitingForScript &&
   !awaitingData'>
     <ul>
@@ -32,6 +35,6 @@
     </div>
     <h2>Getting Sides</h2>
   </div>
- 
+  -->
 
 

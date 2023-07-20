@@ -35,7 +35,9 @@ export class DashboardRightComponent implements OnInit {
   active: boolean = true;
   waitingForScript: boolean = false;
   finalDocReady: boolean = false;
+  checkoutReady: boolean = false;
   coverReady: boolean = false;
+  finalPdfData: any = {};
   linesReady: boolean;
   waterMarkState: boolean;
   // DATA FOR SCRIPT
@@ -66,6 +68,8 @@ export class DashboardRightComponent implements OnInit {
   date: number;
   totalLines: any;
   finalDocument: any;
+  coverSheet:string;
+
   watermark: string;
   script: string = localStorage.getItem('name');
   // DEPCREACEATED WATSON STUFF MAY COME BACK
@@ -113,6 +117,7 @@ export class DashboardRightComponent implements OnInit {
     // SAVED ON THE SERVICE
     this.scriptData = this.upload.lineArr
     this.totalPages = this.upload.pagesArr || null;
+    this.checkoutReady = false
 
     if(!this.scriptData) {
       alert("script upload failed - rerouting to upload page")
@@ -497,18 +502,17 @@ makeVisible(sceneArr, breaks) {
     this.finalDocReady = true;
   /// ***********  UPLOAD THE PDF FIRST THEN ONCE ITS DONE FIRE BACK THE COVER SHEET ***********
     this.upload.generatePdf(finalDocument).subscribe((data:pdfServerRes) => {
-      
-      this.dialog.closeAll();
-      this.stripe.startCheckout().subscribe(
-        (res) => {
-          // Handle successful response, if needed
-          console.log('Stripe checkout response:', res);
+      alert("pdf complete")
+      // this.stripe.startCheckout().subscribe(
+      //   (res) => {
+      //     // Handle successful response, if needed
+      //     console.log('Stripe checkout response:', res);
   
-        },
-        (error) => {
-          console.error('Stripe checkout error:', error);
-        }
-      )
+      //   },
+      //   (error) => {
+      //     console.error('Stripe checkout error:', error);
+      //   }
+      // )
 
 
           // Route to download or other action
@@ -518,8 +522,8 @@ makeVisible(sceneArr, breaks) {
 
 
     },
+  
     (err) =>{
-      this.dialog.closeAll();
      const errorRef =  this.errorDialog.open(IssueComponent, {
         width: '60%',
         data: {
@@ -579,7 +583,7 @@ makeVisible(sceneArr, breaks) {
           totalPages: this.totalPages.length - 1,
           callsheet: this.callsheet,
           waitingForScript: true,
-        },
+        }
       });
       dialogRef.afterClosed().subscribe((result) => {
         result;
@@ -590,8 +594,21 @@ makeVisible(sceneArr, breaks) {
     return this.scriptData[scene.lastLine].page || null;
   };
   // this function renders an IssueComponent with 60% width
-  routeToCheckout(){
-    this.router.navigate(['checkout'])
+  toggleCheckout(){
+    this.checkoutReady = !this.checkoutReady
+    if(this.checkoutReady) {
+    this.finalPdfData  = {
+        selected: this.selected,
+        script: this.script,
+        totalPages: this.totalPages.length - 1,
+        callsheet: this.callsheet,
+        waitingForScript: true,
+      }
+      this.coverSheet = localStorage.getItem("callSheetPath")
+      this.waitingForScript = true;
+      // this.openFinalSpinner();
+      this.getPdf(this.selected, this.script, this.totalPages, this.coverSheet );
+    } 
   }
   openDialog() {
     if (this.modalData) {
@@ -599,13 +616,14 @@ makeVisible(sceneArr, breaks) {
         width: '60%',
         data: { scenes: this.modalData, selected: this.selected },
       });
+      // closing of the issueComponent triggers our finalstep
       dialogRef.afterClosed().subscribe((result) => {
         let coverSheet = localStorage.getItem("callSheetPath")
         this.waitingForScript = true;
         console.log(result)
         this.callsheet = result.callsheet?.name || null;
         this.openFinalSpinner();
-        this.getPdf(this.selected, this.script, this.totalPages, coverSheet );
+        this.getPdf(this.selected, this.script, this.totalPages, coverSheet);
       });
     } else this.getPdf(this.selected, this.script, this.totalPages, '');
   }

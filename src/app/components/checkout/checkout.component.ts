@@ -1,8 +1,13 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 
-export interface Scene {
-  number: number;
-  title: string;
+export interface scriptData {
+  
+    selected: any[],
+    script: any[]
+    totalPages: number
+    callsheet: string 
+    waitingForScript: boolean,
+  
 }
 
 @Component({
@@ -10,17 +15,21 @@ export interface Scene {
   template: `
     <section>
       <div>
-        <h2>{{ title }}</h2>
+
       </div>
-      <ng-container *ngFor="let scene of scenes">
-        <p>scene number: {{ scene.number }} - {{ scene.title }}</p>
-      </ng-container>
+      <button (click)="fireGetPdf()">Get my Sides</button>
     </section>
   `,
   styleUrls: ['./checkout.component.css']
 })
 
 export class CheckoutComponent {
-  @Input() title: string;
-  @Input() scenes: Scene[];
+  @Input() scriptData: scriptData;
+  @Input() getPdf: () => void;
+  @Output() generatePdfEvent: EventEmitter<any> = new EventEmitter<any>();
+ 
+  fireGetPdf() {
+    // Call the function received from the parent component
+    this.generatePdfEvent.emit();
+  }
 }
