@@ -9,6 +9,7 @@ import {
   ViewChild,
   ChangeDetectorRef,
 } from '@angular/core';
+import { TokenService } from 'src/app/services/token/token.service';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
@@ -90,6 +91,7 @@ export class DashboardRightComponent implements OnInit {
     public dialog: MatDialog,
     public errorDialog: MatDialog,
     public lineOut: LineOutService,
+    private tokenService: TokenService,
     private datePipe: DatePipe,
 
   ) {
@@ -503,7 +505,7 @@ makeVisible(sceneArr, breaks) {
   /// ***********  UPLOAD THE PDF FIRST THEN ONCE ITS DONE FIRE BACK THE COVER SHEET ***********
     this.upload.generatePdf(finalDocument).subscribe((data:pdfServerRes) => {
       this.stripe.startCheckout().subscribe((res:any) => {
-        localStorage.setItem('sessionToken', res.sessionToken);
+        this.tokenService.setToken(res.sessionToken);
         const stripeCheckoutUrl = res.url;
         window.location.href = stripeCheckoutUrl;
       })

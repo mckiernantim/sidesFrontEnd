@@ -2,6 +2,7 @@ import { saveAs } from 'file-saver';
 import { UploadService } from '../../services/upload/upload.service';
 import { Component, OnInit } from '@angular/core';
 import { FeedbackComponent } from '../feedback/feedback.component';
+import { TokenService } from 'src/app/services/token/token.service';
 
 @Component({
   selector: 'app-complete',
@@ -12,9 +13,10 @@ export class CompleteComponent implements OnInit {
   name: string = localStorage.getItem('name');
   layout: string = localStorage.getItem('layout');
   callsheet: string = localStorage.getItem('callsheet');
-  constructor(public upload: UploadService) {}
+  constructor(public upload: UploadService, private token:TokenService) {}
   ngOnInit(): void {
-    
+    const _stripeCheckoutSessionToken = localStorage.getItem("_stripeCheckoutSessionToken")
+    this.token.setToken(_stripeCheckoutSessionToken)
   }
   // we download as soon as we land
   ngAfterViewInit(): void {
