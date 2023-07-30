@@ -22,7 +22,7 @@ const routes: Routes = [
   },
   { path: 'complete',
     component: CompleteComponent,
-    // canActivate : [AuthGuard],
+    canActivate : [AuthGuard],
   },
   { path: 'About', component: AboutComponent },
   { path: 'Donate', component: DonateComponent },

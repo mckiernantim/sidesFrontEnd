@@ -24,7 +24,7 @@ export class StripeService {
   handlePaymentSuccess(): void {
     // Handle any additional actions after successful payment
     // For example, navigate to a success page or trigger a download
-    this.router.navigate(['success']);
+    this.router.navigate(['complete']);
   }
 }
 

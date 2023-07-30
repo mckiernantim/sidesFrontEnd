@@ -11,7 +11,7 @@ import {
   MatDialogRef,
 } from '@angular/material/dialog';
 
-
+const _devPdfPath = "MARSHMALLOW_PINK"
 import { StripeService } from "../../services/stripe/stripe.service"
 @Component({
   selector: 'app-upload',
@@ -21,6 +21,7 @@ import { StripeService } from "../../services/stripe/stripe.service"
 export class UploadComponent implements OnInit, OnDestroy {
   logo:string = "../../assets/icons/logoFlat.png";
   fileToUpload: File;
+
   totalTickets: Subscription;
   totalLines: Subscription;
   totalScenes: Subscription;
@@ -82,7 +83,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   skipUploadForTest() {
   const data = require('../../../../../SidesWaysBackEnd/test-data/dummyScript.json')
   if(this.underConstruction) {
-    localStorage.setItem("name", "test-script-fake")
+    localStorage.setItem("name", _devPdfPath)
   }
     this.upload.lineArr = data[0];
     this.upload.pagesArr = data[1];
@@ -117,7 +118,7 @@ export class UploadComponent implements OnInit, OnDestroy {
       }
       // points to singleton instance of uploadservice
       if(this.underConstruction) {
-        localStorage.setItem("name", "test-script-fake")
+        localStorage.setItem("name", _devPdfPath)
         data = require('../../../../../SidesWaysBackEnd/test-data/dummyScript.json')
       }
       this.upload.lineArr = data[0];

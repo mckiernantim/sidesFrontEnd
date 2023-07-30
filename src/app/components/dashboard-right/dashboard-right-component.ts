@@ -502,27 +502,12 @@ makeVisible(sceneArr, breaks) {
     this.finalDocReady = true;
   /// ***********  UPLOAD THE PDF FIRST THEN ONCE ITS DONE FIRE BACK THE COVER SHEET ***********
     this.upload.generatePdf(finalDocument).subscribe((data:pdfServerRes) => {
-      alert("pdf complete")
-      // this.stripe.startCheckout().subscribe(
-      //   (res) => {
-      //     // Handle successful response, if needed
-      //     console.log('Stripe checkout response:', res);
-  
-      //   },
-      //   (error) => {
-      //     console.error('Stripe checkout error:', error);
-      //   }
-      // )
-
-
-          // Route to download or other action
-
-          // Handle error, if needed
-        this.router.navigate(['complete']);
-
-
+      this.stripe.startCheckout().subscribe((res:any) => {
+        localStorage.setItem('sessionToken', res.sessionToken);
+        const stripeCheckoutUrl = res.url;
+        window.location.href = stripeCheckoutUrl;
+      })
     },
-  
     (err) =>{
      const errorRef =  this.errorDialog.open(IssueComponent, {
         width: '60%',
