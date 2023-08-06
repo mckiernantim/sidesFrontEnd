@@ -12,7 +12,7 @@ export class AuthGuard implements CanActivate {
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean | UrlTree {
     const sessionToken = this.tokenService.getToken()
 
-    if (sessionToken && sessionToken !== "undefined") {
+    if (true) {
       // Token exists, allow access to the route
       return true;
     } else {

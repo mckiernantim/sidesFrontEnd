@@ -31,6 +31,7 @@
     "firebase-functions": "^4.3.0",
     "jwt-decode": "^3.1.2",
     "mailgun": "^0.5.0",
+    "node": "^20.5.0",
     "rxjs": "~6.6.6",
     "stream-browserify": "^3.0.0",
     "stripe": "^8.222.0",

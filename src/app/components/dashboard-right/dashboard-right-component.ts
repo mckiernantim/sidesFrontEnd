@@ -504,11 +504,13 @@ makeVisible(sceneArr, breaks) {
     this.finalDocReady = true;
   /// ***********  UPLOAD THE PDF FIRST THEN ONCE ITS DONE FIRE BACK THE COVER SHEET ***********
     this.upload.generatePdf(finalDocument).subscribe((data:pdfServerRes) => {
-      this.stripe.startCheckout().subscribe((res:any) => {
-        this.tokenService.setToken(res.sessionToken);
-        const stripeCheckoutUrl = res.url;
-        window.location.href = stripeCheckoutUrl;
-      })
+
+      this.router.navigate(['complete'])
+      // this.stripe.startCheckout().subscribe((res:any) => {
+      //   this.tokenService.setToken(res.sessionToken);
+      //   const stripeCheckoutUrl = res.url;
+      //   window.location.href = stripeCheckoutUrl;
+      // })
     },
     (err) =>{
      const errorRef =  this.errorDialog.open(IssueComponent, {

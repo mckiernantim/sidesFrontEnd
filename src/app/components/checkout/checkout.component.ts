@@ -17,7 +17,7 @@ export interface scriptData {
       <div>
 
       </div>
-      <button (click)="fireGetPdf()">Get my Sides</button>
+      <button mat-raised-button color="warn"  (click)="fireGetPdf()">Get my Sides</button>
     </section>
   `,
   styleUrls: ['./checkout.component.css']

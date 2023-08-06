@@ -30,7 +30,7 @@ export class TokenService {
     console.log("starting timer")
     const token = this.getToken();
     if (token) {
-      const decodedToken = jwt_decode<DecodedToken>(token); // You'll need to install the jwt-decode library to use this method
+    const decodedToken = jwt_decode<DecodedToken>(token);
       const expirationTime = decodedToken.exp * 1000; // Convert expiration time to milliseconds
       const currentTime = Date.now();
       const timeRemaining = expirationTime - currentTime;
