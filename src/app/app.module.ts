@@ -60,6 +60,8 @@ import { ConfirmationDialogComponent } from './components/confirmation-dialog/co
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { AddCallsheetComponent } from './components/add-callsheet/add-callsheet.component';
 import { CheckoutComponent } from './components/checkout/checkout.component';
+import { LastLooksComponent } from './components/last-looks/last-looks.component';
+import { LastLooksPageComponent } from './components/last-looks-page/last-looks-page.component';
 
 @NgModule({
     declarations: [
@@ -87,6 +89,8 @@ import { CheckoutComponent } from './components/checkout/checkout.component';
         ConfirmationDialogComponent,
         AddCallsheetComponent,
         CheckoutComponent,
+        LastLooksComponent,
+        LastLooksPageComponent,
     ],
     imports: [
       AngularFireModule,

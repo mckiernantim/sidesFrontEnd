@@ -1,0 +1,55 @@
+<main class="last-looks-container">
+    <div class="page">
+        <div class="break">
+            <ul class="screenbox">
+                    <ng-container *ngFor="let line of page">
+                    <span class="watermark">{{line.watermarkText}}</span>
+
+                    <!-- page number span -->
+                    <span class="draft-color-text true">{{line.draftColorText}}</span>
+                    <span class="page-number-text" [class.visible]="line.visible"> {{line.pageNumberText}} </span>
+
+                    <!-- scene number span -->
+                    <span [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible"
+                        [style.bottom]="line.calculatedYpos" [style.left]="line.calculatedXPos">
+                        {{ line.sceneNumber }}
+                    </span>
+
+                    <!-- start span -->
+
+                    <span [class]="line.bar + ' ' + line.visible" [style.bottom]="line.calculatedYpos">
+                        <span class="start-span">START {{ line.sceneNumber }}</span>
+                    </span>
+                    <!-- LINE SPAN -->
+                    <li [class]="line.visible + ' ' + line.category + ' ' + line.hidden"
+                        [style.bottom]="line.calculatedYpos" [style.left]="line.calculatedXPos">
+                        {{ line.text }}
+                    </li>
+
+                    <!-- revision asterisks -->
+                    <span [class]="line.isRevision + ' hidden'" [style.bottom]="line.calculatedYpos">
+                        *
+                    </span>
+
+                    <!-- continue spans -->
+                    <span [class]="line.category + ' ' + line.cont + ' ' + line.hideCont" style="right: 50px">
+                        ↓↓↓{{ line.sceneNumberText }} CONTINUED↓↓↓
+                    </span>
+
+                    <!-- end span -->
+                    <span [class]="line.end + ' ' + line.hideEnd" [style.bottom]="line.calculatedEnd">
+                        <span class="end-span"> END {{ line.sceneNumberText }}</span>
+                    </span>
+
+                    <!-- right scene number span -->
+                    <span class="scene-number-right {{ line.trueScene }} {{ line.visible }}"
+                        [style.bottom]="line.calculatedYpos" [style.right]="line.calculatedXPos">
+                        {{ line.sceneNumber }}
+                    </span>
+                    <li class=footer>made by Sides-Ways</li>
+                </ng-container>
+
+                </ul>
+            </div>
+    </div>
+</main>

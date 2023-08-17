@@ -22,12 +22,14 @@ import { Line } from '../../types/Line';
 })
 
 export class UploadService {
+   _devPdfPath:string = "MARSHMALLOW_PINK"
   // values from script
   script: string;
   // lines
   lineArr: Line[];
   lineCount: any;
   pagesArr: any[];
+  underConstruction:boolean = true;
   // old DB valies
   issues: any;
   coverSheet: any;
@@ -51,8 +53,12 @@ export class UploadService {
     this.feedback = db.collection("feedbackTickets", ticketRef => ticketRef
       .where('text', '!=', "Describe any issues")).valueChanges(idToken);
     this.funData = db.collection("funData").valueChanges({ idField: 'id' })
+    if(this.underConstruction) {
+      this.skipUploadForTest()
+    }
+
   }
-  postFeedback(ticket:FeedbackTicket){
+  postFeedback(ticket:FeedbackTicket) {
     // not sure why this doesn't work with custom class
     const { text, title, category, date, handled } = ticket
     let  userEmail  = JSON.parse(localStorage.getItem("user")).email;
@@ -171,4 +177,18 @@ export class UploadService {
     );
   }
 
+  skipUploadForTest() {
+    const data = require('../../../../../SidesWaysBackEnd/test-data/dummyScript.json')
+    if(this.underConstruction) {
+      localStorage.setItem("name", this._devPdfPath)
+    }
+      this.lineArr = data[0];
+      this.pagesArr = data[1];
+      this.lineCount = [];
+      this.pagesArr.forEach((page) => {
+      this.lineCount.push(page.filter((item) => item.totalLines));
+     
+    })
+  
+  }
 }

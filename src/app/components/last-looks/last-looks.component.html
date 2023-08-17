@@ -1,0 +1,10 @@
+<main class="last-looks-container">
+    <div class="page-container">
+      <app-last-looks-page [page]="currentPage"></app-last-looks-page>
+    </div>
+    <div class="pagination-controls">
+      <button (click)="previousPage()" [disabled]="currentPageIndex === 0">Previous</button>
+      <span>{{ currentPageIndex + 1 }} / {{ pages.length - 1 }}</span>
+      <button (click)="nextPage()" [disabled]="currentPageIndex === pages.length - 1">Next</button>
+    </div>
+  </main>

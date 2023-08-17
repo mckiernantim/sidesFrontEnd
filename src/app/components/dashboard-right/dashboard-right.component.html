@@ -4,7 +4,7 @@
       {{ script }} - {{ date | date }}</h1>
   </div>
   <div class="main-container two-column cell">
-    <ng-container *ngIf="!checkoutReady; else checkout">
+    <ng-container *ngIf="!checkoutReady; else lastLooks">
       
       <div class="controls-container">
         <div class="selected-container">
@@ -95,11 +95,11 @@
       </div>
 
     </ng-container>
-    <ng-template #checkout>
-      <app-checkout 
-      [scriptData]="finalPdfData"
-      (generatePdfEvent)="getPdf(this.selected, this.script, this.totalPages, this.coverSheet)"
-      ></app-checkout>
+    <ng-template #lastLooks >
+      <div *ngIf="this.finalDocReady; else lastLooks">
+        <!-- Render app-last-looks component with selected value -->
+        <app-last-looks [doc]="finalDocument"></app-last-looks>
+      </div>
     </ng-template>
   </div>
 </div>

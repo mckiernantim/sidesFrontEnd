@@ -1,0 +1,264 @@
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap');
+
+@page {
+    width: 816px;
+    height: 1056px;
+}
+
+.page {
+    font-family: 'Courier Prime', monospace;
+    height: 1056px;
+    width: 816px;
+    background-color: white;
+    width: 100VW;
+}
+
+.last {
+    margin-bottom: 0 !important;
+}
+
+.break {
+    page-break-after: always;
+    height: 1056px;
+    width: 100%;
+    margin: 0 auto;
+    margin-bottom: 50px;
+    text-align: left;
+
+}
+.last-looks-container {
+    display:flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+p {
+    display: block;
+}
+
+.screenbox {
+    margin: 0 auto;
+    margin-bottom: 50px;
+    position: relative;
+    break-before: always;
+    width: 95%;
+    height: 100%
+}
+
+li,
+span {
+
+    position: absolute;
+    list-style-type: none;
+    line-height: normal;
+    padding: 0;
+    margin: 0;
+    font-size: 12pt;
+    color: black;
+}
+
+.page-number-text {
+    position: absolute;
+    page-break-before: always;
+    text-align: right;
+    right: 105px;
+    bottom: 975px
+}
+
+.draft-color-text {
+    bottom: 975px;
+    position: absolute;
+    right: 43%
+}
+
+li.page-number {
+    text-decoration: none !important;
+}
+
+.true-scene {
+    border: 5px solid black;
+    border-radius: 50%;
+    padding: 1%;
+}
+
+.final {
+    display: none
+}
+
+.false {
+    text-decoration: line-through;
+    text-decoration-thickness: 25%;
+
+}
+.legal {
+    margin: 1000px 20px 0px 20px;
+    
+}
+
+.true {
+    list-style-type: none !important;
+    text-decoration: none !important
+}
+
+.scene-header {
+    font-weight: 700;
+
+}
+
+.version {
+    display: none;
+}
+
+.character {
+
+    text-align: center;
+
+}
+
+.parenthetical {
+
+    text-align: left;
+}
+
+.hideEnd,
+.hideCont,
+.hideBar {
+    display: none !important
+}
+
+.scene-header {
+    font-weight: 900 !important;
+    left: 96px !important;
+
+}
+
+.scene-number-left {
+    left: 45px !important;
+    font-weight: 900 !important;
+
+}
+
+.bar {
+    border-top: 2.5px solid;
+    width: 87%;
+    text-align: right;
+    font-size: 11.5px;
+    padding-left: -5%;
+    font-weight: 900 !important;
+
+}
+
+
+.scene-number-right {
+    right: 85px !important;
+    text-align: right;
+    font-weight: 900;
+}
+
+.docTitle {
+    font: 42px;
+    margin: 0 auto;
+
+}
+
+.hidden {
+    display: none !important
+}
+
+.END {
+    width: 85%;
+    border-bottom: 2.5px solid black;
+    position: absolute;
+    font-size: 11.5px;
+    padding-left: 4%;
+    font-weight: 900 !important;
+}
+
+.CONTINUE {
+    bottom: 45.5px;
+    width: 90%;
+    border-top: 2.5px solid;
+    padding-top: 2.5px;
+    text-align: right;
+    right: 5px;
+    font-size: 16pt;
+    font-weight: 900 !important;
+}
+
+.CONTINUE-TOP {
+    top: 45.5px;
+    width: 90%;
+    border-top: 2.5px solid;
+    padding-top: 2.5px;
+    text-align: left;
+    left: 25px;
+    font-size: 16pt;
+    font-weight: 900 !important;
+}
+
+
+
+.page-number-hidden,
+.page-number {
+    display: none !important;
+}
+
+.footer {
+    font-size: 6px !important;
+    bottom: 15px;
+    left: 50px;
+
+}
+
+.cover-sheet-left,
+.cover-sheet-right {
+    margin: 2%;
+}
+
+.showCont {
+    top: 35px;
+    font-size: larger;
+    font-weight: bold;
+    ;
+
+}
+
+.start-span {
+    right: 25%;
+    font-size: 16pt;
+
+}
+
+.end-span {
+    left: -15px;
+    font-size: 16pt;
+    bottom: -5px;
+}
+
+.notes {
+    text-align: center;
+    padding-top: 2%;
+    border-bottom: 2px solid;
+    font-size: 30px;
+    height: 32px;
+
+
+}
+
+.isRevision {
+    display: block !important;
+    right: 35px !important
+}
+
+.watermark {
+    z-index: 2;
+    font-size: 66px;
+    transform: rotateY(0deg) rotate(315deg);
+    position: absolute;
+    bottom: 35%;
+    opacity: .4;
+    bottom: 50%;
+    text-align: center;
+    width: 90%;
+    text-align: color;
+}

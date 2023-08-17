@@ -8,26 +8,31 @@ export interface Line {
   lastCharIndex?:number,
   multipleColumn: boolean,
   page: number,
-  pageNumber?:number
+  pageNumber?:number,
   sceneNumber?:string,
   sceneIndex:number,
   sceneNumberText?:string,
   text: string,
   // cass values
-  visible?:string // string value to pass to css file
+  visible?:string, // string value to pass to css file
   yPos: number,
   xPos: number,
   // display or hide `end` bar
-  end?:string;
+  end?:string,
   // display or hide continue bar
-  bar?:string
-  finalLineOfScript?:boolean
-  barY?:string
+  bar?:string,
+  finalLineOfScript?:boolean,
+  barY?:number,
+  endY?:number,
   hideEnd?:string,
   hideCont?:string,
   watermarkText?:string,
   draftColorText?:string
   pageNumberText?:string,
-
-
+  calculatedLeft?:string | number
+  calculatedXpos?:string | number
+  calculatedYpos?:string | number
+  calculatedEnd?:string | number
+  
+  
 }
