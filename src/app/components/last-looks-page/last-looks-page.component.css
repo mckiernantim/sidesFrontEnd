@@ -262,3 +262,7 @@ li.page-number {
     width: 90%;
     text-align: color;
 }
+
+.footer {
+    display:none
+}

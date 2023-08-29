@@ -1,76 +1,72 @@
 <main class="last-looks-container">
-    
+
     <div class="page">
         <div class="break">
             <ul class="screenbox">
                 <div class="selected-line-info" style="color:black">
-                    Selected Line calculatedYpos: {{ selectedLine?.calculatedYpos }}
+                    <h2>diff: {{currentYPosDiff}} yPos: {{selectedLine?.calculatedYpos}}</h2>
                 </div>
                 <ng-container *ngFor="let line of page; let lineIndex = index">
-                   
-                    
-                        <span class="watermark">{{line.watermarkText}}</span>
 
-                        <!-- page number span -->
-                        <span class="draft-color-text true">{{line.draftColorText}}</span>
-                        <span 
-                        class="page-number-text" 
-                        [class.visible]="line.visible"
-                        > {{line.pageNumberText}} </span>
 
-                        <!-- scene number span -->
-                        <span [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible"
-                            [style.bottom]="line.calculatedYpos" 
-                            [style.left]="line.calculatedXpos"
-                            >
-                            {{ line.sceneNumber }}
-                        </span>
+                    <span class="watermark">{{line.watermarkText}}</span>
 
-                        <!-- start span -->
+                    <!-- page number span -->
+                    <span class="draft-color-text true">{{line.draftColorText}}</span>
+                    <span class="page-number-text" [class.visible]="line.visible"> {{line.pageNumberText}} </span>
 
-                        <span [class]="(line.bar ? line.bar : 'hideBar') + ' ' + line.hidden"
-                            [style.bottom]="line.calculatedYpos"
-                            >
-                            <span class="start-span">START {{ line.sceneNumber }}</span>
-                        </span>
-                        <!-- LINE SPAN -->
-                        <li [class]="line.category + ' ' + line.visible + ' ' + + line.hidden"
-                        [style.bottom]="line.calculatedYpos"
-                        [style.left]="line.calculatedXpos"
-                        (mousedown)="startDrag($event, line, lineIndex)"
-                        (mousemove)="drag($event)"
+                    <!-- scene number span -->
+                    <span [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible"
+                        [style.bottom]="line.calculatedYpos" [style.left]="line.calculatedXpos">
+                        {{ line.sceneNumber }}
+                    </span>
+
+                    <!-- start span -->
+
+                    <span [class]="(line.bar ? line.bar : 'hideBar') + ' ' + line.hidden"
+                        [style.bottom]="line.calculatedYpos" (mousedown)="startDrag($event, line, lineIndex)"
+                        (mousemove)="drag($event)" (mouseup)="stopDrag(line)">
+                        <span class="start-span">START {{ line.sceneNumber }}</span>
+                    </span>
+                    <!-- LINE SPAN -->
+                    <li [class]="line.category + ' ' + line.visible + ' ' + + line.hidden"
+                        [style.bottom]="line.calculatedYpos" [style.left]="line.calculatedXpos"
+                        (mousedown)="startDrag($event, line, lineIndex)" (mousemove)="drag($event)"
                         (mouseup)="stopDrag(line)">
-                        
-                           
-                            {{ line.text }} {{line.calculatedYpos}}
-                        </li>
 
-                        <!-- revision asterisks -->
-                        <span [class]="line.isRevision + ' hidden'" [style.bottom]="line.calculatedYpos">
-                            *
-                        </span>
 
-                        <!-- continue spans -->
-                        <span [class]="line.category + ' ' + line.cont + ' ' + line.hideCont" style="right: 50px">
-                            ↓↓↓{{ line.sceneNumberText }} CONTINUED↓↓↓
-                        </span>
+                        {{ line.text }} {{line.calculatedYpos}}
+                    </li>
 
-                        <!-- end span -->
-                        <span [class]="line.end " [style.bottom]="line.calculatedEnd">
-                            <span class="end-span"> END {{ line.sceneNumberText }}</span>
-                        </span>
+                    <!-- revision asterisks -->
+                    <span [class]="line.isRevision + ' hidden'" [style.bottom]="line.calculatedYpos">
+                        *
+                    </span>
 
-                        <!-- right scene number span -->
-                        <span class="scene-number-right {{ line.trueScene }} {{ line.visible }}"
-                            [style.bottom]="line.calculatedYpos" [style.right]="line.calculatedXPos">
-                            {{ line.sceneNumber }}
-                        </span>
-              
+                    <!-- continue spans -->
+                    <span (mousedown)="startDrag($event, line, lineIndex)" (mousemove)="drag($event)"
+                        (mouseup)="stopDrag(line)" [class]="(line.cont ? line.cont : 'hideCont')+ ' ' + line.hideBar"
+                        style="right: 50px">
+                        ↓↓↓{{ line.sceneNumberText }} CONTINUED ↓↓↓ 
+                    </span>
+
+                   
+                    <!-- end span -->
+                    <span [class]="line.end + ' ' + line.hideEnd"  [style.bottom]="line.calculatedEnd">
+                        <span class="end-span"> END {{line.sceneNumberText}}</span>
+                    </span>
+
+                    <!-- right scene number span -->
+                    <span class="scene-number-right {{ line.trueScene }} {{ line.visible }} {{line.hideCont}}"
+                        [style.bottom]="line.calculatedYpos" [style.right]="line.calculatedXPos">
+                        {{ line.sceneNumber }}
+                    </span>
+
                 </ng-container>
 
 
             </ul>
-          
+
             <li class=footer>made by Sides-Ways</li>
         </div>
     </div>

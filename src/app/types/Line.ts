@@ -23,8 +23,10 @@ export interface Line {
   bar?:string,
   finalLineOfScript?:boolean,
   barY?:number,
+  cont?:string,
   endY?:number,
   hideEnd?:string,
+  trueScene?:string,
   hideCont?:string,
   watermarkText?:string,
   draftColorText?:string
