@@ -10,13 +10,14 @@ export class LastLooksComponent implements OnInit {
 
   @Input() doc: any;
   pages: [];
-  pageOptions = ["moveY", "moveX", "toggleHidden", "select"]
   currentPageIndex: number = 0;
   currentPage: number = 0;
-  staartingLinesOfDoc = [];
+  startingLinesOfDoc = [];
+  editPdfOptions: string[] = ["toggleVisibility", "adjustY", "editText"]
+  selectedEditFunction: string | null = null
+  selectedLine: Line | null = null;
   ngOnInit() {
     this.pages = this.doc.data;
-    alert('firing ');
     this.processLinesForLastLooks(this.pages);
     this.updateDisplayedPage();
   }
@@ -37,10 +38,18 @@ export class LastLooksComponent implements OnInit {
       });
     }
   }
+
   updateDisplayedPage() {
     this.currentPage = this.pages[this.currentPageIndex];
   }
-
+  selectEditFunction(e) {
+    console.log("button firigin,",  e.target.value)
+    this.selectedEditFunction = e.target.value
+    alert(`function changed to ${this.selectedEditFunction}`)
+  }
+  handleFunctionNullified() {
+   this.selectEditFunction = null;
+  }
   previousPage() {
     if (this.currentPageIndex > 0) {
       this.currentPageIndex--;
@@ -75,8 +84,8 @@ export class LastLooksComponent implements OnInit {
   }
   
   adjustStartingLinesOfDoc(line: Line) {
-    if (line.bar === "bar" && !this.staartingLinesOfDoc.includes(line.sceneIndex) && line.sceneIndex > 0) {
-      this.staartingLinesOfDoc.push(line.sceneIndex);
+    if (line.bar === "bar" && !this.startingLinesOfDoc.includes(line.sceneIndex) && line.sceneIndex > 0) {
+      this.startingLinesOfDoc.push(line.sceneIndex);
     } else {
       line.bar = "hideBar";
     }
@@ -89,11 +98,11 @@ export class LastLooksComponent implements OnInit {
   }
   
   adjustEndAndContinue(line: Line) {
-    if (line.end === "END" && this.staartingLinesOfDoc.includes(line.sceneIndex)) {
+    if (line.end === "END" && this.startingLinesOfDoc.includes(line.sceneIndex)) {
       line.endY = line.yPos - 5;
       line.hideCont = "hideCont";
       line.bar = "hideBar";
-    } else if (line.cont && line.cont !== "hideCont" && this.staartingLinesOfDoc.includes(line.sceneIndex)) {
+    } else if (line.cont && line.cont !== "hideCont" && this.startingLinesOfDoc.includes(line.sceneIndex)) {
       line.hideEnd = "hideEnd";
       line.bar = "hideBar";
     } else {
@@ -112,8 +121,8 @@ export class LastLooksComponent implements OnInit {
   calculateYPositions(line: Line) {
     line.calculatedYpos = Number(line.yPos) > 1 ? Number(line.yPos) * 1.3 + 'px' : '0';
   }
-    
-          
+
+ 
 
   updatePositionsInDocument(arr) {
     for (let page of arr) {
