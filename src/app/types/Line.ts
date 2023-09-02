@@ -33,7 +33,7 @@ export interface Line {
   pageNumberText?:string,
   calculatedLeft?:string | number
   calculatedXpos?:string | number
-  calculatedYpos?:string | number
+  calculatedYpos?:any
   calculatedEnd?:string | number
   
   

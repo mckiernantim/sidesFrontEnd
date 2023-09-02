@@ -4,7 +4,7 @@
         <div class="break">
             <ul class="screenbox">
                 <div class="selected-line-info" style="color:black">
-                    <h2>currentFunction {{selectedFunction}}  {{initialMouseY}}</h2>
+    
                 </div>
                 <ng-container *ngFor="let line of page; let lineIndex = index">
 
@@ -26,23 +26,23 @@
 
                     <!-- start span -->
                     <span
-                        (mousedown)="selectedFunction === 'adjustY' && isSelectedLine(line, lineIndex) ? startDrag($event, line) : null"
-                        (mousemove)="selectedFunction === 'adjustY' && isSelectedLine(line, lineIndex) ? drag($event) : null"
                         (mouseup)="selectedFunction === 'adjustY' && isSelectedLine(line, lineIndex) ? stopDrag(line) : null"
                         [class]="(line.bar ? line.bar : 'hideBar') + ' ' + line.hidden"
                         [style.bottom]="line.calculatedYpos">
-                        <span class="start-span">START {{ line.sceneNumber }} {{line.calculatedXpos}}</span>
+                        <span class="start-span">START {{ line.sceneNumber }} </span>
                     </span>
 
                     <!-- LINE SPAN -->
-                    <li [value]="lineIndex" [class]="line.category + ' ' + line.visible + ' ' + line.hidden" (click)="selectedFunction === 'toggleVisibility' ? toggleVisibility(line) :
+                    <li [value]="lineIndex" [class]="line.category + ' ' + line.visible + ' ' + line.hidden" 
+                    (click)="selectedFunction === 'toggleVisibility' ? toggleVisibility(line) :
                 toggleSelectedLine($event,line, lineIndex)" [style.bottom]="line.calculatedYpos"
-                        [style.left]="line.calculatedXpos" (contextmenu)="selectedLine && openContextMenu($event, line)"
-                        (click)="startDrag($event, line)"
-                        (mousemove)="isSelectedLine(line, lineIndex) && drag($event)" 
-                        (mouseup)="stopDrag(line)"
+                        [style.left]="line.calculatedXpos" 
+                        (contextmenu)="selectedLine && openContextMenu($event, line)"
+                        (mousedown)="selectedFunction === 'adjustY'  && startDrag($event, line)"
+                        (mousemove)="selectedFunction === 'adjustY' && drag($event)" 
+                        (mouseup)=" selectedFunction === 'adjustY' && stopDrag(line)"
                         [class.selected]="isSelectedLine(line, lineIndex)" (keydown)="handleKeydown($event, line)">
-                        {{ line.text }} {{line.calculatedYpos}}
+                        {{ line.text }} 
                         
                     </li>
 
@@ -53,9 +53,7 @@
 
                     <!-- continue spans -->
                     <span
-                        (mousedown)="selectedFunction === 'adjustY' && isSelectedLine(line, lineIndex) ? startDrag($event, line) : null"
-                        (mousedown)="selectedFunction === 'adjustY' && isSelectedLine(line, lineIndex) ? startDrag($event, line) : null"
-                        (mouseup)="selectedFunction === 'adjustY' && isSelectedLine(line, lineIndex) ? stopDrag(line) : null"
+            
                         [class]="(line.bar ? line.bar : 'hideBar') + ' ' + line.hidden"
                         [style.bottom]="line.calculatedYpos">
                         <span class="start-span">START {{ line.sceneNumber }}</span>
@@ -63,7 +61,7 @@
 
                     <!-- end span -->
                     <span [class]="line.end + ' ' + line.hideEnd" [style.bottom]="line.calculatedEnd">
-                        <span class="end-span"> END {{line.sceneNumberText}} {{line.calculatedXpos}}</span>
+                        <span class="end-span"> END {{line.sceneNumberText}} </span>
                     </span>
 
                     <!-- right scene number span -->

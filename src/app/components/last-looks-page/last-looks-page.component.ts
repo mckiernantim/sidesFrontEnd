@@ -13,7 +13,7 @@ export class LastLooksPageComponent {
   @Input() editPdfOptions: string[];
   @Output() functionNullified: EventEmitter<void> = new EventEmitter<void>();
   draggingLine: any = null;
-  private initalLineY: number = 0;
+  initialLineY: any = "0px";
   selectedLine:Line|null = null;
   isLineSelected:boolean = false;
   initialMouseY: number = 0;
@@ -24,7 +24,7 @@ export class LastLooksPageComponent {
   heldInterval: any = null;
   classificationChoices: string[];
   currentYPosDiff: number = 0;
-  yOffset: number = 0;
+  yOffset: number| string = 0;
   xPositionsForLines: any = {parenthetical: "271.7px", dialog:"234px", character:"327px", description:"140.4px", 'scene-header':"96px"}
   // create a Map that only accepts strings as keys, and functions returning nothing as values
 
@@ -42,22 +42,38 @@ export class LastLooksPageComponent {
     } else {
       // Select the line if it's not already selected
       this.selectedLine = this.page[lineIndex];
+      this.isLineSelected = !!this.selectedLine;
     }
-    this.isLineSelected = !!this.selectedLine;
-    this.initialMouseY = event.clientY;
-    this.yOffset = event.clientY - this.initalLineY;
-    this.draggingLine = line;
-  
   }
   
   startDrag(event: MouseEvent, line: any) {
+    this.draggingLine = line;
+    this.initialLineY = parseFloat(line.calculatedYpos); //100
+    this.initialMouseY = event.clientY;
     console.log("starting drag")
-    this.draggingLine = line;
-    this.initalLineY = parseFloat(line.calculatedYpos); //100
-    this.draggingLine = line;
-
-    
+    this.draggingLine = true;
   }
+  
+drag(event: MouseEvent) {
+  debugger
+
+  if (this.draggingLine !== null) {
+    // 150 - 100
+    this.currentYPosDiff = event.clientY - this.initialMouseY; // Calculate the offset
+    console.log(this.currentYPosDiff, 'new diff is here');
+    // -50
+    this.selectedLine.calculatedYpos = this.processLinePosition();
+    this.cdRef.markForCheck();
+  }
+}
+  
+processLinePosition() {
+  const newPosition = this.initialLineY - this.currentYPosDiff;
+  console.log(newPosition, 'new position');
+  return newPosition.toFixed(2) + 'px';
+}
+  
+  
 
   stopEdit() {
     this.nullifyFunction();
@@ -66,26 +82,8 @@ export class LastLooksPageComponent {
     this.selectedFunction = null;
     this.functionNullified.emit(); // Emit the event to the parent
   }
-  drag(event: MouseEvent) {
- 
-    if (this.draggingLine !== null) {
-      // 150 - 100
-      this.currentYPosDiff = event.clientY - this.initialMouseY; // Calculate the offset
-      console.log(this.currentYPosDiff, 'new diff is here');
-      // -50
-      this.draggingLine.calculatedYpos = this.processLinePosition();
-      this.cdRef.markForCheck();
-    }
-  }
-
-  processLinePosition() {
-    const newPosition = this.initalLineY - this.currentYPosDiff;
-    console.log(newPosition, 'new position');
-    return newPosition.toFixed(2) + 'px';
-  }
-  
   stopDrag(line: any) {
-    this.draggingLine = null;
+    this.draggingLine = false;
   }
   toggleVisibility(line: Line) {
     line.visible = line.visible === 'true' ? 'false' : 'true';
