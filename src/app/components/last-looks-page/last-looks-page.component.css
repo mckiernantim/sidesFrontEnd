@@ -219,8 +219,12 @@ li.page-number {
     top: 35px;
     font-size: larger;
     font-weight: bold;
-    ;
+    
 
+}
+.classification-option {
+    margin-bottom: 10px;
+    position: inherit;
 }
 
 .start-span {
@@ -244,6 +248,11 @@ li.page-number {
 
 
 }
+.selected {
+    border:2px solid black;
+    background-color:yellow;
+    transform: scale(1.02);
+}
 
 .isRevision {
     display: block !important;
@@ -266,3 +275,26 @@ li.page-number {
 .footer {
     display:none
 }
+
+.context-menu {
+    position: fixed;
+    background-color: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+  }
+  
+  .context-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .context-menu li {
+    padding: 8px 12px;
+    cursor: pointer;
+  }
+  
+  .context-menu li:hover {
+    background-color: #f0f0f0;
+  }
