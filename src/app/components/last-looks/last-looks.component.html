@@ -17,9 +17,7 @@
       </div>
       <div class="edit-controls-container">
         <h4>{{this.selectedEditFunction}}</h4>
-        <button (click)="selectEditFunction($event)" value="toggleVisibility">MakeVisible</button>
-        <button (click)="selectEditFunction($event)" value="adjustY">Adjust Vertical</button>
-        <button (click)="selectEditFunction($event)" value="changeType">Change Type</button>
+        <button *ngFor = "let option of editPdfOptions, let i = index" (click)="selectEditFunction($event)" value="{{option}}">{{editPdfButtonLabels[i]}}</button>
       </div>
     </div>
   </main>

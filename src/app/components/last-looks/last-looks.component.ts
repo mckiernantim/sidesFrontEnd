@@ -13,8 +13,9 @@ export class LastLooksComponent implements OnInit {
   currentPageIndex: number = 0;
   currentPage: number = 0;
   startingLinesOfDoc = [];
-  editPdfOptions: string[] = ["toggleVisibility", "adjustY", "editText"]
-  selectedEditFunction: string  = "toggleSlectedLine"
+  editPdfOptions: string[] = ["toggleVisibility", "adjustY","changeType" ,"editText", "toggleSelected", "deleteLine"]
+  editPdfButtonLabels:string[] = ["lineout", "move vertical", "change line category", "edit line text","selectLine", "toggleSelected", "delete Line"]
+  selectedEditFunction: string  = "toggleSelected"
   selectedLine: Line | null = null;
   ngOnInit() {
     this.pages = this.doc.data;

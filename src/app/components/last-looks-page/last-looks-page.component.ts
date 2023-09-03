@@ -114,7 +114,7 @@ processLinePosition() {
     this.cdRef.markForCheck();
   }
   handleKeydown(event: KeyboardEvent, line: Line) {
-    alert("firigind delete")
+    console.log("keydown firing: ", event.key)
     if (event.key === 'Delete' || event.key === 'Backspace') {
       // Handle the 'Delete' key press here
       this.deleteLine(line);

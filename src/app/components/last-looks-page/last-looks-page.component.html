@@ -34,6 +34,7 @@
 
                     <!-- LINE SPAN -->
                     <li [value]="lineIndex" [class]="line.category + ' ' + line.visible + ' ' + line.hidden" 
+                    (keydown)="handleKeydown($event, line)"
                     (click)="selectedFunction === 'toggleVisibility' ? toggleVisibility(line) :
                 toggleSelectedLine($event,line, lineIndex)" [style.bottom]="line.calculatedYpos"
                         [style.left]="line.calculatedXpos" 
@@ -41,7 +42,8 @@
                         (mousedown)="selectedFunction === 'adjustY'  && startDrag($event, line)"
                         (mousemove)="selectedFunction === 'adjustY' && drag($event)" 
                         (mouseup)=" selectedFunction === 'adjustY' && stopDrag(line)"
-                        [class.selected]="isSelectedLine(line, lineIndex)" (keydown)="handleKeydown($event, line)">
+                        [class.selected]="isSelectedLine(line, lineIndex)" 
+                        >
                         {{ line.text }} 
                         
                     </li>
@@ -65,7 +67,7 @@
                     </span>
 
                     <!-- right scene number span -->
-                    <span class="scene-number-right {{ line.trueScene }} {{ line.visible }} {{line.hideCont}}"
+                    <span class="scene-number-right {{ line.trueScene }} {{ line.visible }}"
                         (click)="toggleSelectedLine($event, line, lineIndex); selectedFunction === 'toggleVisibility' ? toggleVisibility(line) : null"
                         [style.bottom]="line.calculatedYpos" [style.right]="line.calculatedXPos">
                         {{ line.sceneNumber }}
@@ -81,7 +83,7 @@
                     </ul>
                 </div>
             </ul>
-
+            <button (click)="handleKeydown($event, selectedLine)">keydown</button>
             <li class=footer>made by Sides-Ways</li>
         </div>
     </div>
