@@ -1,5 +1,6 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
 import { Line } from 'src/app/types/Line';
+
 
 @Component({
   selector: 'app-last-looks',
@@ -9,6 +10,7 @@ import { Line } from 'src/app/types/Line';
 export class LastLooksComponent implements OnInit {
 
   @Input() doc: any;
+  @Output() selectedEditFunctionChange: EventEmitter<string> = new EventEmitter<string>()
   pages: [];
   currentPageIndex: number = 0;
   currentPage: number = 0;
@@ -22,14 +24,19 @@ export class LastLooksComponent implements OnInit {
     this.processLinesForLastLooks(this.pages);
     this.updateDisplayedPage();
   }
+  log() {
+    console.log("whatever the fucktthis is")
+  }
   processLinesForLastLooks(arr) {
     for (let page of arr) {
+      let ends = page.filter((l)=>l.cont==="CONTINUE-TOP");
+
       page.forEach((line: Line) => {
         this.adjustSceneNumberPosition(line);
         this.checkForContraction(line);
         this.adjustStartingLinesOfDoc(line);
-        this.adjustSceneHeader(line);
         this.adjustEndAndContinue(line);
+        this.adjustSceneHeader(line);
         this.adjustBarPosition(line);
         this.calculateYPositions(line);
         // Perform your calculations and store the results in each line object
@@ -44,18 +51,12 @@ export class LastLooksComponent implements OnInit {
     this.currentPage = this.pages[this.currentPageIndex];
   }
   selectEditFunction(e) {
-    console.log("button firigin,",  e.target.value)
+    this.selectedEditFunctionChange.emit(this.selectedEditFunction);
     this.selectedEditFunction = e.target.value
-    alert(`function changed to ${this.selectedEditFunction}`)
+  
   }
   handleFunctionNullified() {
    this.selectEditFunction = null;
-  }
-  previousPage() {
-    if (this.currentPageIndex > 0) {
-      this.currentPageIndex--;
-      this.updateDisplayedPage();
-    }
   }
   startSingle = function (barY) {
     return barY * 1.3 - 44 + 'px';
@@ -65,6 +66,12 @@ export class LastLooksComponent implements OnInit {
       return endY + 'px';
     } else return 90 + 'px';
   };
+  previousPage() {
+    if (this.currentPageIndex > 0) {
+      this.currentPageIndex--;
+      this.updateDisplayedPage();
+    }
+  }
   nextPage() {
     if (this.currentPageIndex < this.pages.length) {
       this.currentPageIndex++;
@@ -85,7 +92,9 @@ export class LastLooksComponent implements OnInit {
   }
   
   adjustStartingLinesOfDoc(line: Line) {
+
     if (line.bar === "bar" && !this.startingLinesOfDoc.includes(line.sceneIndex) && line.sceneIndex > 0) {
+      // add this to list so ENDS can be shows
       this.startingLinesOfDoc.push(line.sceneIndex);
     } else {
       line.bar = "hideBar";
@@ -95,6 +104,7 @@ export class LastLooksComponent implements OnInit {
   adjustSceneHeader(line: Line) {
     if (line.category === "scene-header" && line.visible === "true") {
       line.trueScene = "true-scene";
+      line.bar="bar"
     }
   }
   
@@ -102,10 +112,11 @@ export class LastLooksComponent implements OnInit {
     if (line.end === "END" && this.startingLinesOfDoc.includes(line.sceneIndex)) {
       line.endY = line.yPos - 5;
       line.hideCont = "hideCont";
-      line.bar = "hideBar";
+      line.end="END"
     } else if (line.cont && line.cont !== "hideCont" && this.startingLinesOfDoc.includes(line.sceneIndex)) {
       line.hideEnd = "hideEnd";
       line.bar = "hideBar";
+      line.cont = "CONTINUE"
     } else {
       line.hideEnd = "hideEnd";
       line.hideCont = "hideCont";

@@ -27,18 +27,19 @@
                     <!-- start span -->
                     <span
                         (mouseup)="selectedFunction === 'adjustY' && isSelectedLine(line, lineIndex) ? stopDrag(line) : null"
-                        [class]="(line.bar ? line.bar : 'hideBar') + ' ' + line.hidden"
+                        [class]="(line.bar ? line.bar : 'hideBar')"
                         [style.bottom]="line.calculatedYpos">
                         <span class="start-span">START {{ line.sceneNumber }} </span>
                     </span>
 
                     <!-- LINE SPAN -->
-                    <li [value]="lineIndex" [class]="line.category + ' ' + line.visible + ' ' + line.hidden" 
-                    (keydown)="handleKeydown($event, line)"
+                    <li contenteditable="true" 
+                    tabindex="0" [value]="lineIndex" [class]="line.category + ' ' + line.visible + ' ' + line.hidden" 
                     (click)="selectedFunction === 'toggleVisibility' ? toggleVisibility(line) :
-                toggleSelectedLine($event,line, lineIndex)" [style.bottom]="line.calculatedYpos"
+                toggleSelectedLine($event,line, lineIndex)" 
+                [style.bottom]="line.calculatedYpos"
                         [style.left]="line.calculatedXpos" 
-                        (contextmenu)="selectedLine && openContextMenu($event, line)"
+                        (contextmenu)="selectedLine && selectedFunction === 'changeType' && openContextMenu($event, line)"
                         (mousedown)="selectedFunction === 'adjustY'  && startDrag($event, line)"
                         (mousemove)="selectedFunction === 'adjustY' && drag($event)" 
                         (mouseup)=" selectedFunction === 'adjustY' && stopDrag(line)"
@@ -56,9 +57,9 @@
                     <!-- continue spans -->
                     <span
             
-                        [class]="(line.bar ? line.bar : 'hideBar') + ' ' + line.hidden"
+                        [class]="(line.cont ? line.cont : 'hideCont') + ' ' + line.hidden"
                         [style.bottom]="line.calculatedYpos">
-                        <span class="start-span">START {{ line.sceneNumber }}</span>
+                        <span class="start-span"> ↓↓{{line.sceneNumberText}} CONTINUED↓↓↓</span>
                     </span>
 
                     <!-- end span -->
@@ -80,10 +81,10 @@
                             class="classification-option">
                             {{ choice }}
                         </li>
+                        <li (click)="changeType('hidden')" class="classification-option">delete</li>
                     </ul>
                 </div>
             </ul>
-            <button (click)="handleKeydown($event, selectedLine)">keydown</button>
             <li class=footer>made by Sides-Ways</li>
         </div>
     </div>
