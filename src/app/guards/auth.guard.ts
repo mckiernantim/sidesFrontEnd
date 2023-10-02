@@ -10,7 +10,7 @@ export class AuthGuard implements CanActivate {
   constructor(private tokenService: TokenService, private router: Router) {}
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean | UrlTree {
-    const sessionToken = this.tokenService.getToken()
+    const sessionToken = this.tokenService.getPDFToken()
 
     if (true) {
       // Token exists, allow access to the route

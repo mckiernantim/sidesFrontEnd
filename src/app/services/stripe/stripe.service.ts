@@ -17,9 +17,9 @@ export class StripeService {
 
 
 
-  startCheckout() {
+  startCheckout(token) {
     console.log(`${this._URL}`)
-    return this.http.post(`${this._URL}/start-checkout`, { test:true });
+    return this.http.post(`${this._URL}/start-checkout`, { test:true, token });
   }
   handlePaymentSuccess(): void {
     // Handle any additional actions after successful payment

@@ -14,6 +14,7 @@ import { FeedbackTicket } from '../../types/feedbackTicket';
 import { environment } from 'src/environments/environment';
 import { idToken } from '@angular/fire/auth';
 import { Line } from '../../types/Line';
+import { TokenService } from '../token/token.service';
 
 
 
@@ -48,7 +49,7 @@ export class UploadService {
   private url:string = environment.url
   // Firestore will manage all of our fundata and our tickets for feedback
 
-  constructor(public httpClient: HttpClient, db:AngularFirestore) {
+  constructor(public httpClient: HttpClient, db:AngularFirestore, private token:TokenService) {
     this._db = db;
     this.feedback = db.collection("feedbackTickets", ticketRef => ticketRef
       .where('text', '!=', "Describe any issues")).valueChanges(idToken);
@@ -86,16 +87,17 @@ export class UploadService {
     }
 }
 // final step
-  getPDF(name, callsheet) {
+  getPDF(name, callsheet, token) {
     let params = new HttpParams()
       .append('name', name)
-      .append('callsheet', callsheet);
+      .append('callsheet', callsheet)
+      .append("token", token)
     this.httpOptions.params = params;
     this.httpOptions.headers = new Headers();
     this.httpOptions.responseType = 'blob';
     return this.httpClient.get(this.url + '/complete', {
       responseType: 'blob',
-      params: { name: name, callsheet: callsheet },
+      params: {  name,  callsheet, token },
     });
   }
 
@@ -137,6 +139,7 @@ export class UploadService {
     this.script = localStorage.getItem('name');
     const formData: FormData = new FormData();
     formData.append('script', fileToUpload, fileToUpload.name);
+    debugger
     return this.httpClient
       .post(this.url + '/api', formData, this.httpOptions)
       .pipe(

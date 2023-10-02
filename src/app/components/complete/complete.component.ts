@@ -13,10 +13,11 @@ export class CompleteComponent implements OnInit {
   name: string = localStorage.getItem('name');
   layout: string = localStorage.getItem('layout');
   callsheet: string = localStorage.getItem('callsheet');
+  pdfToken:string = '';
   constructor(public upload: UploadService, private token:TokenService) {}
   ngOnInit(): void {
     const _stripeCheckoutSessionToken = localStorage.getItem("_stripeCheckoutSessionToken")
-    this.token.setToken(_stripeCheckoutSessionToken)
+    this.pdfToken = this.token.getPDFToken()
   }
   // we download as soon as we land
   ngAfterViewInit(): void {
@@ -24,8 +25,8 @@ export class CompleteComponent implements OnInit {
   }
   downloadPDF(): void {
   try {
-    let _dataSubscriptiopn = this.upload.getPDF(this.name, "whatever");
-    _dataSubscriptiopn.subscribe((data) => {
+    let _dataSubscription = this.upload.getPDF(this.name, "whatever", this.pdfToken);
+    _dataSubscription.subscribe((data) => {
        console.log(data)
        let date =  new Date().toISOString().substring(0,10)
         saveAs(data, `${this.name}-${date}.zip`, { type:"application/zip" } )

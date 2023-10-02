@@ -1,26 +1,26 @@
 @import url('https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap');
-main {
-    display:grid;
-    grid-template-columns: 2fr 1fr;
-}
+
+
 .page-container {
     font-family: 'Courier Prime', monospace;
-    height: 1056px;
-    width: 816px;
-    background-color: white;
+    display: grid;
+    grid-template-columns: 816px 200px; /* Adjust pixel values as needed */
+    width: 816px; /* Set the total width as per your requirement */
+    height:1056px;
     margin: 0 auto;
 
-}
-
-.last-looks-container {
-    display:grid;
-    grid-template-columns: 2fr 1fr;
-    justify-content: space-between;
-    width: 100vw
+    grid-column: 2; /* Place page container in the second column */
 }
 
 .pagination-controls {
-    border:2px solid blue
+  
+}
+
+.edit-controls-container {
+    display: flex;
+    flex-direction: column; /* Align buttons vertically */
+    align-items: baseline; 
+    /* Place controls container in the third column */
 }
 
 .selected {

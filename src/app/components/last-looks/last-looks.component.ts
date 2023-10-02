@@ -1,6 +1,10 @@
 import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
 import { Line } from 'src/app/types/Line';
-
+import { UploadService } from 'src/app/services/upload/upload.service';
+import { StripeService } from 'src/app/services/stripe/stripe.service';
+import { TokenService } from 'src/app/services/token/token.service';
+import { Router } from '@angular/router';
+import { switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-last-looks',
@@ -8,16 +12,37 @@ import { Line } from 'src/app/types/Line';
   styleUrls: ['./last-looks.component.css'],
 })
 export class LastLooksComponent implements OnInit {
-
+  constructor(
+    private upload: UploadService,
+    private stripe: StripeService,
+    private token: TokenService,
+    private router: Router
+  ) {}
   @Input() doc: any;
-  @Output() selectedEditFunctionChange: EventEmitter<string> = new EventEmitter<string>()
+  @Output() selectedEditFunctionChange: EventEmitter<string> =
+    new EventEmitter<string>();
   pages: [];
   currentPageIndex: number = 0;
   currentPage: number = 0;
   startingLinesOfDoc = [];
-  editPdfOptions: string[] = ["toggleVisibility", "adjustY","changeType" ,"editText", "toggleSelected", "deleteLine"]
-  editPdfButtonLabels:string[] = ["lineout", "move vertical", "change line category", "edit line text","selectLine", "toggleSelected", "delete Line"]
-  selectedEditFunction: string  = "toggleSelected"
+  editPdfOptions: string[] = [
+    'toggleVisibility',
+    'adjustY',
+    'changeType',
+    'editText',
+    'toggleSelected',
+    'deleteLine',
+  ];
+  editPdfButtonLabels: string[] = [
+    'lineout',
+    'move vertical',
+    'change line category',
+    'edit line text',
+    'selectLine',
+    'toggleSelected',
+    'delete Line',
+  ];
+  selectedEditFunction: string = 'toggleSelected';
   selectedLine: Line | null = null;
   ngOnInit() {
     this.pages = this.doc.data;
@@ -25,12 +50,10 @@ export class LastLooksComponent implements OnInit {
     this.updateDisplayedPage();
   }
   log() {
-    console.log("whatever the fucktthis is")
+    console.log('whatever the fucktthis is');
   }
   processLinesForLastLooks(arr) {
     for (let page of arr) {
-      let ends = page.filter((l)=>l.cont==="CONTINUE-TOP");
-
       page.forEach((line: Line) => {
         this.adjustSceneNumberPosition(line);
         this.checkForContraction(line);
@@ -41,7 +64,8 @@ export class LastLooksComponent implements OnInit {
         this.calculateYPositions(line);
         // Perform your calculations and store the results in each line object
         line.calculatedXpos = Number(line.xPos) * 1.3 + 'px';
-        line.calculatedEnd = Number(line.endY) > 90 ? Number(line.endY) * 1.3 + 'px' : '90px';
+        line.calculatedEnd =
+          Number(line.endY) > 90 ? Number(line.endY) * 1.3 + 'px' : '90px';
         // ... other calculations
       });
     }
@@ -52,11 +76,10 @@ export class LastLooksComponent implements OnInit {
   }
   selectEditFunction(e) {
     this.selectedEditFunctionChange.emit(this.selectedEditFunction);
-    this.selectedEditFunction = e.target.value
-  
+    this.selectedEditFunction = e.target.value;
   }
   handleFunctionNullified() {
-   this.selectEditFunction = null;
+    this.selectEditFunction = null;
   }
   startSingle = function (barY) {
     return barY * 1.3 - 44 + 'px';
@@ -79,74 +102,123 @@ export class LastLooksComponent implements OnInit {
     }
   }
   adjustSceneNumberPosition(line: Line) {
-    if ((line.category === "scene-number-left" || line.category === "scene-number-right") && line.trueScene === "true-scene") {
+    if (
+      (line.category === 'scene-number-left' ||
+        line.category === 'scene-number-right') &&
+      line.trueScene === 'true-scene'
+    ) {
       line.calculatedYpos = line.yPos - 10;
     }
   }
-  
+
   checkForContraction(line: Line) {
     if (line.subCategory === "CON'T") {
-      console.log("changing " + line.text + " visibility");
-      line.visible = "true";
+      console.log('changing ' + line.text + ' visibility');
+      line.visible = 'true';
     }
   }
-  
-  adjustStartingLinesOfDoc(line: Line) {
 
-    if (line.bar === "bar" && !this.startingLinesOfDoc.includes(line.sceneIndex) && line.sceneIndex > 0) {
+  adjustStartingLinesOfDoc(line: Line) {
+    if (
+      line.bar === 'bar' &&
+      !this.startingLinesOfDoc.includes(line.sceneIndex) &&
+      line.sceneIndex > 0
+    ) {
       // add this to list so ENDS can be shows
       this.startingLinesOfDoc.push(line.sceneIndex);
     } else {
-      line.bar = "hideBar";
+      line.bar = 'hideBar';
     }
   }
-  
+
   adjustSceneHeader(line: Line) {
-    if (line.category === "scene-header" && line.visible === "true") {
-      line.trueScene = "true-scene";
-      line.bar="bar"
+    if (line.category === 'scene-header' && line.visible === 'true') {
+      line.trueScene = 'true-scene';
+      line.bar = 'bar';
     }
   }
-  
+
   adjustEndAndContinue(line: Line) {
-    if (line.end === "END" && this.startingLinesOfDoc.includes(line.sceneIndex)) {
+    if (
+      line.end === 'END' &&
+      this.startingLinesOfDoc.includes(line.sceneIndex)
+    ) {
       line.endY = line.yPos - 5;
-      line.hideCont = "hideCont";
-      line.end="END"
-    } else if (line.cont && line.cont !== "hideCont" && this.startingLinesOfDoc.includes(line.sceneIndex)) {
-      line.hideEnd = "hideEnd";
-      line.bar = "hideBar";
-      line.cont = "CONTINUE"
+      line.hideCont = 'hideCont';
+      line.end = 'END';
+    } else if (
+      line.cont &&
+      line.cont !== 'hideCont' &&
+      this.startingLinesOfDoc.includes(line.sceneIndex)
+    ) {
+      line.hideEnd = 'hideEnd';
+      line.bar = 'hideBar';
+      line.cont = 'CONTINUE';
     } else {
-      line.hideEnd = "hideEnd";
-      line.hideCont = "hideCont";
-      line.bar = "hideBar";
+      line.hideEnd = 'hideEnd';
+      line.hideCont = 'hideCont';
+      line.bar = 'hideBar';
     }
   }
-  
+
   adjustBarPosition(line: Line) {
     if (line.bar) {
       line.barY = line.yPos + 65;
     }
   }
-  
+
   calculateYPositions(line: Line) {
-    line.calculatedYpos = Number(line.yPos) > 1 ? Number(line.yPos) * 1.3 + 'px' : '0';
+    line.calculatedYpos =
+      Number(line.yPos) > 1 ? Number(line.yPos) * 1.3 + 'px' : '0';
   }
 
- 
-
-  updatePositionsInDocument(arr) {
-    for (let page of arr) {
-      page.forEach((line: Line) => {
+  restorePositionsInDocument(arr) {
+    const scriptPages = arr.data;
+    for (let page of scriptPages) {
+      page.forEach((line) => {
         if (line.calculatedXpos) {
-          line.xPos = (Number(line.calculatedXpos) / 1.3) ;
+          line.xPos =
+            Number(
+              line.calculatedXpos.substr(0, line.calculatedXpos.length - 2)
+            ) / 1.3;
         }
         if (line.calculatedYpos) {
-          line.yPos = (Number(line.calculatedYpos) / 1.3) ;
+          line.yPos =
+            Number(
+              line.calculatedYpos.substr(0, line.calculatedYpos.length - 2)
+            ) / 1.3;
         }
-        // Update other properties if needed
+        // Restore other properties if needed
       });
     }
+    console.log(arr);
+    return arr;
+  }
+
+  getPDF() {
+    alert('geting sides');
+    const adjustedFinalDoc = this.restorePositionsInDocument(this.doc);
+    this.upload.generatePdf(adjustedFinalDoc).subscribe(
+      (serverRes: any) => {
+        try {
+          const token = serverRes.jwtToken;
+          this.token.setPDFToken(token);
+          // Generate a session token for Stripe checkout
+          this.stripe.startCheckout(token).subscribe((stripeRes: any) => {
+            console.log(stripeRes);
+            // redirect has to be created
+            window.location.href = stripeRes.url;
+            // Redirect to "/complete" with both sessionToken and pdfToken as query parameters
+          });
+        } catch (e) {
+          console.error('token not saved');
+        }
+
+        // Save the PDF token obtained from the server using the TokenService
+      },
+      (error: any) => {
+        console.error('Error in PDF generation:', error);
+      }
+    );
   }
 }

@@ -58,11 +58,7 @@ export class UploadComponent implements OnInit, OnDestroy {
     //Add 'implements OnDestroy' to the class.
     // this.dataSubscription.unsubscribe()
   };
-  checkOut():void {
-    this.stripe.startCheckout().subscribe(data => {
-      console.log(data)
-    })
-  }
+
 
   // create the page '2.' which is hidden in most scripts
   addTwo(arr) {
