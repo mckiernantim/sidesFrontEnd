@@ -139,7 +139,6 @@ export class UploadService {
     this.script = localStorage.getItem('name');
     const formData: FormData = new FormData();
     formData.append('script', fileToUpload, fileToUpload.name);
-    debugger
     return this.httpClient
       .post(this.url + '/api', formData, this.httpOptions)
       .pipe(
@@ -158,6 +157,7 @@ export class UploadService {
     this.httpOptions.responseType = 'blob';
     return this.httpClient.post(this.url + '/pdf', sceneArr, {
       params: params,
+      withCredentials:true,
     });
   }
 

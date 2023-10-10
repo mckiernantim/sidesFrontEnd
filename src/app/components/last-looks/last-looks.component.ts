@@ -48,6 +48,7 @@ export class LastLooksComponent implements OnInit {
     this.pages = this.doc.data;
     this.processLinesForLastLooks(this.pages);
     this.updateDisplayedPage();
+    this.selectedLine = this.doc.data[0][0]
   }
   log() {
     console.log('whatever the fucktthis is');
@@ -202,12 +203,13 @@ export class LastLooksComponent implements OnInit {
       (serverRes: any) => {
         try {
           const token = serverRes.jwtToken;
-          this.token.setPDFToken(token);
+          console.log(serverRes)
+    
           // Generate a session token for Stripe checkout
           this.stripe.startCheckout(token).subscribe((stripeRes: any) => {
             console.log(stripeRes);
             // redirect has to be created
-            window.location.href = stripeRes.url;
+            // window.location.href = stripeRes.url;
             // Redirect to "/complete" with both sessionToken and pdfToken as query parameters
           });
         } catch (e) {

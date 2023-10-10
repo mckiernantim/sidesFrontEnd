@@ -16,16 +16,18 @@ export class CompleteComponent implements OnInit {
   pdfToken:string = '';
   constructor(public upload: UploadService, private token:TokenService) {}
   ngOnInit(): void {
-    const _stripeCheckoutSessionToken = localStorage.getItem("_stripeCheckoutSessionToken")
-    this.pdfToken = this.token.getPDFToken()
+    // this.pdfToken = this.token.getPDFToken()
+    console.log(document.cookie)
   }
   // we download as soon as we land
   ngAfterViewInit(): void {
     this.downloadPDF();
+
   }
   downloadPDF(): void {
   try {
-    let _dataSubscription = this.upload.getPDF(this.name, "whatever", this.pdfToken);
+    const headers= { 'Authorization': `Bearer ${this.pdfToken}`}
+    let _dataSubscription = this.upload.getPDF(this.name, "whatever", headers);
     _dataSubscription.subscribe((data) => {
        console.log(data)
        let date =  new Date().toISOString().substring(0,10)

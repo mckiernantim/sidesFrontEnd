@@ -34,7 +34,9 @@
 
                     <!-- LINE SPAN -->
                     <li contenteditable="true" 
-                    tabindex="0" [value]="lineIndex" [class]="line.category + ' ' + line.visible + ' ' + line.hidden" 
+                    tabindex="0" 
+                    [value]="lineIndex" 
+                    [class]="line.category + ' ' + line.visible + ' ' + line.hidden" 
                     (click)="selectedFunction === 'toggleVisibility' ? toggleVisibility(line) :
                 toggleSelectedLine($event,line, lineIndex)" 
                 [style.bottom]="line.calculatedYpos"

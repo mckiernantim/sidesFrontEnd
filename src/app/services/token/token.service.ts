@@ -8,7 +8,7 @@ interface DecodedToken {
   providedIn: 'root'
 })
 export class TokenService {
-  private readonly tokenKey = '_stripeCheckoutSessionToken';
+  private readonly tokenKey = 'sides-ways-jwt';
   private expirationTimer: any;
 
   getPDFToken(): string | null {

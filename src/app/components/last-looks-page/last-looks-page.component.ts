@@ -67,8 +67,9 @@ addToUndoQueue(actionType: string, data: any) {
     return this.selectedLine === this.page[lineIndex]
   }
   toggleSelectedLine(event: MouseEvent, line: any, lineIndex: number) {
+    alert("selecing line")
     if (this.isSelectedLine(line, lineIndex)) {
-      // Deselect the line if it's already selected
+      // Deselect the line if it's already selecte 
       this.selectedLine = null;
     } else {
       // Select the line if it's not already selected
