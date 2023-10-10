@@ -10,15 +10,15 @@ export class AuthGuard implements CanActivate {
   constructor(private tokenService: TokenService, private router: Router) {}
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean | UrlTree {
-    const sessionToken = this.tokenService.getPDFToken()
+    const sessionToken = this.tokenService.getDeleteTimer();
 
-    if (true) {
+    if (sessionToken) {
       // Token exists, allow access to the route
       return true;
     } else {
-      alert("No session token has been found - re routing to upload page")
+      alert("Please confirm purcahse to continue to downlaod")
       // Token does not exist, redirect to login page or any other appropriate page
-      return this.router.parseUrl('/upload'); // Replace '/login' with your login page URL
+      return this.router.parseUrl('/download'); // Replace '/login' with your login page URL
     }
   }
 }

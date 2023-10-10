@@ -202,14 +202,17 @@ export class LastLooksComponent implements OnInit {
     this.upload.generatePdf(adjustedFinalDoc).subscribe(
       (serverRes: any) => {
         try {
-          const token = serverRes.jwtToken;
+          const { downloadTimeRemaining, token } = serverRes
           console.log(serverRes)
+          this.token.setDeleteTimer(downloadTimeRemaining)
     
           // Generate a session token for Stripe checkout
           this.stripe.startCheckout(token).subscribe((stripeRes: any) => {
             console.log(stripeRes);
+            console.log(document.cookie);
             // redirect has to be created
             // window.location.href = stripeRes.url;
+
             // Redirect to "/complete" with both sessionToken and pdfToken as query parameters
           });
         } catch (e) {

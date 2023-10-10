@@ -42,6 +42,7 @@ import { AngularFireModule } from '@angular/fire/compat';
 import { AngularFireAnalyticsModule } from '@angular/fire/compat/analytics';
 import { AngularFirestoreModule } from '@angular/fire/compat/Firestore';
 import { environment } from '../environments/environment';
+
 // componeents
 import { DualDialogComponent } from './components/dual-dialog/dual-dialog.component';
 import { FooterComponent } from './components/footer/footer.component';

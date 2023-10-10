@@ -13,17 +13,23 @@ export class CompleteComponent implements OnInit {
   name: string = localStorage.getItem('name');
   layout: string = localStorage.getItem('layout');
   callsheet: string = localStorage.getItem('callsheet');
+  downloadTimeRemaining:number = Infinity;
   pdfToken:string = '';
   constructor(public upload: UploadService, private token:TokenService) {}
   ngOnInit(): void {
-    // this.pdfToken = this.token.getPDFToken()
-    console.log(document.cookie)
+    this.pdfToken = this.token.validateCookie();
   }
   // we download as soon as we land
   ngAfterViewInit(): void {
     this.downloadPDF();
-
   }
+  calculateDownloadTime() {
+    try {
+      console.log(this.pdfToken)
+    } catch (e) {
+      console.error("no cookie detected")
+    }
+  } 
   downloadPDF(): void {
   try {
     const headers= { 'Authorization': `Bearer ${this.pdfToken}`}

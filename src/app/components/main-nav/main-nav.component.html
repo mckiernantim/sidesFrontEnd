@@ -1,63 +1,39 @@
 <mat-sidenav-container class="sidenav-container">
-  <mat-sidenav #drawer class="sidenav" fixedInViewport
-      [attr.role]="(isHandset$ | async) ? 'dialog' : 'navigation'"
-      [mode]="(isHandset$ | async) ? 'over' : 'side'"
-      [opened]="(isHandset$ | async) === false">
+  <mat-sidenav #drawer class="sidenav" fixedInViewport [attr.role]="(isHandset$ | async) ? 'dialog' : 'navigation'"
+    [mode]="(isHandset$ | async) ? 'over' : 'side'" [opened]="(isHandset$ | async) === false">
     <mat-toolbar>
     </mat-toolbar>
     <mat-nav-list>
-      <a mat-list-item routerLink ="/">Home</a>
-      <a mat-list-item routerLink ="./About">About</a>
-      <a mat-list-item routerLink ="./Donate">Donate</a>
+      <a mat-list-item routerLink="/">Home</a>
+      <a mat-list-item routerLink="./About">About</a>
+      <a mat-list-item routerLink="./Donate">Donate</a>
       <div class="right nav-item">
         <label>
 
         </label>
-
-        <ng-container *ngIf="auth.userData; else imageTemplate">
-          <img src="path_to_image" alt="Image" />
-          <a mat-list-item> {{auth.userData.email }}</a>
-          <button mat-raised-button color="warn" class="right nav-item" (click)="auth.SignOut()">Sign Out</button>
-        </ng-container>
-
-        <ng-template #imageTemplate>
-          <button mat-raised-button color="warn" class="right nav-item" (click)="auth.loginWithGoogle()">Sign in</button>
-        </ng-template>
-
-        </div>
+      </div>
     </mat-nav-list>
   </mat-sidenav>
   <mat-sidenav-content>
     <mat-toolbar color="primary" class="navbar">
-      <button
-        type="button"
-        aria-label="Toggle sidenav"
-        mat-icon-button
-        (click)="drawer.toggle()"
+      <button type="button" aria-label="Toggle sidenav" mat-icon-button (click)="drawer.toggle()"
         *ngIf="isHandset$ | async">
-        <mat-icon aria-label="Side nav toggle icon"><span class="material-symbols-outlined">
-          </span></mat-icon>
+        <mat-icon aria-label="Side nav toggle icon">
+          <span class="material-symbols-outlined"></span>
+        </mat-icon>
       </button>
 
-        <span class="logo nav-item">Sides-Ways</span>
-        <span class="spacer"></span>
-        <button mat-raised-button color="primary-light" class ="nav-item" routerLink ="/" >Home</button>
-        <button mat-raised-button color="primary-light" class ="nav-item" routerLink ="/About">About</button>
-        <button mat-raised-button color="primary-light" class ="nav-item" routerLink ="/donate">Donate</button>
-        <div class="right nav-item">
-
-          <!-- <ng-container *ngIf="auth.userData; else imageTemplate">
-            <div class ="user-login">
-              <img src ="{{auth.userData.photoURL}}"> <span>{{auth.userData.email}}</span>
-              <button mat-raised-button color="warn" class="right nav-item" (click)="auth.SignOut()">Sign Out </button>
-            </div>
-          </ng-container> -->
-
-
-          <ng-template #imageTemplate>
-
-          </ng-template>
-          </div>
+      <span class="logo nav-item">Sides-Ways</span>
+      <span class="spacer"></span>
+      <ng-container *ngIf="(token.expirationTime)">
+        <!-- Display the countdown value -->
+        <div class="right nav-item">Deleting your IP in : {{ token.getCountdown() | async }} seconds  </div>
+      </ng-container>
+      <button mat-raised-button color="primary-light" class="nav-item" routerLink="/">Home</button>
+      <button mat-raised-button color="primary-light" class="nav-item" routerLink="/About">About</button>
+      <button mat-raised-button color="primary-light" class="nav-item" routerLink="/donate">Donate</button>
+      <div class="right nav-item">
+      </div>
 
     </mat-toolbar>
     <router-outlet></router-outlet>

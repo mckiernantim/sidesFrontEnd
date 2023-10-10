@@ -6,13 +6,10 @@
         <button mat-flat-button color="primary-light" class="right" id="{{option.text}}" (click)="toggleHidden($event.target.id)"
           routerLink="{{option.text}}">{{option.text.toUpperCase()}}</button>
       </li>
-      <div *ngIf="this.auth.userData" class="right nav-item">
-      <label>
-        {{this.auth.userData.email}}
-      </label>
-      <button mat-raised-button color="warn" *ngIf="this.auth.userData" class="right nav-item" (click)="this.auth.SignOut()">sign out
-      </button>
-      </div>
+      <ng-container *ngIf="(token.getCountdown() | async) as countdown">
+        <!-- Display the countdown value -->
+        <div class="right nav-item">Deleting your IP in : {{ countdown }}  </div>
+      </ng-container>
     </ul>
   </div>
 

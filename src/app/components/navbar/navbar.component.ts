@@ -1,5 +1,6 @@
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { AuthService } from '../../services/auth/auth.service';
+import { TokenService } from 'src/app/services/token/token.service';
 @Component({
   selector: 'app-navbar',
   templateUrl: './navbar.component.html',
@@ -7,8 +8,9 @@ import { AuthService } from '../../services/auth/auth.service';
 })
 export class NavbarComponent implements OnInit {
   options: any[] = []
+  countdown:number = -Infinity;
   @ViewChild('homeButton') homeButton: ElementRef;
-  constructor( public auth: AuthService) {
+  constructor( public auth: AuthService, public token:TokenService) {
     this.options = [{
       text: "Home",
     selected: true
@@ -29,7 +31,7 @@ export class NavbarComponent implements OnInit {
     return target.selected ? false : true
   }
   ngOnInit(): void {
-
-  }
+    this.token.getCountdown().subscribe(countdown => this.countdown = countdown)
+  } 
 
 }
