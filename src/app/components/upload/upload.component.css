@@ -41,9 +41,9 @@ img {
 
   }
   .typewriter h2 {
-  width:0;
+   width:0;
 /* Ensures the content is not revealed until the animation */ /* The typwriter cursor */
-overflow:hidden;
+    overflow:hidden;
     white-space: nowrap; /* Keeps the content on a single line */
     margin: 0 50% 0 0; /* Gives that scrolling effect as the typing happens */
     letter-spacing: .15em; /* Adjust as needed */
@@ -220,6 +220,7 @@ h4{
     padding-bottom: 1% !important;
     position: relative;
     padding: 16px;
+    min-height:70vh;
     border-radius: 15px 15px 15px 15px !important;
 }
 .two-column{

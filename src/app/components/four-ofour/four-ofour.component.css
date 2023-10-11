@@ -1,3 +1,18 @@
 .center{
     margin: 0 auto;
 }
+
+.four-o-four {
+    align-items: center;
+    display:flex;
+    flex-direction: column;
+    & img {
+        width:300px
+    }
+}
+
+.four-o-four-image {
+    width:500px;
+
+}
+

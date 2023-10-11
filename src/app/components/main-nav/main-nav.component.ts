@@ -29,11 +29,11 @@ export class MainNavComponent {
   }
   ngOnInit() {
     // connect to our token service countdown;
-   this.countdownValue$ =  this.token.getCountdown()
+  //  this.countdownValue$ =  this.token.getCountdown()
 
-   this.countdownValue$.subscribe(countdown => {
-    console.log('Countdown updated:', countdown);
-  });
+  //  this.countdownValue$.subscribe(countdown => {
+  //   console.log('Countdown updated:', countdown);
+  // });
   }
 
 }
