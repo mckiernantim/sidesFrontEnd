@@ -14,7 +14,8 @@ import { TokenService } from 'src/app/services/token/token.service';
   styleUrls: ['./main-nav.component.css']
 })
 export class MainNavComponent {
-  countdown:number = -Infinity;
+  countdown:number = 0;
+  countdownValue$: Observable<number>;
   isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
     .pipe(
       map(result => result.matches),
@@ -23,12 +24,16 @@ export class MainNavComponent {
 
   constructor(private breakpointObserver: BreakpointObserver, public token:TokenService) {
     console.log(this.token)
+    this.countdown = 0;
+    
   }
   ngOnInit() {
     // connect to our token service countdown;
-    this.token.getCountdown()
-      .subscribe(countdown => this.countdown = countdown)
+   this.countdownValue$ =  this.token.getCountdown()
 
+   this.countdownValue$.subscribe(countdown => {
+    console.log('Countdown updated:', countdown);
+  });
   }
 
 }

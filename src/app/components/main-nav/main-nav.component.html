@@ -25,9 +25,9 @@
 
       <span class="logo nav-item">Sides-Ways</span>
       <span class="spacer"></span>
-      <ng-container *ngIf="(token.expirationTime)">
+      <ng-container *ngIf="countdownValue$ | async as countdownValue">
         <!-- Display the countdown value -->
-        <div class="right nav-item">Deleting your IP in : {{ token.getCountdown() | async }} seconds  </div>
+        <div class="right nav-item">Deleting your IP in: {{ countdownValue }} seconds</div>
       </ng-container>
       <button mat-raised-button color="primary-light" class="nav-item" routerLink="/">Home</button>
       <button mat-raised-button color="primary-light" class="nav-item" routerLink="/About">About</button>

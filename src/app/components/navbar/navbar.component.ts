@@ -8,7 +8,7 @@ import { TokenService } from 'src/app/services/token/token.service';
 })
 export class NavbarComponent implements OnInit {
   options: any[] = []
-  countdown:number = -Infinity;
+  countdown:number = 0;
   @ViewChild('homeButton') homeButton: ElementRef;
   constructor( public auth: AuthService, public token:TokenService) {
     this.options = [{

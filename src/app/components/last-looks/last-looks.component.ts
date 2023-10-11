@@ -205,15 +205,14 @@ export class LastLooksComponent implements OnInit {
           const { downloadTimeRemaining, token } = serverRes
           console.log(serverRes)
           this.token.setDeleteTimer(downloadTimeRemaining)
-    
+
+          this.token.startCountdown()
+          
           // Generate a session token for Stripe checkout
           this.stripe.startCheckout(token).subscribe((stripeRes: any) => {
             console.log(stripeRes);
             console.log(document.cookie);
-            // redirect has to be created
-            // window.location.href = stripeRes.url;
-
-            // Redirect to "/complete" with both sessionToken and pdfToken as query parameters
+            window.location.href = stripeRes.url;
           });
         } catch (e) {
           console.error('token not saved');
