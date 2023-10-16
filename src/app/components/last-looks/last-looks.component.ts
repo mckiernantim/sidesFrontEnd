@@ -1,4 +1,5 @@
-import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, Input, OnInit, Output, EventEmitter,  } from '@angular/core';
+import { HttpHeaders } from '@angular/common/http';
 import { Line } from 'src/app/types/Line';
 import { UploadService } from 'src/app/services/upload/upload.service';
 import { StripeService } from 'src/app/services/stripe/stripe.service';
@@ -202,16 +203,13 @@ export class LastLooksComponent implements OnInit {
     this.upload.generatePdf(adjustedFinalDoc).subscribe(
       (serverRes: any) => {
         try {
-          const { downloadTimeRemaining, token } = serverRes
-          console.log(serverRes)
-          this.token.setDeleteTimer(downloadTimeRemaining)
+          const { downloadTimeRemaining, token } = serverRes;
+          console.log(serverRes);
+          this.token.setDeleteTimer(downloadTimeRemaining);
 
-          this.token.startCountdown()
-          
+          this.token.startCountdown();
           // Generate a session token for Stripe checkout
-          this.stripe.startCheckout(token).subscribe((stripeRes: any) => {
-            console.log(stripeRes);
-            console.log(document.cookie);
+          this.stripe.startCheckout().subscribe((stripeRes: any) => {
             window.location.href = stripeRes.url;
           });
         } catch (e) {

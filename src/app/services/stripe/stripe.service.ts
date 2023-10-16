@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { loadStripe } from '@stripe/stripe-js';
 import { environment } from '../../../environments/environment';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { from, Observable } from 'rxjs';
 import { Router } from '@angular/router';
 @Injectable({
@@ -17,9 +17,16 @@ export class StripeService {
 
 
 
-  startCheckout(token) {
-    console.log(`${this._URL}`)
-    return this.http.post(`${this._URL}/start-checkout`, { test:true, token });
+  startCheckout() {
+    console.log(`${this._URL}`);
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+    });
+    const options = {
+      headers:headers,
+      withCredentials:true
+    }
+    return this.http.post(`${this._URL}/start-checkout`, { test:true, headers }, options);
   }
   handlePaymentSuccess(): void {
     // Handle any additional actions after successful payment
