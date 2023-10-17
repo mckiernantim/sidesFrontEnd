@@ -87,19 +87,16 @@ export class UploadService {
     }
 }
 // final step
-  getPDF(name, callsheet, token) {
-    let params = new HttpParams()
-      .append('name', name)
-      .append('callsheet', callsheet)
-      .append("token", token)
-    this.httpOptions.params = params;
-    this.httpOptions.headers = new Headers();
-    this.httpOptions.responseType = 'blob';
-    return this.httpClient.get(this.url + '/complete', {
-      responseType: 'blob',
-      params: {  name,  callsheet, token },
-    });
-  }
+getPDF(name: string, callsheet: string): Observable<Blob> {
+  const params = new HttpParams()
+    .set('name', name)
+    .set('callsheet', callsheet);
+
+  const options = {  params };
+
+  return this.httpClient.get<Blob>(`${this.url}/complete`, options);
+}
+
 
   getFile(name) {
     let params = new HttpParams();
@@ -143,6 +140,7 @@ export class UploadService {
       .post(this.url + '/api', formData, this.httpOptions)
       .pipe(
         map((data) => {
+          debugger
           return data;
         })
       );
