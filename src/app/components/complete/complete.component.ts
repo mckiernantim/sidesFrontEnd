@@ -34,6 +34,7 @@ export class CompleteComponent implements OnInit {
 
     downloadPDF(): void {
       this.upload.getPDF(this.name, 'whatever').subscribe((data) => {
+        debugger
         const date = new Date().toISOString().substring(0, 10);
         saveAs(data, `${this.name}-${date}.zip`, { type: 'application/zip' });
       });

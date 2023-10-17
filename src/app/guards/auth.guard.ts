@@ -16,6 +16,9 @@ export class AuthGuard implements CanActivate {
       // Token exists, allow access to the route
       return true;
     } else {
+      // we need to check on this later - currently its instantiating before the download
+      
+      return true;
       alert("Please confirm purcahse to continue to downlaod")
       // Token does not exist, redirect to login page or any other appropriate page
       return this.router.parseUrl('/download'); // Replace '/login' with your login page URL

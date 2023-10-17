@@ -81,6 +81,9 @@ export class UploadComponent implements OnInit, OnDestroy {
   if(this.underConstruction) {
     localStorage.setItem("name", this.upload._devPdfPath)
   }
+  else {
+    this.resetLocalData();
+  }
     this.upload.lineArr = data[0];
     this.upload.pagesArr = data[1];
     this.upload.lineCount = [];
@@ -127,6 +130,11 @@ export class UploadComponent implements OnInit, OnDestroy {
 
       this.router.navigate(['download']);
     });
+  }
+
+  resetLocalData() {
+    if(localStorage.getItem("name")) localStorage.setItem('name', null)
+    if(localStorage.getItem("callsheey")) localStorage.setItem('callsheet', null)
   }
 
   

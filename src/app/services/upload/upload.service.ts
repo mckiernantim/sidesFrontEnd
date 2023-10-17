@@ -88,11 +88,13 @@ export class UploadService {
 }
 // final step
 getPDF(name: string, callsheet: string): Observable<Blob> {
+  const headers = new HttpHeaders()
+    .set('Content-Type' , 'applicaiton/json')
   const params = new HttpParams()
     .set('name', name)
     .set('callsheet', callsheet);
 
-  const options = {  params };
+  const options = { params, withCredentials:true };
 
   return this.httpClient.get<Blob>(`${this.url}/complete`, options);
 }
