@@ -8,7 +8,7 @@ import {
   HttpClientModule,
   HttpClient,
   HttpHeaders,
-  HttpParams,
+  HttpParams
 } from '@angular/common/http';
 import { FeedbackTicket } from '../../types/feedbackTicket';
 import { environment } from 'src/environments/environment';
@@ -87,16 +87,20 @@ export class UploadService {
     }
 }
 // final step
-getPDF(name: string, callsheet: string): Observable<Blob> {
+getPDF(name: string, callsheet: string): Observable<any> {
   const headers = new HttpHeaders()
-    .set('Content-Type' , 'applicaiton/json')
+    .set('Content-Type' , 'application/json')
+    
   const params = new HttpParams()
     .set('name', name)
     .set('callsheet', callsheet);
 
-  const options = { params, withCredentials:true };
 
-  return this.httpClient.get<Blob>(`${this.url}/complete`, options);
+ return this.httpClient.get(this.url + '/complete', {
+      responseType: 'blob',
+      withCredentials:true,
+      params: { name: name, callsheet: callsheet },
+    });
 }
 
 
