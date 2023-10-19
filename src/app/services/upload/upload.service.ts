@@ -146,7 +146,6 @@ getPDF(name: string, callsheet: string): Observable<any> {
       .post(this.url + '/api', formData, this.httpOptions)
       .pipe(
         map((data) => {
-          debugger
           return data;
         })
       );

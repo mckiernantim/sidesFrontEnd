@@ -27,36 +27,31 @@ export class TokenService {
     localStorage.removeItem(this.tokenKey);
     this.clearExpirationTimer();
   }
-  validateCookie() {
-    const pdfCookie = Cookies.get('pdfToken')
-    if (pdfCookie) return pdfCookie
-    return null;
-  
+
+  validateCookie():null |  number  {
+    debugger
+    const cookieWithRemainingTime = Cookies.get("downloadTimeRemaining")
+    if(cookieWithRemainingTime) this.setDeleteTimer(cookieWithRemainingTime)
+    return cookieWithRemainingTime ? Number(cookieWithRemainingTime) : null;
   };
-
-  private startExpirationTimer(): void {
-    console.log("starting timer");
-    const tokenTime = this.getDeleteTimer();
-    if (tokenTime) {
-      // Clear any existing expiration timer
-      this.clearExpirationTimer();
+    
   
 
-    }
-  }
+
 
   private clearExpirationTimer(): void {
     clearTimeout(this.expirationTime);
   }
 
-  startCountdown() {
-    this.startExpirationTimer();
-    console.log(this.expirationTime)
-    return this.getCountdown()
-  }
+
   setDeleteTimer(token: string): void {
+    debugger
     this.expirationTime = Number(token);
-    this.countdown$ = timer(0, 1000);
+    // interval creates an observable
+    this.countdown$ = interval(1000).pipe(
+      map(() => this.expirationTime - Math.floor(Date.now() / 1000)),
+      takeWhile(countdown => countdown > 0)
+    );
   }
 
   getCountdown(): Observable<number> {

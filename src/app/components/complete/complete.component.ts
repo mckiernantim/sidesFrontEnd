@@ -1,29 +1,32 @@
 import { saveAs } from 'file-saver';
 import { UploadService } from '../../services/upload/upload.service';
-import { Component, OnInit } from '@angular/core';
-import { FeedbackComponent } from '../feedback/feedback.component';
+import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { TokenService } from 'src/app/services/token/token.service';
 import { catchError } from 'rxjs/operators';
-import { throwError } from 'rxjs';
+import { throwError, of } from 'rxjs';
 @Component({
   selector: 'app-complete',
   templateUrl: './complete.component.html',
   styleUrls: ['./complete.component.css'],
 })
-export class CompleteComponent implements OnInit {
+export class CompleteComponent {
   name: string = localStorage.getItem('name');
   layout: string = localStorage.getItem('layout');
   callsheet: string = localStorage.getItem('callsheet');
   downloadTimeRemaining:number = Infinity;
   pdfToken:string = '';
-  constructor(public upload: UploadService, private token:TokenService) {}
-  ngOnInit(): void {
-    this.pdfToken = this.token.validateCookie();
+  downloadToken:number;
+  constructor(public upload: UploadService, private token:TokenService) {
+
   }
+ 
   // we download as soon as we land
-  ngAfterViewInit(): void {
-    this.downloadPDF();
-  }
+  // ngAfterViewInit(): void {
+  //   debugger
+  //   this.downloadToken = this.token.validateCookie()
+  //   this.token.setDeleteTimer(this.pdfToken)
+  //   this.downloadPDF();
+  // }
   calculateDownloadTime() {
     try {
       console.log(this.pdfToken)
@@ -33,10 +36,24 @@ export class CompleteComponent implements OnInit {
   } 
 
     downloadPDF(): void {
-      this.upload.getPDF(this.name, 'whatever').subscribe((data) => {
-        debugger
-        const date = new Date().toISOString().substring(0, 10);
-        saveAs(data, `${this.name}-${date}.zip`, { type: 'application/zip' });
-      });
+      this.upload.getPDF(this.name, 'whatever')
+        .pipe(
+          catchError((error:any) => {
+            if(error) {
+              alert("Checkout token exipred - unable to please upload script again");
+              return of(null)
+            }
+
+          })
+        )
+        .subscribe((data) => { 
+          if(data) {
+            const date = new Date().toISOString().substring(0, 10);
+            this.token.validateCookie();
+            saveAs(data, `${this.name}-${date}-sides-ways.zip`, { type: 'application/zip' });
+          }
+
+      })
+    
     }
 }

@@ -207,7 +207,7 @@ export class LastLooksComponent implements OnInit {
           console.log(serverRes);
           this.token.setDeleteTimer(downloadTimeRemaining);
 
-          this.token.startCountdown();
+  
           // Generate a session token for Stripe checkout
           this.stripe.startCheckout().subscribe((stripeRes: any) => {
             window.location.href = stripeRes.url;

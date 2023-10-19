@@ -5,17 +5,21 @@ import { GoogleAuthProvider } from '@angular/fire/auth';
 import { AngularFirestore, AngularFirestoreDocument } from '@angular/fire/compat/Firestore';
 import { Router } from '@angular/router';
 
+  /*
+  DEPRECATED - WE MAY RETURN TO THIS DOWN THE ROAD IF WE NEED TO CREATE USER AUTH FOR 
+  CREATING SCHEDULING;
+  */
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  userData: any; // Save logged in user data
+  userData: any; 
 
   constructor(
-    public afs: AngularFirestore, // Inject Firestore service
-    public afAuth: AngularFireAuth, // Inject Firebase auth service
+    public afs: AngularFirestore, 
+    public afAuth: AngularFireAuth, 
     public router: Router,
-    public ngZone: NgZone // NgZone service to remove outside scope warning
+    public ngZone: NgZone 
   ) {
     /* Saving user data in localstorage when
     logged in and setting up null when logged out */
