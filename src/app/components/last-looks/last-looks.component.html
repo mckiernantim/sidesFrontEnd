@@ -9,8 +9,11 @@
     </div>
   </div>
   <div class="page-container">
-    <app-last-looks-page [page]="currentPage" [selectedFunction]=selectedEditFunction [editPdfOptions]=editPdfOptions
-      (functionNullified)="handleFunctionNullified()">
+    <app-last-looks-page 
+    [page]="currentPage"
+    [selectedFunction] = selectedEditFunction 
+    [editPdfOptions] = editPdfOptions
+    (functionNullified)="handleFunctionNullified()">
     </app-last-looks-page>
     <aside class="controls-container">
       <button (click)="getPDF()">GET MY SIDES</button>

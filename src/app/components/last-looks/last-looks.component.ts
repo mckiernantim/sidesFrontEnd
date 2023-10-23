@@ -1,11 +1,10 @@
 import { Component, Input, OnInit, Output, EventEmitter,  } from '@angular/core';
-import { HttpHeaders } from '@angular/common/http';
 import { Line } from 'src/app/types/Line';
 import { UploadService } from 'src/app/services/upload/upload.service';
 import { StripeService } from 'src/app/services/stripe/stripe.service';
 import { TokenService } from 'src/app/services/token/token.service';
 import { Router } from '@angular/router';
-import { switchMap } from 'rxjs/operators';
+
 
 @Component({
   selector: 'app-last-looks',
@@ -45,12 +44,15 @@ export class LastLooksComponent implements OnInit {
   ];
   selectedEditFunction: string = 'toggleSelected';
   selectedLine: Line | null = null;
-  ngOnInit() {
+  ngOnInit():void {
     this.pages = this.doc.data;
     this.processLinesForLastLooks(this.pages);
     this.updateDisplayedPage();
-    this.selectedLine = this.doc.data[0][0]
+    this.selectedLine = this.doc.data[0][0];
+  
+    
   }
+ 
   log() {
     console.log('whatever the fucktthis is');
   }
@@ -64,7 +66,6 @@ export class LastLooksComponent implements OnInit {
         this.adjustSceneHeader(line);
         this.adjustBarPosition(line);
         this.calculateYPositions(line);
-        // Perform your calculations and store the results in each line object
         line.calculatedXpos = Number(line.xPos) * 1.3 + 'px';
         line.calculatedEnd =
           Number(line.endY) > 90 ? Number(line.endY) * 1.3 + 'px' : '90px';
