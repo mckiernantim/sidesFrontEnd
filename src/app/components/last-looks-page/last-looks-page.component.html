@@ -4,7 +4,7 @@
         <div class="break">
             <ul class="screenbox">
                 <div class="selected-line-info" style="color:black">
-                    {{ scroll }}
+                    {{ selectedLine?.calculatedYpos }}
                 </div>
                 <ng-container *ngFor="let line of page; let lineIndex = index">
 
@@ -37,15 +37,14 @@
                     tabindex="0" 
                     [value]="lineIndex" 
                     [class]="line.category + ' ' + line.visible + ' ' + line.hidden" 
-                    (click)="selectedFunction === 'toggleVisibility' ? toggleVisibility(line) :
-                toggleSelectedLine($event,line, lineIndex)" 
-                [style.bottom]="line.calculatedYpos"
-                        [style.left]="line.calculatedXpos" 
-                        (contextmenu)="selectedLine && selectedFunction === 'changeType' && openContextMenu($event, line)"
-                        (mousedown)="selectedFunction === 'adjustY'  && startDrag($event, line)"
-                        (mousemove)="selectedFunction === 'adjustY' && drag($event)" 
-                        (mouseup)=" selectedFunction === 'adjustY' && stopDrag(line)"
-                        [class.selected]="isSelectedLine(line, lineIndex)" 
+                    [style.bottom]="line.calculatedYpos"
+                    [style.left]="line.calculatedXpos" 
+                    (contextmenu)="selectedLine && selectedFunction === 'changeType' && openContextMenu($event, line)"
+                    (mousedown)="startDrag($event, line)"
+                    (mousemove)="drag($event)" 
+                    (mouseup)="stopDrag(line)"
+                    [class.selected]="isSelectedLine(line, lineIndex)" 
+                    [ngClass]="{ 'grab-cursor': draggingLine }"
                         >
                         {{ line.text }} 
                         
@@ -58,20 +57,22 @@
 
                     <!-- continue spans -->
                     <span
-            
+                        
                         [class]="(line.cont ? line.cont : 'hideCont') + ' ' + line.hidden"
                         [style.bottom]="line.calculatedYpos">
                         <span class="start-span"> ↓↓{{line.sceneNumberText}} CONTINUED↓↓↓</span>
                     </span>
 
                     <!-- end span -->
-                    <span [class]="line.end + ' ' + line.hideEnd" [style.bottom]="line.calculatedEnd">
+                    <span 
+                    (click) = "toggleSelectedLine($event, line, lineIndex)" 
+                    [class]="line.end + ' ' + line.hideEnd" [style.bottom]="line.calculatedEnd">
                         <span class="end-span"> END {{line.sceneNumberText}} </span>
                     </span>
 
                     <!-- right scene number span -->
                     <span class="scene-number-right {{ line.trueScene }} {{ line.visible }}"
-                        (click)="toggleSelectedLine($event, line, lineIndex); selectedFunction === 'toggleVisibility' ? toggleVisibility(line) : null"
+                        (click)="toggleSelectedLine($event, line, lineIndex)"
                         [style.bottom]="line.calculatedYpos" [style.right]="line.calculatedXPos">
                         {{ line.sceneNumber }}
                     </span>

@@ -68,12 +68,25 @@ export class LastLooksPageComponent {
     },100)
   }
   
-  @HostListener('document:mousemove', ['$event'])
-  onMouseMove(event: MouseEvent): void {
-    this.mousePosition.x = event.clientX;
-    this.mousePosition.y = event.clientY;
+  @HostListener("window:scroll", ["$event"])
+  handleScroll(): void {
+    const scrollY = window.scrollY;
+   // Update the previous scroll value
+  
+    // Update calculatedYPos based on the scroll difference
+    const adjustedY = parseFloat(this.selectedLine.calculatedYpos + scrollY);
+    this.selectedLine.calculatedYpos = adjustedY.toFixed(2) + 'px';
+    alert("new y position should be : " +adjustedY.toFixed(2) + 'px')
+    this.cdRef.markForCheck();
+
+  
+    // Ensure that calculatedYPos doesn't go below 0 or exceed a certain limit
+  
+    // Adjust the limit as needed
+  
+    // Perform other operations if necessary
   }
-  calculateScrollAmount(): number {
+  calculateScrollAmount(): void {
     // Implement your logic here to calculate the scroll amount based on mouse position.
     // You can adjust the interval and logic to match your desired scrolling behavior.
 
@@ -119,39 +132,65 @@ export class LastLooksPageComponent {
     }
   }
 
-  startDrag(event: MouseEvent, line: any) {
-    this.draggingLine = line;
-    this.initialLineY = parseFloat(line.calculatedYpos); //100
-    this.initialLineX = parseFloat(line.calculatedXpos); //100
-    this.initialMouseY = event.clientY;
-    this.initialMouseX = event.clientX;
-    this.draggingLine = true;
-  }
-
+  
   /* 
   10/23
-    Currently dragginLine is not being reset to null resulting in a spining Null property error
-    Need to address 
+  Currently dragginLine is not being reset to null resulting in a spining Null property error
+  Need to address 
   */
-  drag(event: MouseEvent) {
-    if (this.draggingLine !== null) {
-      // 150 - 100
-      this.currentXPosDiff = event.clientX - this.initialMouseX;
-      this.currentYPosDiff = event.clientY - this.initialMouseY; // Calculate the offset
-      // -50
-      const { x: calculatedXpos, y: calculatedYpos } = this.processLinePosition(
-        this.currentXPosDiff,
-        this.currentYPosDiff
-      );
-      [this.selectedLine.calculatedXpos, this.selectedLine.calculatedYpos] = [
-        calculatedXpos,
-        calculatedYpos,
-      ];
-      this.cdRef.markForCheck();
+ drag(event: MouseEvent) {
+  
+   if (this.draggingLine !== null) {
+     // 150 - 100
+     this.currentXPosDiff = event.clientX - this.initialMouseX;
+     this.currentYPosDiff = event.clientY - this.initialMouseY; // Calculate the offset
+     // -50
+     const { x: calculatedXpos, y: calculatedYpos } = this.processLinePosition(
+       this.currentXPosDiff,
+       this.currentYPosDiff
+       );
+       [this.selectedLine.calculatedXpos, this.selectedLine.calculatedYpos] = [
+         calculatedXpos,
+         calculatedYpos,
+        ];
+        this.cdRef.markForCheck();
+      }
     }
-  }
+    startDrag(event: MouseEvent, line: any) {
+     
+      // Select the line
+      this.selectedLine = line;
+      this.isLineSelected = true;
+      this.draggingLine = true
+      
+      // Record the initial positions
+      this.initialLineY = parseFloat(line.calculatedYpos);
+      this.initialLineX = parseFloat(line.calculatedXpos);
+      this.initialMouseY = event.clientY;
+      this.initialMouseX = event.clientX;
 
-  processLinePosition(currentXPosDiff: number, currentYPosDiff: number) {
+
+    }
+
+    stopDrag(event: MouseEvent) {
+      if (this.draggingLine !== null) {
+        // Calculate the final positions
+        const { x: calculatedXpos, y: calculatedYpos } = this.processLinePosition(
+          this.currentXPosDiff,
+          this.currentYPosDiff
+        );
+        
+        // Update the line's position
+        this.selectedLine.calculatedXpos = calculatedXpos;
+        this.selectedLine.calculatedYpos = calculatedYpos;
+        this.cdRef.markForCheck();
+    
+        // Reset the dragging state
+        this.draggingLine = null;
+      }
+    }
+    
+    processLinePosition(currentXPosDiff: number, currentYPosDiff: number) {
     const newXPosition = this.initialLineX + currentXPosDiff;
     const newYPosition = this.initialLineY - currentYPosDiff;
     return {
@@ -167,9 +206,6 @@ export class LastLooksPageComponent {
   nullifyFunction() {
     this.selectedFunction = null;
     this.functionNullified.emit(); // Emit the event to the parent
-  }
-  stopDrag(line: any) {
-    this.draggingLine = false;
   }
   toggleVisibility(line: Line) {
     line.visible = line.visible === 'true' ? 'false' : 'true';
