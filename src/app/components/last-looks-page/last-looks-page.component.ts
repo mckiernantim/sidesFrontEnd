@@ -6,6 +6,7 @@ import {
   ElementRef,
 } from '@angular/core';
 import { Input, ChangeDetectorRef, HostListener } from '@angular/core';
+import { DragDropService } from 'src/app/services/drag-drop/drag-drop.service';
 import { Line } from 'src/app/types/Line';
 
 @Component({
@@ -46,7 +47,7 @@ export class LastLooksPageComponent {
   };
   mousePosition: { x: number, y: number } = { x: 0, y: 0 };
   container: HTMLElement;
-  constructor(private cdRef: ChangeDetectorRef, private el: ElementRef) {
+  constructor(private cdRef: ChangeDetectorRef, private el: ElementRef, public dragDrop: DragDropService) {
     this.classificationChoices = [
       'description',
       'dialog',
@@ -67,34 +68,7 @@ export class LastLooksPageComponent {
       this.container.scroll
     },100)
   }
-  
-  @HostListener("window:scroll", ["$event"])
-  handleScroll(): void {
-    const scrollY = window.scrollY;
-   // Update the previous scroll value
-  
-    // Update calculatedYPos based on the scroll difference
-    const adjustedY = parseFloat(this.selectedLine.calculatedYpos + scrollY);
-    this.selectedLine.calculatedYpos = adjustedY.toFixed(2) + 'px';
-    alert("new y position should be : " +adjustedY.toFixed(2) + 'px')
-    this.cdRef.markForCheck();
-
-  
-    // Ensure that calculatedYPos doesn't go below 0 or exceed a certain limit
-  
-    // Adjust the limit as needed
-  
-    // Perform other operations if necessary
-  }
-  calculateScrollAmount(): void {
-    // Implement your logic here to calculate the scroll amount based on mouse position.
-    // You can adjust the interval and logic to match your desired scrolling behavior.
-
-    // For example, calculate the difference between the initial mouse position and the current position.
-    // const differenceY = this.mousePosition.y - this.mousePosition.y;
-    // const scrollAmount = this.container.scrollLeft + differenceX;
-    // return scrollAmount;
-  }
+   
   ngOnChanges(changes: SimpleChanges) {
     if (
       changes.selectedFunction &&
@@ -130,6 +104,7 @@ export class LastLooksPageComponent {
       this.selectedLine = this.page[lineIndex];
       this.isLineSelected = !!this.selectedLine;
     }
+    this.dragDrop.setSelectedLine(this.selectedLine);
   }
 
   
@@ -157,22 +132,12 @@ export class LastLooksPageComponent {
       }
     }
     startDrag(event: MouseEvent, line: any) {
-     
-      // Select the line
-      this.selectedLine = line;
-      this.isLineSelected = true;
-      this.draggingLine = true
-      
-      // Record the initial positions
-      this.initialLineY = parseFloat(line.calculatedYpos);
-      this.initialLineX = parseFloat(line.calculatedXpos);
-      this.initialMouseY = event.clientY;
-      this.initialMouseX = event.clientX;
-
-
+      this.dragDrop.startDrag(event, line);
+      // Select the line  
     }
 
     stopDrag(event: MouseEvent) {
+      this.dragDrop.stopDrag(event)
       if (this.draggingLine !== null) {
         // Calculate the final positions
         const { x: calculatedXpos, y: calculatedYpos } = this.processLinePosition(
