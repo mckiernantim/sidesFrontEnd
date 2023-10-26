@@ -29,7 +29,7 @@ export class TokenService {
   }
 
   validateCookie():null |  number  {
-    debugger
+   
     const cookieWithRemainingTime = Cookies.get("downloadTimeRemaining")
     if(cookieWithRemainingTime) this.setDeleteTimer(cookieWithRemainingTime)
     return cookieWithRemainingTime ? Number(cookieWithRemainingTime) : null;
@@ -45,7 +45,7 @@ export class TokenService {
 
 
   setDeleteTimer(token: string): void {
-    debugger
+   
     this.expirationTime = Number(token);
     // interval creates an observable
     this.countdown$ = interval(1000).pipe(

@@ -4,7 +4,7 @@
         <div class="break">
             <ul class="screenbox">
                 <div class="selected-line-info" style="color:black">
-                    {{ selectedLine?.calculatedYpos }}
+                    {{ selectedLine?.calculatedYpos }} {{ this.selectedLine?.text}}
                 </div>
                 <ng-container *ngFor="let line of page; let lineIndex = index">
 
@@ -26,7 +26,7 @@
 
                     <!-- start span -->
                     <span
-                        (mouseup)="selectedFunction === 'adjustY' && isSelectedLine(line, lineIndex) ? stopDrag(line) : null"
+                        (mouseup)="selectedFunction === 'adjustY' && isSelectedLine(line, lineIndex) ? dragDrop.stopDrag(line) : null"
                         [class]="(line.bar ? line.bar : 'hideBar')"
                         [style.bottom]="line.calculatedYpos">
                         <span class="start-span">START {{ line.sceneNumber }} </span>
@@ -40,13 +40,14 @@
                     [style.bottom]="line.calculatedYpos"
                     [style.left]="line.calculatedXpos" 
                     (contextmenu)="selectedLine && selectedFunction === 'changeType' && openContextMenu($event, line)"
-                    (mousedown)="startDrag($event, line)"
-                    (mousemove)="drag($event)" 
-                    (mouseup)="stopDrag(line)"
+                    (mousedown)="handleLeftClick($event, line, lineIndex)"
+                    (mousemove)="dragDrop.drag($event)" 
+                    (mouseup)="dragDrop.stopDrag($event)"
                     [class.selected]="isSelectedLine(line, lineIndex)" 
                     [ngClass]="{ 'grab-cursor': draggingLine }"
+                    (mousemove)="dragDrop.drag($event)"     
                         >
-                        {{ line.text }} 
+                        {{ line.text }} {{line.calculatedYpos}}
                         
                     </li>
 
