@@ -25,23 +25,8 @@ export class LastLooksComponent implements OnInit {
   currentPageIndex: number = 0;
   currentPage: number = 0;
   startingLinesOfDoc = [];
-  editPdfOptions: string[] = [
-    'toggleVisibility',
-    'adjustY',
-    'changeType',
-    'editText',
-    'toggleSelected',
-    'deleteLine',
-  ];
-  editPdfButtonLabels: string[] = [
-    'lineout',
-    'move vertical',
-    'change line category',
-    'edit line text',
-    'selectLine',
-    'toggleSelected',
-    'delete Line',
-  ];
+  
+ 
   selectedEditFunction: string = 'toggleSelected';
   selectedLine: Line | null = null;
   ngOnInit():void {
@@ -177,8 +162,9 @@ export class LastLooksComponent implements OnInit {
 
   restorePositionsInDocument(arr) {
     const scriptPages = arr.data;
+  
     for (let page of scriptPages) {
-      page.forEach((line) => {
+      page.forEach((line, ind) => {
         if (line.calculatedXpos) {
           line.xPos =
             Number(

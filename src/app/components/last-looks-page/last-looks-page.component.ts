@@ -51,6 +51,7 @@ export class LastLooksPageComponent {
     public dragDrop: DragDropService
   ) {
     this.classificationChoices = [
+      'line-out',
       'description',
       'dialog',
       'scene-header',
@@ -64,9 +65,7 @@ export class LastLooksPageComponent {
   }
   ngOnInit() {
     this.dragDrop.update.subscribe((reset) => {
-      this.selectedLine.text = this.selectedLine.text.toUpperCase()
         if(reset) {
-          debugger
           this.selectedLine = null;
         }
         this.cdRef.markForCheck();
@@ -106,7 +105,6 @@ export class LastLooksPageComponent {
     this.undoQueue.push(undoAction);
   }
   handleLeftClick(event: MouseEvent, line: Line, lineIndex: number) {
- 
     this.toggleSelectedLine(event, line, lineIndex);
     this.dragDrop.startDrag(event, line);
   }
@@ -118,12 +116,12 @@ export class LastLooksPageComponent {
       // Deselect the line if it's already selecte
       this.selectedLine = null;
       this.dragDrop.setSelectedLine(null)
+      
     } else {
       // Select the line if it's not already selected
       this.selectedLine = this.page[lineIndex];
       this.dragDrop.setSelectedLine(this.selectedLine);
       this.isLineSelected = !!this.selectedLine;
-      this.dragDrop.setSelectedLine(this.selectedLine);
     }
   }
   stopEdit() {
@@ -141,19 +139,43 @@ export class LastLooksPageComponent {
 
   changeType(newCategory: string) {
     // Update the line's category property
+    debugger
     this.selectedLine.calculatedXpos = this.xPositionsForLines[newCategory];
-    this.selectedLine.category = newCategory;
-    this.closeContextMenu();
-    this.cdRef.markForCheck();
+    if(newCategory === 'line-out') {
+      let { visible } =  this.selectedLine;
+      visible = visible === "true" ? "false" : "true"
+    } else {
+      this.selectedLine.category = newCategory;
+      this.closeContextMenu();
+      this.cdRef.markForCheck();
+    }
   }
+    
+
   openContextMenu(event: MouseEvent, line: Line) {
     event.preventDefault();
+debugger
+    this.selectedLine = line;
+
+    this.contextMenuLine = line;
     this.showContextMenu = true;
     // this.contextMenuX = event.clientX;
     // this.contextMenuY = event.clientY;
-    this.contextMenuLine = line;
   }
   closeContextMenu() {
     this.showContextMenu = false;
+    this.contextMenuLine = null;
+    this.selectedLine = null;
+    this.updateContextMenu()
+  }
+  updateContextMenu() {
+    if(this.selectedLine) {
+      this.contextMenuY = this.selectedLine.calculatedYpos
+      this.contextMenuX = this.selectedLine.calculatedXpos
+    } else {
+      this.contextMenuX = null;
+      this.contextMenuY = null;
+    }
+
   }
 }

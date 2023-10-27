@@ -22,7 +22,7 @@ export class CompleteComponent {
  
   // we download as soon as we land
   // ngAfterViewInit(): void {
-  //   debugger
+
   //   this.downloadToken = this.token.validateCookie()
   //   this.token.setDeleteTimer(this.pdfToken)
   //   this.downloadPDF();

@@ -70,9 +70,10 @@ export class DragDropService {
   stopDrag(event: MouseEvent) {
    
     if (this.draggingLine !== null) {
-      // Calculate the final position
+      // Calculate the final positi
      this.draggingLine = null;
      this.selectedLine = null;
+     this.updateComponent()
     }
     // Reset the dragging state
 
