@@ -5,16 +5,19 @@
       [disabled]="currentPageIndex === pages.length - 1">Next</button>
     <button mat-raised-button color="warn" (click)="previousPage()"
       [disabled]="currentPageIndex === pages.length - 1">Previous</button>
-    <div *ngIf="selectedEditFunction === 'editText'">
-      selected line text: <input [(ngModel)]="selectedLine.text" (blur)="handleFunctionNullified()" />
-    </div>
   </div>
   <div class="page-container">
-    <app-last-looks-page [page]="currentPage" (functionNullified)="handleFunctionNullified()">
+
+    <app-last-looks-page 
+    [page]="currentPage" 
+    (functionNullified)="handleFunctionNullified()"
+    [canEditDocument]="canEditDocument"
+     >
     </app-last-looks-page>
     <aside class="controls-container">
       <button mat-raised-button color="warn" (click)="getPDF()">GET MY SIDES</button>
       <div class="edit-controls-container">
+        <button mat-raised-button color="warn" (click)="toggleEditMode()">Edit Sides</button>
       </div>
     </aside>
   </div>

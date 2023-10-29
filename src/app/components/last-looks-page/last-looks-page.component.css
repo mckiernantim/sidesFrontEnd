@@ -5,6 +5,14 @@
     height: 1056px;
 }
 
+.edit-mode {
+    background-color:rgba(255, 255, 0, 0.7);
+    transition: background-color 0.2s ease; 
+}
+.edit-li:hover {
+    transform: scale(1.05);
+    cursor: grab;
+}
 .page {
     font-family: 'Courier Prime', monospace;
     height: 1056px;
@@ -12,7 +20,9 @@
     background-color: white;
     width: 100VW;
 }
-
+.grab-cursor {
+    cursor: grabbing !important;
+}
 .last {
     margin-bottom: 0 !important;
 }
@@ -110,13 +120,10 @@ li.page-number {
 }
 
 .character {
-
     text-align: center;
-
 }
 
 .parenthetical {
-
     text-align: left;
 }
 

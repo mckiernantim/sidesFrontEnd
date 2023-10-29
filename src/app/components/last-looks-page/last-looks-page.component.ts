@@ -19,6 +19,7 @@ export class LastLooksPageComponent {
   @Input() selectedFunction: string;
   @Input() selectedEditFunction: string;
   @Input() editPdfOptions: string[];
+  @Input() canEditDocument: boolean;
   @Output() functionNullified: EventEmitter<void> = new EventEmitter<void>();
   undoQueue: any[] = [];
   draggingLine: any = null;
@@ -26,8 +27,8 @@ export class LastLooksPageComponent {
   isLineSelected: boolean = false;
 
   showContextMenu: boolean = false;
-  contextMenuY: number = 15;
-  contextMenuX: number = 15;
+  contextMenuY: number = 150;
+  contextMenuX: number = 150;
   contextMenuLine: Line | null = null;
   heldInterval: any = null;
   classificationChoices: string[];
@@ -71,35 +72,40 @@ export class LastLooksPageComponent {
         this.cdRef.markForCheck();
       });
     }
+    // Trigger change detection when the event is emitted
+    // This will update your component when the service triggers it
+    // Add any additional logic you need here
+
+ngOnChanges(changes: SimpleChanges) {
+  if (
+    changes.selectedFunction &&
+    changes.selectedFunction.currentValue !== this.selectedFunction
+  ) {
+    this.selectedFunction = changes.selectedFunction.currentValue;
+    this.selectedLine = null;
+    this.cdRef.markForCheck();
+    // Do any additional logic you need here
+  }
+}
+updatePositon(num: number, str: string): string {
+  const dif = parseInt(str) - num;
+  return dif + 'px';
+}
+updateText(event: Event) {
+  const newText = (event.target as HTMLElement).textContent;
+  this.selectedLine.text = newText;
+  // You can also perform any additional logic here.
+}
+// Helper function to add actions to the undo queue
+addToUndoQueue(actionType: string, data: any) {
+  // Create an undo action
+  const undoAction = {
+    actionType: actionType,
+    data: data,
+  };
       
         
       
-      // Trigger change detection when the event is emitted
-      // This will update your component when the service triggers it
-      // Add any additional logic you need here
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (
-      changes.selectedFunction &&
-      changes.selectedFunction.currentValue !== this.selectedFunction
-    ) {
-      this.selectedFunction = changes.selectedFunction.currentValue;
-      this.selectedLine = null;
-      this.cdRef.markForCheck();
-      // Do any additional logic you need here
-    }
-  }
-  updatePositon(num: number, str: string): string {
-    const dif = parseInt(str) - num;
-    return dif + 'px';
-  }
-  // Helper function to add actions to the undo queue
-  addToUndoQueue(actionType: string, data: any) {
-    // Create an undo action
-    const undoAction = {
-      actionType: actionType,
-      data: data,
-    };
 
     // Add the undo action to the undo queue
     this.undoQueue.push(undoAction);
@@ -146,6 +152,7 @@ export class LastLooksPageComponent {
       visible = visible === "true" ? "false" : "true"
     } else {
       this.selectedLine.category = newCategory;
+      this.selectedLine.xPos, this.selectedLine.calculatedXpos = this.xPositionsForLines[newCategory]
       this.closeContextMenu();
       this.cdRef.markForCheck();
     }
@@ -153,11 +160,14 @@ export class LastLooksPageComponent {
     
 
   openContextMenu(event: MouseEvent, line: Line) {
+    // change val to be calculated from the top
     event.preventDefault();
-debugger
+    debugger
+    if(this.showContextMenu) this.showContextMenu = false
     this.selectedLine = line;
-
     this.contextMenuLine = line;
+    const [x, y] = [event.clientX, event.clientY]
+    this.updateContextMenu(x,y);
     this.showContextMenu = true;
     // this.contextMenuX = event.clientX;
     // this.contextMenuY = event.clientY;
@@ -168,10 +178,10 @@ debugger
     this.selectedLine = null;
     this.updateContextMenu()
   }
-  updateContextMenu() {
+  updateContextMenu(x?:number, y?:number) {
     if(this.selectedLine) {
-      this.contextMenuY = this.selectedLine.calculatedYpos
-      this.contextMenuX = this.selectedLine.calculatedXpos
+      this.contextMenuY = parseFloat(this.selectedLine.calculatedYpos)
+      this.contextMenuX = parseFloat(this.selectedLine.calculatedXpos)
     } else {
       this.contextMenuX = null;
       this.contextMenuY = null;

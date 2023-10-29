@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "engage": "code . && npm start",
     "start": "ng serve",
     "build": "ng build --configuration production",
     "test": "./node_modules/.bin/cypress open",

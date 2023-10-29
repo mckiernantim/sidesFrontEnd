@@ -23,6 +23,7 @@ export class DragDropService {
   // Other properties and methods related to drag and drop
   // calculated  vals to offset the browser renders for the page
   yOffset: number | string = 0;
+  allowDragTimer: any;
 
 
   constructor() {}
@@ -66,7 +67,18 @@ export class DragDropService {
     this.initialMouseY = event.clientY;
     this.initialMouseX = event.clientX;
   }
+  
 
+  allowDrag() {
+    if (!this.allowDragTimer) {
+      this.allowDragTimer = setTimeout(() => {
+        clearTimeout(this.allowDragTimer);
+        this.allowDragTimer = null;
+      }, 300); // Adjust the timeout duration as needed
+      return true;
+    }
+    return false;
+  } 
   stopDrag(event: MouseEvent) {
    
     if (this.draggingLine !== null) {

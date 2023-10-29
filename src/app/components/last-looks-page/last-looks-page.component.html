@@ -2,9 +2,10 @@
 
     <div class="page" (click)="showContextMenu && closeContextMenu()">
         <div class="break">
-            <ul class="screenbox">
+            <ul class="screenbox"
+            [ngClass] = " {'edit-mode': canEditDocument} ">
                 <div class="selected-line-info" style="color:black">
-                    {{ selectedLine?.calculatedYpos }} {{ this.selectedLine?.text}}
+                    {{ contextMenuX }} {{ contextMenuY }}
                 </div>
                 <ng-container *ngFor="let line of page; let lineIndex = index">
 
@@ -18,36 +19,40 @@
                         {{line.pageNumberText}} </span>
 
                     <!-- scene number span -->
-                    <span [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible" (click)="toggleSelectedLine($event, line, lineIndex);
-               selectedFunction === 'toggleVisibility' ? toggleVisibility(line) : null"
+                    <span [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible" 
+                    (click)="toggleSelectedLine($event, line, lineIndex);   
+                        selectedFunction === 'toggleVisibility' ? toggleVisibility(line) : null"
                         [style.bottom]="line.calculatedYpos" [style.left]="line.calculatedXpos">
                         {{ line.sceneNumber }}
                     </span>
 
                     <!-- start span -->
                     <span
-                        (mouseup)="selectedFunction === 'adjustY' && isSelectedLine(line, lineIndex) ? dragDrop.stopDrag(line) : null"
+                        (mouseup)=" dragDrop.stopDrag(line)"
                         [class]="(line.bar ? line.bar : 'hideBar')"
                         [style.bottom]="line.calculatedYpos">
                         <span class="start-span">START {{ line.sceneNumber }} </span>
                     </span>
 
                     <!-- LINE SPAN -->
-                    <li contenteditable="true" 
-                    tabindex="0" 
-                    [value]="lineIndex" 
-                    [class]="line.category + ' ' + line.visible + ' ' + line.hidden" 
-                    [style.bottom]="line.calculatedYpos"
-                    [style.left]="line.calculatedXpos" 
-                    (contextmenu)="selectedLine && openContextMenu($event, line)"
-                    (mousedown)="!this.contextMenuLine && handleLeftClick($event, line, lineIndex)"
-                    (mousemove)="dragDrop.drag($event)" 
-                    (mouseup)="dragDrop.stopDrag($event)"
-                    [class.selected]="isSelectedLine(line, lineIndex)" 
-                    [ngClass]="{ 'grab-cursor': draggingLine }"
-                    (mousemove)="dragDrop.drag($event)"     
-                        >
-                        {{ line.text }} {{line.calculatedYpos}}
+                    <li 
+                        contenteditable="canEditDocument ? 'true' : 'false'"
+                        tabindex="0" 
+                        [value]="lineIndex" 
+                        [class]="line.category + ' ' + line.visible + ' ' + line.hidden" 
+                        [style.bottom]="line.calculatedYpos"
+                        [style.left]="line.calculatedXpos" 
+                        (contextmenu)="canEditDocument && openContextMenu($event, line)"
+                        (mousedown)="canEditDocument && !this.contextMenuLine && handleLeftClick($event, line, lineIndex)"
+                        (mousemove)="canEditDocument && dragDrop.allowDrag() && dragDrop.drag($event)" 
+                        (mouseup)="canEditDocument && dragDrop.stopDrag($event)"
+                        [class.selected]="isSelectedLine(line, lineIndex)" 
+                        [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex), 'edit-li': canEditDocument && !selectedLine  }"
+                        (mousemove)="canEditDocument && dragDrop.drag($event)"     
+                        [textContent]="line.text" 
+                        (input)="canEditDocument && updateText($event)"
+                    >
+        
                         
                     </li>
 
@@ -58,7 +63,6 @@
 
                     <!-- continue spans -->
                     <span
-                        
                         [class]="(line.cont ? line.cont : 'hideCont') + ' ' + line.hidden"
                         [style.bottom]="line.calculatedYpos">
                         <span class="start-span"> ↓↓{{line.sceneNumberText}} CONTINUED↓↓↓</span>
@@ -78,8 +82,9 @@
                         {{ line.sceneNumber }}
                     </span>
                 </ng-container>
+               
                 <div *ngIf="showContextMenu" class="context-menu" [style.left.px]="contextMenuX"
-                    [style.top.px]="contextMenuY">
+                    [style.bottom.px]="contextMenuY">
                     <ul>
                         <li *ngFor="let choice of classificationChoices" (click)="changeType(choice)"
                             class="classification-option">
@@ -87,6 +92,7 @@
                         </li>
                         <li (click)="changeType('hidden')" class="classification-option">delete</li>
                     </ul>
+               
                 </div>
             </ul>
             <li class=footer>made by Sides-Ways</li>

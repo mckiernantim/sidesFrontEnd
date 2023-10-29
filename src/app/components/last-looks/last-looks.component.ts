@@ -18,6 +18,7 @@ export class LastLooksComponent implements OnInit {
     private token: TokenService,
     private router: Router
   ) {}
+  // doc is given to our component
   @Input() doc: any;
   @Output() selectedEditFunctionChange: EventEmitter<string> =
     new EventEmitter<string>();
@@ -25,6 +26,7 @@ export class LastLooksComponent implements OnInit {
   currentPageIndex: number = 0;
   currentPage: number = 0;
   startingLinesOfDoc = [];
+  canEditDocument:boolean = false;
   
  
   selectedEditFunction: string = 'toggleSelected';
@@ -34,13 +36,8 @@ export class LastLooksComponent implements OnInit {
     this.processLinesForLastLooks(this.pages);
     this.updateDisplayedPage();
     this.selectedLine = this.doc.data[0][0];
-  
-    
   }
- 
-  log() {
-    console.log('whatever the fucktthis is');
-  }
+
   processLinesForLastLooks(arr) {
     for (let page of arr) {
       page.forEach((line: Line) => {
@@ -61,6 +58,9 @@ export class LastLooksComponent implements OnInit {
 
   updateDisplayedPage() {
     this.currentPage = this.pages[this.currentPageIndex];
+  }
+  toggleEditMode() {
+    this.canEditDocument = !this.canEditDocument
   }
   selectEditFunction(e) {
     this.selectedEditFunctionChange.emit(this.selectedEditFunction);
