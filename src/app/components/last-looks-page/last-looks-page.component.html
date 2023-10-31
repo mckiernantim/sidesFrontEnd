@@ -3,59 +3,76 @@
     <div class="page" (click)="showContextMenu && closeContextMenu()">
         <div class="break">
             <ul class="screenbox"
-            [ngClass] = " {'edit-mode': canEditDocument} ">
+            [ngClass] = "{'edit-mode': canEditDocument } ">
                 <div class="selected-line-info" style="color:black">
-                    {{ contextMenuX }} {{ contextMenuY }}
+               
                 </div>
+                
                 <ng-container *ngFor="let line of page; let lineIndex = index">
 
                     <span class="watermark">{{line.watermarkText}}</span>
 
                     <!-- page number span -->
                     <span class="draft-color-text true"
-                        (click)="toggleSelectedLine($event, line, lineIndex); selectedFunction === 'toggleVisibility' ? toggleVisibility(line) : null">{{line.draftColorText}}</span>
-                    <span class="page-number-text" [class.visible]="line.visible"
-                        (click)="toggleSelectedLine($event, line, lineIndex); selectedFunction === 'toggleVisibility' ? toggleVisibility(line) : null">
-                        {{line.pageNumberText}} </span>
+                        (click)="toggleSelectedLine($event, line, lineIndex)">
+                        {{line.draftColorText}}
+                    </span>
+                    <span class="page-number-text" 
+                        [class.visible]="line.visible"
+                        (click)="toggleSelectedLine($event, line, lineIndex)">
+                        {{line.pageNumberText}} 
+                    </span>
 
                     <!-- scene number span -->
                     <span [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible" 
-                    (click)="toggleSelectedLine($event, line, lineIndex);   
-                        selectedFunction === 'toggleVisibility' ? toggleVisibility(line) : null"
-                        [style.bottom]="line.calculatedYpos" [style.left]="line.calculatedXpos">
+                        (click)="toggleSelectedLine($event, line, lineIndex)"
+                        [style.bottom]="line.calculatedYpos" 
+                        [style.left]="line.calculatedXpos"
+                    >
                         {{ line.sceneNumber }}
                     </span>
 
                     <!-- start span -->
                     <span
-                        (mouseup)=" dragDrop.stopDrag(line)"
+                        (mouseup)="dragDrop.stopDrag(line)"
                         [class]="(line.bar ? line.bar : 'hideBar')"
                         [style.bottom]="line.calculatedYpos">
                         <span class="start-span">START {{ line.sceneNumber }} </span>
                     </span>
 
-                    <!-- LINE SPAN -->
+                    <!-- 
+                    LINE SPAN 
+                        style calculated by line.calculatedXpos && ...Ypos 
+                        state managed by tracking mouse event and binding ...Xpos||...Ypos to mouse move 
+                        and triggering change deteciton
+                        Drag triggered by left click, context menu by right;
+                        content is editible and updates model on text change after selecting LI
+                    -->
+
+
                     <li 
-                        contenteditable="canEditDocument ? 'true' : 'false'"
+                        autofocus
+                        [attr.contenteditable]="canEditDocument ? 'true' : 'false'"
                         tabindex="0" 
                         [value]="lineIndex" 
                         [class]="line.category + ' ' + line.visible + ' ' + line.hidden" 
-                        [style.bottom]="line.calculatedYpos"
-                        [style.left]="line.calculatedXpos" 
-                        (contextmenu)="canEditDocument && openContextMenu($event, line)"
-                        (mousedown)="canEditDocument && !this.contextMenuLine && handleLeftClick($event, line, lineIndex)"
-                        (mousemove)="canEditDocument && dragDrop.allowDrag() && dragDrop.drag($event)" 
-                        (mouseup)="canEditDocument && dragDrop.stopDrag($event)"
                         [class.selected]="isSelectedLine(line, lineIndex)" 
                         [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex), 'edit-li': canEditDocument && !selectedLine  }"
-                        (mousemove)="canEditDocument && dragDrop.drag($event)"     
+                        [style.bottom]="line.calculatedYpos"
+                        [style.left]="line.calculatedXpos" 
                         [textContent]="line.text" 
-                        (input)="canEditDocument && updateText($event)"
-                    >
-        
                         
+                        (input)="canEditDocument && updateText($event)"
+                        (contextmenu)="canEditDocument 
+                            && openContextMenu($event, line)"
+                        (mousedown)="canEditDocument 
+                            && !this.contextMenuLine 
+                            && handleLeftClick($event, line, lineIndex)"
+                        (mousemove)="determineIfWeCanDrag() ? throttledDrag($event) : null"
+                        (mouseup)="determineIfWeCanDrag() ? dragDrop.stopDrag($event) : null"
+                        
+                        >
                     </li>
-
                     <!-- revision asterisks -->
                     <span [class]="line.isRevision + ' hidden'" [style.bottom]="line.calculatedYpos">
                         *
@@ -82,20 +99,23 @@
                         {{ line.sceneNumber }}
                     </span>
                 </ng-container>
-               
-                <div *ngIf="showContextMenu" class="context-menu" [style.left.px]="contextMenuX"
-                    [style.bottom.px]="contextMenuY">
+                
+                <div *ngIf="showContextMenu" class="context-menu" [style.left.px]="mouseEvent.clientX"
+                    [style.top.px]="mouseEvent.clientY">
                     <ul>
-                        <li *ngFor="let choice of classificationChoices" (click)="changeType(choice)"
-                            class="classification-option">
+                         <li *ngFor="let choice of classificationChoices" (click)="changeType(choice)"
+                            class="classification-option">  
                             {{ choice }}
                         </li>
                         <li (click)="changeType('hidden')" class="classification-option">delete</li>
                     </ul>
-               
                 </div>
             </ul>
             <li class=footer>made by Sides-Ways</li>
         </div>
     </div>
 </main>
+        
+                    
+                 
+                        

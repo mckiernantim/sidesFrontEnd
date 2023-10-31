@@ -4,14 +4,12 @@
     <button mat-raised-button color="warn" (click)="nextPage()"
       [disabled]="currentPageIndex === pages.length - 1">Next</button>
     <button mat-raised-button color="warn" (click)="previousPage()"
-      [disabled]="currentPageIndex === pages.length - 1">Previous</button>
+      [disabled]="currentPageIndex === 0">Previous</button>
   </div>
   <div class="page-container">
-
     <app-last-looks-page 
-    [page]="currentPage" 
-    (functionNullified)="handleFunctionNullified()"
-    [canEditDocument]="canEditDocument"
+      [page]="currentPage" 
+      [canEditDocument]="canEditDocument"
      >
     </app-last-looks-page>
     <aside class="controls-container">

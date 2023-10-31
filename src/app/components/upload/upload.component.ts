@@ -21,7 +21,6 @@ import { StripeService } from "../../services/stripe/stripe.service"
 export class UploadComponent implements OnInit, OnDestroy {
   logo:string = "../../assets/icons/logoFlat.png";
   fileToUpload: File;
-
   totalTickets: Subscription;
   totalLines: Subscription;
   totalScenes: Subscription;
@@ -134,7 +133,7 @@ export class UploadComponent implements OnInit, OnDestroy {
 
   resetLocalData() {
     if(localStorage.getItem("name")) localStorage.setItem('name', null)
-    if(localStorage.getItem("callsheey")) localStorage.setItem('callsheet', null)
+    if(localStorage.getItem("callsheet")) localStorage.setItem('callsheet', null)
   }
 
   
