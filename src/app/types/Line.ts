@@ -32,6 +32,7 @@ export interface Line {
   draftColorText?:string
   pageNumberText?:string,
   calculatedLeft?:string | number
+  calculatedBarY?:string|number,
   calculatedXpos?:any
   calculatedYpos?:any
   calculatedEnd?:string | number

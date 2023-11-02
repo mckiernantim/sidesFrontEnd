@@ -62,7 +62,7 @@
                         [style.left]="line.calculatedXpos" 
                         [textContent]="line.text" 
                         
-                        (input)="canEditDocument && updateText($event)"
+                        (input)="canEditDocument && updateText($event, line, lineIndex)"
                         (contextmenu)="canEditDocument 
                             && openContextMenu($event, line)"
                         (mousedown)="canEditDocument 
@@ -72,6 +72,7 @@
                         (mouseup)="determineIfWeCanDrag() ? dragDrop.stopDrag($event) : null"
                         
                         >
+                        {{line.bar}}
                     </li>
                     <!-- revision asterisks -->
                     <span [class]="line.isRevision + ' hidden'" [style.bottom]="line.calculatedYpos">
@@ -79,14 +80,18 @@
                     </span>
 
                     <!-- continue spans -->
-                    <span
+                    <span class="bar-span"
+                        (mousedown)="canEditDocument && !this.contextMenuLine && handleLeftClick($event, line, lineIndex, true)"
                         [class]="(line.cont ? line.cont : 'hideCont') + ' ' + line.hidden"
-                        [style.bottom]="line.calculatedYpos">
-                        <span class="start-span"> ↓↓{{line.sceneNumberText}} CONTINUED↓↓↓</span>
+                        [style.bottom]="line.calculatedBarY"
+                        (mousemove)="determineIfWeCanDrag() ? throttledDragBar($event): null"
+                        (mouseup)="determineIfWeCanDrag() ? dragDrop.stopDrag($event) : null"
+                    >
+                        <span class="start-span"> ↓↓{{line.sceneNumberText}} CONTINUED↓↓↓ {{line.calculatedBarY}}</span>
                     </span>
 
                     <!-- end span -->
-                    <span 
+                    <span class="bar-span"
                     (click) = "toggleSelectedLine($event, line, lineIndex)" 
                     [class]="line.end + ' ' + line.hideEnd" [style.bottom]="line.calculatedEnd">
                         <span class="end-span"> END {{line.sceneNumberText}} </span>

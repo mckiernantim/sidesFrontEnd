@@ -11,7 +11,7 @@
     background-color: rgba(255, 255, 0, 0.4) ;
     transition: box-shadow 0.2s ease; 
 }
-.edit-li:hover {
+.edit-li:hover, .bar-span:hover {
     transform: scale(1.05);
     cursor: grab;
 }
@@ -68,7 +68,9 @@ span {
     font-size: 12pt;
     color: black;
 }
+.bar-span {
 
+}
 .page-number-text {
     position: absolute;
     page-break-before: always;

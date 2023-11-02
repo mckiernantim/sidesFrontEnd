@@ -9,6 +9,7 @@ import { Input, ChangeDetectorRef, HostListener } from '@angular/core';
 import { DragDropService } from 'src/app/services/drag-drop/drag-drop.service';
 import { Line } from 'src/app/types/Line';
 import * as _ from 'lodash';
+import { DragDropOptions } from 'src/app/types/DragDropOptions';
 @Component({
   selector: 'app-last-looks-page',
   templateUrl: './last-looks-page.component.html',
@@ -25,7 +26,7 @@ export class LastLooksPageComponent {
   undoQueue: any[] = [];
 // values for dragging 
   draggingLine: any = null;
-  selectedLine: Line | null = null;
+  selectedLine: Line | null ;
   isLineSelected: boolean = false;
   showContextMenu: boolean = false;
   mouseEvent: MouseEvent | null = null;
@@ -51,6 +52,7 @@ export class LastLooksPageComponent {
   // calculated  vals to offset the browser renders for the page
   mousePosition: { x: number; y: number } = { x: 0, y: 0 };
   throttledDrag: Function;
+  throttledDragBar: Function;
   constructor(
     private cdRef: ChangeDetectorRef,
     private el: ElementRef,
@@ -72,6 +74,10 @@ export class LastLooksPageComponent {
   }
   ngOnInit() {
     this.throttledDrag = _.throttle((event:MouseEvent) => {this.dragDrop.drag(event), this.dragRefreshDelay});
+    this.throttledDragBar = _.throttle((event: MouseEvent) => {
+      this.dragDrop.dragBar(event);
+    }, this.dragRefreshDelay);
+  
     this.dragDrop.update.subscribe((reset:null|true) => {
       console.log(reset, " new value emitted")
         if(reset) {
@@ -92,14 +98,16 @@ export class LastLooksPageComponent {
       // Do any additional logic you need here
     }
   }
+
   updatePositon(num: number, str: string): string {
     const dif = parseInt(str) - num;
     return dif + 'px';
   }
  
-  updateText(event: Event) {
+  updateText(event: MouseEvent, line, lineIndex) {
 
     const newText = (event.target as HTMLElement).textContent;
+    if(!this.selectedLine) this.toggleSelectedLine(event, line, lineIndex)
     this.selectedLine.text = newText;
     // You can also perform any additional logic here.
   }
@@ -121,16 +129,24 @@ export class LastLooksPageComponent {
           
         
 
-  handleLeftClick(event: MouseEvent, line: Line, lineIndex: number) {
-   
-    if(event.button != 0) return
+  handleLeftClick(event: MouseEvent, line: Line, lineIndex: number, isDragBar?: boolean) {
+
+    if (event.button !== 0 || this.contextMenuLine) return;
+  
     this.mouseEvent = event;
     this.toggleSelectedLine(event, line, lineIndex);
-    this.dragDrop.startDrag(event, line);
+  
+    if (isDragBar) {
+      this.dragDrop.startDragBar(event);
+    } else {
+      this.dragDrop.startDrag({event, line, lineIndex})
+    }
   }
+
   isSelectedLine(line: Line, lineIndex: number) {
     return this.selectedLine === this.page[lineIndex];
   }
+
   toggleSelectedLine(event: MouseEvent, line: any, lineIndex: number) {
   
     if (this.isSelectedLine(line, lineIndex)) {

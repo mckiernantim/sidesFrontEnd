@@ -154,10 +154,17 @@ export class LastLooksComponent implements OnInit {
       line.barY = line.yPos + 65;
     }
   }
-
+  adjustYpositionAndReturnString(lineYPos:number):string {
+    return  Number(lineYPos) > 1 ? Number(lineYPos) * 1.3 + 'px' : '0';
+  }
   calculateYPositions(line: Line) {
-    line.calculatedYpos =
-      Number(line.yPos) > 1 ? Number(line.yPos) * 1.3 + 'px' : '0';
+    const { yPos, barY } = line;
+    
+    line.calculatedYpos = this.adjustYpositionAndReturnString(yPos);
+    if(line.cont|| line.end)  {
+      // either End or CONT valie
+        line.calculatedBarY=  this.adjustYpositionAndReturnString(yPos - 5)
+      } 
   }
 
   restorePositionsInDocument(arr) {
