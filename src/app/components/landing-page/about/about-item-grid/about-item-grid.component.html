@@ -1,0 +1,13 @@
+<div>
+    <h1>Stop Making Sides By Hand</h1>
+</div>
+<section class="about-container" >
+        <app-about-item 
+        *ngFor="let title of titles; let i = index" 
+        [title] = "title" 
+        [content] = "content[i]"
+        ></app-about-item>
+</section>
+    
+
+
