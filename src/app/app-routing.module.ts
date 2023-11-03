@@ -7,7 +7,7 @@ import { AdminComponent } from "./components/admin/admin.component"
 import { CheckoutComponent } from './components/checkout/checkout.component';
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
-import { UploadComponent } from './components/upload/upload.component';
+import { UploadComponent } from './components/landing-page/upload/upload.component'
 import { AuthGuard } from './guards/auth.guard';
 
 

@@ -1,0 +1,19 @@
+<article class="feature-card">
+    <ng-container *ngIf="align !== 'left'">
+
+        <div class="feature-card-body">
+            <h4>{{title}}</h4>
+            <p>{{content}}</p>
+        </div>
+        <div class="feature-card-image-container"></div>
+    </ng-container>
+
+    <ng-container *ngIf="align === 'left'">
+        <div class="feature-card-image-container"></div>
+        <div class="feature-card-body">
+            <h4>{{title}}</h4>
+            <p>{{content}}</p>
+        </div>
+    </ng-container>
+
+</article>

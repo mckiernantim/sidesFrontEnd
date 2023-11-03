@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { environment } from '../environments/environment';
-import { NavComponent } from './components/nav/nav.component';
+import { NavComponent } from './components/shared/nav/nav.component';
 
 @Component({
   selector: 'app-root',

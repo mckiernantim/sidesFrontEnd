@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { FeedbackTicket } from 'src/app/types/feedbackTicket';
+import { FeedbackTicket } from '../../..//types/feedbackTicket';
 
 
 

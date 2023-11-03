@@ -1,8 +1,8 @@
-import { LineOutService } from '../../services/line-out/line-out.service'
+import { LineOutService } from '../../../services/line-out/line-out.service'
 import { Observable } from 'rxjs';
-import { IssueComponent } from '../issue/issue.component';
+import { IssueComponent } from '../../issue/issue.component';
 import { Router } from '@angular/router';
-import { UploadService } from '../../services/upload/upload.service';
+import { UploadService } from '../../../services/upload/upload.service';
 import {
   Component,
   OnInit,
@@ -502,6 +502,7 @@ makeVisible(sceneArr, breaks) {
     }
     this.finalDocument = finalDocument;
     this.finalDocReady = true;
+  };
 
   /// ***********  UPLOAD THE PDF FIRST THEN ONCE ITS DONE FIRE BACK THE COVER SHEET ***********
     // this.upload.generatePdf(finalDocument).subscribe((data:pdfServerRes) => {
@@ -525,7 +526,6 @@ makeVisible(sceneArr, breaks) {
     //   })
     // });
 
-};
 
 
   logUpload() {

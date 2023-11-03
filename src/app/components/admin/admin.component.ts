@@ -6,7 +6,7 @@ import { MatCard } from '@angular/material/card';
 import { Router } from '@angular/router';
 import { FeedbackService } from '../../services/feedback/feedback.service';
 import { MatDialog } from '@angular/material/dialog';
-import { ConfirmationDialogComponent } from '../confirmation-dialog/confirmation-dialog.component';
+import { ConfirmationDialogComponent } from './confirmation-dialog/confirmation-dialog.component';
 @Component({
   selector: 'app-admin',
   templateUrl: './admin.component.html',

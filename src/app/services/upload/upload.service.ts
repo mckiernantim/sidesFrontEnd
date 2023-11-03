@@ -11,7 +11,7 @@ import {
   HttpParams
 } from '@angular/common/http';
 import { FeedbackTicket } from '../../types/feedbackTicket';
-import { environment } from 'src/environments/environment';
+import { environment } from '../../../environments/environment';
 import { idToken } from '@angular/fire/auth';
 import { Line } from '../../types/Line';
 import { TokenService } from '../token/token.service';

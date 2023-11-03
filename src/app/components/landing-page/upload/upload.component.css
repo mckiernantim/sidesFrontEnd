@@ -288,7 +288,7 @@ label.upload-button input[type="file"] {
 .image-container {
     width:98%;
     background-repeat:no-repeat;
-    background-image:url("../../../assets/icons/vectors/flat-bot.PNG");
+    background-image:url("../../../../assets/icons/vectors/flat-bot.PNG");
     background-size:contain;
     background-position-x: 50%;
 }
