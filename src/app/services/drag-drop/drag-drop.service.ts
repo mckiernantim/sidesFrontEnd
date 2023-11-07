@@ -38,7 +38,6 @@ export class DragDropService {
     this.update.next(reset);
   }
   setSelectedLine(line: Line) {
-    debugger
     this.selectedLine = line;
   }
   setComponentSelectedLine(line: Line | null) {
@@ -46,7 +45,8 @@ export class DragDropService {
 
   }
   drag(event: MouseEvent, bar?:boolean) {
-      if (this.draggingLine !== null && !bar) {
+    debugger
+      if (this.draggingLine) {
       this.currentXPosDiff = event.clientX - this.initialMouseX;
       this.currentYPosDiff = event.clientY - this.initialMouseY;
       this.updateComponent();
@@ -76,6 +76,7 @@ export class DragDropService {
     event.preventDefault();
   }
   startDrag(options:DragDropOptions) {
+
     const { event, line } = options
     this.isLineSelected = true;
     // Record the initial positions
@@ -92,6 +93,7 @@ export class DragDropService {
   
 
   allowDrag() {
+    debugger
     if (!this.allowDragTimer) {
       this.allowDragTimer = setTimeout(() => {
         clearTimeout(this.allowDragTimer);

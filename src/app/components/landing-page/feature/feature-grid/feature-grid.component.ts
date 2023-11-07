@@ -7,7 +7,7 @@ import { FeatureCardComponent } from '../feature-card/feature-card.component';
   styleUrls: ['./feature-grid.component.css'],
 })
 export class FeatureGridComponent {
-  titles: string[] = [`Production`, `Casting`, `Student Films`];
+  titles: string[] = [`Production`, `Casting`, `StudentFilms`];
   content: string[] = [
     `With Sides-Ways you can get set-ready sides, both Bigs and Smalls, complete with call-sheet, in a matter of minutes  <strong>with no subsrcription fees, and no accounts to sign up for</strong>.
    <br>Save time, save money, and get back on set.`,
@@ -17,7 +17,7 @@ export class FeatureGridComponent {
 
     `   Broke film student? <br>
     Looking for a way to elevate your set? <br>
-   Professional grade set ready documents from your script for about $5.00
+    Pro documents for your set  for about $5.00
     <br> We got your back.  Go make your movie.`,
   ];
 }

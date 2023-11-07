@@ -1,16 +1,15 @@
-<mat-card appearance="outlined reveal delay-3">
-  <mat-card-header>
-    <div>
-    <h2 class="spinner-text">Processing <strong>{{ this.title }}</strong></h2>
+<section class="relative h-screen flex items-center justify-center">
+  <!-- Container -->
+  <div class="md:h-auto absolute left-1/2 top-1/2 h-auto w-[50%] max-w-lg -translate-x-1/2 -translate-y-1/2 bg-white lg:w-full">
+    <div class="flex flex-col items-center">
+      <img class="spinner" src="../../assets/animations/ScriptBot_Animation-BW.gif" />
+      
+      <!-- Content -->
+      <div class="p-5 text-center sm:p-10">
+        <!-- Title -->
+        <h3 class="mb-2 text-xl font-bold md:text-2xl">Processing title</h3>
+        <p class="text-sm text-[#636262]">Sit Tight.</p>
+      </div>
+    </div>
   </div>
-</mat-card-header>
-<mat-card-content>
-  <mat-progress-spinner style="display: none" mode="indeterminate" value="0"></mat-progress-spinner>
-  <div class="loading-image">
-    <img class="spinner" src="../../assets/animations/ScriptBot_Animation-BW.gif" />
-  </div>
-  <h2 class="spinner-text">Sit Tight.</h2>
-</mat-card-content>
-</mat-card>
-    
-
+</section>

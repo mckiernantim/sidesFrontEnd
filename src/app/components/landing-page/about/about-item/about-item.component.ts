@@ -7,5 +7,6 @@ import { Component, Input } from '@angular/core';
 })
 export class AboutItemComponent {
   @Input()title: string;
-  @Input()content:string
+  @Input()content:string;
+  @Input()imagePath:string
 }

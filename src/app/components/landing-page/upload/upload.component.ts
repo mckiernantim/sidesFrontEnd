@@ -1,6 +1,7 @@
 import { SpinningBotComponent } from '../../shared/spinning-bot/spinning-bot.component';
 import { FeatureGridComponent } from "../feature/feature-grid/feature-grid.component"
-
+import { AboutItemGridComponent } from "../about/about-item-grid/about-item-grid.component"
+import { TestimonialGridComponent} from "../testimonial/testimonial-grid/testimonial-grid.component"
 import { Observable, Subscription, throwError, pipe } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { Component, OnInit, OnDestroy } from '@angular/core';
@@ -48,7 +49,8 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.working = false;
+    this.working = true;
+    this.openDialog("test");
     localStorage.setItem('name', null);
     console.log(this.totalLines, this.totalScenes, this.totalTickets);
     this.underConstruction = true;

@@ -10,6 +10,7 @@ export class FeatureCardComponent {
   @Input()title:string;
   @Input()content:string;
   @Input()tagLine:string;
+  
 
 }
 

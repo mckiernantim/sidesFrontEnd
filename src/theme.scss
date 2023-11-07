@@ -1,34 +1,23 @@
 @use "@angular/material" as mat;
 @import url("https://fonts.googleapis.com/icon?family=Material+Icons");
 @include mat.core();
-// @include mat.legacy-core();
 
-$my-app-primary: mat.define-palette(mat.$gray-palette, 900, 500, 400, 100);
-$my-app-accent:  mat.define-palette(mat.$blue-palette, 50, 500, 800);
-$my-app-warn: mat.define-palette(mat.$deep-orange-palette);
+$my-white: #ffffff; // Define white color
+$my-light-gray: #f0f0f0; 
+$my-blue: mat.define-palette(mat.$blue-palette);
+$my-red: mat.define-palette(mat.$red-palette);
 
-
- $my-dark-theme: mat.define-dark-theme((
+$my-custom-theme: mat.define-light-theme((
     color: (
-      primary: $my-app-primary,
-      accent: $my-app-accent,
-      warn: $my-app-warn
+        primary: $my-blue,
+        accent: $my-red,
+        warn: $my-red
     ),
     density: 0,
- ));
+));
+
 body {
-  @include mat.all-component-themes($my-dark-theme);
+    @include mat.all-component-themes($my-custom-theme);
+    @include mat.core-theme($my-custom-theme);
+    @include mat.button-theme($my-custom-theme);
 }
-
-@include mat.core-theme($my-dark-theme);
-@include mat.button-theme($my-dark-theme);
-
-
-
-
-
-
-
-
-
-

@@ -50,6 +50,8 @@ import { TestimonialItemComponent } from './components/landing-page/testimonial/
 import { TestimonialGridComponent } from './components/landing-page/testimonial/testimonial-grid/testimonial-grid.component';
 import { FeatureCardComponent } from './components/landing-page/feature/feature-card/feature-card.component';
 import { FeatureGridComponent } from './components/landing-page/feature/feature-grid/feature-grid.component';
+import { AboutItemComponent } from './components/landing-page/about/about-item/about-item.component';
+import { AboutItemGridComponent } from './components/landing-page/about/about-item-grid/about-item-grid.component';
 
 @NgModule({
     declarations: [
@@ -84,6 +86,8 @@ import { FeatureGridComponent } from './components/landing-page/feature/feature-
         TestimonialGridComponent,
         FeatureCardComponent,
         FeatureGridComponent,
+        AboutItemComponent,
+        AboutItemGridComponent,
     ],
     imports: [
         BrowserModule,

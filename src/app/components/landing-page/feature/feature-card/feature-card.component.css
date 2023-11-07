@@ -1,14 +1,25 @@
+.production {
+  background-image:url("https://www.scripto.live/images/studiotv.png");
+}
+.casting {
+  background-image: url("https://www.nycastings.com/wp-content/uploads/2020/06/RichardJordanCasting-e1593025965212-816x460.png");
+}
+.studentFilms {
+  background-image: url("https://www.hollywoodreporter.com/wp-content/uploads/2023/08/23bob_filmschools_MAIN-H-2023.jpg?w=1296");
+}
 .feature-card {
     display:flex;
-    justify-content:space-evenly;
+    justify-content:space-between;
+    
     && img {
       width:100%;
       height:auto
     }
     && .feature-card-image-container {
       width:50%;
+      min-height:450px;
       min-width:50%;
-      background-image:url("https://www.scripto.live/images/studiotv.png");
+    
       background-repeat: no-repeat;
       -webkit-background-position: center;
       background-position: center;
@@ -19,17 +30,20 @@
     }
   
     && .feature-card-body {
-      
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
       font-family:"Courier";
       padding:10px 25px;
       && h4 {
         margin-top:20px;
-        margin-bottom:10px;
-        font-size:2.2rem;
+        margin-bottom:40px;
+        font-size:2.5rem;
       }
       && p {
         line-height:1.75;
-        font-size:.95rem;
+        font-size:1.15rem;
         margin-bottom:50px;
       }
     }

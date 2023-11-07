@@ -1,98 +1,47 @@
 <main>
-  <section class = "image-container">
-    <div class="title">
-      <h1 class="mat-headline-3 title reveal title">
-        <strong>Welcome To Sides-Ways</strong>
-        <!-- <button (click) = "checkOut()">checkout</button> -->
-      </h1>
-    </div>
-    <div class="form-group two-column left black">
-      <div class="left-cell reveal">
-        <div class="left-container">
-          <!-- <button mat-raised-button color = "primary" class="delay-6 learn-more-button reveal" routerLink="../About">Learn More</button> -->
-          <mat-card class="upload-card white-card shadow">
-            <h1>
-              <strong style = "color:red">
-                AI should help artists. <br>Not replace them.
-              </strong>
-            </h1>
-            <h1>
-              <strong>Congrats to our brothers and sisters of the WGA. </strong>
-           </h1>
-            <div class="wga-block">
-              <img src = "../../../assets/CA_keyart3_cautiontape_social_6.jpeg"style="width: 300px">
-              <div>
-                <h2>
-                  <strong>We proudly stand with our union brothers and sisters of SAG-AFTRA</strong>
-               </h2>
-              </div>
-              <div>
-              </div>
-  
-            </div>
-          </mat-card>
-          <!-- <div class="typewriter ">
-                <h2 class="delay-3 mat-headline-4">
-                  Free Open Beta
-                </h2>
-              </div>
-              <div class="typewriter">
-                <h2 class="delay-4 mat-headline-4">
-                  We Make Sides
-                </h2>
-              </div> -->
+
+<header class="py-24">
+  <!-- Container -->
+  <div class="w-full max-w-7xl px-5 pt-8  md:px-10 md:h-45  lg:h-55 flex items-center justify-center centered bg-offWhite">
+    <!-- Component -->
+    <div class="grid items-center gap-8 sm:gap-20 lg:grid-cols-2">
+      <div>
+        <!-- Title -->
+        <h1 class="mb-4 text-4xl font-bold md:text-6xl">Sides-Ways. </h1> 
+        <h2 class="mb-6  text-2xl font-bold">
+          Secure, Set-Ready Sides in Minutes.
+          <br>
+          No subscriptions to worry about.  
+          <br>
+          Nothing to sign up for.   
+        </h2>
+ 
+        <p class="mb-6  text-lg font-bold">Whether you're an independent filmmaker working on your first feature, or a veteran AD back the lot for another season, Sides-ways will save you time and money on your next project. </p>
+        <p class="mb-6  text-lg font-semibold">
+          No subbscrtiptions to manage, no bloated software packages costing your project thousands. 
+        </p>
+        <h2 class="mb-6  text-lg font-semibold text-accent"> 
+          We make sides. 
+          <br>
+          That's it.
+        </h2>
+        <div class="mb-6 flex items-stretch md:mb-10 lg:mb-12">
+
+          <button (click)="fileInput.click()" class="mr-5 rounded-md bg-black px-8 py-4 text-center font-semibold text-white md:mr-6 lg:mr-8 bg-primary">Upload Script PDF</button>
+          <input hidden (change)="handleFileInput($event.target.files)" #fileInput type="file" id="file"
+          accept="application/pdf">
         </div>
-        <div></div>
+        <!-- App -->
       </div>
-      <div class="center right-cell reveal" >
-        <mat-card appearance="outlined" class="upload-card shadow">
-          <ng-container>
-            <mat-card-header *ngIf="underConstruction; else normalBlock ">
-              <div class="image-container">
-                <h1>Stay Tuned: We're Back this November </h1>
-                <h2>We're making sides-ways more robust</h2>
-                <h2>We've heard your feedback we're cooking up something nice. </h2>
-                <h3>we still don't make scripts*</h3>
-                <button (click)="skipUploadForTest()">skip for testing</button>
-              </div>
-            </mat-card-header>
-          </ng-container>
-  
-          <ng-template #normalBlock>
-            <mat-card-content >
-              <div class="feature-block" >
-                <h3 class="feature-headline">Upload your script <br>
-                  We'll prep your sides</h3>
-                <p>For best results, use PDF scripts made with Final draft or Celtx.
-                </p>
-                <div class="warning-text">
-                  <p>
-                    <strong>
-                      Please use unencrypted Production Scripts with proper scene-headers, scene numbers,
-                      and a title page without a topsheet (we'll handle that laater)
-    
-                      <br>
-                      PDF scripts should be formatted to industry standard before you even get here.
-                      <br>
-                      We make sides, not scripts*.
-                    </strong>
-                  </p>
-                </div>
-              </div>
-            </mat-card-content>
-            
-            <mat-card-actions>
-              <button type="button" mat-raised-button color="warn" (click)="fileInput.click()">Upload Script PDF</button>
-              <input hidden (change)="handleFileInput($event.target.files)" #fileInput type="file" id="file"
-              accept="application/pdf">
-            </mat-card-actions>
-          </ng-template>
-          <div class="footnote">
-            <p>*or screenwriters.</p>
-          </div>
-        </mat-card>
-      </div>
+      <img src="../../../../assets/icons/logoFlat.png" alt="" class="inline-block h-full w-full" />
     </div>
+  </div>
+</header>
+  <section class="about-product-section">
+    <app-about-item-grid></app-about-item-grid>
+  </section>
+  <section class="customers-section">
+    <app-testimonial-grid></app-testimonial-grid>
   </section>
   <section class="feature-section">
     <app-feature-grid></app-feature-grid>

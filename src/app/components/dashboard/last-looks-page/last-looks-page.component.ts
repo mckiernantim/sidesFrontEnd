@@ -75,6 +75,7 @@ export class LastLooksPageComponent {
   ngOnInit() {
     this.throttledDrag = _.throttle((event:MouseEvent) => {this.dragDrop.drag(event), this.dragRefreshDelay});
     this.throttledDragBar = _.throttle((event: MouseEvent) => {
+      debugger
       this.dragDrop.dragBar(event);
     }, this.dragRefreshDelay);
   
@@ -112,7 +113,11 @@ export class LastLooksPageComponent {
     // You can also perform any additional logic here.
   }
  determineIfWeCanDrag():boolean {
+
+
     // only 
+    // DRAGGIN LINE IS NOT INSTANTIATING ON SERVOCE SO NO DRAG!
+    console.log( this.dragDrop.draggingLine, !this.contextMenuLine)
     return !!this.dragDrop.draggingLine && !this.contextMenuLine
   }
   // Helper function to add actions to the undo queue

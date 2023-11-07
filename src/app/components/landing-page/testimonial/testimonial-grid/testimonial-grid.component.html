@@ -1,1 +1,13 @@
-<p>testimonial-grid works!</p>
+<section>
+    <div class="mx-auto w-full max-w-7xl px-5 py-16 md:px-10 md:py-24">
+        <div class="mb-8 text-center md:mb-12 ">
+            <!-- Heading -->
+            <h2 class="text-3xl font-bold md:text-5xl">Who We've Worked With</h2>
+            <!-- Subeading -->
+           
+        </div>
+        <div class="mb-12 grid grid-cols-5 gap-5  md:mb-16  md:gap-4" >
+            <app-testimonial-item *ngFor="let film of films, let i= index;" [film]=film [poster]="posters[i]"></app-testimonial-item>
+        </div>
+    </div>
+</section>

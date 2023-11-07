@@ -1,18 +1,20 @@
-<article class="feature-card">
+<article class="feature-card border-solid p-10">
+    
     <ng-container *ngIf="align !== 'left'">
 
         <div class="feature-card-body">
-            <h4>{{title}}</h4>
-            <p>{{content}}</p>
+            <h4 class="text-lg font-bold">{{title === 'StudentFilms' ? 'Student Films' : title}}</h4>
+            <p class="font-bold" [innerHTML]="content"></p>
         </div>
-        <div class="feature-card-image-container"></div>
+        <div [ngClass] = "title" class="feature-card-image-container "></div>
     </ng-container>
 
     <ng-container *ngIf="align === 'left'">
-        <div class="feature-card-image-container"></div>
+        
+        <div [ngClass] = "title" class="feature-card-image-container"></div>
         <div class="feature-card-body">
-            <h4>{{title}}</h4>
-            <p>{{content}}</p>
+            <h4 class="text-lg font-bold">{{title === 'tudentFilms' ? 'Student Films' : title}}</h4>
+            <p class="text-lg font-bold" [innerHTML]="content"></p>
         </div>
     </ng-container>
 

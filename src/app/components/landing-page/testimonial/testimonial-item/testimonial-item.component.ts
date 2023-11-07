@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 @Component({
   selector: 'app-testimonial-item',
@@ -6,5 +6,6 @@ import { Component } from '@angular/core';
   styleUrls: ['./testimonial-item.component.css']
 })
 export class TestimonialItemComponent {
-
+  @Input()film:string;
+  @Input()poster:string;
 }
