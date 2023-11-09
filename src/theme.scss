@@ -1,23 +1,30 @@
-@use "@angular/material" as mat;
-@import url("https://fonts.googleapis.com/icon?family=Material+Icons");
+@use '@angular/material' as mat;
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 @include mat.core();
 
-$my-white: #ffffff; // Define white color
-$my-light-gray: #f0f0f0; 
-$my-blue: mat.define-palette(mat.$blue-palette);
-$my-red: mat.define-palette(mat.$red-palette);
+$my-primary-blue: mat.define-palette(mat.$blue-palette, 500);
+$my-accent-color: mat.define-palette(mat.$orange-palette, 700);
+$my-warn-red: mat.define-palette(mat.$red-palette, 500);
+$my-off-white: #f8f8f8; // Adjust to your off-white preference
+$my-light-gray: #d6d6d6; 
 
 $my-custom-theme: mat.define-light-theme((
-    color: (
-        primary: $my-blue,
-        accent: $my-red,
-        warn: $my-red
-    ),
-    density: 0,
+  color: (
+    primary: $my-primary-blue,
+    accent: $my-accent-color,
+  ),
+  density: 0,
 ));
+
 
 body {
     @include mat.all-component-themes($my-custom-theme);
     @include mat.core-theme($my-custom-theme);
     @include mat.button-theme($my-custom-theme);
-}
+    background-color: $my-off-white; // Set background color to off-white
+  }
+  
+  // Apply gray color to table
+  .mat-table {
+    background-color: $my-light-gray;
+  }

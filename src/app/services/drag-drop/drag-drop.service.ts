@@ -3,7 +3,7 @@ import { Line } from '../../types/Line';
 import { Subject } from 'rxjs';
 import { DragDropOptions } from 'src/app/types/DragDropOptions';
 import { PositionChange } from 'src/app/types/PositionChange';
-import { debug } from 'console';
+
 
       
 
@@ -32,7 +32,7 @@ export class DragDropService {
 
   constructor() {}
   updateComponent() {
-    debugger
+   
     // drag is not firing here for some reason - maybe the stop isnt registering
     const reset = this.selectedLine || this.draggingBar ? null : true
     this.update.next(reset);
@@ -45,17 +45,18 @@ export class DragDropService {
 
   }
   drag(event: MouseEvent, bar?:boolean) {
-    debugger
+    
       if (this.draggingLine) {
       this.currentXPosDiff = event.clientX - this.initialMouseX;
       this.currentYPosDiff = event.clientY - this.initialMouseY;
+      this.selectedLine.calculatedYpos = this.initialLineY - this.currentYPosDiff + 'px';
       this.updateComponent();
     } else {
       this.currentXPosDiff = event.clientX - this.selectedLine.barY
     }
   }
   dragBar(event: MouseEvent) {
-    debugger
+    
     const deltaY = event.clientY - this.initialMouseY;
 
     // Calculate the new bar position
@@ -79,6 +80,7 @@ export class DragDropService {
 
     const { event, line } = options
     this.isLineSelected = true;
+    this.draggingLine = true;
     // Record the initial positions
     this.initialLineY = parseFloat(line.calculatedYpos);
     this.initialLineX = parseFloat(line.calculatedXpos);
@@ -93,7 +95,7 @@ export class DragDropService {
   
 
   allowDrag() {
-    debugger
+
     if (!this.allowDragTimer) {
       this.allowDragTimer = setTimeout(() => {
         clearTimeout(this.allowDragTimer);
@@ -109,6 +111,7 @@ export class DragDropService {
       // Calculate the final position of the line
       this.processLinePosition();
       this.selectedLine = null;
+      this.draggingLine = false;
     } else if (this.draggingBar) {
       // Calculate the final position of the bar
       // Update the bar position in the line object

@@ -59,6 +59,7 @@ export class LastLooksPageComponent {
     public dragDrop: DragDropService,
    //not sure why Function throwing err
   ) {
+    
     this.classificationChoices = [
       'line-out',
       'description',
@@ -68,31 +69,41 @@ export class LastLooksPageComponent {
       'parenthetical',
       'shot',
     ];
+
     const firstLi = this.el.nativeElement.querySelector('li');
+
+   
     if (firstLi) firstLi.focus();
     this.container = this.el.nativeElement;
   }
   ngOnInit() {
-    this.throttledDrag = _.throttle((event:MouseEvent) => {this.dragDrop.drag(event), this.dragRefreshDelay});
+  
+    this.throttledDrag = _.throttle((event:MouseEvent) => {
+      this.dragDrop.drag(event), this.dragRefreshDelay
+    });
     this.throttledDragBar = _.throttle((event: MouseEvent) => {
-      debugger
+     
       this.dragDrop.dragBar(event);
     }, this.dragRefreshDelay);
   
     this.dragDrop.update.subscribe((reset:null|true) => {
       console.log(reset, " new value emitted")
         if(reset) {
+         
           this.selectedLine = null;
         }
         this.cdRef.markForCheck();
       });
+     
   }
 
   ngOnChanges(changes: SimpleChanges) {
+  
     if (
       changes.selectedFunction &&
       changes.selectedFunction.currentValue !== this.selectedFunction
     ) {
+      
       this.selectedFunction = changes.selectedFunction.currentValue;
       this.selectedLine = null;
       this.cdRef.markForCheck();
@@ -106,6 +117,7 @@ export class LastLooksPageComponent {
   }
  
   updateText(event: MouseEvent, line, lineIndex) {
+   
 
     const newText = (event.target as HTMLElement).textContent;
     if(!this.selectedLine) this.toggleSelectedLine(event, line, lineIndex)
@@ -113,15 +125,15 @@ export class LastLooksPageComponent {
     // You can also perform any additional logic here.
   }
  determineIfWeCanDrag():boolean {
-
-
-    // only 
-    // DRAGGIN LINE IS NOT INSTANTIATING ON SERVOCE SO NO DRAG!
+// DRAGGIN LINE IS NOT INSTANTIATING ON SERVOCE SO NO DRAG!
     console.log( this.dragDrop.draggingLine, !this.contextMenuLine)
-    return !!this.dragDrop.draggingLine && !this.contextMenuLine
+   if(!this.contextMenuLine && this.dragDrop.draggingLine) {
+    return true
+   } return false
   }
   // Helper function to add actions to the undo queue
   addToUndoQueue(actionType: string, data: any) {
+   
     // Create an undo action
     const undoAction = {
       actionType: actionType,
@@ -136,12 +148,14 @@ export class LastLooksPageComponent {
 
   handleLeftClick(event: MouseEvent, line: Line, lineIndex: number, isDragBar?: boolean) {
 
+
     if (event.button !== 0 || this.contextMenuLine) return;
   
     this.mouseEvent = event;
     this.toggleSelectedLine(event, line, lineIndex);
   
     if (isDragBar) {
+    
       this.dragDrop.startDragBar(event);
     } else {
       this.dragDrop.startDrag({event, line, lineIndex})
@@ -149,12 +163,15 @@ export class LastLooksPageComponent {
   }
 
   isSelectedLine(line: Line, lineIndex: number) {
+
     return this.selectedLine === this.page[lineIndex];
   }
 
   toggleSelectedLine(event: MouseEvent, line: any, lineIndex: number) {
+ 
   
     if (this.isSelectedLine(line, lineIndex)) {
+    
       // Deselect the line if it's already selecte
       this.selectedLine = null;
       this.dragDrop.setSelectedLine(null)
@@ -168,21 +185,25 @@ export class LastLooksPageComponent {
   }
   
   toggleVisibility(line: Line) {
+   
     line.visible = line.visible === 'true' ? 'false' : 'true';
     this.cdRef.markForCheck();
   }
 
   getMouseEvent(event:MouseEvent) {
+   
     this.mouseEvent = event;
   }
   
   openContextMenu(event: MouseEvent, line: Line) {
+   
     this.mouseEvent = event;
     // change val to be calculated from the top
     event.preventDefault();
     const [x, y] = [event.clientX, event.clientY]
     
     if(!this.showContextMenu) {
+     
       this.selectedLine = line;
       this.contextMenuLine = line;
       this.showContextMenu = true;
@@ -196,6 +217,7 @@ export class LastLooksPageComponent {
   }
   
   closeContextMenu() {
+    
     this.showContextMenu = false;
     this.contextMenuLine = null;
     this.mouseEvent = null;
@@ -204,7 +226,9 @@ export class LastLooksPageComponent {
   }
   
   updateContextMenu(x?:number, y?:number) {
+   
     if(this.selectedLine) {
+      
       this.contextMenuY = parseFloat(this.selectedLine.calculatedYpos)
       this.contextMenuX = parseFloat(this.selectedLine.calculatedXpos)
       
@@ -216,9 +240,11 @@ export class LastLooksPageComponent {
   
   
   changeType(newCategory: string) {
+   
     // Update the line's category property
     this.selectedLine.calculatedXpos = this.xPositionsForLines[newCategory];
     if(newCategory === 'line-out') {
+      
       this.toggleStrikethroughLine()
     } else {
       this.selectedLine.category = newCategory;
@@ -229,6 +255,7 @@ export class LastLooksPageComponent {
   }
   toggleStrikethroughLine():void {
    if(this.selectedLine.visible === "true") {
+   
     this.selectedLine.visible = "false"
    } else {
     this.selectedLine.visible = "true"

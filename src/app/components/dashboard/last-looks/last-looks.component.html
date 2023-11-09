@@ -6,6 +6,7 @@
     <button mat-raised-button color="warn" (click)="previousPage()"
       [disabled]="currentPageIndex === 0">Previous</button>
   </div>
+  {{selectedLine.text || "no line yet"}}
   <div class="page-container">
     <app-last-looks-page 
       [page]="currentPage" 

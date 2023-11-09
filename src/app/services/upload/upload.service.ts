@@ -184,7 +184,7 @@ getPDF(name: string, callsheet: string): Observable<any> {
   }
 
   skipUploadForTest() {
-    const data = require('../../../../../SidesWaysBackEnd/test-data/dummyScript.json')
+    const data = require('../../components/landing-page/upload/dummyScript.json')
     if(this.underConstruction) {
       localStorage.setItem("name", this._devPdfPath)
     }

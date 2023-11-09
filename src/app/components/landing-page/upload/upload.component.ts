@@ -7,13 +7,15 @@ import { catchError, map } from 'rxjs/operators';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { UploadService } from '../../../services/upload/upload.service';
 import { Router } from '@angular/router';
+
 import {
   MatDialog,
   MAT_DIALOG_DATA,
   MatDialogRef,
 } from '@angular/material/dialog';
+import "./dummyScript.json" 
+const dummyData = require("./dummyScript.json")
 
-import { StripeService } from '../../../services/stripe/stripe.service';
 
 @Component({
   selector: 'app-upload',
@@ -43,13 +45,12 @@ export class UploadComponent implements OnInit, OnDestroy {
     public upload: UploadService,
     public router: Router,
     public dialog: MatDialog,
-    public stripe: StripeService
   ) {
     this.totalLines;
   }
 
   ngOnInit(): void {
-    this.working = true;
+    this.working = false;
     this.openDialog("test");
     localStorage.setItem('name', null);
     console.log(this.totalLines, this.totalScenes, this.totalTickets);
@@ -80,14 +81,14 @@ export class UploadComponent implements OnInit, OnDestroy {
     }
   }
   skipUploadForTest() {
-    const data = require(this.devDataPath);
+ 
     if (this.underConstruction) {
       localStorage.setItem('name', this.upload._devPdfPath);
     } else {
       this.resetLocalData();
     }
-    this.upload.lineArr = data[0];
-    this.upload.pagesArr = data[1];
+    this.upload.lineArr = dummyData[0];
+    this.upload.pagesArr = dummyData[1];
     this.upload.lineCount = [];
     this.upload.pagesArr.forEach((page) => {
       this.upload.lineCount.push(page.filter((item) => item.totalLines));

@@ -1,10 +1,54 @@
-<div class="about-container">
-  <div *ngFor="let blurb of blurbs">
+<section>
+  <!-- Container -->
+  <div class="mx-auto w-full max-w-7xl px-5 py-12 md:px-10 md:py-16 lg:py-20">
+    <!-- Component -->
+    <div class="grid gap-12 sm:gap-20 lg:grid-cols-2">
+      <!-- Content -->
+      <div class="flex flex-col items-start gap-2">
 
-    <app-text-block [image]="blurb.image" [text]="blurb.text" [align]="blurb.align"></app-text-block>
-    <br>
+        <p class="text-sm text-[#808080] sm:text-xl">Founder &amp; Former PA/AD</p>
+        <!-- Title -->
+        <h1 class="mb-6 text-4xl font-bold md:text-6xl lg:mb-8">Scott Reynolds</h1>
+        <p class="text-sm text-[#808080] sm:text-xl">Consectetur adipiscing elit duis tristique sollicitudin nibh. Augue
+          mauris augue neque gravida in fermentum. Sapien pellentesque habitant morbi tristique pellentesque.</p>
+        <!-- Divider -->
+        <div class="mb-8 mt-8 h-px w-full bg-black"></div>
+        <div class="flex flex-row gap-4 font-semibold">
+          <a href="#" class="flex  items-center gap-4 rounded-md bg-black px-6 py-2 text-white">
+
+            <p>Email Scott</p>
+          </a>
+        </div>
+      </div>
+      <!-- Image -->
+      <div class="min-h-[450px] overflow-hidden rounded-md bg-cover bg-[url('/assets/headshots/scottHead.jpg')]"></div>
+    </div>
   </div>
-  <button mat-raised-button href="">DONATE</button>
-  <p> Give us MONEY please. We are free while in BETA, but still need to eat (and drink beer). </p>
 
-</div>
+  <div class="mx-auto w-full max-w-7xl px-5 py-12 md:px-10 md:py-16 lg:py-20">
+    <!-- Component -->
+    <div class="grid gap-12 sm:gap-20 lg:grid-cols-2">
+      <div class="min-h-[450px] overflow-hidden rounded-md bg-cover bg-[url('/assets/headshots/timHead.jpg')]"></div>
+      <!-- Content -->
+      <div class="flex flex-col items-start gap-2">
+
+        <p class="text-sm text-[#808080] sm:text-xl">Founder &amp; Actor / Coder</p>
+        <!-- Title -->
+        <h1 class="mb-6 text-4xl font-bold md:text-6xl lg:mb-8">Tim McKiernan</h1>
+        <p class="text-sm text-[#808080] sm:text-xl">Consectetur adipiscing elit duis tristique sollicitudin nibh. Augue
+          mauris augue neque gravida in fermentum. Sapien pellentesque habitant morbi tristique pellentesque.</p>
+        <!-- Divider -->
+        <div class="mb-8 mt-8 h-px w-full bg-black"></div>
+        <div class="flex flex-row w-full justify-end">
+          <div class="flex flex-row  gap-4 font-semibold">
+            <a href="#" class="flex  items-center gap-4 rounded-md bg-black px-6 py-2 text-white">
+              <p>Email Tim</p>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</section>

@@ -1,18 +1,18 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./src/app/components/**/*.html", // Include HTML files
-    "./src/app/components/**/*.js", // Include JavaScript files
-    // Add more file types or paths as needed
+    "./src/app/components/**/*.html", 
+    "./src/app/components/**/*.js", 
+
   ],
   theme: {
     extend: {
       colors: {
-        primary: "#2196f3",
-        secondary: "#f0f0f0",
-        accent: "#fc120f",
-        darkGrey:'#d6d2d2',
-        offWhite:'#fafafa',
+        primary: '#001D3D',     // Dark blue
+        secondary:'#003566',   // Darker blue
+        accent: '#000814 ',      // Darker than primary blue
+        darkGrey: '#FFC300',    // Yellow
+        offWhite: '#FFD60A',    // Bright yellow
       },
     },
   },
