@@ -79,14 +79,14 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "sideWays:build"
+            "buildTarget": "sideWays:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "sideWays:build:production"
+              "buildTarget": "sideWays:build:production"
             },
             "dev": {
-              "browserTarget": "sideWays:build:dev"
+              "buildTarget": "sideWays:build:dev"
             }
           },
           "defaultConfiguration": "dev"
@@ -94,7 +94,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "sideWays:build"
+            "buildTarget": "sideWays:build"
           }
         },
         "test": {
