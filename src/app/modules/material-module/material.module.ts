@@ -9,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatListModule } from '@angular/material/list';
 import { MatInputModule } from '@angular/material/input';
-import { MatCarouselModule } from '@ngbmodule/material-carousel';
+// import { MatCarouselModule } from '@ngbmodule/material-carousel';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
@@ -42,7 +42,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatProgressSpinnerModule,
     MatGridListModule,
     MatIconModule,
-    MatCarouselModule
+    // MatCarouselModule
   ],
   imports: [
     CommonModule,

@@ -1,23 +1,20 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
+import { getFirestore, provideFirestore } from '@angular/fire/firestore';
+import { provideAnalytics, getAnalytics } from '@angular/fire/analytics';
 
+import { environment } from '../../../environments/environment';
 
-import { AngularFireModule } from '@angular/fire/compat';
-import { AngularFireAnalyticsModule } from '@angular/fire/compat/analytics';
-import { AngularFirestoreModule } from '@angular/fire/compat/Firestore';
-import { environment } from '../../../environments/environment'
-
-const { firebaseConfig } = environment
+const { firebaseConfig } = environment;
 
 @NgModule({
   exports: [],
-  imports: [
-    CommonModule,
-    AngularFireModule,
-    AngularFireAnalyticsModule,
-    AngularFireModule.initializeApp(firebaseConfig),
-    AngularFirestoreModule,
-  
-  ]
+  imports: [CommonModule],
+  providers: [
+    provideFirebaseApp(() => initializeApp(firebaseConfig)),
+    provideFirestore(() => getFirestore()),
+    provideAnalytics(() => getAnalytics()),
+  ],
 })
-export class FirebaseModule { }
+export class FirebaseModule {}
