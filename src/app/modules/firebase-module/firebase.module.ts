@@ -12,9 +12,9 @@ const { firebaseConfig } = environment;
   exports: [],
   imports: [CommonModule],
   providers: [
-    provideFirebaseApp(() => initializeApp(firebaseConfig)),
-    provideFirestore(() => getFirestore()),
-    provideAnalytics(() => getAnalytics()),
+    // provideFirebaseApp(() => initializeApp(firebaseConfig)),
+    // provideFirestore(() => getFirestore()),
+    // provideAnalytics(() => getAnalytics()),
   ],
 })
 export class FirebaseModule {}

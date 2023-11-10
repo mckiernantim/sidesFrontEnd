@@ -8,6 +8,7 @@
     "declaration": false,
     "downlevelIteration": true,
     "experimentalDecorators": true,
+   
     "module": "esnext",
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
@@ -35,6 +36,7 @@
   "angularCompilerOptions": {
     "fullTemplateTypeCheck": true,
     "strictInjectionParameters": true,
-    "types": [ "node" ]
+    "types": [ "node" ],
+    "enableIvy":false,
   },
 }

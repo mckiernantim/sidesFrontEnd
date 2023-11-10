@@ -36,7 +36,7 @@
               "stream"
             ]
           },
-          "proxyConfig": "src/proxy.conf.json",
+          
           "configurations": {
             "production": {
               "fileReplacements": [
@@ -79,23 +79,17 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "buildTarget": "sideWays:build"
-          },
+            "browserTarget": "sideWays:build"  
+           },
           "configurations": {
             "production": {
-              "buildTarget": "sideWays:build:production"
+              "browserTarget": "sideWays:build:production"
             },
             "dev": {
-              "buildTarget": "sideWays:build:dev"
+              "browserTarget": "sideWays:build:dev"
             }
           },
           "defaultConfiguration": "dev"
-        },
-        "extract-i18n": {
-          "builder": "@angular-devkit/build-angular:extract-i18n",
-          "options": {
-            "buildTarget": "sideWays:build"
-          }
         },
         "test": {
           "builder": "@angular-devkit/build-angular:karma",
