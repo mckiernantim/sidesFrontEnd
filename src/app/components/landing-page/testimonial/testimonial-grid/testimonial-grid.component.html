@@ -1,19 +1,18 @@
 <section class="bg-white text-black relative">
     <div class="mx-auto w-full max-w-7xl px-5 py-34 md:px-10 md:py-24 relative z-10">
       <div class="mb-8 text-center md:mb-12">
-        <!-- Heading -->
-        <h2 class="text-3xl font-bold md:text-5xl">Who We've Worked With</h2>
-        <!-- Subheading -->
+        <h2 class="text-3xl font-bold md:text-5xl relative">
+            <span class="horizontal-bar top"></span>
+            <span class="content-span">
+              Who We've Worked With
+            </span>
+            <span class="horizontal-bar bottom"></span>
+          </h2>
       </div>
-  
-      <!-- Grid container for the items -->
       <div class="grid grid-cols-7 gap-5 md:gap-4 relative z-10">
-        <!-- Grid items go here -->
         <app-testimonial-item *ngFor="let film of films, let i= index;" [film]=film [poster]="posters[i]"></app-testimonial-item>
       </div>
     </div>
-  
-    <!-- Blue bar centered within the section -->
-    <div class="absolute top-1/2 left-0 right-0 transform -translate-y-1/2 bg-primary h-1/3"></div>
+    <div class="absolute top-1/2 left-0 right-0 transform -translate-y-1/2 bg-primary h-1/6"></div>
   </section>
   
