@@ -1,52 +1,8 @@
-<div class="dash-container">
-  <div>
-    <h1 class="project-title">Generating sides for
-      {{ script }} - {{ date | date }}</h1>
-  </div>
+<div class="dash-container grid grid-cols-2 text-white">
+  
   <div class="main-container two-column cell">
     <ng-container *ngIf="!checkoutReady; else lastLooks">
       
-      <div class="controls-container">
-        <div class="selected-container">
-          <div>
-            <h2> {{script}} - Selected Scenes </h2>
-          </div>
-          <div>
-            <h2 (change)="toggleWatermark()">Watermarks? <label class="switch">
-                <input type="checkbox">
-                <span class="slider round"></span>
-              </label>
-            </h2>
-          </div>
-        </div>
-        <app-add-callsheet></app-add-callsheet>
-        <ng-container>
-          <div *ngIf="waterMarkState">
-            <form>
-              <h2>Add Watermark</h2>
-              <input type='text' id=watermark [(ngModel)]=this.watermark [ngModelOptions]="{standalone: true}">
-              <button mat-raised-button color="warn" [disabled] = "!this.watermark" (click)="addWaterMark(this.watermark)">update</button>
-            </form>
-          </div>
-        </ng-container>
-        <h2>{{date | date: 'shortDate' }} scenes:</h2>
-        
-        <ul>
-          <ng-container>
-            <li *ngIf="this.watermark">
-              <pre> watermark: {{this.watermark}}</pre>
-            </li>
-            
-            <li *ngFor="let scene of selected">
-              <pre>{{scene.sceneNumber}}     {{scene.text}}     {{scene.sceneNumber}}</pre>
-            </li>
-          </ng-container>
-        </ul>
-        <div>
-          <button mat-raised-button color="warn" (click)="toggleCheckout()" [disabled]="selected.length === 0">getPDF</button>
-        </div>
-  
-      </div>
       <div class="data-feed cell">
         <div class="mat-elevation-z8 table-container">
           <h2> {{ script }} scenes</h2>
@@ -95,11 +51,55 @@
       </div>
 
     </ng-container>
+    <!-- Render app-last-looks component with selected value -->
     <ng-template #lastLooks >
       <div *ngIf="this.finalDocReady; else lastLooks">
-        <!-- Render app-last-looks component with selected value -->
         <app-last-looks [doc]="finalDocument"></app-last-looks>
       </div>
     </ng-template>
+  </div>
+  <div class="flex flex-col">
+    <h1 class="py-20 text-3xl">Generating sides for
+      <br>
+     <p class="pt-4">{{ script }} - {{ date | date }}</p> 
+    </h1>
+      <div class="selected-container">
+        <ng-container >
+          <ul>
+            <ng-container>
+              <li *ngIf="this.watermark">
+                <pre> watermark: {{this.watermark}}</pre>
+              </li>
+              
+              <li *ngFor="let scene of selected">
+                <pre>{{scene.sceneNumber}}     {{scene.text}}     {{scene.sceneNumber}}</pre>
+              </li>
+            </ng-container>
+          </ul>
+        </ng-container>
+        <div>
+          <h2 (change)="toggleWatermark()">Watermarks? <label class="switch">
+              <input type="checkbox">
+              <span class="slider round"></span>
+            </label>
+          </h2>
+        </div>
+      </div>
+      <div class="controls-container">
+        <!-- <app-add-callsheet></app-add-callsheet> -->
+        <!-- <ng-container>
+          <div *ngIf="waterMarkState">
+            <form>
+              <h2>Add Watermark</h2>
+              <input type='text' id=watermark [(ngModel)]=this.watermark [ngModelOptions]="{standalone: true}">
+              <button mat-raised-button color="warn" [disabled] = "!this.watermark" (click)="addWaterMark(this.watermark)">update</button>
+            </form>
+          </div>
+        </ng-container > -->
+        <div>
+          <button mat-raised-button color="warn" (click)="toggleCheckout()" [disabled]="selected.length === 0">getPDF</button>
+        </div>
+    
+      </div>
   </div>
 </div>

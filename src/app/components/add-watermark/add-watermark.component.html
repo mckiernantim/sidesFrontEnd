@@ -1,0 +1,9 @@
+<ng-container>
+    <div *ngIf="displayWaterMark">
+      <form>
+        <h2>Add Watermark</h2>
+        <input type='text' id=watermark [(ngModel)]=this.watermark [ngModelOptions]="{standalone: true}">
+        <button mat-raised-button color="warn" [disabled] = "!this.watermark" (click)="addWaterMark(this.watermark)">update</button>
+      </form>
+    </div>
+  </ng-container >

@@ -217,4 +217,9 @@ export class LastLooksComponent implements OnInit {
       }
     );
   }
+  waterMarkPages(watermark:string, doc:any) {
+    doc.forEach((page) => {
+      page[0].watermarkText = watermark;
+    });
+  }
 }
