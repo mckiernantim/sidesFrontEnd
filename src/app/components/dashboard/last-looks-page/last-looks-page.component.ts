@@ -242,11 +242,12 @@ export class LastLooksPageComponent {
   changeType(newCategory: string) {
    
     // Update the line's category property
-    this.selectedLine.calculatedXpos = this.xPositionsForLines[newCategory];
+    debugger
     if(newCategory === 'line-out') {
       
       this.toggleStrikethroughLine()
     } else {
+      this.selectedLine.calculatedXpos = this.xPositionsForLines[newCategory];
       this.selectedLine.category = newCategory;
       this.selectedLine.xPos, this.selectedLine.calculatedXpos = this.xPositionsForLines[newCategory]
       this.closeContextMenu();

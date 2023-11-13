@@ -6,7 +6,7 @@ import { Component, EventEmitter, Output} from '@angular/core';
   styleUrls: ['./add-watermark.component.css']
 })
 export class AddWatermarkComponent {
-  displayWatermark: boolean;
+  displayWaterMark: boolean;
   waterMark:string = null;
   addWaterMark: Function;
   @Output() waterMarkUpdate = new EventEmitter<string>();
@@ -15,7 +15,9 @@ export class AddWatermarkComponent {
     // get data from inpit';
     this.waterMarkUpdate.emit(this.waterMark);
   }
-  
+  toggleDisplayWaterMark () {
+    this.displayWaterMark = !this.displayWaterMark;
+  }
 }
 
 

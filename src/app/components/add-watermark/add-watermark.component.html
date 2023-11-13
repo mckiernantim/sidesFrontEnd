@@ -1,9 +1,16 @@
 <ng-container>
+    <div>
+        <h2 (change)="toggleDisplayWaterMark()">Add WaterMark <label class="switch">
+            <input type="checkbox">
+            <span class="slider round"></span>
+          </label>
+        </h2>
+    </div>
     <div *ngIf="displayWaterMark">
       <form>
         <h2>Add Watermark</h2>
-        <input type='text' id=watermark [(ngModel)]=this.watermark [ngModelOptions]="{standalone: true}">
-        <button mat-raised-button color="warn" [disabled] = "!this.watermark" (click)="addWaterMark(this.watermark)">update</button>
+        <input type='text' id=watermark [(ngModel)]=this.waterMark [ngModelOptions]="{standalone: true}">
+        <button mat-raised-button color="warn" [disabled] = "!this.displayWaterMark" (click)="emitValue()">update</button>
       </form>
     </div>
   </ng-container >

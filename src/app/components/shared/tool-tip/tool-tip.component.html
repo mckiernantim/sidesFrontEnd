@@ -1,0 +1,23 @@
+<section>
+    <!-- Container -->
+    <div class="flex items-center justify-center text-black">
+        <!-- Component -->
+        <div class="relative min-h-[30rem] bottom-[20rem] left-[10rem] gap-4 min-w-[700px] md:max-w-[800px] z-10">
+            <div class="relative  items-start gap-4 rounded-md bg-[#f2f2f7] p-6">
+                <h3 class="text-3xl font-bold">Introducing Last Looks Editing</h3>
+                <p class="text-lg mb-4">Full edit functionality for your document before PDF generation</p>
+                <div *ngFor="let item of data">
+                    <div class="text-left p-62">
+                        <p class="text-sm text-[#636262] sm:text-base px-8"><strong class="font-semibold">{{item.title}}:</strong>{{item.text}}</p>
+                    </div>
+                </div>
+                <div class="flex flex-row justify-between pt-4 "> 
+                    <button mat-raised-button color="warn" class="font-semibold" (click)="toolTipButton.emit('restDoc')"> Reset Document </button>
+                    <button mat-raised-button color="warn" class="font-semibold" (click) = "toolTipButton.emit('stopEdit')"> Stop Editing </button>
+                    <button mat-raised-button color="warn" class="font-semibold" (click) = "toolTipButton.emit('undo')"> Undo </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+

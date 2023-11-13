@@ -7,16 +7,8 @@
       [disabled]="currentPageIndex === 0">Previous</button>
   </div>
   <div class="page-container">
-    <app-last-looks-page [page]="currentPage" [canEditDocument]="canEditDocument">
+    <app-last-looks-page [page]="currentPage" [canEditDocument]="editState">
     </app-last-looks-page>
-    <aside class="controls-container">
-      <app-add-callsheet></app-add-callsheet>
-      <app-add-watermark (waterMarkUpdate) ="waterMarkPages($event, this.doc)"></app-add-watermark>
-      <button mat-raised-button color="warn" (click)="getPDF()">GET MY SIDES</button>
-      <div class="edit-controls-container">
-        <button mat-raised-button color="warn" (click)="toggleEditMode()">Edit Sides</button>
-      </div>
-    </aside>
   </div>
-
+  
 </main>

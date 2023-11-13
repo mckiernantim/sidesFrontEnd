@@ -25,6 +25,11 @@ export interface pdfServerRes {
   status:string
   fileName:string
 }
+interface toolTipOption  {
+  title:string;
+  text:string,
+  ind:number
+}
 @Component({
   selector: 'app-dashboard-right',
   templateUrl: './dashboard-right.component.html',
@@ -36,11 +41,21 @@ export class DashboardRightComponent implements OnInit {
   active: boolean = true;
   waitingForScript: boolean = false;
   finalDocReady: boolean = false;
-  checkoutReady: boolean = false;
-  coverReady: boolean = false;
+  lastLooksReady: boolean = false;
+  callsheetReady: boolean = false;
   finalPdfData: any = {};
   linesReady: boolean;
   waterMarkState: boolean;
+
+  // LAST LOOKS STATE
+  editLastLooksState:boolean = false;
+  toolTipContent:toolTipOption[] = [
+    {title:"Selecting Lines", text:"Left-click to choose a line. Edit the content directly on the page.", ind:2},
+    {title:"Adjusting Position", text:"Click and hold to drag and drop lines to adjust positioning", ind:0},
+    {title:"Reclassifying Lines:", text:"Right Click a line to reclassify or toggle line-through", ind:1},
+    {title: "Undo Changes", text:"Easily undo your last change by selecting 'Undo.", ind:3}
+
+  ]
   // DATA FOR SCRIPT
   scriptData;
   displayedColumns: string[] = [
@@ -64,12 +79,11 @@ export class DashboardRightComponent implements OnInit {
   length: number;
   totalPages: any;
   callSheetPath: string;
-  callsheet: any;
   scriptLength: number;
   date: number;
   totalLines: any;
   finalDocument: any;
-  coverSheet:string;
+  callsheet:string;
 
   watermark: string;
   script: string = localStorage.getItem('name');
@@ -91,8 +105,6 @@ export class DashboardRightComponent implements OnInit {
     public dialog: MatDialog,
     public errorDialog: MatDialog,
     public lineOut: LineOutService,
-    private tokenService: TokenService,
-    private datePipe: DatePipe,
 
   ) {
     // DATA ITEMS FOR FUN
@@ -119,7 +131,7 @@ export class DashboardRightComponent implements OnInit {
     // SAVED ON THE SERVICE
     this.scriptData = this.upload.lineArr
     this.totalPages = this.upload.pagesArr || null;
-    this.checkoutReady = false
+    this.lastLooksReady = false
 
     // if(!this.scriptData) {
     //   alert("script upload failed - rerouting to upload page")
@@ -195,6 +207,7 @@ export class DashboardRightComponent implements OnInit {
   addWaterMark(line) {
     this.watermark = line;
     alert(line + ' has been recorded as watermark');
+    this.waterMarkPages(this.watermark, this.finalDocument.doc.data);
   }
   getPreview(ind) {
     return (this.scenes[ind].preview =
@@ -214,7 +227,9 @@ export class DashboardRightComponent implements OnInit {
       }
     }
   }
-
+  handleCallSheetUpload(callsheet) {
+    this.callsheet = callsheet
+  }
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     this.dataSource.filter = filterValue.trim().toLowerCase();
@@ -504,27 +519,7 @@ makeVisible(sceneArr, breaks) {
     this.finalDocReady = true;
   };
 
-  /// ***********  UPLOAD THE PDF FIRST THEN ONCE ITS DONE FIRE BACK THE COVER SHEET ***********
-    // this.upload.generatePdf(finalDocument).subscribe((data:pdfServerRes) => {
-
-    //   // this.router.navigate(['complete'])
-    //   // this.stripe.startCheckout().subscribe((res:any) => {
-    //   //   this.tokenService.setToken(res.sessionToken);
-    //   //   const stripeCheckoutUrl = res.url;
-    //   //   window.location.href = stripeCheckoutUrl;
-    //   // })
-    // },
-    // (err) =>{
-    //  const errorRef =  this.errorDialog.open(IssueComponent, {
-    //     width: '60%',
-    //     data: {
-    //       err
-    //     },
-    //   });
-    //   errorRef.afterClosed().subscribe((res) => {
-    //     console.log(res)
-    //   })
-    // });
+ 
 
 
 
@@ -584,9 +579,10 @@ makeVisible(sceneArr, breaks) {
     return this.scriptData[scene.lastLine].page || null;
   };
   // this function renders an IssueComponent with 60% width
-  toggleCheckout(){
-    this.checkoutReady = !this.checkoutReady
-    if(this.checkoutReady) {
+  toggleLastLooks(){
+    this.lastLooksReady = !this.lastLooksReady
+    // deprecated
+    if(this.lastLooksReady) {
     this.finalPdfData  = {
         selected: this.selected,
         script: this.script,
@@ -594,11 +590,14 @@ makeVisible(sceneArr, breaks) {
         callsheet: this.callsheet,
         waitingForScript: true,
       }
-      this.coverSheet = localStorage.getItem("callSheetPath")
+      this.callsheet = localStorage.getItem("callSheetPath")
       this.waitingForScript = true;
       // this.openFinalSpinner();
-      this.getPdf(this.selected, this.script, this.totalPages, this.coverSheet );
+      this.getPdf(this.selected, this.script, this.totalPages, this.callsheet );
     } 
+  }
+  toggleEditStateInLastLooks() {
+    this.editLastLooksState = !this.editLastLooksState
   }
   openDialog() {
     if (this.modalData) {

@@ -1,7 +1,7 @@
 <div class="dash-container grid grid-cols-2 text-white">
   
   <div class="main-container two-column cell">
-    <ng-container *ngIf="!checkoutReady; else lastLooks">
+    <ng-container *ngIf="!lastLooksReady; else lastLooks">
       
       <div class="data-feed cell">
         <div class="mat-elevation-z8 table-container">
@@ -54,9 +54,11 @@
     <!-- Render app-last-looks component with selected value -->
     <ng-template #lastLooks >
       <div *ngIf="this.finalDocReady; else lastLooks">
-        <app-last-looks [doc]="finalDocument"></app-last-looks>
+        <app-last-looks [doc]="finalDocument" [editState] = "editLastLooksState"></app-last-looks>
       </div>
     </ng-template>
+
+
   </div>
   <div class="flex flex-col">
     <h1 class="py-20 text-3xl">Generating sides for
@@ -70,6 +72,9 @@
               <li *ngIf="this.watermark">
                 <pre> watermark: {{this.watermark}}</pre>
               </li>
+              <div *ngIf="callsheet">
+                <li>Callsheet: {{ callsheet }}</li>
+            </div>
               
               <li *ngFor="let scene of selected">
                 <pre>{{scene.sceneNumber}}     {{scene.text}}     {{scene.sceneNumber}}</pre>
@@ -77,29 +82,46 @@
             </ng-container>
           </ul>
         </ng-container>
-        <div>
-          <h2 (change)="toggleWatermark()">Watermarks? <label class="switch">
-              <input type="checkbox">
-              <span class="slider round"></span>
-            </label>
-          </h2>
-        </div>
       </div>
       <div class="controls-container">
-        <!-- <app-add-callsheet></app-add-callsheet> -->
-        <!-- <ng-container>
-          <div *ngIf="waterMarkState">
-            <form>
-              <h2>Add Watermark</h2>
-              <input type='text' id=watermark [(ngModel)]=this.watermark [ngModelOptions]="{standalone: true}">
-              <button mat-raised-button color="warn" [disabled] = "!this.watermark" (click)="addWaterMark(this.watermark)">update</button>
-            </form>
+        <ng-container  *ngIf="!lastLooksReady; else lastLooksControls">
+          <div>
+            <button mat-raised-button color="warn" (click)="toggleLastLooks()" [disabled]="selected.length === 0">getPDF</button>
           </div>
-        </ng-container > -->
-        <div>
-          <button mat-raised-button color="warn" (click)="toggleCheckout()" [disabled]="selected.length === 0">getPDF</button>
-        </div>
-    
+        </ng-container>
+   
+        <ng-template #lastLooksControls>
+          <div class="grid grid-cols-3 space-around py-10">
+            <div class="p-4">
+              <button mat-raised-button color="warn" (click)="toggleEditStateInLastLooks()" class="bg-accent">Edit Pdf</button>
+              <ng-container>
+                <div *ngIf="editLastLooksState" >
+                    <app-tool-tip  [data]="toolTipContent"></app-tool-tip>
+                </div>
+              </ng-container>
+
+                 
+            </div>
+            <div class="p-4">
+              <app-add-watermark (waterMarkUpdate) ="addWaterMark($event)"></app-add-watermark>
+            </div>
+            <div class="p-4">
+              <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
+            </div>
+          </div>
+          <div>
+            <h2>Total: $5.00</h2>  
+            <button mat-raised button color="warn">Proceed To Checkout</button>
+          </div>
+        </ng-template>
       </div>
   </div>
 </div>
+
+
+        
+         
+
+    
+     
+

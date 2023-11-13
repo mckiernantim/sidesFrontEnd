@@ -60,7 +60,7 @@
                         [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex), 'edit-li': canEditDocument && !selectedLine  }"
                         [style.bottom]="line.calculatedYpos"
                         [style.left]="line.calculatedXpos" 
-                        [textContent]="line.text" 
+                        [textContent]="line.text"
                         
                         (input)="canEditDocument && updateText($event, line, lineIndex)"
                         (contextmenu)="canEditDocument 
@@ -70,9 +70,8 @@
                             && handleLeftClick($event, line, lineIndex)"
                         (mousemove)="determineIfWeCanDrag() ? throttledDrag($event) : null"
                         (mouseup)="determineIfWeCanDrag() ? dragDrop.stopDrag($event) : null"
-                        
                         >
-                        {{line.bar}}
+                     
                     </li>
                     <!-- revision asterisks -->
                     <span [class]="line.isRevision + ' hidden'" [style.bottom]="line.calculatedYpos">
