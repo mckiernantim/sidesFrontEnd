@@ -24,20 +24,22 @@
                     </span>
 
                     <!-- scene number span -->
-                    <span [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible" 
+                    <span 
+                    *ngIf="line.category === 'scene-header'" 
+                        [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible" 
                         (click)="toggleSelectedLine($event, line, lineIndex)"
                         [style.bottom]="line.calculatedYpos" 
                         [style.left]="line.calculatedXpos"
                     >
-                        {{ line.sceneNumber }}
+                        {{ line.sceneNumberText }}
                     </span>
 
                     <!-- start span -->
-                    <span
+                    <span  
                         (mouseup)="dragDrop.stopDrag(line)"
                         [class]="(line.bar ? line.bar : 'hideBar')"
                         [style.bottom]="line.calculatedYpos">
-                        <span class="start-span">START {{ line.sceneNumber }} </span>
+                        <span class="start-span">START {{ line.sceneNumberText }} </span>
                     </span>
 
                     <!-- 
@@ -97,10 +99,10 @@
                     </span>
 
                     <!-- right scene number span -->
-                    <span class="scene-number-right {{ line.trueScene }} {{ line.visible }}"
+                    <span *ngIf="line.category === 'scene-header'" class="scene-number-right {{ line.trueScene }} {{ line.visible }}"
                         (click)="toggleSelectedLine($event, line, lineIndex)"
                         [style.bottom]="line.calculatedYpos" [style.right]="line.calculatedXPos">
-                        {{ line.sceneNumber }}
+                        {{ line.sceneNumberText }}
                     </span>
                 </ng-container>
                 

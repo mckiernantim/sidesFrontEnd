@@ -22,6 +22,7 @@ export class LastLooksPageComponent {
   @Input() editPdfOptions: string[];
   @Input() canEditDocument: boolean;
   @Output() functionNullified: EventEmitter<void> = new EventEmitter<void>();
+
   container: HTMLElement;
   undoQueue: any[] = [];
 // values for dragging 
@@ -30,7 +31,7 @@ export class LastLooksPageComponent {
   isLineSelected: boolean = false;
   showContextMenu: boolean = false;
   mouseEvent: MouseEvent | null = null;
-  dragRefreshDelay: number = 100;
+  dragRefreshDelay: number = 200;
   currentYPosDiff: number = 0;
   currentXPosDiff: number = 0;
   yOffset: number | string = 0;
@@ -71,13 +72,12 @@ export class LastLooksPageComponent {
     ];
 
     const firstLi = this.el.nativeElement.querySelector('li');
-
-   
     if (firstLi) firstLi.focus();
     this.container = this.el.nativeElement;
   }
+
+   
   ngOnInit() {
-  
     this.throttledDrag = _.throttle((event:MouseEvent) => {
       this.dragDrop.drag(event), this.dragRefreshDelay
     });
@@ -94,11 +94,11 @@ export class LastLooksPageComponent {
         }
         this.cdRef.markForCheck();
       });
+  
      
   }
 
   ngOnChanges(changes: SimpleChanges) {
-  
     if (
       changes.selectedFunction &&
       changes.selectedFunction.currentValue !== this.selectedFunction
@@ -110,6 +110,7 @@ export class LastLooksPageComponent {
       // Do any additional logic you need here
     }
   }
+  
 
   updatePositon(num: number, str: string): string {
     const dif = parseInt(str) - num;
@@ -117,15 +118,14 @@ export class LastLooksPageComponent {
   }
  
   updateText(event: MouseEvent, line, lineIndex) {
-   
-
     const newText = (event.target as HTMLElement).textContent;
     if(!this.selectedLine) this.toggleSelectedLine(event, line, lineIndex)
     this.selectedLine.text = newText;
     // You can also perform any additional logic here.
   }
+    
+   
  determineIfWeCanDrag():boolean {
-// DRAGGIN LINE IS NOT INSTANTIATING ON SERVOCE SO NO DRAG!
     console.log( this.dragDrop.draggingLine, !this.contextMenuLine)
    if(!this.contextMenuLine && this.dragDrop.draggingLine) {
     return true

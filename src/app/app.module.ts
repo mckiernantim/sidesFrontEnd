@@ -42,7 +42,6 @@ import { AdminComponent } from './components/admin/admin.component';
 import { AdminMainComponent } from './components/admin/admin-main/admin-main.component';
 import { AdminSideBarComponent } from './components/admin/admin-side-bar/admin-side-bar.component';
 import { ConfirmationDialogComponent } from './components/admin/confirmation-dialog/confirmation-dialog.component';
-import { AddCallsheetComponent } from './components/add-callsheet/add-callsheet.component';
 import { CheckoutComponent } from './components/checkout/checkout.component';
 import { LastLooksComponent } from './components/dashboard/last-looks/last-looks.component';
 import { LastLooksPageComponent } from './components/dashboard/last-looks-page/last-looks-page.component';
@@ -52,6 +51,10 @@ import { FeatureCardComponent } from './components/landing-page/feature/feature-
 import { FeatureGridComponent } from './components/landing-page/feature/feature-grid/feature-grid.component';
 import { AboutItemComponent } from './components/landing-page/about/about-item/about-item.component';
 import { AboutItemGridComponent } from './components/landing-page/about/about-item-grid/about-item-grid.component';
+import { AddWatermarkComponent } from './components/add-watermark/add-watermark.component';
+
+import { AddCallsheetComponent } from './components/add-callsheet/add-callsheet.component';
+import { ToolTipComponent } from './components/shared/tool-tip/tool-tip.component'
 
 @NgModule({
     declarations: [
@@ -78,7 +81,6 @@ import { AboutItemGridComponent } from './components/landing-page/about/about-it
         AdminMainComponent,
         AdminSideBarComponent,
         ConfirmationDialogComponent,
-        AddCallsheetComponent,
         CheckoutComponent,
         LastLooksComponent,
         LastLooksPageComponent,
@@ -88,6 +90,9 @@ import { AboutItemGridComponent } from './components/landing-page/about/about-it
         FeatureGridComponent,
         AboutItemComponent,
         AboutItemGridComponent,
+        AddWatermarkComponent,
+        AddCallsheetComponent,
+        ToolTipComponent,
     ],
     imports: [
         BrowserModule,

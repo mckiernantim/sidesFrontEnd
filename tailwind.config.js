@@ -7,6 +7,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      minHeight: {
+        '21rem': '21rem',
+        "12rem" : "12rem"
+      },
       colors: {
         primary: '#001D3D',     // Dark blue
         secondary:'#003566',   // Darker blue

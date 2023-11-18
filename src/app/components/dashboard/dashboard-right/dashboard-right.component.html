@@ -13,7 +13,7 @@
           <table mat-table [dataSource]="dataSource" matSort>
             <ng-container matColumnDef="number">
               <th class="table-scene-num" mat-header-cell *matHeaderCellDef mat-sort-header sticky> Scene Number </th>
-              <td class="table-scene-num" mat-cell *matCellDef="let scene; let i=index"> {{scene.sceneNumber}} </td>
+            <td class="table-scene-num" mat-cell *matCellDef="let scene; let i=index"> {{scene.sceneNumberText}} </td>
             </ng-container>
             <ng-container matColumnDef="page number">
               <th class="table-page-num" mat-header-cell *matHeaderCellDef mat-sort-header sticky> Page Number </th>
@@ -76,7 +76,7 @@
                 <li>Callsheet: {{ callsheet }}</li>
             </div>
               
-              <li *ngFor="let scene of selected">
+              <li class="p-2"*ngFor="let scene of selected">
                 <pre>{{scene.sceneNumber}}     {{scene.text}}     {{scene.sceneNumber}}</pre>
               </li>
             </ng-container>

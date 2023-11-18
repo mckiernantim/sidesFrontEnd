@@ -149,6 +149,7 @@ export class DashboardRightComponent implements OnInit {
     }
 
     // GET SCENES
+    debugger
     if (this.totalPages && this.scriptData) {
       this.scenes = this.scriptData.filter((line) => {
         return line.category === 'scene-header';
