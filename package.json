@@ -6,6 +6,7 @@
     "start": "ng serve",
     "build": "ng build --configuration production",
     "test": "./node_modules/.bin/cypress open",
+    "heroku-postbuild": "mkdir ./.cache && mv /app/.cache/puppeteer ./.cache",
     "lint": "ng lint",
     "e2e": "ng e2e"
   },
