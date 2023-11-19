@@ -4,17 +4,26 @@
   padding:2%;
   text-align:center
 }
+h1,
+h2,
+h3,
+h4,
+li,
+p {
+  color:white;
+}
 .selections-container{
     display:grid;
     grid-template-columns: 1fr 1fr;
-   
+
     justify-items:center;
 }
 .button-wrapper{
-  
+
   padding:10px;
 
 }
+
 
 .icon{
   max-height: 300px;
@@ -24,15 +33,15 @@
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  
+
 }
 .layout-button{
-  
+
 
   padding:5%
 }
 .layout-button:hover{
-  filter: hue-rotate(180deg); 
+  filter: hue-rotate(180deg);
 }
 .close-button{
   margin: 0 auto;

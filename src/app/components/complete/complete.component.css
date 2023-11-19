@@ -28,3 +28,15 @@ mat-mdc-card {
      color: var(--black)!important;
      background: var(--white) !important;
 }
+.mat-mdc-card-header {
+  display: flex;
+  padding: 16px 16px 0;
+  flex-direction: row;
+  align-content: center;
+  justify-content: space-around;
+  align-items: stretch;
+}
+
+.download-container {
+  padding:25px
+}

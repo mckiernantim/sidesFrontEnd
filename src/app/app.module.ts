@@ -1,3 +1,4 @@
+import { NavComponent } from './components/nav/nav.component';
 import { UploadService } from './services/upload/upload.service';
 import { HttpClientModule } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
@@ -11,7 +12,6 @@ import { DashboardRightComponent } from './components/dashboard-right/dashboard-
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { NavComponent } from './components/nav/nav.component';
 import { LayoutModule } from '@angular/cdk/layout';
 
 // material stuff
@@ -21,6 +21,7 @@ import { MatGridListModule } from '@angular/material/grid-list';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSelectModule } from '@angular/material/select';
 import { MatListModule } from '@angular/material/list';
 import { MatInputModule } from '@angular/material/input';
 import { ScriptComponent } from './components/script/script.component';
@@ -33,6 +34,7 @@ import { IssueComponent } from './components/issue/issue.component';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import {MatCheckboxModule} from '@angular/material/checkbox';
 
 // Firebase
 import { provideFirebaseApp, getApp, initializeApp } from '@angular/fire/app';
@@ -40,6 +42,7 @@ import { AngularFireModule } from '@angular/fire/compat';
 import { AngularFireAnalyticsModule } from '@angular/fire/compat/analytics';
 import { AngularFirestoreModule } from '@angular/fire/compat/Firestore';
 import { environment } from '../environments/environment';
+// componeents
 import { DualDialogComponent } from './components/dual-dialog/dual-dialog.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { AboutComponent } from './components/about/about.component';
@@ -54,58 +57,66 @@ import { AdminComponent } from './components/admin/admin.component';
 import { AdminMainComponent } from './components/admin/admin-main/admin-main.component';
 import { AdminSideBarComponent } from './components/admin/admin-side-bar/admin-side-bar.component';
 import { ConfirmationDialogComponent } from './components/confirmation-dialog/confirmation-dialog.component';
+import { MatFormFieldModule } from '@angular/material/form-field';
 @NgModule({
-  declarations: [
-    AppComponent,
-    UploadComponent,
-    DashboardRightComponent,
-    DashboardComponent,
-    NavbarComponent,
-    NavComponent,
-    ScriptComponent,
-    CompleteComponent,
-    IssueComponent,
-    DualDialogComponent,
-    FooterComponent,
-    AboutComponent,
-    DonateComponent,
-    FeedbackComponent,
-    FourOfourComponent,
-    TextBlockComponent,
-    MainNavComponent,
-    SpinningBotComponent,
-    AdminComponent,
-    AdminMainComponent,
-    AdminSideBarComponent,
-    ConfirmationDialogComponent,
-  ],
-  imports: [
-    AngularFireModule,
-    AngularFireModule.initializeApp(environment.firebaseConfig),
-    MatCardModule,
-    AngularFireAnalyticsModule,
-    AngularFirestoreModule,
-    BrowserModule,
-    AppRoutingModule,
-    HttpClientModule,
-    BrowserAnimationsModule,
-    LayoutModule,
-    FormsModule,
-    MatToolbarModule,
-    MatCardModule,
-    MatButtonModule,
-    MatSidenavModule,
-    MatIconModule,
-    MatListModule,
-    MatInputModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatSortModule,
-    MatDialogModule,
-    MatProgressSpinnerModule,
-    MatGridListModule,
-  ],
-  providers: [DatePipe, UploadService, AuthGuardService],
-  bootstrap: [AppComponent],
+    declarations: [
+        AppComponent,
+        UploadComponent,
+        DashboardRightComponent,
+        DashboardComponent,
+        NavbarComponent,
+        NavComponent,
+        ScriptComponent,
+        CompleteComponent,
+        IssueComponent,
+        DualDialogComponent,
+        FooterComponent,
+        AboutComponent,
+        DonateComponent,
+        FeedbackComponent,
+        FourOfourComponent,
+        TextBlockComponent,
+        MainNavComponent,
+        SpinningBotComponent,
+        AdminComponent,
+        AdminMainComponent,
+        AdminSideBarComponent,
+        ConfirmationDialogComponent
+    ],
+    imports: [
+      AngularFireModule,
+       AngularFireModule.initializeApp(environment.firebaseConfig),
+        AngularFireAnalyticsModule,
+        AngularFirestoreModule,
+        BrowserModule,
+        AppRoutingModule,
+        HttpClientModule,
+        BrowserAnimationsModule,
+        LayoutModule,
+        FormsModule,
+        MatToolbarModule,
+        MatCardModule,
+        MatButtonModule,
+        MatSidenavModule,
+        MatIconModule,
+        MatInputModule,
+        MatSelectModule,
+        MatListModule,
+        MatFormFieldModule,
+        MatTableModule,
+        MatPaginatorModule,
+        MatSortModule,
+        MatDialogModule,
+        MatCheckboxModule,
+        MatCardModule,
+        MatProgressSpinnerModule,
+        MatGridListModule
+    ],
+    providers: [
+        DatePipe,
+        UploadService,
+        AuthGuardService,
+    ],
+    bootstrap: [AppComponent]
 })
 export class AppModule {}

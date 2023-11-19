@@ -14,7 +14,9 @@ h3,
 h4 {
     font-weight: bold !important;
 }
-
+button {
+  font-weight: bold;
+}
 html {
     height: 100vh
 }
@@ -79,7 +81,7 @@ p {
 .bold {
     font-weight: 700;
 }
-.title{ 
+.title{
     text-align:center
 }
 
@@ -250,12 +252,12 @@ mat-progress-spinner {
   .delay-6 {
     animation-delay: 5s !important;
   }
-  @keyframes reveal {
+@keyframes reveal {
     from {opacity: 0 }
     to{opacity:100}
   }
   /* The typing effect */
-  @keyframes typing {
+@keyframes typing {
     from { width: 0; }
     to { width: 100%; }
 }
@@ -264,9 +266,22 @@ mat-progress-spinner {
     50% { border-color: black; }
   }
 
+@keyframes rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .spin-image {
+    animation: rotate 1.25s linear infinite;
+  }
 
 @media only screen and (max-width: 1200px) {
     .two-column {
         grid-template-columns: 1fr;
     }
 }
+

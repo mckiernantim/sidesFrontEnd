@@ -7,7 +7,7 @@ Try it out.
 
 ## Summary  
 Live [here](https://scriptthing.firebaseapp.com)
-Sides-Ways is a front end portal built with angular 9, Firenase, Node and Express to create documents for film and television sets
+Sides-Ways is a front end portal built with Angular 2, Firebase, Node and Express to create documents for film and television sets
 
 
 

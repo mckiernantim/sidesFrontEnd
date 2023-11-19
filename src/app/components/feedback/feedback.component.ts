@@ -35,7 +35,7 @@ export class FeedbackComponent implements OnInit {
       ""
     );
   }
-  
+
 
   onSubmit() {
     this.currentTicket.date = new Date().toISOString()
