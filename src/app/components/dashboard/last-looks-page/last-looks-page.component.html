@@ -62,7 +62,7 @@
                         [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex), 'edit-li': canEditDocument && !selectedLine  }"
                         [style.bottom]="line.calculatedYpos"
                         [style.left]="line.calculatedXpos" 
-                        [textContent]="line.text + ' '  + line.calculatedYpos"
+                        [textContent]="line.text + ' '  + line.hidden"
                         
                         (input)="canEditDocument && updateText($event, line, lineIndex)"
                         (contextmenu)="canEditDocument 
@@ -109,11 +109,11 @@
                 <div *ngIf="showContextMenu" class="context-menu" [style.left.px]="mouseEvent.clientX"
                     [style.top.px]="mouseEvent.clientY">
                     <ul>
-                         <li *ngFor="let choice of classificationChoices" (click)="changeType(choice)"
+                         <li *ngFor="let choice of classificationChoices" (click)="changeLineCategory(choice)"
                             class="classification-option">  
                             {{ choice }}
                         </li>
-                        <li (click)="changeType('hidden')" class="classification-option">delete</li>
+                        <li (click)="changeLineCategory('hidden')" class="classification-option">delete</li>
                     </ul>
                 </div>
             </ul>

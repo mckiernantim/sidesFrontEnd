@@ -59,17 +59,17 @@ export class LastLooksPageComponent {
     private cdRef: ChangeDetectorRef,
     private el: ElementRef,
     public dragDrop: DragDropService,
-    private undo: UndoService
-  ) //not sure why Function throwing err
-  {
+    private undo: UndoService //not sure why Function throwing err
+  ) {
     this.classificationChoices = [
-      'line-out',
       'description',
       'dialog',
       'scene-header',
       'character',
       'parenthetical',
       'shot',
+      'line-out',
+      'delete'
     ];
 
     const firstLi = this.el.nativeElement.querySelector('li');
@@ -145,8 +145,8 @@ export class LastLooksPageComponent {
       // add to the queue at start of drag
       this.dragDrop.startDragBar(event);
     } else {
-       // add to the queue at start of drag
-      this.undo.addToUndoQueue({...this.selectedLine})
+      // add to the queue at start of drag
+      this.undo.addToUndoQueue({ ...this.selectedLine });
       this.dragDrop.startDrag({ event, line, lineIndex });
     }
   }
@@ -218,20 +218,21 @@ export class LastLooksPageComponent {
     this.undo.addToUndoQueue({ ...this.selectedLine });
   }
 
-  changeType(newCategory: string) {
+  changeLineCategory(newCategory: string) {
+    this.recordLineStateToUndoQueueBeforeChange();
     if (newCategory === 'line-out') {
-      this.recordLineStateToUndoQueueBeforeChange();
       this.toggleStrikethroughLine();
+    } else if ((newCategory = 'delete')) {
+      this.toggleHiddenOnLine();
     } else {
-      this.recordLineStateToUndoQueueBeforeChange();
       this.selectedLine.calculatedXpos = this.xPositionsForLines[newCategory];
       this.selectedLine.category = newCategory;
       this.selectedLine.xPos,
         (this.selectedLine.calculatedXpos =
           this.xPositionsForLines[newCategory]);
       this.closeContextMenu();
-      this.cdRef.markForCheck();
     }
+    this.cdRef.markForCheck();
   }
 
   toggleStrikethroughLine(): void {
@@ -240,5 +241,11 @@ export class LastLooksPageComponent {
     } else {
       this.selectedLine.visible = 'true';
     }
+  }
+  toggleHiddenOnLine() {
+    console.log(this.selectedLine.hidden ,this.selectedLine)
+    !this.selectedLine.hidden
+      ? (this.selectedLine.hidden = 'hidden')
+      : (this.selectedLine.hidden = null);
   }
 }

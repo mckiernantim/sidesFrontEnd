@@ -36,6 +36,7 @@ export interface Line {
   calculatedXpos?:any
   calculatedYpos?:any
   calculatedEnd?:string | number
+  hidden?:"hidden" | null;
   
   
 }

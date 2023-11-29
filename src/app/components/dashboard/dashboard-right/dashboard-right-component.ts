@@ -445,7 +445,8 @@ makeVisible(sceneArr, breaks) {
       'short-dialog',
       'parenthetical',
       'more',
-      "shot"
+      "shot",
+      "delete"
     ];
     // LOOP FOR PAGES
     for (let i = 0; i < finalDocument.data.length; i++) {
