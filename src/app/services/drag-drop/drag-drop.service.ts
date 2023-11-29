@@ -34,7 +34,7 @@ export class DragDropService {
   updateComponent() {
    
     // drag is not firing here for some reason - maybe the stop isnt registering
-    const reset = this.selectedLine || this.draggingBar ? null : true
+    const reset = this.selectedLine || this.draggingBar ? this.selectedLine: true
     this.update.next(reset);
   }
   setSelectedLine(line: Line) {

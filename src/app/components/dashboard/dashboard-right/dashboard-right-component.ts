@@ -19,6 +19,8 @@ import {
 import { StripeService } from 'src/app/services/stripe/stripe.service';
 import { Subscription } from 'rxjs';
 import { DatePipe } from '@angular/common';
+import { UndoService } from 'src/app/services/edit/undo.service';
+import { Line } from 'src/app/types/Line';
 
 
 export interface pdfServerRes {
@@ -46,6 +48,7 @@ export class DashboardRightComponent implements OnInit {
   finalPdfData: any = {};
   linesReady: boolean;
   waterMarkState: boolean;
+
 
   // LAST LOOKS STATE
   editLastLooksState:boolean = false;
@@ -83,6 +86,9 @@ export class DashboardRightComponent implements OnInit {
   date: number;
   totalLines: any;
   finalDocument: any;
+  resetFinalDocState: boolean  = false;
+  fireUndo: boolean = false;
+  initialFinalDocState: Line[];
   callsheet:string;
 
   watermark: string;
@@ -101,6 +107,7 @@ export class DashboardRightComponent implements OnInit {
     public cdr: ChangeDetectorRef,
     public stripe: StripeService,
     public upload: UploadService,
+    public undoService:UndoService,
     public router: Router,
     public dialog: MatDialog,
     public errorDialog: MatDialog,
@@ -136,7 +143,6 @@ export class DashboardRightComponent implements OnInit {
     // if(!this.scriptData) {
     //   alert("script upload failed - rerouting to upload page")
     //   this.router.navigate(["/"])
-    // }
 
     if (this.scriptData) {
       // GET CHARS
@@ -149,7 +155,7 @@ export class DashboardRightComponent implements OnInit {
     }
 
     // GET SCENES
-    debugger
+   
     if (this.totalPages && this.scriptData) {
       this.scenes = this.scriptData.filter((line) => {
         return line.category === 'scene-header';
@@ -510,12 +516,14 @@ makeVisible(sceneArr, breaks) {
         }
       }
     }
+    this.initialFinalDocState = {...finalDocument.data}
     this.finalDocument.doc = finalDocument;
 
     // finalDocument = this.lineOut.makeX(finalDocument)
     if (this.watermark) {
       this.waterMarkPages(this.watermark, finalDocument.data);
     }
+    console.log(this.finalDocument)
     this.finalDocument = finalDocument;
     this.finalDocReady = true;
   };
@@ -579,12 +587,11 @@ makeVisible(sceneArr, breaks) {
   getLastPage = (scene) => {
     return this.scriptData[scene.lastLine].page || null;
   };
-  // this function renders an IssueComponent with 60% width
   toggleLastLooks(){
     this.lastLooksReady = !this.lastLooksReady
     // deprecated
     if(this.lastLooksReady) {
-    this.finalPdfData  = {
+      this.finalPdfData  = {
         selected: this.selected,
         script: this.script,
         totalPages: this.totalPages.length - 1,
@@ -597,9 +604,8 @@ makeVisible(sceneArr, breaks) {
       this.getPdf(this.selected, this.script, this.totalPages, this.callsheet );
     } 
   }
-  toggleEditStateInLastLooks() {
-    this.editLastLooksState = !this.editLastLooksState
-  }
+  
+  // this function renders an IssueComponent with 60% width
   openDialog() {
     if (this.modalData) {
       const dialogRef = this.dialog.open(IssueComponent, {
@@ -617,7 +623,40 @@ makeVisible(sceneArr, breaks) {
       });
     } else this.getPdf(this.selected, this.script, this.totalPages, '');
   }
+  triggerLastLooksAction(str) {
+    if(str === "resetDoc") {
+      this.resetFinalDocState = !this.resetFinalDocState;
+      return 
+    }
+    if(str === "undo") {
+      this.fireUndo = !this.fireUndo
+    }
+
+    
+  }
+  
+  handleToolTipClicked(str) {
+    switch (true) {
+      case str === "undo":
+        this.undoService.undo()
+        break;
+      case str === "resetDoc" :
+        console.log("firign reset")
+       this.triggerLastLooksAction(str)
+        
+        break;
+      case str ==="stopEdit" :
+        this.toggleEditStateInLastLooks()
+    }
+  }
+  toggleEditStateInLastLooks() {
+    console.log()
+    this.editLastLooksState = !this.editLastLooksState
+  }
+
+
   setLastLines(i) {
+   
     let last;
     let currentScene = this.scenes[i];
     let sceneInd;

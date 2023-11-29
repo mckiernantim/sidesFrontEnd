@@ -10,9 +10,14 @@ interface toolTipOption  {
   templateUrl: './tool-tip.component.html',
   styleUrls: ['./tool-tip.component.css']
 })
+
+
 export class ToolTipComponent {
-
+  
   @Input() data:toolTipOption[];
-  @Output() toolTipButton: EventEmitter<string> = new EventEmitter<string>(); 
+  @Output() buttonAction: EventEmitter<string> = new EventEmitter<string>(); 
 
+log(str) {
+ alert(str)
+}
 }

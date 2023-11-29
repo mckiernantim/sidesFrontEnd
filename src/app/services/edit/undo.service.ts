@@ -10,31 +10,34 @@ interface QueueItem {
   providedIn: 'root',
 })
 export class UndoService {
-  private undoQueue: QueueItem[] = [];
-  private undoQueueSource = new Subject<QueueItem[]>();
-  public currentPage:number; 
+  public undoQueue: QueueItem[] = [];
+  private undoQueueSource = new Subject<QueueItem>();
+  // this is set in our last-looks-component
+  public currentPageIndex:number; 
   undoQueue$ = this.undoQueueSource.asObservable();
 
   addToUndoQueue(line:Line) {
     const changeToAdd: QueueItem = {
-      pageIndex:this.currentPage,
+      pageIndex:this.currentPageIndex,
       line,
     }
     this.undoQueue.push(changeToAdd);
-    this.notifyUndoQueueChange();
+    console.log(changeToAdd)
+    console.log("undo queue added", this.undoQueue)
   }
 
   undo() {
     if (this.undoQueue.length > 0) {
-      this.undoQueue.pop();
-      this.notifyUndoQueueChange();
+     const last =  this.undoQueue.pop();
+      this.notifyUndoQueueChange(last);
     }
   }
   resetQueue() {
     this.undoQueue = [];
   }
-  private notifyUndoQueueChange() {
-    this.undoQueueSource.next([...this.undoQueue]);
+  private notifyUndoQueueChange(val:QueueItem) {
+    this.undoQueueSource.next(val);
   }
+
 }
 

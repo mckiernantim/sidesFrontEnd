@@ -1,10 +1,15 @@
-import { Component, Input, OnInit, Output, EventEmitter,  } from '@angular/core';
+import { Component, Input, OnInit, Output, EventEmitter, SimpleChanges, ChangeDetectorRef  } from '@angular/core';
 import { Line } from 'src/app/types/Line';
 import { UploadService } from 'src/app/services/upload/upload.service';
 import { StripeService } from 'src/app/services/stripe/stripe.service';
 import { TokenService } from 'src/app/services/token/token.service';
 import { Router } from '@angular/router';
-
+import { UndoService } from 'src/app/services/edit/undo.service';
+import { Observable, Subscription } from 'rxjs';
+interface QueueItem {
+  pageIndex:number;
+  line:Line
+}
 
 @Component({
   selector: 'app-last-looks',
@@ -15,31 +20,65 @@ export class LastLooksComponent implements OnInit {
   constructor(
     private upload: UploadService,
     private stripe: StripeService,
+    public undoService:UndoService,
     private token: TokenService,
-    private router: Router
+    private router: Router,
+    private cdRef:ChangeDetectorRef
   ) {}
   // doc is given to our component
   @Input() doc: any;
   @Input() editState:boolean;
+  @Input() resetDocState:string;
+  @Input() undoState:string;
+  @Input() triggerLastLooksAction:Function
   @Output() selectedEditFunctionChange: EventEmitter<string> =
     new EventEmitter<string>();
-  pages: [];
+  pages: any[];
+  initialDocState:any[];
   currentPageIndex: number = 0;
   currentPage: number = 0;
   startingLinesOfDoc = [];
   canEditDocument:boolean = false;
-  
- 
+  docChangesQueue:QueueItem[]; 
   selectedEditFunction: string = 'toggleSelected';
   selectedLine: Line | null = null;
+  undoQueue: Subscription
+
   ngOnInit():void {
     this.pages = this.doc.data;
+    this.initialDocState = this.pages.map(page=> [...page] as Line[]);
+    this.establishInitialLineState()
+    this.undoQueue = this.undoService.undoQueue$.subscribe(change => {
+      const { pageIndex, line } = change;
+      const indexToUpdate = this.pages[pageIndex].findIndex(l => l.index === line.index);
+  
+      if (indexToUpdate !== -1) {
+        // Replace the entire object in the array
+        this.pages[pageIndex][indexToUpdate] = line;
+        // Trigger change detection
+        this.cdRef.markForCheck();
+      }
+    });
+  }
+  
+  ngOnChanges(changes: SimpleChanges) {
+    
+    console.log(changes, " cha-cha-changes")
+    if(this.pages && changes.resetDocState) this.resetDocumentToInitialState();
+    if(this.pages && changes.undoState) this.undoService.undo()
+    if(!this.canEditDocument) {
+      this.selectedLine = null;
+    }
+    
+  }
+  establishInitialLineState() {
     this.processLinesForLastLooks(this.pages);
     this.updateDisplayedPage();
     this.selectedLine = this.doc.data[0][0];
   }
 
   processLinesForLastLooks(arr) {
+    console.log(arr)
     for (let page of arr) {
       page.forEach((line: Line) => {
         this.adjustSceneNumberPosition(line);
@@ -56,9 +95,14 @@ export class LastLooksComponent implements OnInit {
       });
     }
   }
-
+ resetDocumentToInitialState() {
+  this.undoService.resetQueue()
+  this.pages = this.initialDocState;
+  this.processLinesForLastLooks(this.pages);
+ }
   updateDisplayedPage() {
     this.currentPage = this.pages[this.currentPageIndex];
+    this.undoService.currentPageIndex = this.currentPageIndex
   }
   toggleEditMode() {
     this.canEditDocument = !this.canEditDocument

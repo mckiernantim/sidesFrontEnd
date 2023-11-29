@@ -50,11 +50,11 @@
                         Drag triggered by left click, context menu by right;
                         content is editible and updates model on text change after selecting LI
                     -->
-
+                        <!-- disabling content editable for now-->
+                    <!-- [attr.contenteditable]="canEditDocument ? 'true' : 'false'" -->
 
                     <li 
                         autofocus
-                        [attr.contenteditable]="canEditDocument ? 'true' : 'false'"
                         tabindex="0" 
                         [value]="lineIndex" 
                         [class]="line.category + ' ' + line.visible + ' ' + line.hidden" 
@@ -62,7 +62,7 @@
                         [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex), 'edit-li': canEditDocument && !selectedLine  }"
                         [style.bottom]="line.calculatedYpos"
                         [style.left]="line.calculatedXpos" 
-                        [textContent]="line.text"
+                        [textContent]="line.text + ' '  + line.calculatedYpos"
                         
                         (input)="canEditDocument && updateText($event, line, lineIndex)"
                         (contextmenu)="canEditDocument 
@@ -72,9 +72,9 @@
                             && handleLeftClick($event, line, lineIndex)"
                         (mousemove)="determineIfWeCanDrag() ? throttledDrag($event) : null"
                         (mouseup)="determineIfWeCanDrag() ? dragDrop.stopDrag($event) : null"
-                        >
-                     
+                        > 
                     </li>
+                     
                     <!-- revision asterisks -->
                     <span [class]="line.isRevision + ' hidden'" [style.bottom]="line.calculatedYpos">
                         *
