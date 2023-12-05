@@ -40,6 +40,7 @@ export class LastLooksPageComponent {
   contextMenuY: number = 150;
   contextMenuX: number = 150;
   contextMenuLine: Line | null = null;
+  mouseX:number;
   classificationChoices: string[];
   xPositionsForLines: any = {
     parenthetical: '271.7px',
@@ -69,7 +70,6 @@ export class LastLooksPageComponent {
       'parenthetical',
       'shot',
       'line-out',
-      'delete'
     ];
 
     const firstLi = this.el.nativeElement.querySelector('li');
@@ -139,12 +139,14 @@ export class LastLooksPageComponent {
     if (event.button !== 0 || this.contextMenuLine) return;
 
     this.mouseEvent = event;
+    console.log(this.mouseEvent)
     this.toggleSelectedLine(event, line, lineIndex);
 
     if (isDragBar) {
       // add to the queue at start of drag
       this.dragDrop.startDragBar(event);
     } else {
+     
       // add to the queue at start of drag
       this.undo.addToUndoQueue({ ...this.selectedLine });
       this.dragDrop.startDrag({ event, line, lineIndex });
@@ -159,11 +161,11 @@ export class LastLooksPageComponent {
     if (this.isSelectedLine(line, lineIndex)) {
       // Deselect the line if it's already selecte
       this.selectedLine = null;
-      this.dragDrop.setSelectedLine(null);
+      this.dragDrop.setComponentSelectedLine(null);
     } else {
       // Select the line if it's not already selected
       this.selectedLine = this.page[lineIndex];
-      this.dragDrop.setSelectedLine(this.selectedLine);
+      this.dragDrop.setComponentSelectedLine(this.selectedLine);
       this.isLineSelected = !!this.selectedLine;
     }
   }

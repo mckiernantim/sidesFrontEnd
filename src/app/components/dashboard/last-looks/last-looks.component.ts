@@ -6,6 +6,7 @@ import { TokenService } from 'src/app/services/token/token.service';
 import { Router } from '@angular/router';
 import { UndoService } from 'src/app/services/edit/undo.service';
 import { Observable, Subscription } from 'rxjs';
+import { DragDropService } from 'src/app/services/drag-drop/drag-drop.service';
 interface QueueItem {
   pageIndex:number;
   line:Line
@@ -20,6 +21,7 @@ export class LastLooksComponent implements OnInit {
   constructor(
     private upload: UploadService,
     private stripe: StripeService,
+    public drag: DragDropService,
     public undoService:UndoService,
     private token: TokenService,
     private router: Router,
@@ -105,7 +107,9 @@ export class LastLooksComponent implements OnInit {
     this.undoService.currentPageIndex = this.currentPageIndex
   }
   toggleEditMode() {
-    this.canEditDocument = !this.canEditDocument
+    this.canEditDocument = !this.canEditDocument;
+    this.drag
+  
   }
   selectEditFunction(e) {
     this.selectedEditFunctionChange.emit(this.selectedEditFunction);

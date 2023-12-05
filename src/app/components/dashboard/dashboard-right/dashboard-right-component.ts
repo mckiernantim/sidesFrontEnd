@@ -651,8 +651,8 @@ makeVisible(sceneArr, breaks) {
     }
   }
   toggleEditStateInLastLooks() {
-    console.log()
     this.editLastLooksState = !this.editLastLooksState
+    
   }
 
 

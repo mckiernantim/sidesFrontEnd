@@ -6,7 +6,6 @@
     <button mat-raised-button color="warn" (click)="previousPage()"
       [disabled]="currentPageIndex === 0">Previous</button>
   </div>
-  {{undoService.undoQueue.length || null }}
   <div class="page-container">
     <app-last-looks-page 
     [page]="currentPage" 

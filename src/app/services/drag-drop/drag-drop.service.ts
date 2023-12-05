@@ -37,34 +37,36 @@ export class DragDropService {
     const reset = this.selectedLine || this.draggingBar ? this.selectedLine: true
     this.update.next(reset);
   }
-  setSelectedLine(line: Line) {
-    this.selectedLine = line;
-  }
+  // setSelectedLine(line: Line) {
+  //   this.selectedLine = line;
+  // }
   setComponentSelectedLine(line: Line | null) {
     this.selectedLine = line;
-
   }
   drag(event: MouseEvent, bar?:boolean) {
-    
-      if (this.draggingLine) {
-      this.currentXPosDiff = event.clientX - this.initialMouseX;
-      this.currentYPosDiff = event.clientY - this.initialMouseY;
-      this.selectedLine.calculatedYpos = this.initialLineY - this.currentYPosDiff + 'px';
-      this.updateComponent();
-    } else {
-      this.currentXPosDiff = event.clientX - this.selectedLine.barY
-    }
-  }
-  dragBar(event: MouseEvent) {
-    
-    const deltaY = event.clientY - this.initialMouseY;
 
+    
+    if (this.draggingLine) {
+    this.currentXPosDiff = event.clientX - this.initialMouseX;
+    this.currentYPosDiff = event.clientY - this.initialMouseY;
+    this.selectedLine.calculatedYpos = this.initialLineY - this.currentYPosDiff + 'px';
+    this.updateComponent();
+  } else {
+    this.currentXPosDiff = event.clientX - this.selectedLine.barY
+  }
+}
+    
+
+  dragBar(event: MouseEvent) {
+    const deltaY = event.clientY - this.initialMouseY;
     // Calculate the new bar position
     const newBarY = this.initialBarY + deltaY;
     this.selectedLine.calculatedBarY = newBarY.toFixed(2) + 'px';
     event.preventDefault();
     this.updateComponent();
   }
+    
+
    
   startDragBar(event: MouseEvent) {
    
@@ -90,10 +92,6 @@ export class DragDropService {
 
     // Select the line
   }
-    
-
-  
-
   allowDrag() {
 
     if (!this.allowDragTimer) {
@@ -105,10 +103,13 @@ export class DragDropService {
     }
     return false;
   } 
-
+    
   stopDrag(event: MouseEvent) {
     if (this.draggingLine) {
       // Calculate the final position of the line
+      debugger
+      this.currentXPosDiff = event.clientX - this.initialMouseX;
+      this.currentYPosDiff = event.clientY - this.initialMouseY;
       this.processLinePosition();
       this.selectedLine = null;
       this.draggingLine = false;
@@ -130,18 +131,22 @@ export class DragDropService {
     // this.selectedLine.calculatedXpos = newXPosition.toFixed(2) + 'px';
     this.selectedLine.calculatedYpos = newYPosition.toFixed(2) + 'px';
   }
-  
- 
   processBarChange(newBarPosition) {
     const newBarY = this.initialBarY - newBarPosition
     this.selectedLine.calculatedBarY = newBarY.toFixed(2) + 'px';
   }
+  
   updateSelectedLine(x:number,y:number) {
     if(this.selectedLine) {
       this.selectedLine.calculatedXpos = x;
       this.selectedLine.calculatedYpos = y;
     }
   }
+
+  
+
+
+ 
 
 
 }

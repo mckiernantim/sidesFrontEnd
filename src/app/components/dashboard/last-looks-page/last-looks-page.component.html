@@ -1,5 +1,5 @@
 <main class="last-looks-container">
-
+{{this.mouseEvent?.clientY}}
     <div class="page" (click)="showContextMenu && closeContextMenu()">
         <div class="break">
             <ul class="screenbox"
@@ -62,7 +62,7 @@
                         [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex), 'edit-li': canEditDocument && !selectedLine  }"
                         [style.bottom]="line.calculatedYpos"
                         [style.left]="line.calculatedXpos" 
-                        [textContent]="line.text + ' '  + line.hidden"
+                        [textContent]="line.text"
                         
                         (input)="canEditDocument && updateText($event, line, lineIndex)"
                         (contextmenu)="canEditDocument 
@@ -88,7 +88,7 @@
                         (mousemove)="determineIfWeCanDrag() ? throttledDragBar($event): null"
                         (mouseup)="determineIfWeCanDrag() ? dragDrop.stopDrag($event) : null"
                     >
-                        <span class="start-span"> ↓↓{{line.sceneNumberText}} CONTINUED↓↓↓ {{line.calculatedBarY}}</span>
+                        <span class="start-span"> ↓↓{{line.sceneNumberText}} CONTINUED↓↓↓ </span>
                     </span>
 
                     <!-- end span -->
