@@ -42,6 +42,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
   selectionMade: boolean = false;
   waitingForScript: boolean = false;
   error:boolean = false;
+  agreeToTerms:boolean = false;
 
   constructor(
     public upload: UploadService,
@@ -60,9 +61,12 @@ export class IssueComponent implements OnInit, AfterViewInit {
     this.callsheet = undefined;
     this.awaitingData = false;
     this.loggedIn = true;
+    this.agreeToTerms = false;
     this.data.waitingForScript
       ? (this.waitingForScript = true)
-      : (this.waitingForScript = false);;
+      : (this.waitingForScript = false);
+
+      console.log(this.data)
 
   }
   ngAfterViewInit(): void {

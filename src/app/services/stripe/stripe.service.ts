@@ -28,9 +28,9 @@ export class StripeService {
     }
     return this.http.post(`${this._URL}/start-checkout`, { test:true, headers }, options);
   }
+  // Handle any additional actions after successful payment
+  // For example, navigate to a success page or trigger a download
   handlePaymentSuccess(): void {
-    // Handle any additional actions after successful payment
-    // For example, navigate to a success page or trigger a download
     this.router.navigate(['complete']);
   }
 }

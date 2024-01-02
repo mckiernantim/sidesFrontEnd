@@ -32,7 +32,7 @@ export class LastLooksPageComponent {
   isLineSelected: boolean = false;
   showContextMenu: boolean = false;
   mouseEvent: MouseEvent | null = null;
-  dragRefreshDelay: number = 200;
+  dragRefreshDelay: number = 100; // miliseconds to throttle the drag action
   currentYPosDiff: number = 0;
   currentXPosDiff: number = 0;
   yOffset: number | string = 0;
@@ -89,7 +89,7 @@ export class LastLooksPageComponent {
       console.log(reset, ' new value emitted');
       if (reset) {
         const ind = this.selectedLine.index;
-        debugger;
+        ;
 
         this.selectedLine = null;
       }
@@ -139,7 +139,6 @@ export class LastLooksPageComponent {
     if (event.button !== 0 || this.contextMenuLine) return;
 
     this.mouseEvent = event;
-    console.log(this.mouseEvent)
     this.toggleSelectedLine(event, line, lineIndex);
 
     if (isDragBar) {
@@ -152,10 +151,15 @@ export class LastLooksPageComponent {
       this.dragDrop.startDrag({ event, line, lineIndex });
     }
   }
-
+handleMouseUp (event, line, lineIndex) {
+  
+  this.toggleSelectedLine(event, line, lineIndex);
+  this.dragDrop.stopDrag(event);
+}
   isSelectedLine(line: Line, lineIndex: number) {
     return this.selectedLine === this.page[lineIndex];
   }
+
 
   toggleSelectedLine(event: MouseEvent, line: any, lineIndex: number) {
     if (this.isSelectedLine(line, lineIndex)) {
@@ -224,7 +228,7 @@ export class LastLooksPageComponent {
     this.recordLineStateToUndoQueueBeforeChange();
     if (newCategory === 'line-out') {
       this.toggleStrikethroughLine();
-    } else if ((newCategory = 'delete')) {
+    } else if ((newCategory === 'delete')) {
       this.toggleHiddenOnLine();
     } else {
       this.selectedLine.calculatedXpos = this.xPositionsForLines[newCategory];

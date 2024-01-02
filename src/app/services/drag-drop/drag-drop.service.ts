@@ -31,12 +31,14 @@ export class DragDropService {
 
 
   constructor() {}
+  // emits value from observable to stop signal end of update
   updateComponent() {
-   
-    // drag is not firing here for some reason - maybe the stop isnt registering
-    const reset = this.selectedLine || this.draggingBar ? this.selectedLine: true
-    this.update.next(reset);
+    // drag is not firing here for some reason - maybe the stop isnt 
+    // either emits the current selectedLine to the component or a TRUE to signal end of edit
+    const valueToEmit = this.selectedLine || this.draggingBar ? this.selectedLine : true
+    this.update.next(valueToEmit);
   }
+   
   // setSelectedLine(line: Line) {
   //   this.selectedLine = line;
   // }
@@ -107,21 +109,22 @@ export class DragDropService {
   stopDrag(event: MouseEvent) {
     if (this.draggingLine) {
       // Calculate the final position of the line
-      debugger
+      
       this.currentXPosDiff = event.clientX - this.initialMouseX;
       this.currentYPosDiff = event.clientY - this.initialMouseY;
       this.processLinePosition();
       this.selectedLine = null;
       this.draggingLine = false;
+   
     } else if (this.draggingBar) {
       // Calculate the final position of the bar
       // Update the bar position in the line object
       this.processBarChange(0); 
       this.draggingBar = false;
     }
-
     // Reset the dragging state
     this.updateComponent();
+
   }
   processLinePosition() {
     // Calculate new X and Y positions based on initial values and differences
@@ -129,7 +132,7 @@ export class DragDropService {
     const newYPosition = this.initialLineY - this.currentYPosDiff;
     // disabling this for now - leaving the functionality here 
     // this.selectedLine.calculatedXpos = newXPosition.toFixed(2) + 'px';
-    this.selectedLine.calculatedYpos = newYPosition.toFixed(2) + 'px';
+    if (this.selectedLine) this.selectedLine.calculatedYpos = newYPosition.toFixed(2) + 'px';
   }
   processBarChange(newBarPosition) {
     const newBarY = this.initialBarY - newBarPosition

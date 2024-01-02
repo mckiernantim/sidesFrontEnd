@@ -2,39 +2,35 @@
   <ng-container *ngIf="error">
     <h3>Soemthing went wrong</h3>
     {{ data }}
-
   </ng-container>
 </div>
-<!-- this whole component is deprecated -->
 
-  <!-- <div *ngIf='
-  !waitingForScript &&
-  !awaitingData'>
+<div class="container mx-auto mt-8 flex flex-col justify-center items-center">
+  <!-- Selected Scenes -->
+  <div>
+    <h3 class="text-xl font-semibold mb-4">Selected Scenes:</h3>
     <ul>
-      <h3>Selected Scenes:</h3>
-      <li *ngFor="let text of data.selected" style="list-style-type:none;">{{text.scenenumber}} {{text.text}} </li>
+      <li *ngFor="let text of data.selected" class="list-none mb-2">{{ text.sceneNumberText }} {{ text.text }}</li>
     </ul>
-    <div><h3>Callsheet: {{this.upload.coverSheet.name}}</h3></div>
-    <div *ngIf = "callsheetReady">
-      <h2>Total:$5</h2>
-    </div>
+    <h2 class="text-2xl font-bold mt-4">Total: $5</h2>
   </div>
 
-
-  <div class="button-wrapper">
-
-    <button class="close-button" (click)="dialogRef.close({selected:this.selected, callsheet:this.callsheet})">Get My
-      Sides</button>
+  <!-- Checkbox for Terms and Conditions -->
+  <div class="mt-6">
+    <label class="flex items-center">
+      <input type="checkbox" class="form-checkbox mr-2" [(ngModel)]="agreeToTerms" required>
+      <span class="text-sm">I agree with the terms and conditions</span>
+    </label>
   </div>
-  <div *ngIf="waitingForScript">
-    <h1>BRB</h1>
-    <mat-progress-spinner style="display:none" mode="indeterminate" value="0"></mat-progress-spinner>
-    <h3 class="spinner-text">Processing Script</h3>
-    <div class="loading-image spin-image">
-      <img class="spinning-bot" src="../../assets/icons/robotWhite.png">
-    </div>
-    <h2>Getting Sides</h2>
+
+  <!-- Button Wrapper -->
+  <div class="mt-8 p-4" >
+    <button [class.bg-gray-200]="!agreeToTerms" [class.bg-blue-500] = "agreeToTerms" class="text-white py-2 px-4 rounded hover:bg-blue-600 focus:outline-none"
+      [disabled]="!agreeToTerms"
+      >
+      Get My Sides
+    </button>
   </div>
-  -->
+ 
 
 

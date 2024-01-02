@@ -1,8 +1,9 @@
 <div class="dash-container grid grid-cols-2 text-white">
-  
+
   <div class="main-container two-column cell">
+
     <ng-container *ngIf="!lastLooksReady; else lastLooks">
-      
+
       <div class="data-feed cell">
         <div class="mat-elevation-z8 table-container">
           <h2> {{ script }} scenes</h2>
@@ -13,14 +14,15 @@
           <table mat-table [dataSource]="dataSource" matSort>
             <ng-container matColumnDef="number">
               <th class="table-scene-num" mat-header-cell *matHeaderCellDef mat-sort-header sticky> Scene Number </th>
-            <td class="table-scene-num" mat-cell *matCellDef="let scene; let i=index"> {{scene.sceneNumberText}} </td>
+              <td class="table-scene-num" mat-cell *matCellDef="let scene; let i=index"> {{scene.sceneNumberText}} </td>
             </ng-container>
             <ng-container matColumnDef="page number">
               <th class="table-page-num" mat-header-cell *matHeaderCellDef mat-sort-header sticky> Page Number </th>
               <td class="table-page-num" mat-cell *matCellDef="let scene; let i=index"> {{scene.pageNumber}} </td>
             </ng-container>
             <ng-container matColumnDef="text">
-              <th class="table-scene-header" mat-header-cell *matHeaderCellDef mat-sort-header sticky> Scene Header </th>
+              <th class="table-scene-header" mat-header-cell *matHeaderCellDef mat-sort-header sticky> Scene Header
+              </th>
               <td class="table-scene-header" mat-cell *matCellDef="let scene"> {{scene.text}} </td>
             </ng-container>
             <ng-container matColumnDef="preview">
@@ -34,103 +36,90 @@
                   [attr.disabled]="active === false ? 'disabled' : null">
               </td>
             </ng-container>
-  
-  
+
+
             <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
             <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-  
+
             <!-- Row shown when there is no matching data. -->
             <tr class="mat-row" *matNoDataRow>
               <td class="mat-cell" colspan="4">No data matching the filter "{{input.value}}"</td>
             </tr>
           </table>
-  
+
           <mat-paginator [pageSize]="25" [pageSizeOptions]="[25, 100]"></mat-paginator>
-  
+
         </div>
       </div>
 
     </ng-container>
     <!-- Render app-last-looks component with selected value -->
-    <ng-template #lastLooks >
-      
-      <div *ngIf="this.finalDocReady; else lastLooks">
+    <ng-template #lastLooks>
+
+      <div *ngIf="this.pdf.finalDocReady; else lastLooks">
         <!-- Inputs passed to trigger changes in our lastlooks to handle edit state -->
-        <app-last-looks 
-        [doc]="finalDocument" 
-        [resetDocState] ="resetFinalDocState"
-        [editState] = "editLastLooksState"
-        [undoState] = "fireUndo"
-        ></app-last-looks>
+        <app-last-looks [doc]="pdf.finalDocument" [resetDocState]="resetFinalDocState" [editState]="editLastLooksState"
+          [undoState]="fireUndo"></app-last-looks>
       </div>
     </ng-template>
 
 
   </div>
+
   <div class="flex flex-col">
     <h1 class="py-20 text-3xl">Generating sides for
       <br>
-     <p class="pt-4">{{ script }} - {{ date | date }}</p> 
+      <p class="pt-4">{{ script }} - {{ date | date }}</p>
     </h1>
-      <div class="selected-container">
-        <ng-container >
-          <ul>
-            <ng-container>
-              <li *ngIf="this.watermark">
-                <pre> watermark: {{this.watermark}}</pre>
-              </li>
-              <div *ngIf="callsheet">
-                <li>Callsheet: {{ callsheet }}</li>
+    <div class="selected-container">
+      <ng-container>
+        <ul>
+          <ng-container>
+            <li *ngIf="this.watermark">
+              <pre> watermark: {{this.watermark}}</pre>
+            </li>
+            <div *ngIf="callsheet">
+              <li>Callsheet: {{ callsheet }}</li>
             </div>
-              
-              <li class="p-2"*ngFor="let scene of selected">
-                <pre>{{scene.sceneNumber}}     {{scene.text}}     {{scene.sceneNumber}}</pre>
-              </li>
-            </ng-container>
-          </ul>
-        </ng-container>
-      </div>
-      <div class="controls-container">
-        <ng-container  *ngIf="!lastLooksReady; else lastLooksControls">
-          <div>
-            <button mat-raised-button color="warn" (click)="toggleLastLooks()" [disabled]="selected.length === 0">getPDF</button>
-          </div>
-        </ng-container>
-   
-        <ng-template #lastLooksControls>
-          <div class="grid grid-cols-3 space-around py-10">
-            <div class="p-4">
-              <button mat-raised-button color="warn" (click)="toggleEditStateInLastLooks()" class="bg-accent">Edit Pdf</button>
-              <ng-container>
-                <div *ngIf="editLastLooksState" >
-                    <app-tool-tip 
-                    (buttonAction)="handleToolTipClicked($event)"
-                    [data]="toolTipContent"></app-tool-tip>
-                </div>
-              </ng-container>
 
-                 
-            </div>
-            <div class="p-4">
-              <app-add-watermark (waterMarkUpdate)="addWaterMark($event)"></app-add-watermark>
-            </div>
-            <div class="p-4">
-              <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
-            </div>
+            <li class="p-2" *ngFor="let scene of selected">
+              <pre>{{scene.sceneNumber}}     {{scene.text}}     {{scene.sceneNumber}}</pre>
+            </li>
+          </ng-container>
+        </ul>
+      </ng-container>
+    </div>
+    <div class="controls-container">
+      <ng-container *ngIf="!lastLooksReady; else lastLooksControls">
+        <div>
+          <button mat-raised-button color="warn" (click)="toggleLastLooks()"
+            [disabled]="selected.length === 0">getPDF</button>
+        </div>
+      </ng-container>
+
+      <ng-template #lastLooksControls>
+        <div class="grid grid-cols-3 space-around py-1">
+          <div class="p-4">
+            <button mat-raised-button color="warn" (click)="toggleEditStateInLastLooks()" class="bg-accent">Edit
+              Pdf</button>
+            <ng-container>
+              <div *ngIf="editLastLooksState">
+                <app-tool-tip (buttonAction)="handleToolTipClicked($event)" [data]="toolTipContent"></app-tool-tip>
+              </div>
+            </ng-container>
           </div>
-          <div>
-            <h2>Total: $5.00</h2>  
-            <button mat-raised button color="warn">Proceed To Checkout</button>
+          <div class="p-4">
+            <app-add-watermark (waterMarkUpdate)="addWaterMark($event)"></app-add-watermark>
           </div>
-        </ng-template>
-      </div>
+          <div class="p-4">
+            <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
+          </div>
+        </div>
+        <div>
+          <h2>Total: $5.00</h2>
+          <button mat-raised button color="warn" (click)="openConfirmPurchaseDialog()">Proceed To Checkout</button>
+        </div>
+      </ng-template>
+    </div>
   </div>
 </div>
-
-
-        
-         
-
-    
-     
-

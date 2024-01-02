@@ -5,7 +5,7 @@
             <ul class="screenbox"
             [ngClass] = "{'edit-mode': canEditDocument } ">
                 <div class="selected-line-info" style="color:black">
-               
+                    <h2>drag state is: {{this.dragDrop.draggingLine}}</h2>
                 </div>
                 
                 <ng-container *ngFor="let line of page; let lineIndex = index">
@@ -71,7 +71,7 @@
                             && !this.contextMenuLine 
                             && handleLeftClick($event, line, lineIndex)"
                         (mousemove)="determineIfWeCanDrag() ? throttledDrag($event) : null"
-                        (mouseup)="determineIfWeCanDrag() ? dragDrop.stopDrag($event) : null"
+                        (mouseup)="handleMouseUp($event, line, lineIndex)"
                         > 
                     </li>
                      
@@ -86,7 +86,7 @@
                         [class]="(line.cont ? line.cont : 'hideCont') + ' ' + line.hidden"
                         [style.bottom]="line.calculatedBarY"
                         (mousemove)="determineIfWeCanDrag() ? throttledDragBar($event): null"
-                        (mouseup)="determineIfWeCanDrag() ? dragDrop.stopDrag($event) : null"
+                        (mouseup)="dragDrop.stopDrag($event)"
                     >
                         <span class="start-span"> ↓↓{{line.sceneNumberText}} CONTINUED↓↓↓ </span>
                     </span>
