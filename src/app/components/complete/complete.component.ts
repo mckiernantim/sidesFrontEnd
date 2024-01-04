@@ -11,13 +11,14 @@ import { throwError, of } from 'rxjs';
 })
 export class CompleteComponent {
   name: string = localStorage.getItem('name');
+  
   layout: string = localStorage.getItem('layout');
   callsheet: string = localStorage.getItem('callsheet');
   downloadTimeRemaining:number = Infinity;
   pdfToken:string = '';
   downloadToken:number;
   constructor(public upload: UploadService, private token:TokenService) {
-
+    
   }
  
   // we download as soon as we land
@@ -36,6 +37,7 @@ export class CompleteComponent {
   } 
 
     downloadPDF(): void {
+    
       this.upload.getPDF(this.name, 'whatever')
         .pipe(
           catchError((error:any) => {

@@ -251,7 +251,7 @@ export class DashboardRightComponent implements OnInit {
     this.upload.generatePdf(finalDocument).subscribe(
       
       (data: pdfServerRes) => {
-      debugger
+  
         console.log(data, " data from server")
         this.stripe.startCheckout().subscribe(
           (res:pdfServerRes) => {

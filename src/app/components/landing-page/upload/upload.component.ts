@@ -52,9 +52,9 @@ export class UploadComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.working = false;
     this.openDialog("test");
-    localStorage.setItem('name', null);
+    this.resetLocalData()
     console.log(this.totalLines, this.totalScenes, this.totalTickets);
-    this.underConstruction = true;
+    this.underConstruction = false
   }
 
   ngOnDestroy(): void {
@@ -100,7 +100,7 @@ export class UploadComponent implements OnInit, OnDestroy {
     this.working = true;
     this.fileToUpload = files.item(0);
     this.openDialog(this.fileToUpload.name);
-    localStorage.setItem('name', this.fileToUpload.name.replace(/.pdf/, ''));
+   
     // upload our script
     this.$script_data = this.upload.postFile(this.fileToUpload);
     this.dataSubscription = this.$script_data

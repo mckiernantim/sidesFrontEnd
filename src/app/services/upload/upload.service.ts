@@ -30,7 +30,7 @@ export class UploadService {
   lineArr: Line[];
   lineCount: any;
   pagesArr: any[];
-  underConstruction:boolean = true;
+  underConstruction:boolean = false;
   // old DB valies
   issues: any;
   coverSheet: any;
@@ -88,6 +88,7 @@ export class UploadService {
 }
 // final step
 getPDF(name: string, callsheet: string): Observable<any> {
+
   const headers = new HttpHeaders()
     .set('Content-Type' , 'application/json')
     
@@ -138,7 +139,9 @@ getPDF(name: string, callsheet: string): Observable<any> {
   }
 // get classified data => returns observable for stuff to plug into
   postFile(fileToUpload: File): Observable<any> {
+
     this.resetHttpOptions();
+     localStorage.setItem('name', fileToUpload.name.replace(/.pdf/, ''));
     this.script = localStorage.getItem('name');
     const formData: FormData = new FormData();
     formData.append('script', fileToUpload, fileToUpload.name);
@@ -184,6 +187,7 @@ getPDF(name: string, callsheet: string): Observable<any> {
   }
 
   skipUploadForTest() {
+
     const data = require('../../components/landing-page/upload/dummyScript.json')
     if(this.underConstruction) {
       localStorage.setItem("name", this._devPdfPath)
