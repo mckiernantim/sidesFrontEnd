@@ -5,7 +5,7 @@
   </ng-container>
 </div>
 
-<div class="container mx-auto mt-8 flex flex-col justify-center items-center">
+<div *ngIf="!waitingForScript" class="container mx-auto mt-8 flex flex-col justify-center items-center">
   <!-- Selected Scenes -->
   <div>
     <h3 class="text-xl font-semibold mb-4">Selected Scenes:</h3>
@@ -25,12 +25,20 @@
 
   <!-- Button Wrapper -->
   <div class="mt-8 p-4" >
-    <button [class.bg-gray-200]="!agreeToTerms" [class.bg-blue-500] = "agreeToTerms" class="text-white py-2 px-4 rounded hover:bg-blue-600 focus:outline-none"
+    <button (click) = "this.dialogRef.close()"
+      [class.bg-gray-200]="!agreeToTerms" 
+      [class.bg-blue-500] = "agreeToTerms" 
+      class="text-white py-2 px-4 rounded hover:bg-blue-600 focus:outline-none"
       [disabled]="!agreeToTerms"
       >
       Get My Sides
     </button>
   </div>
+
+  <div *ngIf="waitingForScript">
+    <app-spinning-bot></app-spinning-bot>
+  </div>
+
  
 
 

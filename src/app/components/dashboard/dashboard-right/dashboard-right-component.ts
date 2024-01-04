@@ -15,8 +15,8 @@ import { Line } from 'src/app/types/Line';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
 
 export interface pdfServerRes {
-  status: string;
-  fileName: string;
+  url:string,
+  id:string
 }
 interface toolTipOption {
   title: string;
@@ -249,18 +249,23 @@ export class DashboardRightComponent implements OnInit {
 
   sendFinalDocumentToServer(finalDocument) {
     this.upload.generatePdf(finalDocument).subscribe(
+      
       (data: pdfServerRes) => {
-        this.dialog.closeAll();
+      debugger
+        console.log(data, " data from server")
         this.stripe.startCheckout().subscribe(
-          (res) => {
+          (res:pdfServerRes) => {
             // Handle successful response, if needed
+            localStorage.setItem("stripeSession", res.id)
+            window.location.href = res.url
             console.log('Stripe checkout response:', res);
+            
           },
           (error) => {
             console.error('Stripe checkout error:', error);
           }
         );
-        this.router.navigate(['complete']);
+        // this.router.navigate(['complete']);
 
         // Route to download or other action
 
@@ -355,6 +360,8 @@ export class DashboardRightComponent implements OnInit {
   }
 
   // this function renders an IssueComponent with 60% width
+
+  //  NEED TO UPDATE SERVIVCE TO NOT FIRE ON DIALOG CLOSE - TOO EASY
   openConfirmPurchaseDialog() {
     if (this.modalData) {
       const dialogRef = this.dialog.open(IssueComponent, {
@@ -366,17 +373,36 @@ export class DashboardRightComponent implements OnInit {
         let coverSheet = localStorage.getItem('callSheetPath');
         this.waitingForScript = true;
         console.log(result);
-        this.callsheet = result.callsheet?.name || null;
+        this.callsheet = result?.callsheet.name || null;
         this.openFinalSpinner();
         this.finalDocument = this.pdf.getPdf(this.selected, this.script, this.totalPages, coverSheet);
         this.finalDocReady = true;
-        this.stripe.startCheckout().subscribe((result) => {});
+        this.waitingForScript = true;
+        this.sendFinalDocumentToServer(this.finalDocument)
+        // this.stripe.startCheckout().subscribe((result:any) => {
+        //   localStorage.setItem("stripeSession", result.id)
+        //   debugger
+        //   window.location = result.url
+
+        // });
       });
     } else {
       this.finalDocument = this.pdf.getPdf(this.selected, this.script, this.totalPages, '');
       this.finalDocReady = true;
+      this.waitingForScript = true;
+      this.openFinalSpinner();
+      this.sendFinalDocumentToServer(this.finalDocument)
+      // this.stripe.startCheckout().subscribe((result:any) => {
+      //   debugger
+      //     window.location.href = result.url
+      //     console.log(result)
+            
+      // });
     }
   }
+    
+
+          
   triggerLastLooksAction(str) {
     if (str === 'resetDoc') {
       this.resetFinalDocState = !this.resetFinalDocState;

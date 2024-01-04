@@ -49,7 +49,6 @@ export class CompleteComponent {
         .subscribe((data) => { 
           if(data) {
             const date = new Date().toISOString().substring(0, 10);
-            this.token.validateCookie();
             saveAs(data, `${this.name}-${date}-sides-ways.zip`, { type: 'application/zip' });
           }
 

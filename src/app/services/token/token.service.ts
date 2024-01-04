@@ -1,62 +1,58 @@
 import { Injectable } from '@angular/core';
-import jwt_decode from 'jwt-decode'
+import jwt_decode from 'jwt-decode';
 import Cookies from 'js-cookie';
-import {interval, Observable, timer} from 'rxjs';
-import { map, takeWhile } from 'rxjs/operators'
+import { Observable, timer } from 'rxjs';
+import { map, takeWhile } from 'rxjs/operators';
+
 interface DecodedToken {
-  exp: number; // The property representing the expiration time in seconds
+  sessionId: string;
+  exp: number; // Expiration time in seconds
 }
+
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class TokenService {
-  private readonly tokenKey = 'sides-ways-delete-timer';
-  private expirationTime: number = 0;
-  private countdown$: Observable<number>;
+  private readonly tokenKey = 'checkoutSession';
+  public countdown$: Observable<number>;
 
-  getDeleteTimer(): string | null {
-    return localStorage.getItem(this.tokenKey);
+  constructor() {
+    this.initializeCountdown();
   }
 
-  // setDeleteTimer(token: string): void {
-  //   localStorage.setItem(this.tokenKey, token);
-  //   this.expirationTime = Number(token);
-  // }
-
-  removeToken(): void {
-    localStorage.removeItem(this.tokenKey);
-    this.clearExpirationTimer();
+  getCookieValue(): string | null {
+    return Cookies.get(this.tokenKey);
   }
 
-  validateCookie():null |  number  {
-   
-    const cookieWithRemainingTime = Cookies.get("downloadTimeRemaining")
-    if(cookieWithRemainingTime) this.setDeleteTimer(cookieWithRemainingTime)
-    return cookieWithRemainingTime ? Number(cookieWithRemainingTime) : null;
-  };
-    
-  
-
-
-
-  private clearExpirationTimer(): void {
-    clearTimeout(this.expirationTime);
+  decodeToken(token: string): DecodedToken {
+    return jwt_decode<DecodedToken>(token);
   }
 
+  initializeCountdown(): void {
+    const token = this.getCookieValue();
+    if (token) {
+      const decoded = this.decodeToken(token);
+      this.startCountdown(decoded.exp);
+    }
+  }
 
-  setDeleteTimer(token: string): void {
-   
-    this.expirationTime = Number(token);
-    // interval creates an observable
-    this.countdown$ = interval(1000).pipe(
-      map(() => this.expirationTime - Math.floor(Date.now() / 1000)),
-      takeWhile(countdown => countdown > 0)
+  startCountdown(expirationTime: number): void {
+    const currentTime = Math.floor(Date.now() / 1000);
+    const timeLeft = expirationTime - currentTime; // Time left in seconds
+    this.countdown$ = timer(0, 1000).pipe(
+      map((elapsed) => timeLeft - elapsed),
+      takeWhile((remaining) => remaining >= 0)
     );
   }
-
-  getCountdown(): Observable<number> {
-    return this.countdown$;
+  getCountdown () {
+    return this.countdown$
+  }
+  setDeleteTimer(time) {
+    this.startCountdown(time)
   }
 
-  
+  getDeleteTimer() {
+    
+  } 
+
 }

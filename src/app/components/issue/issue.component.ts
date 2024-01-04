@@ -18,6 +18,7 @@ import {
   MatDialog,
   MAT_DIALOG_DATA,
 } from '@angular/material/dialog';
+import { SpinningBotComponent } from '../shared/spinning-bot/spinning-bot.component';
 
 
 @Component({
@@ -27,7 +28,7 @@ import {
 })
 export class IssueComponent implements OnInit, AfterViewInit {
   @ViewChild('callSheet') el: ElementRef;
-
+  @Input()onClick: Function;
   dualReady: boolean = false;
   dualEdit: boolean = false;
   pdfIssues: boolean = false;
@@ -111,5 +112,9 @@ export class IssueComponent implements OnInit, AfterViewInit {
   selectOption(option) {
     this.selectionMade = true;
     this.selected = option;
+  }
+
+  handleClick() {
+    this.onClick()
   }
 }
