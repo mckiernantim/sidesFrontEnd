@@ -3,7 +3,7 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Observable } from 'rxjs';
 import { map, shareReplay } from 'rxjs/operators';
 import { TokenService } from 'src/app/services/token/token.service';
-import { count } from 'console';
+import { Router } from '@angular/router';
 
 
 @Component({
@@ -22,7 +22,7 @@ export class MainNavComponent implements AfterViewInit {
       shareReplay()
     );
 
-  constructor(private breakpointObserver: BreakpointObserver, public token:TokenService) {
+  constructor(private breakpointObserver: BreakpointObserver, public token:TokenService, private router:Router) {
     console.log(this.token)
     this.countdown = 0;
     
@@ -31,11 +31,16 @@ export class MainNavComponent implements AfterViewInit {
    
       this.countdownValue$ =  this.token.getCountdown();
       this.countdownValue$.subscribe(countdown => {
-       this.formattedCountdown = this.formatCountdown(countdown)
-     });
+        if (countdown > 0) {
+          this.formattedCountdown = this.formatCountdown(countdown)
+        } else {
+          this.router.navigate(['/'])
+        }
+      });
+    }
     
-  }
   formatCountdown(timer: number): string {
+    
     // Calculate hours, minutes, and seconds
     const hours = Math.floor(timer / 3600);
     const minutes = Math.floor((timer % 3600) / 60);

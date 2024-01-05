@@ -39,4 +39,9 @@
     "types": [ "node" ],
     "enableIvy":false,
   },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.json" // Include JSON files in your TypeScript project
+  ]
 }

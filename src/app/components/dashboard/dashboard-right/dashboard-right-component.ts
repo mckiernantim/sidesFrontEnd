@@ -91,7 +91,7 @@ export class DashboardRightComponent implements OnInit {
   fireUndo: boolean = false;
   initialFinalDocState: Line[];
   callsheet: string;
-
+  
   watermark: string;
   script: string = localStorage.getItem('name');
   // DEPCREACEATED WATSON STUFF MAY COME BACK
@@ -121,6 +121,16 @@ export class DashboardRightComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.intizilazeState()
+    this.initializeSceneSelectionTable()
+
+  }
+  ngAfterViewInit(): void {
+    this.scriptLength = this.totalPages.length - 1 || 0;
+    this.dataReady = true;
+    this.cdr.detectChanges();
+  }
+  intizilazeState() {
     this.finalDocument = {
       doc: {},
       breaks: {},
@@ -136,57 +146,18 @@ export class DashboardRightComponent implements OnInit {
     this.scriptProblems = [];
     this.modalData = [];
     // SAVED ON THE SERVICE
-    this.scriptData = this.upload.lineArr;
-    this.totalPages = this.upload.pagesArr || null;
+    this.scriptData = this.pdf.scriptData;
+    this.totalPages = this.pdf.totalPages || null;
     this.lastLooksReady = false;
-
-    // if(!this.scriptData) {
-    //   alert("script upload failed - rerouting to upload page")
-    //   this.router.navigate(["/"])
-
-    if (this.scriptData) {
-      // GET CHARS
-      this.characters = this.scriptData.filter((line) => {
-        return line.category === 'character';
-      });
-      this.characters = [
-        ...new Set(this.characters.map((line) => line.text.replace(/\s/g, ''))),
-      ];
-    }
-
-    // GET SCENES
-
-    if (this.totalPages && this.scriptData) {
-      this.scenes = this.scriptData.filter((line) => {
-        return line.category === 'scene-header';
-      });
-      for (let i = 0; i < this.scenes.length; i++) {
-        // give scenes extra data for later
-        this.setLastLines(i);
-        // POPULATE TABLE
-      }
-      this.dataSource = new MatTableDataSource(this.scenes);
-      this.dataSource.paginator = this.paginator;
-      this.dataSource.sort = this.sort;
-      this.length = this.scriptData.length;
-    }
-
-    this.length = this.scriptData.length || 0;
-    // assign PAGENUMBER values to page 0 and 1 in order for future
-    for (let i = 0; i < 200; i++) {
-      this.scriptData[i].page == 0
-        ? (this.scriptData[i].pageNumber = 0)
-        : this.scriptData[i].page == 1
-        ? (this.scriptData[i].pageNumber = 1)
-        : this.scriptData;
-    }
-  }
-  ngAfterViewInit(): void {
-    this.scriptLength = this.totalPages.length - 1 || 0;
-    this.dataReady = true;
-    this.cdr.detectChanges();
   }
 
+  initializeSceneSelectionTable() {
+    this.dataSource = new MatTableDataSource(this.pdf.scenes);
+    this.dataSource.paginator = this.paginator;
+    this.dataSource.sort = this.sort;
+    this.length = this.pdf.scriptData.length;
+  }
+  
   // lets get lookback tighter  - should be able to refrence lastCharacterIndex
   lookBack(line) {
     let newText = '';
@@ -265,11 +236,6 @@ export class DashboardRightComponent implements OnInit {
             console.error('Stripe checkout error:', error);
           }
         );
-        // this.router.navigate(['complete']);
-
-        // Route to download or other action
-
-        // Handle error, if needed
       },
       (err) => {
         this.dialog.closeAll();
@@ -379,12 +345,6 @@ export class DashboardRightComponent implements OnInit {
         this.finalDocReady = true;
         this.waitingForScript = true;
         this.sendFinalDocumentToServer(this.finalDocument)
-        // this.stripe.startCheckout().subscribe((result:any) => {
-        //   localStorage.setItem("stripeSession", result.id)
-        //   debugger
-        //   window.location = result.url
-
-        // });
       });
     } else {
       this.finalDocument = this.pdf.getPdf(this.selected, this.script, this.totalPages, '');
@@ -392,12 +352,6 @@ export class DashboardRightComponent implements OnInit {
       this.waitingForScript = true;
       this.openFinalSpinner();
       this.sendFinalDocumentToServer(this.finalDocument)
-      // this.stripe.startCheckout().subscribe((result:any) => {
-      //   debugger
-      //     window.location.href = result.url
-      //     console.log(result)
-            
-      // });
     }
   }
     

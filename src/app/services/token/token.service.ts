@@ -42,7 +42,7 @@ export class TokenService {
     const timeLeftInMilliseconds = expirationTimeInMilliseconds - currentTimeInMilliseconds; // Time left in milliseconds
     this.countdown$ = timer(0, 1000).pipe(
       map((elapsed) => Math.floor((timeLeftInMilliseconds - (elapsed * 1000)) / 1000)),
-      takeWhile((remaining) => remaining >= 0)
+      takeWhile((remaining) => remaining >= 0, true)
     );
   }
   getCountdown () {
