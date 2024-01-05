@@ -13,34 +13,35 @@ interface DecodedToken {
   providedIn: 'root',
 })
 export class TokenService {
-  private readonly tokenKey = 'checkoutSession';
+  private readonly tokenKey = 'dltr_sidesWays';
   public countdown$: Observable<number>;
+  private decodedToken: string | null = null;
 
   constructor() {
     this.initializeCountdown();
   }
 
   getCookieValue(): string | null {
+    console.log(Cookies.get())
     return Cookies.get(this.tokenKey);
   }
 
-  decodeToken(token: string): DecodedToken {
-    return jwt_decode<DecodedToken>(token);
+  decodeToken(token: string): void {
+    debugger
+    // this.decodedToken = jwt_decode<DecodedToken>(token);
   }
-
   initializeCountdown(): void {
     const token = this.getCookieValue();
     if (token) {
-      const decoded = this.decodeToken(token);
-      this.startCountdown(decoded.exp);
+      const expirationTimeInMilliseconds = parseInt(token);
+      this.startCountdown(expirationTimeInMilliseconds);
     }
   }
-
-  startCountdown(expirationTime: number): void {
-    const currentTime = Math.floor(Date.now() / 1000);
-    const timeLeft = expirationTime - currentTime; // Time left in seconds
+  startCountdown(expirationTimeInMilliseconds: number): void {
+    const currentTimeInMilliseconds = Date.now();
+    const timeLeftInMilliseconds = expirationTimeInMilliseconds - currentTimeInMilliseconds; // Time left in milliseconds
     this.countdown$ = timer(0, 1000).pipe(
-      map((elapsed) => timeLeft - elapsed),
+      map((elapsed) => Math.floor((timeLeftInMilliseconds - (elapsed * 1000)) / 1000)),
       takeWhile((remaining) => remaining >= 0)
     );
   }

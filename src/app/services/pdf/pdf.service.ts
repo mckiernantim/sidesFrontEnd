@@ -28,7 +28,7 @@ export class PdfService {
   scriptData:any[] 
   totalPages:any[] 
   finalDocReady:boolean = false;
-
+// 1/5 WE NEED TO MOVE THIS SO THAT THIS FIRES EVERY TIME THE USER NAVIGATES TO UPLOAD COMPONENT
   constructor(public upload:UploadService) {
     // Initialize your properties if needed
     this.finalDocument = {
@@ -40,6 +40,7 @@ export class PdfService {
   }
 
   private initializeData() {
+    debugger
     this.scriptData = this.upload.lineArr;
     this.totalPages = this.upload.pagesArr || null;
 

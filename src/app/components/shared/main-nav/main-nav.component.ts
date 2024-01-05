@@ -35,11 +35,19 @@ export class MainNavComponent implements AfterViewInit {
      });
     
   }
-formatCountdown(timer: number): string {
-  const minutes = Math.floor(timer / 60);
-  const seconds = timer % 60;
-  //1:09
-  return `${minutes} : ${seconds < 10 ? '0': ''}${seconds}`
-}
+  formatCountdown(timer: number): string {
+    // Calculate hours, minutes, and seconds
+    const hours = Math.floor(timer / 3600);
+    const minutes = Math.floor((timer % 3600) / 60);
+    const seconds = timer % 60;
+  
+    // Format the result as HH:MM:SS
+    const formattedHours = hours < 10 ? `0${hours}` : `${hours}`;
+    const formattedMinutes = minutes < 10 ? `0${minutes}` : `${minutes}`;
+    const formattedSeconds = seconds < 10 ? `0${seconds}` : `${seconds}`;
+  
+    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+  }
+  
 
 }

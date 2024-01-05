@@ -136,7 +136,7 @@ export class UploadComponent implements OnInit, OnDestroy {
 
   resetLocalData() {
     if (localStorage.getItem('name')) localStorage.setItem('name', null);
-    if (localStorage.getItem('callsheet'))
-      localStorage.setItem('callsheet', null);
+    if (localStorage.getItem('callSheetPath'))
+      localStorage.setItem('callSheetPath', null);
   }
 }
