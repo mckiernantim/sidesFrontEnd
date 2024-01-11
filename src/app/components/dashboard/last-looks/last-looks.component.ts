@@ -96,9 +96,12 @@ export class LastLooksComponent implements OnInit {
     }
   }
   establishInitialLineState() {
+    
     this.processLinesForLastLooks(this.pages);
     // this.adjustLinesForDisplay(this.pages); // Add this line
     this.updateDisplayedPage();
+    debugger
+    console.log(this.pages)
     this.selectedLine = this.doc[0][0]; // Assuming this selects the first line
   }
   findLastLinesOfScenes(pages) {
@@ -118,17 +121,18 @@ export class LastLooksComponent implements OnInit {
   processLinesForLastLooks(arr) {
     
     this.getSceneBreaks(arr)
-    debugger;
+    this.setContAndEndVals()
     arr.forEach((page) => {
       let lastSceneIndex = -1;
-      this.setContAndEndVals();
       page.forEach((line, index) => {
+        this.hideBars(line)
         // Existing adjustments
         this.adjustSceneNumberPosition(line);
         this.adjustSceneHeader(line);
         this.revealContSubcategoryLines(line);
         this.adjustBarPosition(line);
         this.calculateYPositions(line);
+       
         line.calculatedXpos = Number(line.xPos) * 1.3 + 'px';
         line.calculatedEnd =
           Number(line.endY) > 90 ? Number(line.endY) * 1.3 + 'px' : '90px';
@@ -137,7 +141,6 @@ export class LastLooksComponent implements OnInit {
   }
   getSceneBreaks(sceneArr) {
    sceneArr.forEach((scene) => {
-    debugger
       // RECORD SCENE BREAKS FOR TRUE AND FALSE VALUES LATER
       // not getting firstLine for all scenes for some reason
       let breaks = {
@@ -150,76 +153,12 @@ export class LastLooksComponent implements OnInit {
       this.sceneBreaks.push(breaks);
     });
   }
-processVisibilityAndProperties(lineToMakeVisible, merged, breaks, counter, skippedCategories) {
-    // Determine visibility and set .cont, .bar, and .end properties
-    let currentSceneBreak = breaks[counter] || 'last';
-  
-    if (
-      currentSceneBreak &&
-      lineToMakeVisible.index > currentSceneBreak.first &&
-      lineToMakeVisible.index <= currentSceneBreak.last
-    ) {
-      lineToMakeVisible.visible = 'true';
-  
-      if (lineToMakeVisible.bar === 'noBar') {
-        lineToMakeVisible.bar = 'bar';
-      }
-  
-      if (
-        lineToMakeVisible.lastLine &&
-        !lineToMakeVisible.finalScene &&
-        lineToMakeVisible.visible === 'true'
-      ) {
-        let finalTrueLine = merged.find(
-          (line) => line.index === lineToMakeVisible.lastLine
-        );
-  
-        if (finalTrueLine.category.match('page-number')) {
-          for (let finalTrue = merged.indexOf(finalTrueLine); finalTrue < merged.length; finalTrue++) {
-            if (!breaks[counter]) break;
-            if (merged[finalTrue + 1] && merged[finalTrue + 1].category === 'scene-header') {
-              merged[finalTrue].end = 'END';
-              counter += 1;
-              break;
-            } else {
-              for (let j = finalTrue - 1; j > 0; j--) {
-                if (merged[j].category && !merged[j].category.match('page-number')) {
-                  merged[j].end = 'END';
-                  counter += 1;
-                  break;
-                }
-              }
-            }
-          }
-        } else {
-          finalTrueLine.end = 'END';
-        }
-      }
-  
-      if (lineToMakeVisible.index === currentSceneBreak.last) {
-        counter += 1;
-      }
-  
-      if (lineToMakeVisible.finalScene) {
-        let actualLastLine;
-        for (let k = 1; k < merged.length; k++) {
-          let lineToCheck = merged[merged.length - k];
-          if (!skippedCategories.includes(lineToCheck.category)) {
-            lineToCheck.end = 'END';
-            lineToCheck.barY = lineToCheck.yPos;
-            lineToCheck.finalLineOfScript = true;
-            actualLastLine = merged.length - k;
-            break;
-          }
-        }
-  
-        for (let m = merged.indexOf(lineToMakeVisible); m < actualLastLine; m++) {
-          merged[m].visible = 'true';
-          merged[m].cont = 'hideCont';
-        }
-      }
-    } 
+  hideBars(line:Line) {
+    if(line.bar != 'bar') line.bar = "hideBar"
+    if(line.end != 'END') line.bar = "hideEnd"
+    if(!line.cont) line.cont = "hideCont"
   }
+// 
   
   resetDocumentToInitialState() {
     this.undoService.resetQueue();
@@ -230,7 +169,52 @@ processVisibilityAndProperties(lineToMakeVisible, merged, breaks, counter, skipp
     this.currentPage = this.pages[this.currentPageIndex];
     this.undoService.currentPageIndex = this.currentPageIndex;
   }
-
+  establishContAndEnd(sceneData) {
+    sceneData.forEach(item => {
+      item.forEach(line => {
+        if (item.category == ("scene-number-left" || "scene-number-right") && (line.trueScene ==="true-scene") ){
+          item.yPos = item.yPos - 10
+          console.log("changing ypos")
+        } 
+      
+      if(line.subCategory === "CON'T") { 
+        console.log("changing " + line.text + " visibility");
+        line.visible = "true"
+      }
+        line.bar == "bar" &&
+          !this.startingLinesOfDoc.includes(line.sceneIndex) &&
+          line.sceneIndex > 0 ?
+            this.startingLinesOfDoc.push(line.sceneIndex) : 
+            line.bar = "hideBar"
+  
+        line.yPos = parseInt(line.yPos)
+        line.xPos = (((line.xPos)))
+        if (line.category == "scene-header" && line.visible == "true") {
+          line.trueScene = "true-scene"
+        }
+        if (line.end === "END" && this.startingLinesOfDoc.includes(line.sceneIndex)) {
+          // END CONDITION
+          line.endY = line.yPos - 5
+          line.hideCont = "hideCont"
+          line.bar = "hideBar"
+          // CONTINUE CONDITION
+        } else if (line.cont && line.cont != "hideCont" && this.startingLinesOfDoc.includes(line.sceneIndex)) {
+          line.hideEnd = "hideEnd"
+          line.bar = "hideBar"
+          // START SCENE CONDITION
+        } else if (line.bar && line.bar !== 'hideBar')(
+          line.hideEnd = "hideEnd",
+          line.hideCont = "hideCont",
+          line.barY = line.yPos + 65
+  
+        )
+        else(
+          line.hideEnd = "hideEnd",
+          line.hideCont = "hideCont",
+          line.bar = "hideBar")
+        })
+      })
+  }
 
 
   toggleEditMode() {
@@ -244,10 +228,10 @@ processVisibilityAndProperties(lineToMakeVisible, merged, breaks, counter, skipp
   handleFunctionNullified() {
     this.selectEditFunction = null;
   }
-  startSingle = function (barY) {
+  startSingle (barY) {
     return barY * 1.3 - 44 + 'px';
   };
-  formatEndY = function (endY) {
+  formatEndY (endY) {
     if (endY > 90) {
       return endY + 'px';
     } else return 90 + 'px';
@@ -307,20 +291,30 @@ processVisibilityAndProperties(lineToMakeVisible, merged, breaks, counter, skipp
   }
 
   adjustSceneHeader(line: Line) {
-    if (line.category === 'scene-header' && line.visible === 'true') {
-      line.trueScene = 'true-scene';
-      line.bar = 'bar';
+    if (line.category === 'scene-header') {
+      if (line.visible === "true") {
+        line.trueScene = 'true-scene';
+        line.bar = 'bar';
+      } else {
+        line.bar = "hideBar"
+      }
     }
   }
+
 
 
 
   adjustBarPosition(line: Line) {
     if (line.bar) {
       line.barY = line.yPos + 65;
+    } else {
+      line.bar = "hideBar";
     }
     if (line.end === 'END') {
       line.barY = line.yPos + 65;
+    } else {
+
+      line.end === "hideEnd"
     }
   }
   adjustYpositionAndReturnString(lineYPos: number): string {
@@ -468,5 +462,7 @@ processVisibilityAndProperties(lineToMakeVisible, merged, breaks, counter, skipp
       }
     }
   }
+
+  
 }
 

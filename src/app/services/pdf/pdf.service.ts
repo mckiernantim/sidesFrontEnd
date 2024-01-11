@@ -55,8 +55,11 @@ export class PdfService {
     this.initializeData();
     // Inject other services if required
   }
-
-  private initializeData() {
+  
+  resetData () {
+    this.initializeData()
+  }
+  initializeData() {
     this.scriptData = this.upload.lineArr;
     this.totalPages = this.upload.pagesArr || null;
 
@@ -222,6 +225,9 @@ export class PdfService {
       if (item.category === 'injected-break') {
         item.visible = 'false';
       }
+      if(!item.end) item.end = "hideEnd"
+      if(!item.bar) item.bar = "hideBar"
+      if(!item.cont) item.bar = "hideCont"
     });
     return merged;
   }

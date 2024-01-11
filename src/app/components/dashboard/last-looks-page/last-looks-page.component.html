@@ -93,10 +93,11 @@
 
                     <!-- end span -->
                     <span class="bar-span"
-                    (click) = "toggleSelectedLine($event, line, lineIndex)" 
-                    [class]="line.end + ' ' + line.hideEnd" [style.bottom]="line.calculatedEnd">
-                        <span class="end-span"> END {{line.sceneNumberText}} </span>
-                    </span>
+                    (click)="toggleSelectedLine($event, line, lineIndex)" 
+                    class="hideEnd + ' ' + line.end"
+                    [style.bottom]="line.calculatedEnd">
+                  <span class="end-span"> END {{line.sceneNumberText}} </span>
+              </span>
 
                     <!-- right scene number span -->
                     <span *ngIf="line.category === 'scene-header'" class="scene-number-right {{ line.trueScene }} {{ line.visible }}"

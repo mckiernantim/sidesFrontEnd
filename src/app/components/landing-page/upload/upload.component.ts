@@ -6,6 +6,7 @@ import { Observable, Subscription, throwError, pipe } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { UploadService } from '../../../services/upload/upload.service';
+import { PdfService } from '../../../services/pdf/pdf.service'
 import { Router } from '@angular/router';
 
 import {
@@ -45,6 +46,7 @@ export class UploadComponent implements OnInit, OnDestroy {
     public upload: UploadService,
     public router: Router,
     public dialog: MatDialog,
+    public pdf: PdfService
   ) {
     this.totalLines;
   }
@@ -95,7 +97,7 @@ export class UploadComponent implements OnInit, OnDestroy {
       this.router.navigate(['/download']);
     });
   }
-  handleFileInput(files: FileList) {
+  handleFileInput(files: FileList ) {
     console.log('firing over script');
     this.working = true;
     this.fileToUpload = files.item(0);
@@ -129,7 +131,7 @@ export class UploadComponent implements OnInit, OnDestroy {
         );
         data.pop();
         this.dialog.closeAll();
-
+        this.pdf.initializeData()
         this.router.navigate(['download']);
       });
   }
