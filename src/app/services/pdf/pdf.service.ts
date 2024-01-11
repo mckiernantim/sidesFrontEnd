@@ -4,7 +4,7 @@ import { skip } from 'rxjs/operators';
 // Import other dependencies if required
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class PdfService {
   conditions = [
@@ -26,9 +26,9 @@ export class PdfService {
   script: string; // Presumably the name of the script or relevant data // Total number of pages in the PDF
   finalDocument: any; // Adjust the type to match your document structure
   initialFinalDocState: any; // Type this according to your initial document state
-  scriptData:any[] 
-  totalPages:any[] 
-  finalDocReady:boolean = false;
+  scriptData: any[];
+  totalPages: any[];
+  finalDocReady: boolean = false;
   scenes: any[];
   initialSelection: any[] = [];
   pages: any[];
@@ -45,8 +45,8 @@ export class PdfService {
   scriptLength: number;
   date: number;
   totalLines: any;
-// 1/5 WE NEED TO MOVE THIS SO THAT THIS FIRES EVERY TIME THE USER NAVIGATES TO UPLOAD COMPONENT
-  constructor(public upload:UploadService) {
+  // 1/5 WE NEED TO MOVE THIS SO THAT THIS FIRES EVERY TIME THE USER NAVIGATES TO UPLOAD COMPONENT
+  constructor(public upload: UploadService) {
     // Initialize your properties if needed
     this.finalDocument = {
       doc: {},
@@ -55,9 +55,9 @@ export class PdfService {
     this.initializeData();
     // Inject other services if required
   }
-  
-  resetData () {
-    this.initializeData()
+
+  resetData() {
+    this.initializeData();
   }
   initializeData() {
     this.scriptData = this.upload.lineArr;
@@ -70,7 +70,7 @@ export class PdfService {
 
   private initializeCharactersAndScenes() {
     this.getCharacters();
-    this.getScenes()
+    this.getScenes();
 
     // Logic to initialize characters and scenes
   }
@@ -108,7 +108,114 @@ export class PdfService {
         : this.scriptData;
     }
   }
-  
+
+  makeVisible2(sceneArr, breaks) {
+    let merged = this.flattenScenes(sceneArr);
+    let sortedBreaks = this.sortBreaks(breaks);
+
+    return this.processLines(merged, sortedBreaks);
+  }
+
+  flattenScenes(sceneArr) {
+    // Implement flattening of scene arrays
+    return sceneArr.reduce((acc, scene) => acc.concat(scene), []);
+  }
+
+  sortBreaks(breaks) {
+    // Implement sorting of breaks
+    return breaks.sort((a, b) => a.first - b.first);
+  }
+
+  processLines(merged, breaks) {
+    let currentBreakIndex = 0;
+    let currentSceneBreak = breaks[currentBreakIndex];
+
+    merged.forEach((line, index) => {
+      if (this.isLineInCurrentBreak(line, currentSceneBreak)) {
+        line.visible = 'true';
+        this.handleSpecialCases(line, merged, index, breaks, currentBreakIndex);
+      }
+
+      // Move to the next scene break if needed
+      if (line.index === currentSceneBreak.last) {
+        currentBreakIndex++;
+        currentSceneBreak = breaks[currentBreakIndex];
+      }
+    });
+
+    return merged;
+  }
+
+  isLineInCurrentBreak(line, currentSceneBreak) {
+    if (currentSceneBreak === 'last') {
+      return true; // Handle the special case of the last scene break
+    }
+    return (
+      line.index > currentSceneBreak.first &&
+      line.index <= currentSceneBreak.last
+    );
+  }
+
+  handleSpecialCases(line, merged, index, breaks, currentBreakIndex) {
+    if (line.category === 'scene-header' && line.bar !== 'bar') {
+      line.bar = 'bar';
+    }
+
+    // Handle the Last Line of a Scene
+    if (line.lastLine) {
+      this.handleLastLineOfScene(line, merged, index);
+    }
+
+    // Special Handling for the Final Scene
+    if (line.finalScene) {
+      this.handleFinalScene(line, merged);
+    }
+  }
+
+  handleLastLineOfScene(line, merged, index) {
+    let lastLineIndex = line.lastLine;
+    let lastLine = merged.find((l) => l.index === lastLineIndex);
+
+    if (lastLine && lastLine.category === 'page-number') {
+      // If the last line is a page number, find the real last content line
+      for (let i = index - 1; i >= 0; i--) {
+        if (!merged[i].category.match('page-number')) {
+          merged[i].end = 'END';
+          break;
+        }
+      }
+    } else if (lastLine) {
+      lastLine.end = 'END';
+    }
+  }
+  handleFinalScene(line, merged) {
+    // Find the actual last line of content, ignoring skipped categories
+    const skippedCategories = [
+      'page-number',
+      'injected-break',
+      'page-number-hidden',
+    ];
+    let actualLastLineIndex = merged.length - 1;
+
+    while (
+      skippedCategories.includes(merged[actualLastLineIndex].category) &&
+      actualLastLineIndex >= 0
+    ) {
+      actualLastLineIndex--;
+    }
+
+    // Mark all lines from the current to the actual last line as visible
+    for (let i = merged.indexOf(line); i <= actualLastLineIndex; i++) {
+      merged[i].visible = 'true';
+      merged[i].cont = 'hideCont';
+      if (i === actualLastLineIndex) {
+        merged[i].end = 'END';
+        merged[i].barY = merged[i].yPos;
+        merged[i].finalLineOfScript = true;
+      }
+    }
+  }
+
   makeVisible(sceneArr, breaks) {
     // loop through and find breaks
     this.finalDocument.breaks = breaks;
@@ -116,7 +223,11 @@ export class PdfService {
     // merge all pages to one array
     let merged = [].concat.apply([], sceneArr);
     let counter = 0;
-    const skippedCategories = ['page-number', 'injected-break'];
+    const skippedCategories = [
+      'page-number',
+      'injected-break',
+      'page-number-hidden',
+    ];
     // find scene breaks and ENDS
     for (let i = 0; i < merged.length; i++) {
       let lineToMakeVisible = merged[i];
@@ -213,53 +324,55 @@ export class PdfService {
       }
     }
 
-    merged.forEach((item) => {
+    merged.forEach((line) => {
+      let currentSceneNum = null;
+      if (line.category === 'scene-header')
+        currentSceneNum = line.sceneNumberText;
       if (
-        item.category === 'page-number-hidden' ||
-        item.category === 'page-number'
+        line.category === 'page-number-hidden' ||
+        line.category === 'page-number'
       ) {
-        item.visible = 'true';
-        (item.cont = 'hideCont'), (item.end = 'hideEnd');
-        item.xPos = 87;
+        line.visible = 'true';
+        (line.cont = 'hideCont'), (line.end = 'hideEnd');
+        line.xPos = 87;
       }
-      if (item.category === 'injected-break') {
-        item.visible = 'false';
+      if (line.category === 'injected-break') {
+        line.visible = 'false';
       }
-      if(!item.end) item.end = "hideEnd"
-      if(!item.bar) item.bar = "hideBar"
-      if(!item.cont) item.bar = "hideCont"
+      if (!line.end) line.end = 'hideEnd';
+      if (!line.bar) line.bar = 'hideBar';
+      if (!line.cont) line.bar = 'hideCont';
+      if (!line.sceneNumber) {
+        line.sceneNumber = currentSceneNum;
+      }
     });
     return merged;
   }
-  
 
-  getPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
-    
-    const requiredPages = this.getRequiredPages(sceneArr);
-    const sceneBreaks = this.calculateSceneBreaks(sceneArr);
+  //   getPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
 
-    const pages = this.getPagesForSelectedScenes(this.scriptData, requiredPages);
-    const finalPagesWithVisibilitySet = this.setVisibleForSelectedScenes(pages, sceneBreaks);
-    const finalPagesWithContinueBars = this.processContinueBars(finalPagesWithVisibilitySet, sceneBreaks);
+  //     const requiredPages = this.getRequiredPages(sceneArr);
+  //     const sceneBreaks = this.calculateSceneBreaks(sceneArr);
 
-    
+  //     const pages = this.getPagesForSelectedScenes(this.scriptData, requiredPages);
+  //     const finalPagesWithVisibilitySet = this.setVisibleForSelectedScenes(pages, sceneBreaks);
+  //     const finalPagesWithContinueBars = this.processContinueBars(finalPagesWithVisibilitySet, sceneBreaks);
 
-    this.finalDocument.doc = {
-        data: finalPagesWithContinueBars,
-        name: name,
-        numPages: numPages.length,
-        callSheetPath: callSheetPath,
-    };
+  //     this.finalDocument.doc = {
+  //         data: finalPagesWithContinueBars,
+  //         name: name,
+  //         numPages: numPages.length,
+  //         callSheetPath: callSheetPath,
+  //     };
 
-    if (this.watermark) {
-        this.watermarkPages(this.watermark, finalPagesWithContinueBars);
-    }
-    
+  //     if (this.watermark) {
+  //         this.watermarkPages(this.watermark, finalPagesWithContinueBars);
+  //     }
 
-    this.finalDocument = finalPagesWithContinueBars;
-    this.finalDocReady = true;
-    return finalPagesWithContinueBars;
-}
+  //     this.finalDocument = finalPagesWithContinueBars;
+  //     this.finalDocReady = true;
+  //     return finalPagesWithContinueBars;
+  // }
 
   initializePdfDocument(name, numPages, callSheetPath) {
     this.finalPdfData = {
@@ -270,231 +383,213 @@ export class PdfService {
     };
   }
 
+  processPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
+    debugger
+    sceneArr = this.sortByNum(sceneArr);
+    let pages = this.collectPageNumbers(sceneArr);
+    let sceneBreaks = this.recordSceneBreaks(sceneArr);
 
+    let fullPages = this.constructFullPages(pages);
 
-  private getRequiredPages(scenes: any[]): number[] {
-    const pages = new Set<number>();
-  
-    scenes.forEach(scene => {
+    // You can now use sceneBreaks and fullPages as needed
+    return { fullPages, sceneBreaks };
+  }
+
+  collectPageNumbers(sceneArr) {
+    let pages = [];
+    sceneArr.forEach((scene) => {
       for (let i = scene.page; i <= scene.lastPage; i++) {
-        pages.add(i);
+        if (!pages.includes(i)) {
+          pages.push(i);
+        }
       }
     });
-  
-    return Array.from(pages);
-  }
-  private getPagesForSelectedScenes(scriptData: any[], requiredPages: number[]): any[] {
-    return requiredPages.map(pageNum => scriptData.filter(line => line.page === pageNum));
-  }
-  private setVisibleForSelectedScenes(pages: any[], sceneBreaks: any[]): any[] {
-    pages.forEach(page => {
-      page.forEach(line => {
-        const isInSelectedScene = sceneBreaks.some(breakInfo =>
-          line.index >= breakInfo.first && line.index <= breakInfo.last);
-  
-        line.visible = isInSelectedScene ? 'true' : 'false';
-      });
-    });
-  
     return pages;
   }
-  private calculateSceneBreaks(scenes: any[]): any[] {
-    return scenes.map(scene => ({
-      first: scene.firstLine,
-      last: scene.lastLine,
-      scene: scene.sceneNumber,
-      firstPage: scene.page,
-      lastPage: scene.lastPage
+
+  recordSceneBreaks(sceneArr) {
+    return sceneArr.map(scene => ({
+        first: scene.firstLine,
+        last: scene.lastLine,
+        scene: scene.sceneNumber,
+        firstPage: scene.page
     }));
-  }
- 
-  private processContinueBars(pages: any[], sceneBreaks: any[]): any[] {
-    pages.forEach((page, pageIndex) => {
-        let lastLineOfCurrentPage = page[page.length - 1];
-        let nextPage = pages[pageIndex + 1];
-
-        page.forEach((line, lineIndex) => {
-            // Process 'END' markers for scene breaks
-            if (sceneBreaks.some(breakInfo => line.index === breakInfo.last)) {
-                line.end = 'END';
-            }
-
-            // Process 'CONTINUE' bars for page breaks
-            if (line === lastLineOfCurrentPage && nextPage) {
-                let firstLineOfNextPage = nextPage.find(l => l.visible === 'true');
-                if (firstLineOfNextPage && line.visible === 'true') {
-                    line.cont = 'CONTINUE';
-                    firstLineOfNextPage.cont = 'CONTINUE-TOP';
-                }
-            }
-
-            sceneBreaks.forEach(breakInfo => {
-              let endLine = page.find(line => line.index === breakInfo.last);
-              if (endLine) {
-                  endLine.end = 'END';
-              }
-          });
-        });
-    });
-
-    return pages;
 }
 
+  constructFullPages(pages) {
+    return pages.map(page => {
+        let doc = this.scriptData.filter(scene => scene.page === page);
+        doc.push({
+            page: page,
+            bar: 'noBar',
+            hideCont: 'hideCont',
+            hideEnd: 'hideEnd',
+            yPos: 50,
+            category: 'injected-break',
+            visible: 'true'
+        });
+        return doc;
+    });
+}
 
-  
-  // getPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
-  //   sceneArr = this.sortByNum(sceneArr);
-  //   let fullPages = [];
-  //   let used = [];
-  //   let pages = [];
-  //   let sceneBreaks = [];
-  //   // FIND SCENE BREAKS FIRST AND RECORD PAGES THAT ARE NEEDED IN pages ARRAY
-  //   sceneArr.forEach((scene) => {
-  //     for (let i = scene.page; i <= scene.lastPage; i++) {
-  //       if (!pages.includes(i)) {
-  //         pages.push(i);
-  //       }
-  //     }
-  //     // RECORD SCENE BREAKS FOR TRUE AND FALSE VALUES LATER
-  //     // not getting firstLine for all scenes for some reason
-  //     let breaks = {
-  //       first: scene.firstLine,
-  //       last: scene.lastLine,
-  //       scene: scene.sceneNumber,
-  //       firstPage: scene.page,
-  //     };
+  getPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
+    debugger;
+    sceneArr = this.sortByNum(sceneArr);
+    let fullPages = [];
+    let used = [];
+    let pages = [];
+    let sceneBreaks = [];
+    // FIND SCENE BREAKS FIRST AND RECORD PAGES THAT ARE NEEDED IN pages ARRAY
+    sceneArr.forEach((scene) => {
+      for (let i = scene.page; i <= scene.lastPage; i++) {
+        if (!pages.includes(i)) {
+          pages.push(i);
+        }
+      }
+      // RECORD SCENE BREAKS FOR TRUE AND FALSE VALUES LATER
+      // not getting firstLine for all scenes for some reason
+      let breaks = {
+        first: scene.firstLine,
+        last: scene.lastLine,
+        scene: scene.sceneNumber,
+        firstPage: scene.page,
+      };
 
-  //     sceneBreaks.push(breaks);
-  //   });
-  //   // GET ONLY PROPER PAGES FROM TOTAL SCRIPT
-  //   pages.forEach((page) => {
-  //     let doc = this.scriptData.filter((scene) => scene.page === page);
-  //     //  BEGIN THE CLASSIFYING FOR TEMPLATE
-  //     // add a SCENE BREAK LINE
-  //     doc.push({
-  //       page: page,
-  //       bar: 'noBar',
-  //       hideCont: 'hideCont',
-  //       hideEnd: 'hideEnd',
-  //       yPos: 50,
-  //       category: 'injected-break',
-  //       visible: 'true',
-  //     });
-  //     fullPages.push(doc);
-  //   });
-  //   //  SORT FULL PAGES
-  //   fullPages = fullPages.sort((a, b) => (a[0].page > b[0].page ? 1 : -1));
-  //   // MAKE THE LINES VISIBLE
-  //   let final = this.makeVisible(fullPages, sceneBreaks);
-  //   if (numPages.length > 1) {
-  //     let lastPage = numPages[numPages.length - 1];
-  //     final.push(lastPage);
-  //   } // CROSS OUT PROPER LINES
-  //   // CREATE OBJECT FOR FINAL
-  //   let finalDocument = {
-  //     data: [],
-  //     name: name,
-  //     numPages: numPages.length,
-  //     callSheetPath: callSheetPath,
-  //   };
+      sceneBreaks.push(breaks);
+    });
 
-  //   let page = [];
-  //   //FINAL IS OUR ASSEMBLED SIDES DOCUMENT WITH TRUE AND FALSE VALUES
-  //   for (let i = 0; i < final.length; i++) {
-  //     //  if the target has NO text and isnt to be skipped
-  //     // lines are insterted to deliniate page breaks and satisfy below conditional;
-  //     if (final[i].page && !final[i].text && !final[i].skip) {
-  //       finalDocument.data.push(page);
-  //       page = [];
-  //     } else {
-  //       page.push(final[i]);
-  //     }
-  //   }
-  //   // CONTINUE ARROWS
-  
-  //   // LOOP FOR PAGES
-  //   for (let i = 0; i < finalDocument.data.length; i++) {
-  //     // ESTABLISH FIRST AND LAST FOR CONT ARROWS
-  //     let currentPage = finalDocument.data[i];
-  //     let nextPage = finalDocument.data[i + 1] || null;
-  //     let first,
-  //       last,
-  //       nextPageFirst = undefined;
-  //     if (nextPage) nextPageFirst = nextPage[0];
-  //     // loop and find the next page first actual line and check it's not page number
-  //     for (let j = 0; j < 5; j++) {
-  //       if (finalDocument.data[i + 1]) {
-  //         let lineToCheck = finalDocument.data[i + 1][j];
-  //         if (this.conditions.includes(lineToCheck.category)) {
-  //           nextPageFirst = finalDocument.data[i + 1][j];
-  //           break;
-  //         }
-  //       }
-  //     }
-  //     // LOOP FOR LINES
-  //     for (let j = 0; j < currentPage.length; j++) {
-  //       let lastLineChecked = currentPage[currentPage.length - j - 1];
-  //       let currentLine = finalDocument.data[i][j];
-  //       currentLine.end === 'END'
-  //         ? (currentLine.endY = currentLine.yPos - 5)
-  //         : currentLine;
-  //       // get first and last lines of each page
-  //       // to make continute bars
-  //       if (
-  //         currentPage &&
-  //         //check last category
-  //         this.conditions.includes(lastLineChecked.category) &&
-  //         !last
-  //       ) {
-  //         last = lastLineChecked;
-  //       }
-  //       if (
-  //         (nextPage &&
-  //           nextPage[j] &&
-  //           !first &&
-  //           this.conditions.includes(nextPage[j].category)) ||
-  //         i === finalDocument.data.length - 1
-  //       ) {
-  //         first = currentPage[j];
-  //       }
-  //       if (first && last) {
-  //         if (
-  //           first.visible === 'true' &&
-  //           last.visible === 'true' &&
-  //           first.category != 'scene-header'
-  //         ) {
-  //           first.cont = 'CONTINUE-TOP';
-  //           last.finalLineOfScript
-  //             ? (last.cont = 'hideCont')
-  //             : (last.cont = 'CONTINUE');
-  //           first.barY = first.yPos + 10;
-  //           last.barY = 55;
-  //         }
-  //         // conditional to ADD CONTINUE BAR if scene continues BUT first line of page is false
-  //         else if (
-  //           nextPageFirst &&
-  //           nextPageFirst.visible === 'true' &&
-  //           last.visible === 'true'
-  //         ) {
-  //           last.cont = 'CONTINUE';
-  //           last.barY = 55;
-  //         }
-  //         break;
-  //       }
-  //     }
-  //   }
-  //   this.initialFinalDocState = { ...finalDocument.data };
-  //   this.finalDocument.doc = finalDocument;
+    // GET ONLY PROPER PAGES FROM TOTAL SCRIPT
+    pages.forEach((page) => {
+      let doc = this.scriptData.filter((scene) => scene.page === page);
+      //  BEGIN THE CLASSIFYING FOR TEMPLATE
+      // add a SCENE BREAK LINE
+      doc.push({
+        page: page,
+        bar: 'noBar',
+        hideCont: 'hideCont',
+        hideEnd: 'hideEnd',
+        yPos: 50,
+        category: 'injected-break',
+        visible: 'true',
+      });
+      fullPages.push(doc);
+    });
+    //  SORT FULL PAGES
+    fullPages = fullPages.sort((a, b) => (a[0].page > b[0].page ? 1 : -1));
+    // MAKE THE LINES VISIBLE
+    let final = this.makeVisible(fullPages, sceneBreaks);
 
-  //   // finalDocument = this.lineOut.makeX(finalDocument)
-  //   if (this.watermark) {
-  //     this.watermarkPages(this.watermark, finalDocument.data);
-  //   }
-  //   console.log(this.finalDocument);
-  //   this.finalDocument = finalDocument;
-  //   this.finalDocReady = true;
-  //   return finalDocument;
-  // }
+    if (numPages.length > 1) {
+      let lastPage = numPages[numPages.length - 1];
+      final.push(lastPage);
+    }
+    // CROSS OUT PROPER LINES
+    // CREATE OBJECT FOR FINAL
+    let finalDocument = {
+      data: [],
+      name: name,
+      numPages: numPages.length,
+      callSheetPath: callSheetPath,
+    };
+
+    let page = [];
+    //FINAL IS OUR ASSEMBLED SIDES DOCUMENT WITH TRUE AND FALSE VALUES
+    for (let i = 0; i < final.length; i++) {
+      //  if the target has NO text and isnt to be skipped
+      // lines are insterted to deliniate page breaks and satisfy below conditional;
+      if (final[i].page && !final[i].text && !final[i].skip) {
+        finalDocument.data.push(page);
+        page = [];
+      } else {
+        page.push(final[i]);
+      }
+    }
+    // CONTINUE ARROWS
+
+    // LOOP FOR PAGES
+    for (let i = 0; i < finalDocument.data.length; i++) {
+      // ESTABLISH FIRST AND LAST FOR CONT ARROWS
+      let currentPage = finalDocument.data[i];
+      let nextPage = finalDocument.data[i + 1] || null;
+      let first,
+        last,
+        nextPageFirst = undefined;
+      if (nextPage) nextPageFirst = nextPage[0];
+      // loop and find the next page first actual line and check it's not page number
+      for (let j = 0; j < 5; j++) {
+        if (finalDocument.data[i + 1]) {
+          let lineToCheck = finalDocument.data[i + 1][j];
+          if (this.conditions.includes(lineToCheck?.category)) {
+            nextPageFirst = finalDocument.data[i + 1][j];
+            break;
+          }
+        }
+      }
+      // LOOP FOR LINES
+      for (let j = 0; j < currentPage.length; j++) {
+        let lastLineChecked = currentPage[currentPage.length - j - 1];
+        let currentLine = finalDocument.data[i][j];
+        currentLine.end === 'END'
+          ? (currentLine.endY = currentLine.yPos - 5)
+          : currentLine;
+        // get first and last lines of each page
+        // to make continute bars
+        if (
+          currentPage &&
+          //check last category
+          this.conditions.includes(lastLineChecked.category) &&
+          !last
+        ) {
+          last = lastLineChecked;
+        }
+        if (
+          (nextPage &&
+            nextPage[j] &&
+            !first &&
+            this.conditions.includes(nextPage[j].category)) ||
+          i === finalDocument.data.length - 1
+        ) {
+          first = currentPage[j];
+        }
+        if (first && last) {
+          if (
+            first.visible === 'true' &&
+            last.visible === 'true' &&
+            first.category != 'scene-header'
+          ) {
+            first.cont = 'CONTINUE-TOP';
+            last.finalLineOfScript
+              ? (last.cont = 'hideCont')
+              : (last.cont = 'CONTINUE');
+            first.barY = first.yPos + 10;
+            last.barY = 55;
+          }
+          // conditional to ADD CONTINUE BAR if scene continues BUT first line of page is false
+          else if (
+            nextPageFirst &&
+            nextPageFirst.visible === 'true' &&
+            last.visible === 'true'
+          ) {
+            last.cont = 'CONTINUE';
+            last.barY = 55;
+          }
+          break;
+        }
+      }
+    }
+    this.initialFinalDocState = { ...finalDocument.data };
+
+    this.finalDocument.doc = finalDocument;
+
+    // finalDocument = this.lineOut.makeX(finalDocument)
+    if (this.watermark) {
+      this.watermarkPages(this.watermark, finalDocument.data);
+    }
+    console.log(this.finalDocument);
+    this.finalDocument = finalDocument;
+    this.finalDocReady = true;
+    return finalDocument;
+  }
 
   sendFinalDocumentToServer(finalDocument) {
     // Implementation of sendFinalDocumentToServer

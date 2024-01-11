@@ -121,6 +121,7 @@ export class DashboardRightComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    console.log(this.pdf.finalDocument)
     this.intizilazeState()
     this.initializeSceneSelectionTable()
 
@@ -308,6 +309,8 @@ export class DashboardRightComponent implements OnInit {
     return this.scriptData[scene.lastLine].page || null;
   };
   toggleLastLooks() {
+    console.log('firigin alst looks')
+    debugger
     this.lastLooksReady = !this.lastLooksReady;
     // deprecated
     if (this.lastLooksReady) {
@@ -321,7 +324,8 @@ export class DashboardRightComponent implements OnInit {
       this.callsheet = localStorage.getItem('callSheetPath');
       this.waitingForScript = true;
       // this.openFinalSpinner();
-      this.pdf.getPdf(this.selected, this.script, this.totalPages, this.callsheet);
+      this.pdf.processPdf(this.selected, this.script, this.totalPages, this.callsheet);
+      // this.pdf.getPdf(this.selected, this.script, this.totalPages, this.callsheet);
     }
   }
 

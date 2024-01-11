@@ -1,4 +1,4 @@
-import { Router } from '@angular/router';
+ import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { UploadService } from '../../services/upload/upload.service';
 import { Component, OnInit } from '@angular/core';

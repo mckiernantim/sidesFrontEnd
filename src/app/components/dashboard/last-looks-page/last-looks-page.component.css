@@ -269,6 +269,10 @@ li.page-number {
     display: block !important;
     right: 35px !important
 }
+.continue-span {
+    right:70%;
+    font-size: 16pt
+}
 
 .watermark {
     z-index: 2;

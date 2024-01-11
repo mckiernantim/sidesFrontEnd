@@ -15,6 +15,7 @@ import { Router } from '@angular/router';
 import { UndoService } from 'src/app/services/edit/undo.service';
 import { Observable, Subscription } from 'rxjs';
 import { DragDropService } from 'src/app/services/drag-drop/drag-drop.service';
+import { PdfService } from 'src/app/services/pdf/pdf.service';
 interface QueueItem {
   pageIndex: number;
   line: Line;
@@ -33,10 +34,11 @@ export class LastLooksComponent implements OnInit {
     public undoService: UndoService,
     private token: TokenService,
     private router: Router,
-    private cdRef: ChangeDetectorRef
+    private cdRef: ChangeDetectorRef,
+    public pdf:PdfService
   ) {}
   // doc is given to our component
-  @Input() doc: any;
+  doc:any 
   @Input() editState: boolean;
   @Input() resetDocState: string;
   @Input() undoState: string;
@@ -68,7 +70,9 @@ export class LastLooksComponent implements OnInit {
 
   ngOnInit(): void {
     this.sceneBreaks = [];
+    this.doc = this.pdf.finalDocument.data;
     this.pages = this.doc;
+    debugger;
     this.initialDocState = this.pages.map((page) => [...page] as Line[]);
     this.establishInitialLineState();
 
@@ -120,15 +124,15 @@ export class LastLooksComponent implements OnInit {
 
   processLinesForLastLooks(arr) {
     
-    this.getSceneBreaks(arr)
-    this.setContAndEndVals()
+    // this.getSceneBreaks(arr)
+    // this.setContAndEndVals()
     arr.forEach((page) => {
       let lastSceneIndex = -1;
       page.forEach((line, index) => {
-        this.hideBars(line)
-        // Existing adjustments
+        // this.hideBars(line)
+        // // Existing adjustments
         this.adjustSceneNumberPosition(line);
-        this.adjustSceneHeader(line);
+        // this.adjustSceneHeader(line);
         this.revealContSubcategoryLines(line);
         this.adjustBarPosition(line);
         this.calculateYPositions(line);

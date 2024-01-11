@@ -39,7 +39,7 @@
                         (mouseup)="dragDrop.stopDrag(line)"
                         [class]="(line.bar ? line.bar : 'hideBar')"
                         [style.bottom]="line.calculatedYpos">
-                        <span class="start-span">START {{ line.sceneNumberText }} </span>
+                        <span class="start-span">START {{ line.sceneNumber }} </span>
                     </span>
 
                     <!-- 
@@ -88,13 +88,13 @@
                         (mousemove)="determineIfWeCanDrag() ? throttledDragBar($event): null"
                         (mouseup)="dragDrop.stopDrag($event)"
                     >
-                        <span class="start-span"> ↓↓{{line.sceneNumberText}} CONTINUED↓↓↓ </span>
+                        <span class="continue-span"> ↓↓{{line.sceneNumber}} CONTINUED↓↓↓ </span>
                     </span>
 
                     <!-- end span -->
                     <span class="bar-span"
                     (click)="toggleSelectedLine($event, line, lineIndex)" 
-                    class="hideEnd + ' ' + line.end"
+                    [class]="(line.end === 'END' ? 'END' : 'hideEnd') + ' ' + line.hidden"
                     [style.bottom]="line.calculatedEnd">
                   <span class="end-span"> END {{line.sceneNumberText}} </span>
               </span>
