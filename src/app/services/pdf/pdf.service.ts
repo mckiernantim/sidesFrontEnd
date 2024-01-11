@@ -57,7 +57,6 @@ export class PdfService {
   }
 
   private initializeData() {
-    debugger
     this.scriptData = this.upload.lineArr;
     this.totalPages = this.upload.pagesArr || null;
 
@@ -128,7 +127,7 @@ export class PdfService {
       ) {
         lineToMakeVisible.visible = 'true';
         // add START bar to scene headers - only Scene Headers have the BAR attriubte
-        if (lineToMakeVisible.bar === 'noBar') {
+        if (lineToMakeVisible.bar != 'bar') {
           lineToMakeVisible.bar = 'bar';
         }
         // IF OUR LINE HAS A LAST LINE ATTRIBUTE THAT MEANS ITS A SCENE HEADER
@@ -229,13 +228,15 @@ export class PdfService {
   
 
   getPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
-    debugger
+    
     const requiredPages = this.getRequiredPages(sceneArr);
     const sceneBreaks = this.calculateSceneBreaks(sceneArr);
 
     const pages = this.getPagesForSelectedScenes(this.scriptData, requiredPages);
     const finalPagesWithVisibilitySet = this.setVisibleForSelectedScenes(pages, sceneBreaks);
     const finalPagesWithContinueBars = this.processContinueBars(finalPagesWithVisibilitySet, sceneBreaks);
+
+    
 
     this.finalDocument.doc = {
         data: finalPagesWithContinueBars,
@@ -247,6 +248,7 @@ export class PdfService {
     if (this.watermark) {
         this.watermarkPages(this.watermark, finalPagesWithContinueBars);
     }
+    
 
     this.finalDocument = finalPagesWithContinueBars;
     this.finalDocReady = true;
@@ -301,32 +303,37 @@ export class PdfService {
   }
  
   private processContinueBars(pages: any[], sceneBreaks: any[]): any[] {
-  pages.forEach((page, pageIndex) => {
-      let nextPage = pages[pageIndex + 1];
-      let lastLineOfCurrentPage = page[page.length - 1];
-      let firstLineOfNextPage = nextPage ? nextPage[0] : null;
+    pages.forEach((page, pageIndex) => {
+        let lastLineOfCurrentPage = page[page.length - 1];
+        let nextPage = pages[pageIndex + 1];
 
-      page.forEach((line, lineIndex) => {
-          // Check if the line is the last visible line on the current page
-          if (line.visible === 'true' && line === lastLineOfCurrentPage) {
-              // Check for continuation to the next page
-              if (nextPage && firstLineOfNextPage && firstLineOfNextPage.visible === 'true') {
-                  line.continueBar = 'CONTINUE';
+        page.forEach((line, lineIndex) => {
+            // Process 'END' markers for scene breaks
+            if (sceneBreaks.some(breakInfo => line.index === breakInfo.last)) {
+                line.end = 'END';
+            }
+
+            // Process 'CONTINUE' bars for page breaks
+            if (line === lastLineOfCurrentPage && nextPage) {
+                let firstLineOfNextPage = nextPage.find(l => l.visible === 'true');
+                if (firstLineOfNextPage && line.visible === 'true') {
+                    line.cont = 'CONTINUE';
+                    firstLineOfNextPage.cont = 'CONTINUE-TOP';
+                }
+            }
+
+            sceneBreaks.forEach(breakInfo => {
+              let endLine = page.find(line => line.index === breakInfo.last);
+              if (endLine) {
+                  endLine.end = 'END';
               }
-          }
+          });
+        });
+    });
 
-          // Check if the line is the first visible line on the next page
-          if (nextPage && line.visible === 'true' && line === firstLineOfNextPage) {
-              // Check for continuation from the previous page
-              if (lineIndex === 0 && lastLineOfCurrentPage.visible === 'true') {
-                  line.continueBar = 'CONTINUE-TOP';
-              }
-          }
-      });
-  });
+    return pages;
+}
 
-  return pages;
-  }
 
   
   // getPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {

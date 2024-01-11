@@ -26,6 +26,8 @@ export interface Line {
   cont?:string,
   endY?:number,
   hideEnd?:string,
+  lastLine?:number,
+
   trueScene?:string,
   hideCont?:string,
   watermarkText?:string,

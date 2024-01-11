@@ -27,7 +27,6 @@ export class TokenService {
   }
 
   decodeToken(token: string): void {
-    debugger
     // this.decodedToken = jwt_decode<DecodedToken>(token);
   }
   initializeCountdown(): void {
