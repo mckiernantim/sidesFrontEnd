@@ -342,7 +342,6 @@ export class DashboardRightComponent implements OnInit {
       dialogRef.afterClosed().subscribe((result) => {
         let coverSheet = localStorage.getItem('callSheetPath');
         this.waitingForScript = true;
-        console.log(result);
         this.callsheet = result?.callsheet.name || null;
         this.openFinalSpinner();
         this.finalDocument = this.pdf.getPdf(this.selected, this.script, this.totalPages, coverSheet);

@@ -17,4 +17,102 @@ describe('PdfService', () => {
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
+
+  describe('PdfService - processData', () => {
+    let service: PdfService;
+  
+    beforeEach(() => {
+      TestBed.configureTestingModule({});
+      service = TestBed.inject(PdfService);
+    });
+    describe(`PdfService - processLine`, () => {
+      it('processLines should mark the correct number of lines as END', () => {
+        // this needs to be set up properly - thats a whole other story
+        const mockSceneArr = JSON.parse(mockData.sceneArr);
+        const mockBreaks = JSON.parse(mockData.breaksActual);
+        const processedDoc = service.setLinesInSceneToVisible(mockSceneArr, mockBreaks);
+    
+        // Get the lines marked as 'END' at the last index of each scene
+        const endLines = mockBreaks.map(el => el.last)
+                                   .map(num => processedDoc.find(line => line.index === num && line.end === 'END'));
+    
+        // Check if the number of lines with 'END' is equal to the length of sceneBreaks
+        expect(endLines.length).toBe(mockBreaks.length);
+      });
+    })
+    describe('handleLastLineOfScene', () => {
+      it('should correctly handle the last line of a scene', () => {
+        // Test implementation...
+      });
+    });
+  
+    describe('makeVisible', () => {
+      it('should correctly process visibility of scenes', () => {
+        // Test implementation...
+      });
+    });
+  
+    describe('handleFinalScene', () => {
+      it('should correctly handle the final scene', () => {
+        // Test implementation...
+      });
+    });
+  
+    // Add more tests for other processData methods...
+  });
+  describe('PdfService - makeSidesDocument', () => {
+    let service: PdfService;
+  
+    beforeEach(() => {
+      TestBed.configureTestingModule({});
+      service = TestBed.inject(PdfService);
+    });
+
+    describe('PdfService - createDocument', () => {
+      let service: PdfService;
+    
+      beforeEach(() => {
+        TestBed.configureTestingModule({});
+        service = TestBed.inject(PdfService);
+      });
+    
+      describe('constructFullPages', () => {
+        it('should correctly construct full pages', () => {
+          // Test implementation...
+        });
+      });
+    
+      describe('collectPageNumbers', () => {
+        it('should correctly collect page numbers from scenes', () => {
+          // Test implementation...
+        });
+      });
+    
+      describe('recordSceneBreaks', () => {
+        it('should correctly sort scenes by scene number', () => {
+          const scenes = [
+            { sceneNumber: 3, otherData: '...' },
+            { sceneNumber: 1, otherData: '...' },
+            { sceneNumber: 2, otherData: '...' }
+          ];
+          const sortedScenes = service.sortByNum(scenes);
+          expect(sortedScenes[0].sceneNumber).toBe(1);
+          expect(sortedScenes[1].sceneNumber).toBe(2);
+          expect(sortedScenes[2].sceneNumber).toBe(3);
+        });
+        it('should correctly record scene breaks', () => {
+          // Test implementation...
+        });
+      });
+    
+      // Add more tests for other createDocument methods...
+    });
+  
+  
+  });
+
+
 });
+
+
+

@@ -62,17 +62,15 @@ export class PdfService {
   initializeData() {
     this.scriptData = this.upload.lineArr;
     this.totalPages = this.upload.pagesArr || null;
-
     if (this.scriptData) {
       this.initializeCharactersAndScenes();
     }
   }
 
+
   private initializeCharactersAndScenes() {
     this.getCharacters();
     this.getScenes();
-
-    // Logic to initialize characters and scenes
   }
 
   getCharacters() {
@@ -109,59 +107,72 @@ export class PdfService {
     }
   }
 
-  makeVisible2(sceneArr, breaks) {
+  setLinesInSceneToVisible(sceneArr, breaks) {
+    // combine the complete scenes
     let merged = this.flattenScenes(sceneArr);
+    // sort the scene breaks for good measure 
     let sortedBreaks = this.sortBreaks(breaks);
-
+    // process ALL THE FUCKING DATA
     return this.processLines(merged, sortedBreaks);
   }
 
   flattenScenes(sceneArr) {
-    // Implement flattening of scene arrays
     return sceneArr.reduce((acc, scene) => acc.concat(scene), []);
   }
 
   sortBreaks(breaks) {
-    // Implement sorting of breaks
     return breaks.sort((a, b) => a.first - b.first);
   }
 
   processLines(merged, breaks) {
+    // start with a zeroed index for the currentSceneBreak
     let currentBreakIndex = 0;
+    // get the first scene break - where the scene ends
+      // this data arrives from the server
     let currentSceneBreak = breaks[currentBreakIndex];
-
-    merged.forEach((line, index) => {
+    for (let index = 0; index < merged.length; index++) {
+      const line = merged[index];
+      console.log(currentSceneBreak, " <--- scene break");
       if (this.isLineInCurrentBreak(line, currentSceneBreak)) {
-        line.visible = 'true';
-        this.handleSpecialCases(line, merged, index, breaks, currentBreakIndex);
+          // flag this as string true - this is done for CSS parsing at the end
+          line.visible = 'true';
+          this.handleSpecialCases(line, merged, index, breaks, currentBreakIndex);
       }
-
+  
       // Move to the next scene break if needed
       if (line.index === currentSceneBreak.last) {
-        currentBreakIndex++;
-        currentSceneBreak = breaks[currentBreakIndex];
+          currentBreakIndex++;
+          currentSceneBreak = breaks[currentBreakIndex];
+          if (!currentSceneBreak) {
+              break; // Exit the loop when there are no more scene breaks
+          }
       }
-    });
-
+  }
+    debugger
     return merged;
   }
 
   isLineInCurrentBreak(line, currentSceneBreak) {
+    // edge case for the last scene in the doc - inserted before we got here
     if (currentSceneBreak === 'last') {
-      return true; // Handle the special case of the last scene break
+      return true;
     }
+    
+    // return bool value to see if our line falls within bounds
     return (
       line.index > currentSceneBreak.first &&
       line.index <= currentSceneBreak.last
     );
   }
-
+ 
   handleSpecialCases(line, merged, index, breaks, currentBreakIndex) {
-    if (line.category === 'scene-header' && line.bar !== 'bar') {
+    // check if our line is true, is a scene hader, and doesn't have a BAR value already
+    if (line.category === 'scene-header' && line.bar !== 'bar' && line.visible === "true") {
+      // flags line to show a START bar
       line.bar = 'bar';
     }
 
-    // Handle the Last Line of a Scene
+    // handle last lines in scenes-  this is flagged in the scan
     if (line.lastLine) {
       this.handleLastLineOfScene(line, merged, index);
     }
@@ -189,7 +200,7 @@ export class PdfService {
     }
   }
   handleFinalScene(line, merged) {
-    // Find the actual last line of content, ignoring skipped categories
+    // find real last scene skipping lines what need the skippin'
     const skippedCategories = [
       'page-number',
       'injected-break',
@@ -384,12 +395,13 @@ export class PdfService {
   }
 
   processPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
-    debugger
     sceneArr = this.sortByNum(sceneArr);
     let pages = this.collectPageNumbers(sceneArr);
     let sceneBreaks = this.recordSceneBreaks(sceneArr);
-
+    
     let fullPages = this.constructFullPages(pages);
+
+    let processedDoc = this.setLinesInSceneToVisible(fullPages, sceneBreaks)
 
     // You can now use sceneBreaks and fullPages as needed
     return { fullPages, sceneBreaks };
