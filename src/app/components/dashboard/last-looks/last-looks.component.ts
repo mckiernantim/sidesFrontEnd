@@ -71,20 +71,19 @@ export class LastLooksComponent implements OnInit {
   ngOnInit(): void {
     this.sceneBreaks = [];
     this.doc = this.pdf.finalDocument.data;
-    this.pages = this.doc;
     debugger;
-    this.initialDocState = this.pages.map((page) => [...page] as Line[]);
+    this.initialDocState =this.doc.map((page) => [...page] as Line[]);
     this.establishInitialLineState();
 
     this.undoQueue = this.undoService.undoQueue$.subscribe((change) => {
       const { pageIndex, line } = change;
-      const indexToUpdate = this.pages[pageIndex].findIndex(
+      const indexToUpdate =this.doc[pageIndex].findIndex(
         (l) => l.index === line.index
       );
 
       if (indexToUpdate !== -1) {
         // Replace the entire object in the array
-        this.pages[pageIndex][indexToUpdate] = line;
+       this.doc[pageIndex][indexToUpdate] = line;
         // Trigger change detection
         this.cdRef.markForCheck();
       }
@@ -93,19 +92,18 @@ export class LastLooksComponent implements OnInit {
 
   ngOnChanges(changes: SimpleChanges) {
     console.log(changes, ' cha-cha-changes');
-    if (this.pages && changes.resetDocState) this.resetDocumentToInitialState();
-    if (this.pages && changes.undoState) this.undoService.undo();
+    if (this.doc && changes.resetDocState) this.resetDocumentToInitialState();
+    if (this.doc && changes.undoState) this.undoService.undo();
     if (!this.canEditDocument) {
       this.selectedLine = null;
     }
   }
   establishInitialLineState() {
     
-    this.processLinesForLastLooks(this.pages);
+    this.processLinesForLastLooks(this.doc);
     // this.adjustLinesForDisplay(this.pages); // Add this line
     this.updateDisplayedPage();
-    debugger
-    console.log(this.pages)
+    console.log(this.doc)
     this.selectedLine = this.doc[0][0]; // Assuming this selects the first line
   }
   findLastLinesOfScenes(pages) {
@@ -166,11 +164,11 @@ export class LastLooksComponent implements OnInit {
   
   resetDocumentToInitialState() {
     this.undoService.resetQueue();
-    this.pages = this.initialDocState;
+    this.doc = this.initialDocState;
     this.processLinesForLastLooks(this.pages);
   }
   updateDisplayedPage() {
-    this.currentPage = this.pages[this.currentPageIndex];
+    this.currentPage =this.doc[this.currentPageIndex];
     this.undoService.currentPageIndex = this.currentPageIndex;
   }
   establishContAndEnd(sceneData) {
@@ -247,7 +245,7 @@ export class LastLooksComponent implements OnInit {
     }
   }
   nextPage() {
-    if (this.currentPageIndex < this.pages.length) {
+    if (this.currentPageIndex <this.doc.length) {
       this.currentPageIndex++;
       this.updateDisplayedPage();
     }
@@ -358,7 +356,7 @@ export class LastLooksComponent implements OnInit {
     return arr;
   }
   findFirstLineOfNextPage(pageIndex) {
-    const nextPage = this.pages[pageIndex + 1];
+    const nextPage =this.doc[pageIndex + 1];
     const acceptableCategories = this.acceptableCategoriesForFirstLine;
     let nextPageFirst = undefined;
   
@@ -400,10 +398,10 @@ export class LastLooksComponent implements OnInit {
     );
   }
   setContAndEndVals() {
-    for (let i = 0; i < this.pages.length; i++) {
+    for (let i = 0; i <this.doc.length; i++) {
       // ESTABLISH FIRST AND LAST FOR CONT ARROWS
-      let currentPage = this.pages[i];
-      let nextPage = this.pages[i + 1] || null;
+      let currentPage =this.doc[i];
+      let nextPage =this.doc[i + 1] || null;
       let first,
         last,
         nextPageFirst = undefined;
@@ -411,9 +409,9 @@ export class LastLooksComponent implements OnInit {
       // loop and find the next page first actual line and check it's not a page number
       for (let j = 0; j < 5; j++) {
         if (this.pages[i + 1]) {
-          let lineToCheck = this.pages[i + 1][j];
+          let lineToCheck =this.doc[i + 1][j];
           if (this.acceptableCategoriesForFirstLine.includes(lineToCheck.category)) {
-            nextPageFirst = this.pages[i + 1][j];
+            nextPageFirst =this.doc[i + 1][j];
             break;
           }
         }
@@ -421,7 +419,7 @@ export class LastLooksComponent implements OnInit {
       // LOOP FOR LINES
       for (let j = 0; j < currentPage.length; j++) {
         let lastLineChecked = currentPage[currentPage.length - j - 1];
-        let currentLine = this.pages[i][j];
+        let currentLine =this.doc[i][j];
         currentLine.end === 'END' ? (currentLine.endY = currentLine.yPos - 5) : currentLine;
         // get first and last lines of each page to make continue bars
         if (
@@ -437,7 +435,7 @@ export class LastLooksComponent implements OnInit {
             nextPage[j] &&
             !first &&
             this.acceptableCategoriesForFirstLine.includes(nextPage[j].category)) ||
-          i === this.pages.length - 1
+          i ===this.doc.length - 1
         ) {
           first = currentPage[j];
         }

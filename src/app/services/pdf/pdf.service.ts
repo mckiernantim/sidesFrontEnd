@@ -48,10 +48,6 @@ export class PdfService {
   // 1/5 WE NEED TO MOVE THIS SO THAT THIS FIRES EVERY TIME THE USER NAVIGATES TO UPLOAD COMPONENT
   constructor(public upload: UploadService) {
     // Initialize your properties if needed
-    this.finalDocument = {
-      doc: {},
-      breaks: {},
-    };
     this.initializeData();
     // Inject other services if required
   }
@@ -132,7 +128,6 @@ export class PdfService {
     let currentSceneBreak = breaks[currentBreakIndex];
     for (let index = 0; index < merged.length; index++) {
       const line = merged[index];
-      console.log(currentSceneBreak, " <--- scene break");
       if (this.isLineInCurrentBreak(line, currentSceneBreak)) {
           // flag this as string true - this is done for CSS parsing at the end
           line.visible = 'true';
@@ -148,7 +143,7 @@ export class PdfService {
           }
       }
   }
-    debugger
+    
     return merged;
   }
 
@@ -360,33 +355,9 @@ export class PdfService {
     return merged;
   }
 
-  //   getPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
-
-  //     const requiredPages = this.getRequiredPages(sceneArr);
-  //     const sceneBreaks = this.calculateSceneBreaks(sceneArr);
-
-  //     const pages = this.getPagesForSelectedScenes(this.scriptData, requiredPages);
-  //     const finalPagesWithVisibilitySet = this.setVisibleForSelectedScenes(pages, sceneBreaks);
-  //     const finalPagesWithContinueBars = this.processContinueBars(finalPagesWithVisibilitySet, sceneBreaks);
-
-  //     this.finalDocument.doc = {
-  //         data: finalPagesWithContinueBars,
-  //         name: name,
-  //         numPages: numPages.length,
-  //         callSheetPath: callSheetPath,
-  //     };
-
-  //     if (this.watermark) {
-  //         this.watermarkPages(this.watermark, finalPagesWithContinueBars);
-  //     }
-
-  //     this.finalDocument = finalPagesWithContinueBars;
-  //     this.finalDocReady = true;
-  //     return finalPagesWithContinueBars;
-  // }
 
   initializePdfDocument(name, numPages, callSheetPath) {
-    this.finalPdfData = {
+    this.finalDocument = {
       name: name,
       numPages: numPages,
       callSheetPath: callSheetPath,
@@ -396,15 +367,19 @@ export class PdfService {
 
   processPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
     sceneArr = this.sortByNum(sceneArr);
+    this.initializePdfDocument(name, numPages, callSheetPath)
     let pages = this.collectPageNumbers(sceneArr);
     let sceneBreaks = this.recordSceneBreaks(sceneArr);
     
     let fullPages = this.constructFullPages(pages);
 
-    let processedDoc = this.setLinesInSceneToVisible(fullPages, sceneBreaks)
 
+    const processedLines = this.setLinesInSceneToVisible(fullPages, sceneBreaks);
+    const linesAsPages = this.buildFinalPages(processedLines)
+    this.finalDocument.data = linesAsPages;
+    this.finalDocReady = true;
     // You can now use sceneBreaks and fullPages as needed
-    return { fullPages, sceneBreaks };
+    return
   }
 
   collectPageNumbers(sceneArr) {
@@ -444,8 +419,31 @@ export class PdfService {
     });
 }
 
+buildFinalPages(processedLines) {
+  let finalPages = [];
+  let currentPage = [];
+
+  processedLines.forEach(line => {
+    // Check for page transition or end of document
+    if (line.category === 'injected-break' || !line.text) {
+      if (currentPage.length > 0) {
+        finalPages.push(currentPage);
+        currentPage = [];
+      }
+    } else {
+      currentPage.push(line);
+    }
+  });
+
+  // Add the last page if it contains any lines
+  if (currentPage.length > 0) {
+    finalPages.push(currentPage);
+  }
+
+  return finalPages;
+}
   getPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
-    debugger;
+    
     sceneArr = this.sortByNum(sceneArr);
     let fullPages = [];
     let used = [];
@@ -597,7 +595,7 @@ export class PdfService {
     if (this.watermark) {
       this.watermarkPages(this.watermark, finalDocument.data);
     }
-    console.log(this.finalDocument);
+    
     this.finalDocument = finalDocument;
     this.finalDocReady = true;
     return finalDocument;

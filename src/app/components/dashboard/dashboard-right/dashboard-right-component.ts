@@ -310,7 +310,6 @@ export class DashboardRightComponent implements OnInit {
   };
   toggleLastLooks() {
     console.log('firigin alst looks')
-    debugger
     this.lastLooksReady = !this.lastLooksReady;
     // deprecated
     if (this.lastLooksReady) {

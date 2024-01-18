@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 
 import { PdfService } from './pdf.service';
-import scriptData from "./mockScriptData.json"
+const scriptData = require("./mockScriptData.json");
+
 describe('PdfService', () => {
   let service: PdfService;
   const mockData = {
