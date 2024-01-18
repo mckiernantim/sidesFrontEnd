@@ -71,8 +71,8 @@ export class LastLooksComponent implements OnInit {
   ngOnInit(): void {
     this.sceneBreaks = [];
     this.doc = this.pdf.finalDocument.data;
+    debugger
     this.pages = this.doc;
-    debugger;
     this.initialDocState = this.doc.map((page) => [...page] as Line[]);
     this.establishInitialLineState();
 
@@ -102,6 +102,7 @@ export class LastLooksComponent implements OnInit {
   establishInitialLineState() {
     
     this.processLinesForLastLooks(this.doc);
+    debugger
     // this.adjustLinesForDisplay(this.pages); // Add this line
     this.updateDisplayedPage();
     console.log(this.doc)
@@ -125,6 +126,7 @@ export class LastLooksComponent implements OnInit {
     
     // this.getSceneBreaks(arr)
     // this.setContAndEndVals()
+    debugger
     arr.forEach((page) => {
       let lastSceneIndex = -1;
       page.forEach((line, index) => {
@@ -135,7 +137,6 @@ export class LastLooksComponent implements OnInit {
         this.revealContSubcategoryLines(line);
         this.adjustBarPosition(line);
         this.calculateYPositions(line);
-       
         line.calculatedXpos = Number(line.xPos) * 1.3 + 'px';
         line.calculatedEnd =
           Number(line.endY) > 90 ? Number(line.endY) * 1.3 + 'px' : '90px';
@@ -327,10 +328,11 @@ export class LastLooksComponent implements OnInit {
     const { yPos, barY } = line;
 
     line.calculatedYpos = this.adjustYpositionAndReturnString(yPos);
-    if (line.cont || line.end) {
-      // either End or CONT valie
-      line.calculatedBarY = this.adjustYpositionAndReturnString(yPos - 5);
-    }
+    // if (line.cont || line.end) {
+    //   // either End or CONT valie
+    //   debugger
+    //   line.calculatedBarY = this.adjustYpositionAndReturnString(yPos - 5);
+    // }
   }
 
   restorePositionsInDocument(arr) {

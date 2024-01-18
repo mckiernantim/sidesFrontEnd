@@ -38,9 +38,16 @@
                     <span  
                         (mouseup)="dragDrop.stopDrag(line)"
                         [class]="(line.bar ? line.bar : 'hideBar')"
-                        [style.bottom]="line.calculatedYpos">
+                        [style.bottom]="line.calculatedYpos"
+                        *ngIf="line.category !== 'page-number' && 
+                            line.category !== 'page-number-hidden' && 
+                            line.category !== 'injected-break'"
+                        >
                         <span class="start-span">START {{ line.sceneNumberText }} </span>
                     </span>
+
+                        
+        
 
                     <!-- 
                     LINE SPAN 
@@ -62,7 +69,7 @@
                         [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex), 'edit-li': canEditDocument && !selectedLine  }"
                         [style.bottom]="line.calculatedYpos"
                         [style.left]="line.calculatedXpos" 
-                        [textContent]="line.text"
+                        [textContent]="line.text + ' ' + line.sceneNumberText "
                         
                         (input)="canEditDocument && updateText($event, line, lineIndex)"
                         (contextmenu)="canEditDocument 
@@ -82,22 +89,29 @@
 
                     <!-- continue spans -->
                     <span class="bar-span"
-                        (mousedown)="canEditDocument && !this.contextMenuLine && handleLeftClick($event, line, lineIndex, true)"
-                        [class]="(line.cont ? line.cont : 'hideCont') + ' ' + line.hidden"
-                        [style.bottom]="line.calculatedBarY"
-                        (mousemove)="determineIfWeCanDrag() ? throttledDragBar($event): null"
-                        (mouseup)="dragDrop.stopDrag($event)"
-                    >
-                        <span class="continue-span"> ↓↓ {{line.sceneNumberText}} CONTINUED↓↓↓ </span>
-                    </span>
-
-                    <!-- end span -->
-                    <span class="bar-span"
+                    (mousedown)="canEditDocument && !contextMenuLine && handleLeftClick($event, line, lineIndex, true)"
+                    [class]="(line.cont ? line.cont : 'hideCont') + ' ' + line.hidden"
+                    [style.bottom]="line.calculatedBarY"
+                    (mousemove)="determineIfWeCanDrag() ? throttledDragBar($event) : null"
+                    (mouseup)="dragDrop.stopDrag($event)"
+                    *ngIf="line.category !== 'page-number' && 
+                            line.category !== 'page-number-hidden' && 
+                            line.category !== 'injected-break'"
+                >
+                    <span class="continue-span"> ↓↓{{line.sceneNumberText}} CONTINUED↓↓↓</span>
+                </span>
+                
+                <!-- end span -->
+                <span class="bar-span"
                     (click)="toggleSelectedLine($event, line, lineIndex)" 
                     [class]="(line.end === 'END' ? 'END' : 'hideEnd') + ' ' + line.hidden"
-                    [style.bottom]="line.calculatedEnd">
-                  <span class="end-span"> END {{line.sceneNumberText}} wheres the number? </span>
-              </span>
+                    [style.bottom]="line.calculatedEnd"
+                    *ngIf="line.category !== 'page-number' && 
+                            line.category !== 'page-number-hidden' && 
+                            line.category !== 'injected-break'"
+                >
+                    <span class="end-span"> END {{line.sceneNumberText}} </span>
+                </span>
 
                     <!-- right scene number span -->
                     <span *ngIf="line.category === 'scene-header'" class="scene-number-right {{ line.trueScene }} {{ line.visible }}"

@@ -58,9 +58,28 @@ describe('PdfService', () => {
         // Test implementation...
       });
     });
-  
-    // Add more tests for other processData methods...
-  });
+    describe('handleFindSceneNumberText', () => {
+      it('should find the correct scene number text', () => {
+        // Mock page data
+        const page = [
+          { category: 'scene-header', scene: 1, sceneNumberText: 'Scene 1' },
+          { category: 'dialog', scene: 1 },
+          { category: 'scene-header', scene: 2, sceneNumberText: 'Scene 2' },
+          { category: 'dialog', scene: 2 },
+          // Add more lines as needed
+        ];
+    
+        // The line for which we want to find the scene number text
+        const line = { category: 'dialog', scene: 2 };
+    
+        // Call the function
+        const sceneNumberText = service.findSceneNumberText(page, line);
+    
+        // Check if the function returns the correct scene number text
+        expect(sceneNumberText).toEqual('Scene 2');
+      });
+    });
+ 
   describe('PdfService - makeSidesDocument', () => {
     let service: PdfService;
   
