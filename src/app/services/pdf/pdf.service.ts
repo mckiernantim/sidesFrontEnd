@@ -372,10 +372,17 @@ export class PdfService {
     let sceneBreaks = this.recordSceneBreaks(sceneArr);
     
     let fullPages = this.constructFullPages(pages);
+ // Set lines in scenes to visible
+ let processedLines = this.setLinesInSceneToVisible(fullPages, sceneBreaks);
 
+ // Build final pages based on 'page-number'
+ let linesAsPages = this.buildFinalPages(processedLines);
 
-    const processedLines = this.setLinesInSceneToVisible(fullPages, sceneBreaks);
-    const linesAsPages = this.buildFinalPages(processedLines)
+ // Mark 'CONTINUE' and 'CONTINUE-TOP' where needed
+ this.addContinueMarkers(linesAsPages);
+
+ // Mark 'END' for the last lines of scenes
+ this.markEndLines(linesAsPages, sceneBreaks);
     this.finalDocument.data = linesAsPages;
     this.finalDocReady = true;
     // You can now use sceneBreaks and fullPages as needed
@@ -420,28 +427,52 @@ export class PdfService {
 }
 
 buildFinalPages(processedLines) {
-  let finalPages = [];
-  let currentPage = [];
-
+  let finalPages = {};
   processedLines.forEach(line => {
-    // Check for page transition or end of document
-    if (line.category === 'injected-break' || !line.text) {
-      if (currentPage.length > 0) {
-        finalPages.push(currentPage);
-        currentPage = [];
-      }
-    } else {
-      currentPage.push(line);
+    // Initialize an array for each page number
+    if (!finalPages[line.page]) {
+      finalPages[line.page] = [];
+    }
+    // Add the line to the corresponding page
+    finalPages[line.page].push(line);
+  });
+
+  // Convert the object into an array of pages
+  return Object.values(finalPages);
+}
+markEndLines(processedLines, breaks) {
+  breaks.forEach(breakInfo => {
+    // Find the last line of the current scene
+    const lastLineOfScene = processedLines.find(line => line.index === breakInfo.last);
+    
+    // Mark the last line with 'END'
+    if (lastLineOfScene) {
+      lastLineOfScene.end = 'END';
     }
   });
 
-  // Add the last page if it contains any lines
-  if (currentPage.length > 0) {
-    finalPages.push(currentPage);
-  }
-
-  return finalPages;
+  return processedLines;
 }
+addContinueMarkers(pages) {
+  for (let i = 0; i < pages.length; i++) {
+    let currentPage = pages[i];
+    let nextPage = pages[i + 1] || null;
+    let lastLineCurrentPage = currentPage[currentPage.length - 1];
+    let firstLineNextPage = nextPage ? nextPage[0] : null;
+
+    // If the scene continues to the next page, mark the last line of the current page with 'CONTINUE'
+    if (nextPage && lastLineCurrentPage.scene === firstLineNextPage.scene) {
+      lastLineCurrentPage.cont = 'CONTINUE';
+    }
+
+    // If the current page is the continuation of a scene from the previous page, mark the first line with 'CONTINUE-TOP'
+    if (i > 0 && currentPage[0].scene === pages[i - 1][pages[i - 1].length - 1].scene) {
+      currentPage[0].cont = 'CONTINUE-TOP';
+    }
+  }
+}
+
+
   getPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
     
     sceneArr = this.sortByNum(sceneArr);

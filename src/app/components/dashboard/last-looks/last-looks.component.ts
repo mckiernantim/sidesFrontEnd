@@ -71,8 +71,9 @@ export class LastLooksComponent implements OnInit {
   ngOnInit(): void {
     this.sceneBreaks = [];
     this.doc = this.pdf.finalDocument.data;
+    this.pages = this.doc;
     debugger;
-    this.initialDocState =this.doc.map((page) => [...page] as Line[]);
+    this.initialDocState = this.doc.map((page) => [...page] as Line[]);
     this.establishInitialLineState();
 
     this.undoQueue = this.undoService.undoQueue$.subscribe((change) => {
