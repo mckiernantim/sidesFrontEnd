@@ -138,8 +138,10 @@ export class LastLooksComponent implements OnInit {
         this.adjustBarPosition(line);
         this.calculateYPositions(line);
         line.calculatedXpos = Number(line.xPos) * 1.3 + 'px';
+        debugger
+        
         line.calculatedEnd =
-          Number(line.endY) > 90 ? Number(line.endY) * 1.3 + 'px' : '90px';
+          Number(line.yPos) > 90 ? Number(line.yPos) * 1.3 + 'px' : '90px';
       });
     });
   }

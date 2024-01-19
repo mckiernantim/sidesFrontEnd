@@ -5,7 +5,7 @@
             <ul class="screenbox"
             [ngClass] = "{'edit-mode': canEditDocument } ">
                 <div class="selected-line-info" style="color:black">
-                    <h2>drag state is: {{this.dragDrop.draggingLine}}</h2>
+                
                 </div>
                 
                 <ng-container *ngFor="let line of page; let lineIndex = index">
@@ -69,7 +69,8 @@
                         [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex), 'edit-li': canEditDocument && !selectedLine  }"
                         [style.bottom]="line.calculatedYpos"
                         [style.left]="line.calculatedXpos" 
-                        [textContent]="line.text + ' ' + line.sceneNumberText "
+                        
+                        [textContent]="line.text"
                         
                         (input)="canEditDocument && updateText($event, line, lineIndex)"
                         (contextmenu)="canEditDocument 
@@ -98,7 +99,7 @@
                             line.category !== 'page-number-hidden' && 
                             line.category !== 'injected-break'"
                 >
-                    <span class="continue-span"> ↓↓{{line.sceneNumberText}} CONTINUED↓↓↓ {{ line.index }}</span>
+                    <span class="continue-span"> ↓↓{{line.sceneNumberText}} CONTINUED↓↓↓</span>
                 </span>
                 
                 <!-- end span -->

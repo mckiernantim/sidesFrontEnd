@@ -405,7 +405,7 @@ export class PdfService {
     this.assignContinueMarkers(linesAsPages);
     // Mark 'END' for the last lines of scenes
     this.markEndLines(linesAsPages, sceneBreaks);
-    debugger;
+    
 
     this.addSceneNumberText(linesAsPages);
     this.finalDocument.data = linesAsPages;
@@ -475,6 +475,8 @@ export class PdfService {
       // Mark the last line with 'END'
       if (lastLineOfScene) {
         lastLineOfScene.end = 'END';
+        // establsh position for the end bar
+        lastLineOfScene.barY = lastLineOfScene.yPos - 5
       }
     });
 
@@ -554,44 +556,28 @@ export class PdfService {
     return firstRelevantLines;
   }
 
-  addSceneNumberText(allLines) {
-    let currentSceneNumberText = '';
-    let updateSceneNumberText = false;
-    for (let page of allLines) {
-      page.forEach((line, index) => {
+  addSceneNumberText(pages) {
+    let currentSceneHeader;
+    pages.forEach(page => {
+      page.forEach(line => {
+        // Check for the start of a new true scene
         if (line.category === 'scene-header' && line.visible === 'true') {
-          debugger;
-          // Save current scene number text
-          currentSceneNumberText = line.sceneNumberText;
-          updateSceneNumberText = true;
+          currentSceneHeader = line;
         }
-
-        if (updateSceneNumberText) {
-          // Assign sceneNumberText to relevant lines
-          if (
-            line.cont === 'CONTINUE' ||
-            line.cont === 'CONTINUE-TOP' ||
-            line.end === 'END'
-          ) {
-            line.sceneNumberText = currentSceneNumberText;
+  
+        // If we are within a true scene, assign sceneNumberText to relevant lines
+        if (currentSceneHeader && (line.index <= currentSceneHeader.lastLine)) {
+          if (line.cont === 'CONTINUE' || line.cont === 'CONTINUE-TOP' || line.end === 'END') {
+            line.sceneNumberText = currentSceneHeader.sceneNumberText;
           }
-
-          // Special condition for lines marked as 'END'
-          if (line.end === 'END') {
-            line.sceneNumberText = currentSceneNumberText;
-          }
-
-          // Reset updateSceneNumberText if the end of the current scene is reached
-          if (
-            line.index === line.lastLine ||
-            line.visible === 'false' ||
-            (line.category === 'scene-header' && line.visible !== 'true')
-          ) {
-            updateSceneNumberText = false;
+  
+          // If this line is the last line of the current scene, reset currentSceneHeader
+          if (line.index === currentSceneHeader.lastLine) {
+            currentSceneHeader = null;
           }
         }
       });
-    }
+    });
   }
 
   getPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {

@@ -187,22 +187,20 @@ li.page-number {
 
 .CONTINUE {
     bottom: 45.5px;
-    width: 90%;
+    width: 100%;
     border-top: 2.5px solid;
     padding-top: 2.5px;
     text-align: right;
-    right: 5px;
     font-size: 16pt;
     font-weight: 900 !important;
 }
 
 .CONTINUE-TOP {
     top: 45.5px;
-    width: 90%;
+    width: 100%;
     border-top: 2.5px solid;
     padding-top: 2.5px;
     text-align: left;
-    left: 25px;
     font-size: 16pt;
     font-weight: 900 !important;
 }
