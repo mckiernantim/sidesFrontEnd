@@ -19,7 +19,6 @@ export class PdfService {
     'scene-header',
     'short-dialog',
     'parenthetical',
-    'more',
     'shot',
     'delete',
   ];
@@ -67,7 +66,6 @@ export class PdfService {
     }
   }
 
-
   private initializeCharactersAndScenes() {
     this.getCharacters();
     this.getScenes();
@@ -110,7 +108,7 @@ export class PdfService {
   setLinesInSceneToVisible(sceneArr, breaks) {
     // combine the complete scenes
     let merged = this.flattenScenes(sceneArr);
-    // sort the scene breaks for good measure 
+    // sort the scene breaks for good measure
     let sortedBreaks = this.sortBreaks(breaks);
     // process ALL THE FUCKING DATA
     return this.processLines(merged, sortedBreaks);
@@ -128,26 +126,26 @@ export class PdfService {
     // start with a zeroed index for the currentSceneBreak
     let currentBreakIndex = 0;
     // get the first scene break - where the scene ends
-      // this data arrives from the server
+    // this data arrives from the server
     let currentSceneBreak = breaks[currentBreakIndex];
     for (let index = 0; index < merged.length; index++) {
       const line = merged[index];
       if (this.isLineInCurrentBreak(line, currentSceneBreak)) {
-          // flag this as string true - this is done for CSS parsing at the end
-          line.visible = 'true';
-          this.handleSpecialCases(line, merged, index, breaks, currentBreakIndex);
+        // flag this as string true - this is done for CSS parsing at the end
+        line.visible = 'true';
+        this.handleSpecialCases(line, merged, index, breaks, currentBreakIndex);
       }
-  
+
       // Move to the next scene break if needed
       if (line.index === currentSceneBreak.last) {
-          currentBreakIndex++;
-          currentSceneBreak = breaks[currentBreakIndex];
-          if (!currentSceneBreak) {
-              break; // Exit the loop when there are no more scene breaks
-          }
+        currentBreakIndex++;
+        currentSceneBreak = breaks[currentBreakIndex];
+        if (!currentSceneBreak) {
+          break; // Exit the loop when there are no more scene breaks
+        }
       }
-  }
-    
+    }
+
     return merged;
   }
 
@@ -156,17 +154,21 @@ export class PdfService {
     if (currentSceneBreak === 'last') {
       return true;
     }
-    
+
     // return bool value to see if our line falls within bounds
     return (
       line.index > currentSceneBreak.first &&
       line.index <= currentSceneBreak.last
     );
   }
- 
+
   handleSpecialCases(line, merged, index, breaks, currentBreakIndex) {
     // check if our line is true, is a scene hader, and doesn't have a BAR value already
-    if (line.category === 'scene-header' && line.bar !== 'bar' && line.visible === "true") {
+    if (
+      line.category === 'scene-header' &&
+      line.bar !== 'bar' &&
+      line.visible === 'true'
+    ) {
       // flags line to show a START bar
       line.bar = 'bar';
     }
@@ -184,60 +186,67 @@ export class PdfService {
 
   handleLastLineOfScene(line, merged, index) {
     let lastLineIndex = line.lastLine;
-    let lastLine = merged.find(l => l.index === lastLineIndex);
-    let sceneNumberText = "";
+    let lastLine = merged.find((l) => l.index === lastLineIndex);
+    let sceneNumberText = '';
     if (lastLine && lastLine.category === 'page-number') {
-        for (let i = index - 1; i >= 0; i--) {
-            if (!merged[i].category.match('page-number')) {
-                merged[i].end = 'END';
-                merged[i].barY = merged[i].yPos;
-             
-                merged[i].sceneNumberText = line.sceneNumberText
-                break;
-            }
+      for (let i = index - 1; i >= 0; i--) {
+        if (!merged[i].category.match('page-number')) {
+          merged[i].end = 'END';
+          merged[i].barY = merged[i].yPos;
+
+          merged[i].sceneNumberText = line.sceneNumberText;
+          break;
         }
+      }
     } else if (lastLine) {
-        lastLine.end = 'END';
-        lastLine.barY = lastLine.yPos;
-        lastLine.sceneNumberText = line.sceneNumberText;
-    }
-}
-
-handleFinalScene(line, merged) {
-    const skippedCategories = ['page-number', 'injected-break', 'page-number-hidden'];
-    let actualLastLineIndex = merged.length - 1;
-
-    while (skippedCategories.includes(merged[actualLastLineIndex].category) && actualLastLineIndex >= 0) {
-        actualLastLineIndex--;
-    }
-
-    for (let i = merged.indexOf(line); i <= actualLastLineIndex; i++) {
-        merged[i].visible = 'true';
-        merged[i].cont = 'hideCont';
-        if (i === actualLastLineIndex) {
-            merged[i].end = 'END';
-            merged[i].barY = merged[i].yPos;
-            merged[i].finalLineOfScript = true;
-            merged[i].sceneNumberText = this.findSceneNumberText(merged, merged[i]);
-        }
-    }
-}
-
-findSceneNumberText(page, line) {
-  // Find the index of the current line
-  const currentLineIndex = page.indexOf(line);
-
-  // Iterate backwards from the current line to find the scene header
-  for (let i = currentLineIndex; i >= 0; i--) {
-    if (page[i].category === 'scene-header' && page[i].scene === line.scene) {
-      // Return the scene number text if found
-      return page[i].sceneNumberText;
+      lastLine.end = 'END';
+      lastLine.barY = lastLine.yPos;
+      lastLine.sceneNumberText = line.sceneNumberText;
     }
   }
 
-  // Return null if no scene header is found
-  return null;
-}
+  handleFinalScene(line, merged) {
+    const skippedCategories = [
+      'page-number',
+      'injected-break',
+      'page-number-hidden',
+    ];
+    let actualLastLineIndex = merged.length - 1;
+
+    while (
+      skippedCategories.includes(merged[actualLastLineIndex].category) &&
+      actualLastLineIndex >= 0
+    ) {
+      actualLastLineIndex--;
+    }
+
+    for (let i = merged.indexOf(line); i <= actualLastLineIndex; i++) {
+      merged[i].visible = 'true';
+      merged[i].cont = 'hideCont';
+      if (i === actualLastLineIndex) {
+        merged[i].end = 'END';
+        merged[i].barY = merged[i].yPos;
+        merged[i].finalLineOfScript = true;
+        merged[i].sceneNumberText = this.findSceneNumberText(merged, merged[i]);
+      }
+    }
+  }
+
+  findSceneNumberText(page, line) {
+    // Find the index of the current line
+    const currentLineIndex = page.indexOf(line);
+
+    // Iterate backwards from the current line to find the scene header
+    for (let i = currentLineIndex; i >= 0; i--) {
+      if (page[i].category === 'scene-header' && page[i].scene === line.scene) {
+        // Return the scene number text if found
+        return page[i].sceneNumberText;
+      }
+    }
+
+    // Return null if no scene header is found
+    return null;
+  }
   makeVisible(sceneArr, breaks) {
     // loop through and find breaks
     this.finalDocument.breaks = breaks;
@@ -371,7 +380,6 @@ findSceneNumberText(page, line) {
     return merged;
   }
 
-
   initializePdfDocument(name, numPages, callSheetPath) {
     this.finalDocument = {
       name: name,
@@ -383,27 +391,27 @@ findSceneNumberText(page, line) {
 
   processPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
     sceneArr = this.sortByNum(sceneArr);
-    this.initializePdfDocument(name, numPages, callSheetPath)
+    this.initializePdfDocument(name, numPages, callSheetPath);
     let pages = this.collectPageNumbers(sceneArr);
     let sceneBreaks = this.recordSceneBreaks(sceneArr);
-    
+
     let fullPages = this.constructFullPages(pages);
- // Set lines in scenes to visible
-   let processedLines = this.setLinesInSceneToVisible(fullPages, sceneBreaks);
+    // Set lines in scenes to visible
+    let processedLines = this.setLinesInSceneToVisible(fullPages, sceneBreaks);
 
- // Build final pages based on 'page-number'
-   let linesAsPages:any[] = this.buildFinalPages(processedLines);
+    // Build final pages based on 'page-number'
+    let linesAsPages: any[] = this.buildFinalPages(processedLines);
+    // Mark 'CONTINUE' and 'CONTINUE-TOP' where needed'
+    this.assignContinueMarkers(linesAsPages);
+    // Mark 'END' for the last lines of scenes
+    this.markEndLines(linesAsPages, sceneBreaks);
+    debugger;
 
- // Mark 'CONTINUE' and 'CONTINUE-TOP' where needed
-    this.assignContinueMarkersToScenes(linesAsPages)
-
-
- // Mark 'END' for the last lines of scenes
- this.markEndLines(linesAsPages, sceneBreaks);
+    this.addSceneNumberText(linesAsPages);
     this.finalDocument.data = linesAsPages;
     this.finalDocReady = true;
     // You can now use sceneBreaks and fullPages as needed
-    return
+    return;
   }
 
   collectPageNumbers(sceneArr) {
@@ -419,127 +427,174 @@ findSceneNumberText(page, line) {
   }
 
   recordSceneBreaks(sceneArr) {
-    return sceneArr.map(scene => ({
-        first: scene.firstLine,
-        last: scene.lastLine,
-        scene: scene.sceneNumber,
-        firstPage: scene.page
+    return sceneArr.map((scene) => ({
+      first: scene.firstLine,
+      last: scene.lastLine,
+      scene: scene.sceneNumber,
+      firstPage: scene.page,
     }));
-}
+  }
 
   constructFullPages(pages) {
-    return pages.map(page => {
-        let doc = this.scriptData.filter(scene => scene.page === page);
-        doc.push({
-            page: page,
-            bar: 'noBar',
-            hideCont: 'hideCont',
-            hideEnd: 'hideEnd',
-            yPos: 50,
-            category: 'injected-break',
-            visible: 'true'
-        });
-        return doc;
+    return pages.map((page) => {
+      let doc = this.scriptData.filter((scene) => scene.page === page);
+      doc.push({
+        page: page,
+        bar: 'noBar',
+        hideCont: 'hideCont',
+        hideEnd: 'hideEnd',
+        yPos: 50,
+        category: 'injected-break',
+        visible: 'true',
+      });
+      return doc;
     });
-}
+  }
 
-buildFinalPages(processedLines) {
-  let finalPages = {};
-  processedLines.forEach(line => {
-    // Initialize an array for each page number
-    if (!finalPages[line.page]) {
-      finalPages[line.page] = [];
-    }
-    // Add the line to the corresponding page
-    finalPages[line.page].push(line);
-  });
+  buildFinalPages(processedLines) {
+    let finalPages = {};
+    processedLines.forEach((line) => {
+      // Initialize an array for each page number
+      if (!finalPages[line.page]) {
+        finalPages[line.page] = [];
+      }
+      // Add the line to the corresponding page
+      finalPages[line.page].push(line);
+    });
 
-  // Convert the object into an array of pages
-  return Object.values(finalPages);
-}
-markEndLines(processedLines, breaks) {
-  breaks.forEach(breakInfo => {
-    // Find the last line of the current scene
-    const lastLineOfScene = processedLines.find(line => line.index === breakInfo.last);
-    
-    // Mark the last line with 'END'
-    if (lastLineOfScene) {
-      lastLineOfScene.end = 'END';
-    }
-  });
+    // Convert the object into an array of pages
+    return Object.values(finalPages);
+  }
+  markEndLines(processedLines, breaks) {
+    breaks.forEach((breakInfo) => {
+      // Find the last line of the current scene
+      const lastLineOfScene = processedLines.find(
+        (line) => line.index === breakInfo.last
+      );
 
-  return processedLines;
-}
-assignContinueMarkersToScenes(documentPages) {
-  // Get a list of all visible scenes
-  const visibleScenes = documentPages.flatMap(page => 
-    page.filter(line => line.category === 'scene-header' && line.visible === 'true')
-  );
+      // Mark the last line with 'END'
+      if (lastLineOfScene) {
+        lastLineOfScene.end = 'END';
+      }
+    });
 
-  visibleScenes.forEach(scene => {
-    let foundSceneStart = false;
+    return processedLines;
+  }
+  assignContinueMarkers(documentPages) {
+    documentPages.forEach((currentPage, pageIndex) => {
+      let nextPage = documentPages[pageIndex + 1] || null;
 
-    // Iterate through each page
-    for (let i = 0; i < documentPages.length; i++) {
-      const page = documentPages[i];
-      let foundContinueLine = false;
+      // Check the last line of the current page
+      let lastLineCurrentPage = [...currentPage]
+        .reverse()
+        .find(
+          (line) =>
+            this.conditions.includes(line.category) && line.visible === 'true'
+        );
 
-      // Iterate through each line in the page
-      for (let j = 0; j < page.length; j++) {
-        const line = page[j];
+      // Check the first line of the next page
+      let firstLineNextPage = nextPage
+        ? nextPage.find(
+            (line) =>
+              this.conditions.includes(line.category) && line.visible === 'true'
+          )
+        : null;
 
-        // Skip irrelevant categories
-        if (['injected-break', 'page-number', 'page-number-hidden'].includes(line.category)) {
-          continue;
-        }
-
-        // Marking the start of the scene
-        if (line.scene === scene.sceneNumber && line.category === 'scene-header') {
-          foundSceneStart = true;
-        }
-
-        // If this is the last content line of the page and belongs to the scene
-        if (j === page.length - 1 && line.visible === 'true' && foundSceneStart) {
-          line.cont = 'CONTINUE';
-          line.sceneNumberText = scene.sceneNumberText;
-          foundContinueLine = true;
-        }
+      // Assign 'CONTINUE' to the last line of the current page if the scene continues
+      if (
+        lastLineCurrentPage &&
+        nextPage &&
+        firstLineNextPage &&
+        lastLineCurrentPage.scene === firstLineNextPage.scene
+      ) {
+        lastLineCurrentPage.cont = 'CONTINUE';
       }
 
-      // Handle CONTINUE-TOP for the next page if the scene is continued
-      if (foundContinueLine && i < documentPages.length - 1) {
-        const nextPage = documentPages[i + 1];
-        for (const nextLine of nextPage) {
-          if (!['injected-break', 'page-number', 'page-number-hidden'].includes(nextLine.category)) {
-            nextLine.cont = 'CONTINUE-TOP';
-            nextLine.sceneNumberText = scene.sceneNumberText;
-            break; // Break after setting the first relevant line
+      // Assign 'CONTINUE-TOP' to the first line of the current page if it's a continuation
+      if (
+        pageIndex > 0 &&
+        currentPage[0] &&
+        currentPage[0].scene === documentPages[pageIndex - 1].slice(-1)[0].scene
+      ) {
+        let firstLineCurrentPage = currentPage.find(
+          (line) =>
+            this.conditions.includes(line.category) && line.visible === 'true'
+        );
+
+        if (firstLineCurrentPage) {
+          firstLineCurrentPage.cont = 'CONTINUE-TOP';
+        }
+      }
+    });
+  }
+
+  findTrueSceneHeaderIndexes(pages) {
+    const trueSceneHeaderIndexes = [];
+    pages.forEach((page, pageIndex) => {
+      page.forEach((line, lineIndex) => {
+        // Check if the line is a 'scene-header' and marked as 'true-scene'
+        if (line.category === 'scene-header' && line.visible === 'true') {
+          trueSceneHeaderIndexes.push({ pageIndex, lineIndex });
+        }
+      });
+    });
+
+    return trueSceneHeaderIndexes;
+  }
+
+  findFirstRelevantLineOnEachPage(pages) {
+    const firstRelevantLines = pages.map((page) => {
+      // Find the first line that is not an 'injected break' or 'scene header'
+      return page.find(
+        (line) =>
+          line.category !== 'injected-break' && line.category !== 'scene-header'
+      );
+    });
+
+    return firstRelevantLines;
+  }
+
+  addSceneNumberText(allLines) {
+    let currentSceneNumberText = '';
+    let updateSceneNumberText = false;
+    for (let page of allLines) {
+      page.forEach((line, index) => {
+        if (line.category === 'scene-header' && line.visible === 'true') {
+          debugger;
+          // Save current scene number text
+          currentSceneNumberText = line.sceneNumberText;
+          updateSceneNumberText = true;
+        }
+
+        if (updateSceneNumberText) {
+          // Assign sceneNumberText to relevant lines
+          if (
+            line.cont === 'CONTINUE' ||
+            line.cont === 'CONTINUE-TOP' ||
+            line.end === 'END'
+          ) {
+            line.sceneNumberText = currentSceneNumberText;
+          }
+
+          // Special condition for lines marked as 'END'
+          if (line.end === 'END') {
+            line.sceneNumberText = currentSceneNumberText;
+          }
+
+          // Reset updateSceneNumberText if the end of the current scene is reached
+          if (
+            line.index === line.lastLine ||
+            line.visible === 'false' ||
+            (line.category === 'scene-header' && line.visible !== 'true')
+          ) {
+            updateSceneNumberText = false;
           }
         }
-      }
-
-      // Reset for the next scene
-      if (!foundContinueLine) {
-        foundSceneStart = false;
-      }
-    }
-  });
-}
-
-
-addSceneNumberText(line, allLines) {
-  // Iterate backwards from the current line to find the last scene header of the same scene
-  for (let i = allLines.indexOf(line); i >= 0; i--) {
-    if (allLines[i].category === 'scene-header' && allLines[i].scene === line.scene) {
-      line.sceneNumberText = allLines[i].sceneNumberText;
-      break;
+      });
     }
   }
-}
-
 
   getPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
-    
     sceneArr = this.sortByNum(sceneArr);
     let fullPages = [];
     let used = [];
@@ -691,7 +746,7 @@ addSceneNumberText(line, allLines) {
     if (this.watermark) {
       this.watermarkPages(this.watermark, finalDocument.data);
     }
-    
+
     this.finalDocument = finalDocument;
     this.finalDocReady = true;
     return finalDocument;

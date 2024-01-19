@@ -71,7 +71,7 @@ export class LastLooksComponent implements OnInit {
   ngOnInit(): void {
     this.sceneBreaks = [];
     this.doc = this.pdf.finalDocument.data;
-    debugger
+
     this.pages = this.doc;
     this.initialDocState = this.doc.map((page) => [...page] as Line[]);
     this.establishInitialLineState();
@@ -102,7 +102,7 @@ export class LastLooksComponent implements OnInit {
   establishInitialLineState() {
     
     this.processLinesForLastLooks(this.doc);
-    debugger
+   
     // this.adjustLinesForDisplay(this.pages); // Add this line
     this.updateDisplayedPage();
     console.log(this.doc)
@@ -126,7 +126,7 @@ export class LastLooksComponent implements OnInit {
     
     // this.getSceneBreaks(arr)
     // this.setContAndEndVals()
-    debugger
+    
     arr.forEach((page) => {
       let lastSceneIndex = -1;
       page.forEach((line, index) => {
