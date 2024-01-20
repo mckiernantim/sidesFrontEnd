@@ -1,3 +1,9 @@
 /.angular/cache
 node_modules
 dist
+
+
+development_utils
+
+app/*.json
+*/*.pdf

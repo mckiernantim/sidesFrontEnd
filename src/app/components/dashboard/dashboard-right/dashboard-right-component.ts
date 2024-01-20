@@ -256,14 +256,7 @@ export class DashboardRightComponent implements OnInit {
   logUpload() {
     console.log(this.upload);
   }
-  sortByNum(array) {
-    return array.sort((a, b) => {
-      let x = a.sceneNumber;
-      let y = b.sceneNumber;
-
-      return x < y ? -1 : x > y ? 1 : 0;
-    });
-  }
+  
   logSelected(): void {
     // let x = this.scenes.filter(scene => {
     //   return scene.problems
@@ -274,10 +267,7 @@ export class DashboardRightComponent implements OnInit {
       page[0].watermarkText = watermark;
     });
   }
-  makePages(scenes) {
-    let pageNums = scenes.map((scene) => scene.page).sort((a, b) => a - b);
-    return pageNums;
-  }
+
   toggleSelected(event, scene) {
     !this.selected.includes(scene)
       ? this.selected.push(scene)
@@ -323,6 +313,8 @@ export class DashboardRightComponent implements OnInit {
       this.callsheet = localStorage.getItem('callSheetPath');
       this.waitingForScript = true;
       // this.openFinalSpinner();
+      this.selected.sort((a,b) => a.sceneIndex - b.sceneIndex)
+   
       this.pdf.processPdf(this.selected, this.script, this.totalPages, this.callsheet);
       // this.pdf.getPdf(this.selected, this.script, this.totalPages, this.callsheet);
     }

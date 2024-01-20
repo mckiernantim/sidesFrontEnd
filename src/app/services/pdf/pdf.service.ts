@@ -16,7 +16,7 @@ export class PdfService {
     'character',
     'description',
     'first-description',
-    'scene-header',
+    // 'scene-header',
     'short-dialog',
     'parenthetical',
     'shot',
@@ -107,6 +107,7 @@ export class PdfService {
 
   setLinesInSceneToVisible(sceneArr, breaks) {
     // combine the complete scenes
+   
     let merged = this.flattenScenes(sceneArr);
     // sort the scene breaks for good measure
     let sortedBreaks = this.sortBreaks(breaks);
@@ -390,7 +391,7 @@ export class PdfService {
   }
 
   processPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
-    sceneArr = this.sortByNum(sceneArr);
+   
     this.initializePdfDocument(name, numPages, callSheetPath);
     let pages = this.collectPageNumbers(sceneArr);
     let sceneBreaks = this.recordSceneBreaks(sceneArr);
@@ -466,69 +467,80 @@ export class PdfService {
     return Object.values(finalPages);
   }
   markEndLines(processedLines, breaks) {
-    breaks.forEach((breakInfo) => {
+    breaks.forEach(breakInfo => {
       // Find the last line of the current scene
-      const lastLineOfScene = processedLines.find(
-        (line) => line.index === breakInfo.last
-      );
-
-      // Mark the last line with 'END'
+      const lastLineOfScene = processedLines.find(line => line.index === breakInfo.last);
+  
       if (lastLineOfScene) {
-        lastLineOfScene.end = 'END';
-        // establsh position for the end bar
-        lastLineOfScene.barY = lastLineOfScene.yPos - 5
-      }
-    });
-
-    return processedLines;
-  }
-  assignContinueMarkers(documentPages) {
-    documentPages.forEach((currentPage, pageIndex) => {
-      let nextPage = documentPages[pageIndex + 1] || null;
-
-      // Check the last line of the current page
-      let lastLineCurrentPage = [...currentPage]
-        .reverse()
-        .find(
-          (line) =>
-            this.conditions.includes(line.category) && line.visible === 'true'
-        );
-
-      // Check the first line of the next page
-      let firstLineNextPage = nextPage
-        ? nextPage.find(
-            (line) =>
-              this.conditions.includes(line.category) && line.visible === 'true'
-          )
-        : null;
-
-      // Assign 'CONTINUE' to the last line of the current page if the scene continues
-      if (
-        lastLineCurrentPage &&
-        nextPage &&
-        firstLineNextPage &&
-        lastLineCurrentPage.scene === firstLineNextPage.scene
-      ) {
-        lastLineCurrentPage.cont = 'CONTINUE';
-      }
-
-      // Assign 'CONTINUE-TOP' to the first line of the current page if it's a continuation
-      if (
-        pageIndex > 0 &&
-        currentPage[0] &&
-        currentPage[0].scene === documentPages[pageIndex - 1].slice(-1)[0].scene
-      ) {
-        let firstLineCurrentPage = currentPage.find(
-          (line) =>
-            this.conditions.includes(line.category) && line.visible === 'true'
-        );
-
-        if (firstLineCurrentPage) {
-          firstLineCurrentPage.cont = 'CONTINUE-TOP';
+        // If the last line is a 'page-number', assign 'END' to the previous visible line
+        if (lastLineOfScene.category === 'page-number') {
+          // Find the previous line that is not a 'page-number'
+          let prevLineIndex = processedLines.indexOf(lastLineOfScene) - 1;
+          while (prevLineIndex >= 0 && processedLines[prevLineIndex].category === 'page-number') {
+            prevLineIndex--;
+          }
+          if (prevLineIndex >= 0) {
+            processedLines[prevLineIndex].end = 'END';
+            processedLines[prevLineIndex].barY = processedLines[prevLineIndex].yPos - 5;
+          }
+        } else {
+          // Mark the last line with 'END'
+          lastLineOfScene.end = 'END';
+          lastLineOfScene.barY = lastLineOfScene.yPos - 5;
         }
       }
     });
+  
+    return processedLines;
   }
+  assignContinueMarkers(documentPages) {
+    let currentScene = null;
+    let foundContinue = false;
+
+    documentPages.forEach((currentPage, pageIndex) => {
+        let nextPage = documentPages[pageIndex + 1] || null;
+
+        currentPage.forEach((line, lineIndex) => {
+            // Set current scene if a scene header is encountered
+            if (line.category === 'scene-header' && line.visible === 'true') {
+                if (currentScene && currentScene !== line.scene) {
+                    // New scene encountered, break the loop
+                    return;
+                }
+                currentScene = line.scene;
+            }
+
+            // Check if the end of the current page is reached
+            if (lineIndex === currentPage.length - 1) {
+                // Iterate backwards to find 'CONTINUE'
+                for (let i = currentPage.length - 1; i >= Math.max(0, currentPage.length - 5); i--) {
+                    let lineToCheck = currentPage[i];
+                    if (this.conditions.includes(lineToCheck.category) && lineToCheck.visible === 'true' && !foundContinue) {
+                        lineToCheck.cont = 'CONTINUE';
+                        foundContinue = true;
+                        break;
+                    }
+                }
+
+                // Check the next page for 'CONTINUE-TOP'
+                if (foundContinue && nextPage) {
+                    for (let j = 0; j < Math.min(5, nextPage.length); j++) {
+                        let nextLineToCheck = nextPage[j];
+                        if (nextLineToCheck.scene === currentScene && this.conditions.includes(nextLineToCheck.category) && nextLineToCheck.category !== 'page-number' && nextLineToCheck.visible === 'true') {
+                            nextLineToCheck.cont = 'CONTINUE-TOP';
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+
+        // Reset foundContinue for the next page
+        foundContinue = false;
+    });
+}
+
+
 
   findTrueSceneHeaderIndexes(pages) {
     const trueSceneHeaderIndexes = [];
@@ -581,7 +593,7 @@ export class PdfService {
   }
 
   getPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
-    sceneArr = this.sortByNum(sceneArr);
+
     let fullPages = [];
     let used = [];
     let pages = [];
@@ -743,14 +755,7 @@ export class PdfService {
     // Adjust the implementation to fit the service context
   }
 
-  sortByNum(array) {
-    return array.sort((a, b) => {
-      let x = a.sceneNumber;
-      let y = b.sceneNumber;
 
-      return x < y ? -1 : x > y ? 1 : 0;
-    });
-  }
 
   watermarkPages(watermark, doc) {
     doc.forEach((page) => {
