@@ -30,10 +30,11 @@
             "scripts": [],
             "allowedCommonJsDependencies": [
               "angular-slickgrid",
-              "stream"
+              "stream",
+              "path",
+              "util" 
             ]
           },
-          "proxyConfig": "src/proxy.conf.json",
           "configurations": {
             "production": {
               "fileReplacements": [

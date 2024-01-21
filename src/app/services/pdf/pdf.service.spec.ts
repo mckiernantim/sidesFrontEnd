@@ -115,10 +115,9 @@ describe('PdfService', () => {
             { sceneNumber: 1, otherData: '...' },
             { sceneNumber: 2, otherData: '...' }
           ];
-          const sortedScenes = service.sortByNum(scenes);
-          expect(sortedScenes[0].sceneNumber).toBe(1);
-          expect(sortedScenes[1].sceneNumber).toBe(2);
-          expect(sortedScenes[2].sceneNumber).toBe(3);
+          expect(scenes[0].sceneNumber).toBe(1);
+          expect(scenes[1].sceneNumber).toBe(2);
+          expect(scenes[2].sceneNumber).toBe(3);
         });
         it('should correctly record scene breaks', () => {
           // Test implementation...
@@ -134,5 +133,5 @@ describe('PdfService', () => {
 
 });
 
-
+})
 

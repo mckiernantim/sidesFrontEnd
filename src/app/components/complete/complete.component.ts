@@ -9,7 +9,7 @@ import { throwError, of } from 'rxjs';
   templateUrl: './complete.component.html',
   styleUrls: ['./complete.component.css'],
 })
-export class CompleteComponent {
+export class CompleteComponent implements OnInit {
   name: string = localStorage.getItem('name');
   
   layout: string = localStorage.getItem('layout');
@@ -20,7 +20,9 @@ export class CompleteComponent {
   constructor(public upload: UploadService, private token:TokenService) {
     
   }
- 
+  ngOnInit() {
+    console.log("complete init")
+  }
   // we download as soon as we land
   // ngAfterViewInit(): void {
 

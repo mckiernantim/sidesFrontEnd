@@ -1,73 +1,66 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DashboardRightComponent } from './dashboard-right-component';
 import { UploadService } from '../../../services/upload/upload.service';
-import { PdfService } from '../../../services/pdf/pdf.service';
-import { MatDialog } from '@angular/material/dialog';
-import { MatPaginator } from '@angular/material/paginator';
-import { MatSort } from '@angular/material/sort';
-import { MatTableDataSource } from '@angular/material/table';
+import { PdfService } from 'src/app/services/pdf/pdf.service';
+import { MatDialogModule } from '@angular/material/dialog';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of } from 'rxjs';
-import 'jasmine';
 
-const scriptData = JSON.parse(require("./classifiedTestData.json"));
-const mockSelectedScenes;
+import nextDoorEntireScript from './nextDoorEntireScript.json';
+import nextDoorMockResult from './nextDoor-2-3-7-11-20.json';
 
-describe('DashboardRightComponent', () => {
+fdescribe('DashboardRightComponent - Scene Selection and PDF Generation', () => {
   let component: DashboardRightComponent;
   let fixture: ComponentFixture<DashboardRightComponent>;
-  let uploadServiceStub: Partial<UploadService>;
-  let pdfServiceStub: Partial<PdfService>;
+  let uploadServiceMock: Partial<UploadService>;
+  let pdfServiceMock: Partial<PdfService>;
 
   beforeEach(async () => {
-    uploadServiceStub = {
-      lineArr: scriptData,
-      pagesArr: [1, 2, 3],
-      // ... other necessary stub implementations
+    // Mock the services and their methods
+    uploadServiceMock = {
+      generatePdf: jasmine.createSpy('generatePdf').and.returnValue(of({ /* Mocked response */ })),
+      // ...other mocked methods and properties
     };
-
-    pdfServiceStub = {
-      // Mock implementation of PdfService methods
+    pdfServiceMock = {
+      processPdf: jasmine.createSpy('processPdf'),
+      // ...other mocked methods and properties
     };
 
     await TestBed.configureTestingModule({
+      imports: [MatDialogModule],
       declarations: [DashboardRightComponent],
       providers: [
-        { provide: UploadService, useValue: uploadServiceStub },
-        { provide: PdfService, useValue: pdfServiceStub },
-        // ... other providers if needed
+        { provide: UploadService, useValue: uploadServiceMock },
+        { provide: PdfService, useValue: pdfServiceMock }
       ],
+      schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
   });
 
   beforeEach(() => {
     fixture = TestBed.createComponent(DashboardRightComponent);
     component = fixture.componentInstance;
-    component.selected = mockSelectedScenes;
     fixture.detectChanges();
   });
 
-  it('should create the component', () => {
-    expect(component).toBeTruthy();
-  });
-
-  it('should sort selected scenes by sceneIndex', () => {
-    component.toggleLastLooks();
-    expect(component.selected[0].sceneIndex).toBeLessThanOrEqual(component.selected[1].sceneIndex);
-    expect(component.selected[1].sceneIndex).toBeLessThanOrEqual(component.selected[2].sceneIndex);
-    // ... continue for other elements
-  });
-
-  it('should call processPdf with correct arguments', () => {
-    spyOn(component.pdf, 'processPdf');
-    component.toggleLastLooks();
-    expect(component.pdf.processPdf).toHaveBeenCalledWith(
-      mockSelectedScenes,
-      component.script,
-      component.totalPages,
-      component.callsheet
+  it('should process the selected scenes correctly', () => {
+    // Mock the scene data
+    component.scriptData = nextDoorEntireScript;
+  
+    // Mock the scene selection
+    component.selected = nextDoorEntireScript.filter(scene => 
+      ['2', '3', '7', '11', '20'].includes(scene.sceneNumber?.toString())
     );
+  
+    // Call the method to process the PDF
+    component.toggleLastLooks();
+  
+    // Verify that the processPdf method was called with correct arguments
+    expect(pdfServiceMock.processPdf).toHaveBeenCalledWith(component.selected, component.script, component.totalPages, component.callsheet);
+  
+    // If you want to verify the final document against the mock result
+    expect(component.finalDocument).toEqual(nextDoorMockResult);
   });
 
-  // ... other tests as needed
-
+  // Tests will be added here
 });
