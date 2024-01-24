@@ -3,6 +3,7 @@
 
 module.exports = function (config) {
   config.set({
+    webpack: { node: { fs: 'empty', } },
     basePath: '',
     frameworks: ['jasmine', '@angular-devkit/build-angular'],
     plugins: [
@@ -39,6 +40,7 @@ module.exports = function (config) {
       { pattern: 'src/assets/**/*', included: false, watched: false },
       { pattern: 'src/environments/environment*.ts', included: false, watched: true },
       // No need to add additional entries unless specifically required
-    ]
+    ],
+    
   });
 };

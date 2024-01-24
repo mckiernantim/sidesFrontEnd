@@ -30,7 +30,8 @@
     "paths": {
       "stream": [
         "./node_modules/stream-browserify"
-      ]
+      ],
+      "fs": ["./node_modules/fs-web"]
     },
     "useDefineForClassFields": false
   },

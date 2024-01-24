@@ -29,10 +29,8 @@
             ],
             "scripts": [],
             "allowedCommonJsDependencies": [
-              "angular-slickgrid",
-              "stream",
-              "path",
-              "util" 
+              "angular-slickgrid"
+        
             ]
           },
           "configurations": {
