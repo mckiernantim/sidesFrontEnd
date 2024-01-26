@@ -328,8 +328,8 @@ export class LastLooksComponent implements OnInit {
   }
   calculateYPositions(line: Line) {
     const { yPos, barY } = line;
-
     line.calculatedYpos = this.adjustYpositionAndReturnString(yPos);
+
     // if (line.cont || line.end) {
     //   // either End or CONT valie
     //   debugger

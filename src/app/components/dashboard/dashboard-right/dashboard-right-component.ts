@@ -8,11 +8,11 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { StripeService } from 'src/app/services/stripe/stripe.service';
+import { StripeService } from '../../../services/stripe/stripe.service'
 import { Subscription } from 'rxjs';
-import { UndoService } from 'src/app/services/edit/undo.service';
+import { UndoService } from '../../../services/edit/undo.service';
 import { Line } from 'src/app/types/Line';
-import { PdfService } from 'src/app/services/pdf/pdf.service';
+import { PdfService } from '../../../services/pdf/pdf.service';
 
 export interface pdfServerRes {
   url:string,
@@ -121,7 +121,6 @@ export class DashboardRightComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    console.log(this.pdf.finalDocument)
     this.intizilazeState()
     this.initializeSceneSelectionTable()
 

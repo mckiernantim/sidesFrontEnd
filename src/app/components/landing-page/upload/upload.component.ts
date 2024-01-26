@@ -119,13 +119,6 @@ export class UploadComponent implements OnInit, OnDestroy {
           let two = this.addTwo(data[0]);
           data[0][two].category = 'page-number';
         }
-        // points to singleton instance of uploadservice
-        this.upload.lineArr = data[0];
-        this.upload.pagesArr = data[1];
-        this.upload.lineCount = [];
-        this.upload.pagesArr.forEach((page) => {
-          this.upload.lineCount.push(page.filter((item) => item.totalLines));
-        });
         alert(
           'your IP is safe. ' + data[3] + ' was just deleted from our servers.'
         );

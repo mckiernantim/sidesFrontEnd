@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import 'jasmine'
+
 import { AdminComponent } from './admin.component';
 
 describe('AdminComponent', () => {

@@ -139,7 +139,6 @@ getPDF(name: string, callsheet: string): Observable<any> {
   }
 // get classified data => returns observable for stuff to plug into
   postFile(fileToUpload: File): Observable<any> {
-
     this.resetHttpOptions();
      localStorage.setItem('name', fileToUpload.name.replace(/.pdf/, ''));
     this.script = localStorage.getItem('name');
@@ -149,10 +148,18 @@ getPDF(name: string, callsheet: string): Observable<any> {
       .post(this.url + '/api', formData, this.httpOptions)
       .pipe(
         map((data) => {
+          this.lineArr = data[0];
+          this.pagesArr = data[1];
+          this.lineCount = [];
+          this.pagesArr.forEach((page) => {
+            this.lineCount.push(page.filter((item) => item.totalLines));
+          });
           return data;
         })
       );
-  }
+    }
+    
+
 
   generatePdf(sceneArr) {
     let params = new HttpParams()
