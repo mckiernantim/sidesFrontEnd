@@ -25,7 +25,6 @@
       "express",
       "zone.js",
       "jest",
-      "jasmine"
     ],
     "paths": {
       "stream": [
