@@ -148,7 +148,6 @@ getPDF(name: string, callsheet: string): Observable<any> {
       .post(this.url + '/api', formData, this.httpOptions)
       .pipe(
         map((data) => {
-          debugger
           this.lineArr = data[0];
           this.pagesArr = data[1];
           this.lineCount = [];

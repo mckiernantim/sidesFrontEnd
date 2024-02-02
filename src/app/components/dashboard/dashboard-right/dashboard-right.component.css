@@ -1,6 +1,11 @@
 li{
     list-style-type: none;
 }
+
+.dash-container {
+  display: flex;
+  flex-direction: row;
+}
 .cell{
     padding: 0 5% 1% 5%;
 }
@@ -80,6 +85,11 @@ tr, th{
 
 table{
   width:100%;
+}
+@media screen and (max-width:1200px) {
+  .dash-container {
+    flex-direction: column-reverse;;
+  }
 }
   @media screen and (max-width: 768px) {
   .mat-mdc-cell{

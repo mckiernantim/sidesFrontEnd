@@ -152,6 +152,11 @@ export class DashboardRightComponent implements OnInit {
   }
 
   initializeSceneSelectionTable() {
+    if(!this.pdf.scriptData) {
+      alert("No Script data detected - routing to upload ")
+      this.router.navigate(["/"])
+    }
+    
     this.dataSource = new MatTableDataSource(this.pdf.scenes);
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;

@@ -1,4 +1,4 @@
-<div class="dash-container grid grid-cols-2 text-white">
+<div class="dash-container text-white">
 
   <div class="main-container two-column cell">
 
@@ -67,7 +67,7 @@
   </div>
 
   <div class="flex flex-col">
-    <h1 class="py-20 text-3xl">Generating sides for
+    <h1 class=" text-3xl">Generating sides for
       <br>
       <p class="pt-4">{{ script }} - {{ date | date }}</p>
     </h1>
@@ -102,11 +102,13 @@
           <div class="p-4">
             <button mat-raised-button color="warn" (click)="toggleEditStateInLastLooks()" class="bg-accent">Edit
               Pdf</button>
+
             <ng-container>
               <div *ngIf="editLastLooksState">
                 <app-tool-tip (buttonAction)="handleToolTipClicked($event)" [data]="toolTipContent"></app-tool-tip>
               </div>
             </ng-container>
+            
           </div>
           <div class="p-4">
             <app-add-watermark (waterMarkUpdate)="addWaterMark($event)"></app-add-watermark>

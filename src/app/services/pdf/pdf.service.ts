@@ -92,7 +92,7 @@ export class PdfService {
         let sceneInActualScript = this.scriptData[sceneRefInTable.index]
         // give scenes extra data for later
         this.setLastLines(i);
-        debugger
+        
         this.processSceneHeader(sceneRefInTable, sceneInActualScript)
         // this.removeSceneNumberFromHeaderAndAssignAsData(currentSceneInScript)
         // this.removeSceneNumberFromHeaderAndAssignAsData(currentScene);
