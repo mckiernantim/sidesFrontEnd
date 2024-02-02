@@ -88,8 +88,16 @@ export class PdfService {
         return line.category === 'scene-header';
       });
       for (let i = 0; i < this.scenes.length; i++) {
+        let sceneRefInTable = this.scenes[i]
+        let sceneInActualScript = this.scriptData[sceneRefInTable.index]
         // give scenes extra data for later
         this.setLastLines(i);
+        debugger
+        this.processSceneHeader(sceneRefInTable, sceneInActualScript)
+        // this.removeSceneNumberFromHeaderAndAssignAsData(currentSceneInScript)
+        // this.removeSceneNumberFromHeaderAndAssignAsData(currentScene);
+        
+
         // POPULATE TABLE
       }
     }
@@ -591,7 +599,7 @@ export class PdfService {
       });
     });
   }
-
+  // dont fucking touch it - it works
   getPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
 
     let fullPages = [];
@@ -754,6 +762,27 @@ export class PdfService {
     // Implementation of sendFinalDocumentToServer
     // Adjust the implementation to fit the service context
   }
+  processSceneHeader(lineInDataTable, lineInScript) {
+     // 86B-86COMITTED86B-86C  < --- strangest example we have founnd
+    // reged for any numbers followed by any ammount of letters and a possible . and then the same thing
+    const bookendPatternRegex = /^(\d+[A-Za-z]*)(.*)(\1)$/;
+
+    const match = lineInDataTable.text.match(bookendPatternRegex);
+  
+    if (match) {
+      // Now match[1] and match[3] should be the same, capturing the bookending pattern
+      const sceneNumberText = match[1]; // The bookending pattern (repeated at both ends)
+      const sceneContent = match[2].trim(); // The content of the scene header without the bookending patterns
+      // update text in table ref
+      lineInDataTable.text = sceneContent
+      lineInDataTable.sceneNumberText = sceneNumberText
+      // update actual doc in the service
+      lineInScript.sceneNumberText = sceneNumberText
+      lineInScript.text = sceneContent;
+    }
+    
+  }
+
 
 
 
@@ -802,11 +831,11 @@ export class PdfService {
 
   getPreview(ind) {
     return (this.scenes[ind].preview =
-      this.scriptData[this.scenes[ind].index + 1].text +
+      this.scriptData[this.scenes[ind].index + 1]?.text +
       ' ' +
-      this.scriptData[this.scenes[ind].index + 2].text)
-      ? this.scriptData[this.scenes[ind].index + 2].text
+      this.scriptData[this.scenes[ind].index + 2]?.text)
+      ? this.scriptData[this.scenes[ind].index + 2]?.text
       : ' ';
   }
-  // Other methods as needed...
+  
 }
