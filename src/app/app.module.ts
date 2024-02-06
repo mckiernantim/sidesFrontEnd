@@ -103,8 +103,7 @@ import { ToolTipComponent } from './components/shared/tool-tip/tool-tip.componen
         LayoutModule,
         MaterialModule,
         FirebaseModule,
-        CarouselModule.forRoot(),
-   
+
   
     ],
     providers: [
