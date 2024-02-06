@@ -2,10 +2,9 @@ import { Injectable, NgZone } from '@angular/core';
 import { User } from '../../types/user';
 import {  AngularFireAuth } from '@angular/fire/compat/auth';
 import { GoogleAuthProvider } from '@angular/fire/auth';
-import { AngularFirestore, AngularFirestoreDocument } from '@angular/fire/compat/Firestore';
 import { Router } from '@angular/router';
-
-  /*
+import { Firestore, collectionData, collection, doc, docData, setDoc} from '@angular/fire/firestore';
+   /*
   DEPRECATED - WE MAY RETURN TO THIS DOWN THE ROAD IF WE NEED TO CREATE USER AUTH FOR 
   CREATING SCHEDULING;
   */
@@ -16,7 +15,7 @@ export class AuthService {
   userData: any; 
 
   constructor(
-    public afs: AngularFirestore, 
+    public firestore:Firestore,
     public afAuth: AngularFireAuth, 
     public router: Router,
     public ngZone: NgZone 
@@ -56,10 +55,8 @@ export class AuthService {
   /* Setting up user data when sign in with username/password,
   sign up with username/password and sign in with social auth
   provider in Firestore database using AngularFirestore + AngularFirestoreDocument service */
-  SetUserData(user: any) {
-    const userRef: AngularFirestoreDocument<any> = this.afs.doc(
-      `users/${user.uid}`
-    );
+  async SetUserData (user: any) {
+    const userRef = doc(this.firestore,  `users/${user.uid}`)
     const userData: User = {
       uid: user.uid,
       email: user.email,
@@ -67,9 +64,8 @@ export class AuthService {
       photoURL: user.photoURL,
       emailVerified: user.emailVerified,
     };
-    return userRef.set(userData, {
-      merge: true,
-    });
+    return await setDoc(userRef, userData)
+    
   }
   // Sign out
   SignOut() {

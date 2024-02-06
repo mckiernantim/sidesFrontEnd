@@ -2,10 +2,10 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 
-import { AngularFireModule } from '@angular/fire/compat';
-import { AngularFireAnalyticsModule } from '@angular/fire/compat/analytics';
-import { AngularFirestoreModule } from '@angular/fire/compat/Firestore';
-import { environment } from '../../../environments/environment'
+import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
+import { provideAnalytics, getAnalytics } from '@angular/fire/analytics';
+import { provideFirestore, getFirestore } from '@angular/fire/firestore';
+import { environment } from '../../../environments/environment';
 
 const { firebaseConfig } = environment
 
@@ -13,11 +13,9 @@ const { firebaseConfig } = environment
   exports: [],
   imports: [
     CommonModule,
-    AngularFireModule,
-    AngularFireAnalyticsModule,
-    AngularFireModule.initializeApp(firebaseConfig),
-    AngularFirestoreModule,
-  
+    provideFirebaseApp(() => initializeApp(firebaseConfig)),
+    provideAnalytics(() => getAnalytics()),
+    provideFirestore(() => getFirestore())
   ]
 })
 export class FirebaseModule { }
