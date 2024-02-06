@@ -4,6 +4,8 @@ import { AppRoutingModule } from './app-routing.module';
 import { HttpClientModule } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { CarouselModule } from 'ngx-bootstrap/carousel';
+
 import { LayoutModule } from '@angular/cdk/layout';
 
 // material stuff
@@ -101,7 +103,8 @@ import { ToolTipComponent } from './components/shared/tool-tip/tool-tip.componen
         BrowserAnimationsModule,
         LayoutModule,
         MaterialModule,
-        FirebaseModule
+        FirebaseModule,
+        CarouselModule.forRoot(),
    
   
     ],
