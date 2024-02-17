@@ -9,8 +9,6 @@ import { LayoutModule } from '@angular/cdk/layout';
 
 // material stuff
 import { MaterialModule } from './modules/material-module/material.module';
-
-
 // Firebase
 import { FirebaseModule } from './modules/firebase-module/firebase.module';
 
@@ -103,9 +101,10 @@ import { ToolTipComponent } from './components/shared/tool-tip/tool-tip.componen
         LayoutModule,
         MaterialModule,
         FirebaseModule,
+    ],
+    
 
   
-    ],
     providers: [
         DatePipe,
         UploadService,

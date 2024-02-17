@@ -4,6 +4,8 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+
+
 :root {
     --white: rgb(238, 234, 234);
     --blue: #3f51b5;

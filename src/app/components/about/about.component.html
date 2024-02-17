@@ -1,54 +1,29 @@
-<section>
-  <!-- Container -->
-  <div class="mx-auto w-full max-w-7xl px-5 py-12 md:px-10 md:py-16 lg:py-20">
-    <!-- Component -->
-    <div class="grid gap-12 sm:gap-20 lg:grid-cols-2">
-      <!-- Content -->
-      <div class="flex flex-col items-start gap-2">
-
-        <p class="text-sm text-[#808080] sm:text-xl">Founder &amp; Former PA/AD</p>
-        <!-- Title -->
-        <h1 class="mb-6 text-4xl font-bold md:text-6xl lg:mb-8">Scott Reynolds</h1>
-        <p class="text-sm text-[#808080] sm:text-xl">Consectetur adipiscing elit duis tristique sollicitudin nibh. Augue
-          mauris augue neque gravida in fermentum. Sapien pellentesque habitant morbi tristique pellentesque.</p>
-        <!-- Divider -->
-        <div class="mb-8 mt-8 h-px w-full bg-black"></div>
-        <div class="flex flex-row gap-4 font-semibold">
-          <a href="#" class="flex  items-center gap-4 rounded-md bg-black px-6 py-2 text-white">
-
-            <p>Email Scott</p>
-          </a>
-        </div>
-      </div>
-      <!-- Image -->
-      <div class="min-h-[450px] overflow-hidden rounded-md bg-cover bg-[url('/assets/headshots/scottHead.jpg')]"></div>
-    </div>
-  </div>
-
-  <div class="mx-auto w-full max-w-7xl px-5 py-12 md:px-10 md:py-16 lg:py-20">
-    <!-- Component -->
-    <div class="grid gap-12 sm:gap-20 lg:grid-cols-2">
-      <div class="min-h-[450px] overflow-hidden rounded-md bg-cover bg-[url('/assets/headshots/timHead.jpg')]"></div>
-      <!-- Content -->
-      <div class="flex flex-col items-start gap-2">
-
-        <p class="text-sm text-[#808080] sm:text-xl">Founder &amp; Actor / Coder</p>
-        <!-- Title -->
-        <h1 class="mb-6 text-4xl font-bold md:text-6xl lg:mb-8">Tim McKiernan</h1>
-        <p class="text-sm text-[#808080] sm:text-xl">Consectetur adipiscing elit duis tristique sollicitudin nibh. Augue
-          mauris augue neque gravida in fermentum. Sapien pellentesque habitant morbi tristique pellentesque.</p>
-        <!-- Divider -->
-        <div class="mb-8 mt-8 h-px w-full bg-black"></div>
-        <div class="flex flex-row w-full justify-end">
-          <div class="flex flex-row  gap-4 font-semibold">
-            <a href="#" class="flex  items-center gap-4 rounded-md bg-black px-6 py-2 text-white">
-              <p>Email Tim</p>
-            </a>
+<section class="container mx-auto px-4 py-12 md:py-16 lg:py-20">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+      <!-- Scott's Section -->
+      <div class="about-card flex flex-col md:flex-row items-center md:rounded-lg bg-white shadow-lg overflow-hidden">
+          <div class="image-wrapper  md:order-1 order-2">
+              <img src="/assets/headshots/scottHead.jpg" alt="Scott Reynolds" class="w-full h-auto">
           </div>
-        </div>
-
+          <div class="px-6 py-8 md:w-2/3 md:order-2 order-1">
+              <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6">Scott Reynolds</h1>
+              <p class="text-sm md:text-base font-semibold mb-2">Founder & Former PA/AD</p>
+              <p class="text-sm md:text-base">Consectetur adipiscing elit duis tristique sollicitudin nibh. Augue mauris augue neque gravida in fermentum. Sapien pellentesque habitant morbi tristique pellentesque.</p>
+              <a href="#" class="inline-block mt-4 px-6 py-3 bg-black text-white rounded-md hover:bg-gray-800 transition duration-300">Email Scott</a>
+          </div>
       </div>
 
-    </div>
+      <!-- Tim's Section -->
+      <div class="about-card flex flex-col md:flex-row items-center md:rounded-lg bg-white shadow-lg overflow-hidden">
+          <div class="image-wrapper  md:order-1 order-2">
+              <img src="/assets/headshots/timHead.jpg" alt="Tim McKiernan" class="w-full h-auto">
+          </div>
+          <div class="px-6 py-8 md:w-2/3 md:order-2 order-1">
+              <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6">Tim McKiernan</h1>
+              <p class="text-sm md:text-base font-semibold mb-2">Founder, Actor, Dev</p>
+              <p class="text-sm md:text-base">Consectetur adipiscing elit duis tristique sollicitudin nibh. Augue mauris augue neque gravida in fermentum. Sapien pellentesque habitant morbi tristique pellentesque.</p>
+              <a href="#" class="inline-block mt-4 px-6 py-3 bg-black text-white rounded-md hover:bg-gray-800 transition duration-300">Email Tim</a>
+          </div>
+      </div>
   </div>
 </section>

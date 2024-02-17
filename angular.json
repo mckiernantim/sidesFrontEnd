@@ -21,6 +21,7 @@
             "aot": true,
             "assets": ["src/favicon.ico", "src/assets"],
             "styles": ["src/styles.css", "src/theme.scss"],
+
             "scripts": [],
             "allowedCommonJsDependencies": ["angular-slickgrid"]
           },
