@@ -1,5 +1,5 @@
 <section>
-    <div class="flex items-center justify-center text-black shadow-md">
+  <div class="tooltip-container flex items-end justify-end fixed bottom-0 right-0 z-20">
       <!-- Tooltip for small screens (Mobile) -->
       <div *ngIf="windowWidth < 1200" class="fixed top-0 left-0 w-full z-20 bg-[#f2f2f7] shadow-xl">
         <div class="p-6 rounded-md">
@@ -19,7 +19,7 @@
       <!-- Tooltip for larger screens -->
       <div *ngIf="windowWidth >= 1200" class="tooltip-desktop-position">
         <div class="p-6 bg-[#f2f2f7] shadow-xl rounded-md">
-          <h3 class="text-3xl font-bold">Introducing Last Looks Editing</h3>
+          <h3 class="text-3xl font-bold font-black">Introducing Last Looks Editing</h3>
           <p class="text-lg mb-4">Confirm everything looks OK before payment</p>
           <div *ngFor="let item of data">
             <p class="text-sm text-[#636262] px-8"><strong class="font-semibold">{{item.title}}:</strong> {{item.text}}</p>

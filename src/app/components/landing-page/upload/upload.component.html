@@ -1,53 +1,62 @@
-<main>
+<main [@fadeInOut]>
+  <header class="w-full">
+    @if (working) {
+      <ng-container>
+        <div class="modal-wrapper">
+          <app-spinning-bot [title] = "'testermolester'"></app-spinning-bot>
+        </div>
+      </ng-container>
+    }
 
-<header class="w-full">
-  <!-- Container -->
-  <div class="w-full   px-5 pt-8  md:px-10 md:h-45  lg:h-55 flex items-center justify-center centered bg-white">
-    <!-- Component -->
-    <div class="grid items-center gap-8 sm:gap-20 lg:grid-cols-2">
-      <img src="../../../../assets/icons/logoFlat.png" alt="" class="inline-block h-full w-full" />
-      <div>
-        <!-- Title -->
+
+
+    <!-- Container -->
+    <div class="w-full px-5 pt-8 md:px-10 md:h-45 lg:h-55 flex items-center justify-center centered bg-white">
+      <!-- Component -->
+      <div class="grid items-center gap-8 sm:gap-20 lg:grid-cols-2">
+        <!-- Use responsive class to shrink image on smaller screens -->
+        <img src="../../../../assets/icons/logoFlat.png" alt="" class="inline-block h-full w-full sm:w-25rem sm:h-25rem" />
         <div>
-          
-          <h1 class="mb-4 text-4xl  font-bold md:text-6xl">Sides-Ways. </h1> 
-          <h2 class="mb-6  text-2xl font-bold">
-            Secure, Set-Ready Sides in Minutes.
+          <!-- Title -->
+          <div>
+            <h1 class="mb-4 text-4xl font-bold md:text-6xl">Sides-Ways. </h1> 
+            <h2 class="mb-6 text-2xl font-bold">
+              Secure, Set-Ready Sides in Minutes.
+              <br>
+              No subscriptions to worry about.  
+              <br>
+              Nothing to sign up for.   
+            </h2>
+          </div>
+   
+          <p class="mb-6 text-lg font-bold">Whether you're an independent filmmaker working on your first feature, or a veteran AD back the lot for another season, Sides-ways will save you time and money on your next project. </p>
+          <p class="mb-6 text-lg font-semibold">
+            No subscriptions to manage, no bloated software packages costing your project thousands. 
+          </p>
+          <h2 class="mb-6 text-lg font-semibold text-accent"> 
+            We make sides. 
             <br>
-            No subscriptions to worry about.  
-            <br>
-            Nothing to sign up for.   
+            That's it.
           </h2>
-        </div>
- 
-        <p class="mb-6  text-lg font-bold">Whether you're an independent filmmaker working on your first feature, or a veteran AD back the lot for another season, Sides-ways will save you time and money on your next project. </p>
-        <p class="mb-6  text-lg font-semibold">
-          No subbscrtiptions to manage, no bloated software packages costing your project thousands. 
-        </p>
-        <h2 class="mb-6  text-lg font-semibold text-accent"> 
-          We make sides. 
-          <br>
-          That's it.
-        </h2>
-        <div class="mb-6 flex items-stretch md:mb-10 lg:mb-12">
 
-          <button (click)="fileInput.click()" class="mr-5 rounded-md bg-black px-8 py-4 text-center font-semibold text-white md:mr-6 lg:mr-8 bg-primary">Upload Script PDF</button>
-          <button (click)="skipUploadForTest()" class="mr-5 rounded-md bg-black px-8 py-4 text-center font-semibold text-white md:mr-6 lg:mr-8 bg-primary">Skip upload</button>
-          <input hidden (change)="handleFileInput($event.target.files)" #fileInput type="file" id="file"
-          accept="application/pdf">
+          <div class="mb-6 flex items-stretch md:mb-10 lg:mb-12">
+            <button (click)="fileInput.click()" class="mr-5 rounded-md bg-black px-8 py-4 text-center font-semibold text-white md:mr-6 lg:mr-8 bg-primary">Upload Script PDF</button>
+            <button (click)="skipUploadForTest()" class="mr-5 rounded-md bg-black px-8 py-4 text-center font-semibold text-white md:mr-6 lg:mr-8 bg-primary">Skip upload</button>
+            <input hidden (change)="handleFileInput($event.target.files)" #fileInput type="file" id="file" accept="application/pdf">
+          </div>
+          <!-- App -->
         </div>
-        <!-- App -->
       </div>
-    
-  </div>
-  </div>
-</header>
-  <section class="about-product-section ">
+    </div>
+  </header>
+  <section class="about-product-section">
     <app-about-item-grid></app-about-item-grid>
   </section>
   <section class="customers-section">
     <app-testimonial-grid></app-testimonial-grid>
   </section>
   <section class="feature-section">
+    <h1>feature</h1>
+    <app-spinning-bot [title]= "'fake name'"></app-spinning-bot>
   </section>
 </main>

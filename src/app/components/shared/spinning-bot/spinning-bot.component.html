@@ -1,14 +1,15 @@
 <section class="relative h-screen flex items-center justify-center">
   <!-- Container -->
-  <div class="md:h-auto absolute left-1/2 top-1/2 h-auto w-[50%] max-w-lg -translate-x-1/2 -translate-y-1/2 bg-white lg:w-full">
-    <div class="flex flex-col items-center">
-      <img class="spinner" src="../../assets/animations/ScriptBot_Animation-BW.gif" />
-      
-      <!-- Content -->
-      <div class="p-5 text-center sm:p-10">
-        <!-- Title -->
-        <h3 class="mb-2 text-xl font-bold md:text-2xl">Processing title</h3>
-        <p class="text-sm text-[#636262]">Sit Tight.</p>
+  <div class="modal-container">
+    <div class="content">
+      <h3 class="title">Processing: {{this.title}}</h3>
+      <div class="animation-container">
+        <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" />
+        <!-- Content -->
+        <div class="message">
+          <!-- Title -->
+          <p>Sit Tight.</p>
+        </div>
       </div>
     </div>
   </div>

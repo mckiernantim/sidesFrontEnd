@@ -1,4 +1,4 @@
-<main class="last-looks-container text-white">
+<main [@fadeInOut] class="last-looks-container text-white">
   <div class="pagination-controls">
     <span>Page {{ currentPageIndex + 1 }} / {{ pages.length }}</span>
     <button mat-raised-button color="warn" (click)="nextPage()"
@@ -9,7 +9,8 @@
   <div class="page-container">
     <app-last-looks-page 
     [page]="currentPage" 
-    [canEditDocument]="editState">
+    [canEditDocument]="editState"
+    [resetSelectedLine] = "selectedLine">
     </app-last-looks-page>
   </div>
 </main>

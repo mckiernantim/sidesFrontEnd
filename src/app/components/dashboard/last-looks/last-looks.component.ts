@@ -20,11 +20,13 @@ interface QueueItem {
   pageIndex: number;
   line: Line;
 }
+import { fadeInOutAnimation } from 'src/app/animations/animations';
 
 @Component({
   selector: 'app-last-looks',
   templateUrl: './last-looks.component.html',
   styleUrls: ['./last-looks.component.css'],
+  animations:[fadeInOutAnimation]
 })
 export class LastLooksComponent implements OnInit {
   constructor(
@@ -41,6 +43,7 @@ export class LastLooksComponent implements OnInit {
   doc:any 
   @Input() editState: boolean;
   @Input() resetDocState: string;
+  @Input() selectedLineState: string;
   @Input() undoState: string;
   @Input() triggerLastLooksAction: Function;
   @Output() selectedEditFunctionChange: EventEmitter<string> =

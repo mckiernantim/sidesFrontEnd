@@ -23,42 +23,62 @@
     width: 300px; 
     height: 50px; 
     transform:  translate(-50%, -50%) skew(-10deg);
-    width: 200px; /* Adjust width as needed */
+    width: 200px;
   
 }
 body {
     
     background-color: #f0f0f0e3
 }
-
-/* Customize the background color of the Angular Material table */
+.modal-wrapper {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 100vw;
+  height: auto;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  justify-content: space-around;
+}
+  
 .mat-table {
-    background-color: var(--grey)/* Set to your desired darker background color */
+    background-color: var(--grey)
   }
-  
-  /* Customize the background color of the table rows */
-  .mat-row {
-    background-color: var(--grey) /* Set to your desired background color */
-  }
-  
-  /* Customize the background color of the header row */
-  .mat-header-row {
-    background-color: var(--grey)/* Set to your desired darker background color */
-  }
-  
-  /* Customize the background color of the header cells */
-  .mat-header-cell {
-    background-color: var(--grey)/* Set to your desired darker background color */
+    .mat-row {
+    background-color: var(--grey)
   }
   
 
+  .mat-header-row {
+    background-color: var(--grey)
+  }
+  
+
+  .mat-header-cell {
+    background-color: var(--grey)
+  }
+  .mat-mdc-cell {
+    color:var(--black)
+  }
+  .mat-dialog-container {
+    border:2px solod purple;
+    background-color: transparent !important; 
+    box-shadow: none; 
+  }
 @import 'https://fonts.googleapis.com/icon?family=Material+Icons';
 * {
     font-family: 'Courier New', Courier, monospace
-        /* Replace with your custom font */
-    /* Add !important to overwrite all elements */
+   
 }
 .material-icons{
     font-family: 'Material Icons' 
 }
 
+.custom-dialog-container .mat-dialog-container {
+  background-color: transparent; 
+  box-shadow: none; 
+  padding: 0;
+}

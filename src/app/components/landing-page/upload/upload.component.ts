@@ -8,6 +8,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { UploadService } from '../../../services/upload/upload.service';
 import { PdfService } from '../../../services/pdf/pdf.service'
 import { Router } from '@angular/router';
+import { fadeInOutAnimation } from 'src/app/animations/animations';
 
 import {
   MatDialog,
@@ -22,6 +23,7 @@ const dummyData = require("./dummyScript.json")
   selector: 'app-upload',
   templateUrl: './upload.component.html',
   styleUrls: ['./upload.component.css'],
+  animations:[fadeInOutAnimation]
 })
 export class UploadComponent implements OnInit, OnDestroy {
   logo: string = '../../assets/icons/logoFlat.png';
@@ -74,13 +76,17 @@ export class UploadComponent implements OnInit, OnDestroy {
     return missingTwo;
   }
   openDialog(data) {
-    if (this.working) {
-      const dialogRef = this.dialog.open(SpinningBotComponent, {
-        width: '60%',
-        data: data,
-      });
-      dialogRef.afterClosed().subscribe((result) => {});
-    }
+    console.log(data)
+    // if (this.working) {
+    //   const dialogRef = this.dialog.open(SpinningBotComponent, {
+    //     height:'100%',
+    //     width:'100%',
+    //     hasBackdrop:false,
+    //     panelClass:'spinning-bot',
+    //     data: data,
+    //   });
+    //   dialogRef.afterClosed().subscribe((result) => {});
+    // }
   }
   skipUploadForTest() {
  

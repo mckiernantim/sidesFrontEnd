@@ -27,7 +27,9 @@
                     <span 
                     *ngIf="line.category === 'scene-header'" 
                         [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible" 
+                        [attr.contenteditable]="canEditDocument ? 'true' : 'false'"
                         (click)="toggleSelectedLine($event, line, lineIndex)"
+                        (blur)="onLineChange(line, lineIndex, $event.target.textContent)"
                         [style.bottom]="line.calculatedYpos" 
                         [style.left]="line.calculatedXpos"
                     >
@@ -69,7 +71,7 @@
                         [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex), 'edit-li': canEditDocument && !selectedLine  }"
                         [style.bottom]="line.calculatedYpos"
                         [style.left]="line.calculatedXpos" 
-                        
+                        [attr.contenteditable]="canEditDocument ? 'true' : 'false'" 
                         [textContent]="line.text"
                         
                         (input)="canEditDocument && updateText($event, line, lineIndex)"

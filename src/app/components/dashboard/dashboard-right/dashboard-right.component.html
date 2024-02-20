@@ -1,5 +1,4 @@
-<div class="dash-container text-white">
-
+<div [@fadeInOut] class="dash-container text-white">
   <div class="main-container two-column cell">
 
     <ng-container *ngIf="!lastLooksReady; else lastLooks">
@@ -58,8 +57,8 @@
 
       <div *ngIf="this.pdf.finalDocReady">
         <!-- Inputs passed to trigger changes in our lastlooks to handle edit state -->
-        <app-last-looks  [resetDocState]="resetFinalDocState" [editState]="editLastLooksState"
-          [undoState]="fireUndo"></app-last-looks>
+        <app-last-looks [resetDocState]="resetFinalDocState" [editState]="editLastLooksState" [undoState]="fireUndo"
+          [selectedLineState]="false"></app-last-looks>
       </div>
     </ng-template>
 
@@ -102,13 +101,6 @@
           <div class="p-4">
             <button mat-raised-button color="warn" (click)="toggleEditStateInLastLooks()" class="bg-accent">Edit
               Pdf</button>
-
-            <ng-container>
-              <div *ngIf="editLastLooksState">
-                <app-tool-tip (buttonAction)="handleToolTipClicked($event)" [data]="toolTipContent"></app-tool-tip>
-              </div>
-            </ng-container>
-            
           </div>
           <div class="p-4">
             <app-add-watermark (waterMarkUpdate)="addWaterMark($event)"></app-add-watermark>
@@ -116,12 +108,20 @@
           <div class="p-4">
             <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
           </div>
+          <ng-container>
+            <div *ngIf="!editLastLooksState">
+              <app-tool-tip (buttonAction)="handleToolTipClicked($event)" [data]="toolTipContent"></app-tool-tip>
+            </div>
+          </ng-container>
         </div>
         <div>
           <h2>Total: $5.00</h2>
-          <button mat-raised button color="warn" (click)="openConfirmPurchaseDialog()">Proceed To Checkout</button>
+          <button mat-raised-button color="warn" (click)="openConfirmPurchaseDialog()">Proceed To Checkout</button>
         </div>
       </ng-template>
     </div>
   </div>
+
+
+
 </div>

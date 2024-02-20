@@ -21,8 +21,10 @@ export class LastLooksPageComponent {
   @Input() selectedFunction: string;
   @Input() selectedEditFunction: string;
   @Input() editPdfOptions: string[];
+  @Input() resetSelectedLine:string | boolean;
   @Input() canEditDocument: boolean;
   @Output() functionNullified: EventEmitter<void> = new EventEmitter<void>();
+  @Output() pageUpdate = new EventEmitter<Line[]>();
 
   container: HTMLElement;
   undoQueue: any[] = [];
@@ -107,6 +109,11 @@ export class LastLooksPageComponent {
       this.cdRef.markForCheck();
       // Do any additional logic you need here
     }
+  }
+
+  onLineChange(line: Line, index: number, newText: string): void {
+    this.page[index].text = newText; // Update the line text
+    this.pageUpdate.emit(this.page); // Emit the updated page
   }
 
   updatePositon(num: number, str: string): string {

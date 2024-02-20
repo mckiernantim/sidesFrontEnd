@@ -14,6 +14,8 @@ import { UndoService } from '../../../services/edit/undo.service';
 import { Line } from 'src/app/types/Line';
 import { PdfService } from '../../../services/pdf/pdf.service';
 
+import { fadeInOutAnimation } from 'src/app/animations/animations';
+
 export interface pdfServerRes {
   url:string,
   id:string
@@ -27,6 +29,7 @@ interface toolTipOption {
   selector: 'app-dashboard-right',
   templateUrl: './dashboard-right.component.html',
   styleUrls: ['./dashboard-right.component.css'],
+  animations:[fadeInOutAnimation]
 })
 export class DashboardRightComponent implements OnInit {
   // STATE BOOLEANS
@@ -381,6 +384,7 @@ export class DashboardRightComponent implements OnInit {
   }
   toggleEditStateInLastLooks() {
     this.editLastLooksState = !this.editLastLooksState;
+    
   }
 
   setLastLines(i) {

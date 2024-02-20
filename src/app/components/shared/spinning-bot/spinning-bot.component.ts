@@ -1,5 +1,5 @@
-import { Component, Input, OnInit, Inject } from '@angular/core';
-import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Component, Input, OnInit, Optional, Inject } from '@angular/core';
+import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-spinning-bot',
@@ -7,13 +7,15 @@ import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/materia
   styleUrls: ['./spinning-bot.component.css']
 })
 export class SpinningBotComponent implements OnInit {
+  @Input() title: string;
 
-  constructor(@Inject(MAT_DIALOG_DATA) public title: string ){
-
+  constructor(@Optional() @Inject(MAT_DIALOG_DATA) public injectedTitle: string) {
+    if (injectedTitle) {
+      this.title = injectedTitle;
+    }
   }
 
   ngOnInit(): void {
-    console.log(this.title)
+    console.log(this.title);
   }
-
 }
