@@ -36,6 +36,11 @@ export class TokenService {
       this.startCountdown(expirationTimeInMilliseconds);
     }
   }
+  isTokenValid(): Observable<boolean> {
+    return this.getCountdown().pipe(
+      map(timeLeft => timeLeft > 0)
+    );
+  }
   startCountdown(expirationTimeInMilliseconds: number): void {
     const currentTimeInMilliseconds = Date.now();
     const timeLeftInMilliseconds = expirationTimeInMilliseconds - currentTimeInMilliseconds; // Time left in milliseconds

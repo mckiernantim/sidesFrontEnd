@@ -50,7 +50,6 @@ export class IssueComponent implements OnInit, AfterViewInit {
     public dialogRef: MatDialogRef<IssueComponent>,
     public errorDialogRef: MatDialogRef<IssueComponent>,
     public cdr: ChangeDetectorRef,
-    public auth: AuthService,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {}
 
@@ -80,9 +79,9 @@ export class IssueComponent implements OnInit, AfterViewInit {
       callsheet: this.file,
     });
   }
-  async googleSignIn (){
-   this.auth.loginWithGoogle()
-  }
+  // async googleSignIn (){
+  //  this.auth.loginWithGoogle()
+  // }
 
   // need to give option for no callsheet
   handleFileInput(file) {

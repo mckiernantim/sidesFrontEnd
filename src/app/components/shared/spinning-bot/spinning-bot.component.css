@@ -1,6 +1,9 @@
 section {
     width:100vw
 }
+img {
+  height:20rem;
+}
 .modal-container {
     position: absolute;
     top: 50%;
@@ -19,6 +22,7 @@ section {
     height:auto
   }
   
+
   .content, .animation-container {
     text-align: center;
     display:flex;

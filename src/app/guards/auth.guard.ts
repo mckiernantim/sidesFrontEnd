@@ -1,27 +1,30 @@
 import { Injectable } from '@angular/core';
-import { ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, Router } from '@angular/router';
+import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { TokenService } from '../services/token/token.service';
+import { map } from 'rxjs/operators';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
-export class AuthGuard  {
+export class AuthGuard implements CanActivate {
   constructor(private tokenService: TokenService, private router: Router) {}
 
-  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean | UrlTree {
-    const sessionToken = this.tokenService.getDeleteTimer();
-    // should check for session token to be truethy
-    if (true) {
-      // Token exists, allow access to the route
-      return true;
-    } else {
-      // we need to check on this later - currently its instantiating before the download
-      
-      return true;
-      alert("Please confirm purcahse to continue to downlaod")
-      // Token does not exist, redirect to login page or any other appropriate page
-      return this.router.parseUrl('/download'); // Replace '/login' with your login page URL
-    }
+  canActivate(
+    route: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot
+  ): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
+    return this.tokenService.isTokenValid().pipe(
+      map(isValid => {
+        if (isValid) {
+          // Token is valid, proceed to the target route
+          return true;
+        } else {
+          alert("No valid checkout session detected.  Rerouting")
+          // Token is not valid, redirect to login or another appropriate page
+          return this.router.parseUrl('/'); // Adjust the route as needed
+        }
+      })
+    );
   }
 }

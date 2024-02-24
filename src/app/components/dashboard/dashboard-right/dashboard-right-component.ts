@@ -15,6 +15,7 @@ import { Line } from 'src/app/types/Line';
 import { PdfService } from '../../../services/pdf/pdf.service';
 
 import { fadeInOutAnimation } from 'src/app/animations/animations';
+import { SpinningBotComponent } from '../../shared/spinning-bot/spinning-bot.component';
 
 export interface pdfServerRes {
   url:string,
@@ -126,6 +127,7 @@ export class DashboardRightComponent implements OnInit {
   ngOnInit(): void {
     this.intizilazeState()
     this.initializeSceneSelectionTable()
+    this.openFinalSpinner()
 
   }
   ngAfterViewInit(): void {
@@ -248,7 +250,7 @@ export class DashboardRightComponent implements OnInit {
       (err) => {
         this.dialog.closeAll();
         const errorRef = this.errorDialog.open(IssueComponent, {
-          width: '60%',
+          width: '100%',
           data: {
             err,
           },
@@ -287,8 +289,8 @@ export class DashboardRightComponent implements OnInit {
     this.waitingForScript = true;
     if (this.waitingForScript) {
       // starts process to navigate
-      const dialogRef = this.dialog.open(IssueComponent, {
-        width: '60%',
+      const dialogRef = this.dialog.open(SpinningBotComponent, {
+        width: '100vw',
         data: {
           selected: this.selected,
           script: this.script,

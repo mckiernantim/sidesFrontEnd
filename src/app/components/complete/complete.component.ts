@@ -4,11 +4,13 @@ import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { TokenService } from 'src/app/services/token/token.service';
 import { catchError } from 'rxjs/operators';
 import { throwError, of } from 'rxjs';
+
 @Component({
   selector: 'app-complete',
   templateUrl: './complete.component.html',
   styleUrls: ['./complete.component.css'],
 })
+
 export class CompleteComponent implements OnInit {
   name: string = localStorage.getItem('name');
   
@@ -21,15 +23,13 @@ export class CompleteComponent implements OnInit {
     
   }
   ngOnInit() {
-    console.log("complete init")
+    console.log("complete init");
   }
+    
   // we download as soon as we land
-  // ngAfterViewInit(): void {
-
-  //   this.downloadToken = this.token.validateCookie()
-  //   this.token.setDeleteTimer(this.pdfToken)
-  //   this.downloadPDF();
-  // }
+  ngAfterViewInit(): void {
+    this.downloadPDF();
+  }
   calculateDownloadTime() {
     try {
       console.log(this.pdfToken)

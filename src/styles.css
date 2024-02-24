@@ -43,7 +43,15 @@ body {
   flex-direction: row;
   justify-content: space-around;
 }
-  
+/* override angular material modal */
+.mat-mdc-dialog-container .mdc-dialog__surface {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+.mat-mdc-dialog-surface mdc-dialog__surface {
+  display:flex;
+  flex-direction: row;
+}
 .mat-table {
     background-color: var(--grey)
   }

@@ -32,9 +32,10 @@ export class MainNavComponent implements AfterViewInit {
       this.countdownValue$ =  this.token.getCountdown();
       this.countdownValue$.subscribe(countdown => {
         if (countdown > 0) {
+          
           this.formattedCountdown = this.formatCountdown(countdown)
         } else {
-          this.router.navigate(['/'])
+          this.formattedCountdown = null;        
         }
       });
     }
