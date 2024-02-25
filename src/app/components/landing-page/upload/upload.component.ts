@@ -55,9 +55,7 @@ export class UploadComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.working = false;
-    this.openDialog("test");
     this.resetLocalData()
-    console.log(this.totalLines, this.totalScenes, this.totalTickets);
     this.underConstruction = false
   }
 
@@ -75,18 +73,23 @@ export class UploadComponent implements OnInit, OnDestroy {
       ) || '2.';
     return missingTwo;
   }
-  openDialog(data) {
-    console.log(data)
-    // if (this.working) {
-    //   const dialogRef = this.dialog.open(SpinningBotComponent, {
-    //     height:'100%',
-    //     width:'100%',
-    //     hasBackdrop:false,
-    //     panelClass:'spinning-bot',
-    //     data: data,
-    //   });
-    //   dialogRef.afterClosed().subscribe((result) => {});
-    // }
+  toggleWorking() {
+    console.log(this.working)
+    this.working = !this.working
+    console.log(this.working)
+  }
+  openDialog(title, dialogOption) {
+    if (this.working) {
+      console.log(title. dialogOption)
+      const dialogRef = this.dialog.open(SpinningBotComponent, {
+        height:'100%',
+        width:'100%',
+        data:{ title, dialogOption }
+      });
+      dialogRef.afterClosed().subscribe((result) => {
+        this.toggleWorking()
+      });
+    }
   }
   skipUploadForTest() {
  
@@ -107,7 +110,7 @@ export class UploadComponent implements OnInit, OnDestroy {
     console.log('firing over script');
     this.working = true;
     this.fileToUpload = files.item(0);
-    this.openDialog(this.fileToUpload.name);
+    this.openDialog(this.fileToUpload.name, "scan");
    
     // upload our script
     this.$script_data = this.upload.postFile(this.fileToUpload);

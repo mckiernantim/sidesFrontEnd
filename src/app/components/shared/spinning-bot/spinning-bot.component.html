@@ -1,16 +1,36 @@
 <section class="relative h-screen flex items-center justify-center">
-  <!-- Container -->
+<ng-container *ngIf="dialogOption == 'scan'">
   <div class="modal-container">
     <div class="content">
-      <h3 class="title">Processing: {{this.title}}</h3>
+      <h3 class="title">Processing: <em> {{this.title}}</em></h3>
       <div class="animation-container">
         <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" />
-        <!-- Content -->
+   
         <div class="message">
-          <!-- Title -->
+       
           <p>Sit Tight.</p>
         </div>
       </div>
     </div>
   </div>
+</ng-container>
+
+<ng-container *ngIf="dialogOption == 'payment' ">
+  <div class="modal-container">
+    <div class="content">
+      <h3 class="title">Processing: <em> {{this.title}}</em></h3>
+      <div class="animation-container">
+        <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" />
+   
+        <div class="message">
+       
+          <p>Sit Tight.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+
+  
 </section>
