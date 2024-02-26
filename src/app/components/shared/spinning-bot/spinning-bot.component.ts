@@ -17,15 +17,12 @@ export class SpinningBotComponent implements OnInit {
   constructor(@Optional() 
   @Inject(MAT_DIALOG_DATA) public data: any) {
     if (data) {
-      console.log(data)
       const { title, dialogOption } = data
       this.title = title;
       this.dialogOption = dialogOption
     }
-    console.log(data)
   }
 
   ngOnInit(): void {
-    console.log(this.title);
   }
 }

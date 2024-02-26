@@ -22,8 +22,6 @@ export class UndoService {
       line,
     }
     this.undoQueue.push(changeToAdd);
-    console.log(changeToAdd)
-    console.log("undo queue added", this.undoQueue)
   }
 
   undo() {

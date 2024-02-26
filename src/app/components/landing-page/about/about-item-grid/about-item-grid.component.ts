@@ -17,20 +17,24 @@ export class AboutItemGridComponent {
     `Your script is scanned, returned, and instantly deleted. We're backed by Google for added peace of mind. 
     <br>
     Nothing is saved — ever.`,
-    `  We make your sides.
+
+    `We make your sides.
     <br>
-    Need a cover page? Upload it. 
+   Need a callsheet?  Add one.
     <br>
     Watermarks? No problem. 
     <br>Everything you need.
-
     Easy.`,
-    `Secure in-browser editing to confirm your sides.  
+
+    `Secure in-browser editing to catch any issues.  
     <br>
     Your Download is encrypted.
-    <br>Any record of your sides are deleted.
+
     <br>
-   And nothing is saved — ever.
+    Everything deleted in 10 minutes - tops.
+    <br>
+
+    And nothing is saved — ever.
 `,
   ];
 }

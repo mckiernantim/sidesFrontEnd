@@ -5,12 +5,12 @@
   </ng-container>
 </div>
 
-<div *ngIf="!waitingForScript" class="container mx-auto mt-8 flex flex-col justify-center items-center">
+<div *ngIf="!waitingForScript" class="container mx-auto mt-8 flex flex-col justify-center bg-white items-center">
   <!-- Selected Scenes -->
   <div>
-    <h3 class="text-xl font-semibold mb-4">Selected Scenes:</h3>
+    <h3 class="text-xl font-bold mb-4">Selected Scenes:</h3>
     <ul>
-      <li *ngFor="let text of data.selected" class="list-none mb-2">{{ text.sceneNumberText }} {{ text.text }}</li>
+      <li *ngFor="let text of data.selected" class="list-none mb-2 font-bold text-lg">{{ text.sceneNumberText }} {{ text.text }}</li>
     </ul>
     <h2 class="text-2xl font-bold mt-4">Total: $5</h2>
   </div>

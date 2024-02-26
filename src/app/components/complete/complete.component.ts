@@ -23,7 +23,7 @@ export class CompleteComponent implements OnInit {
     
   }
   ngOnInit() {
-    console.log("complete init");
+
   }
     
   // we download as soon as we land
@@ -32,7 +32,7 @@ export class CompleteComponent implements OnInit {
   }
   calculateDownloadTime() {
     try {
-      console.log(this.pdfToken)
+
     } catch (e) {
       console.error("no cookie detected")
     }
@@ -44,6 +44,7 @@ export class CompleteComponent implements OnInit {
         .pipe(
           catchError((error:any) => {
             if(error) {
+              console.error(error)
               alert("Checkout token exipred - unable to please upload script again");
               return of(null)
             }

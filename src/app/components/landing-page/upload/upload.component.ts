@@ -74,13 +74,10 @@ export class UploadComponent implements OnInit, OnDestroy {
     return missingTwo;
   }
   toggleWorking() {
-    console.log(this.working)
     this.working = !this.working
-    console.log(this.working)
   }
   openDialog(title, dialogOption) {
     if (this.working) {
-      console.log(title. dialogOption)
       const dialogRef = this.dialog.open(SpinningBotComponent, {
         height:'100%',
         width:'100%',
@@ -107,7 +104,6 @@ export class UploadComponent implements OnInit, OnDestroy {
     });
   }
   handleFileInput(files: FileList ) {
-    console.log('firing over script');
     this.working = true;
     this.fileToUpload = files.item(0);
     this.openDialog(this.fileToUpload.name, "scan");

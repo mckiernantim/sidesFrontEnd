@@ -7,11 +7,13 @@ $my-accent-color: mat.define-palette(mat.$orange-palette, 700);
 $my-warn-red: mat.define-palette(mat.$red-palette, 500);
 $my-off-white: #f8f8f8; // Adjust to your off-white preference
 $my-light-gray: #d6d6d6; 
+$my-orange:#fc1c18;
 
 $my-custom-theme: mat.define-light-theme((
   color: (
     primary: $my-primary-blue,
     accent: $my-accent-color,
+    warning: $my-orange,
   ),
   density: 0,
 ));

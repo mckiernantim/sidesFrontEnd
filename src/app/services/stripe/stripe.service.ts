@@ -18,7 +18,6 @@ export class StripeService {
 
 
   startCheckout() {
-    console.log(`${this._URL}`);
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
     });

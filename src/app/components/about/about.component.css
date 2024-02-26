@@ -14,6 +14,24 @@
     height: 100%;
 }
 
+.accent-bg {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .accent-bg::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -10px;
+    right: -10px; 
+    bottom: 0;
+    z-index: -1;
+    background: var(--orange);
+    transform: rotate(-25deg); 
+    transform-origin: top left;
+  }
+  
 
 @media (min-width: 1000px) {
     .about-card {

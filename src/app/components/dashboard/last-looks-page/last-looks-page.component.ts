@@ -88,7 +88,6 @@ export class LastLooksPageComponent {
     }, this.dragRefreshDelay);
 
     this.dragDrop.update.subscribe((reset: null | true) => {
-      console.log(reset, ' new value emitted');
       if (reset) {
         const ind = this.selectedLine.index;
         ;
@@ -112,8 +111,8 @@ export class LastLooksPageComponent {
   }
 
   onLineChange(line: Line, index: number, newText: string): void {
-    this.page[index].text = newText; // Update the line text
-    this.pageUpdate.emit(this.page); // Emit the updated page
+    this.page[index].text = newText;
+    this.pageUpdate.emit(this.page); 
   }
 
   updatePositon(num: number, str: string): string {
@@ -125,11 +124,11 @@ export class LastLooksPageComponent {
     const newText = (event.target as HTMLElement).textContent;
     if (!this.selectedLine) this.toggleSelectedLine(event, line, lineIndex);
     this.selectedLine.text = newText;
+    this.onLineChange(line, lineIndex, newText)
     // You can also perform any additional logic here.
   }
 
   determineIfWeCanDrag(): boolean {
-    console.log(this.dragDrop.draggingLine, !this.contextMenuLine);
     if (!this.contextMenuLine && this.dragDrop.draggingLine) {
       return true;
     }
@@ -256,7 +255,6 @@ handleMouseUp (event, line, lineIndex) {
     }
   }
   toggleHiddenOnLine() {
-    console.log(this.selectedLine.hidden ,this.selectedLine)
     !this.selectedLine.hidden
       ? (this.selectedLine.hidden = 'hidden')
       : (this.selectedLine.hidden = null);

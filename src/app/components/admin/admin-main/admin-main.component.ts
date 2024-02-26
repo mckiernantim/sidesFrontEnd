@@ -18,7 +18,7 @@ export class AdminMainComponent {
     this.updateSelected.emit(val)
   }
   deleteSelectedTicket(val) {
-    console.log(val, "delete is firing an event")
+   
     this.deleteSelected.emit(val)
   }
 

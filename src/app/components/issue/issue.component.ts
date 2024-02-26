@@ -66,7 +66,6 @@ export class IssueComponent implements OnInit, AfterViewInit {
       ? (this.waitingForScript = true)
       : (this.waitingForScript = false);
 
-      console.log(this.data)
 
   }
   ngAfterViewInit(): void {
@@ -98,7 +97,6 @@ export class IssueComponent implements OnInit, AfterViewInit {
 
       } else {
         this.upload.postCallSheet(file[0]).subscribe((data) => {
-          console.log(data)
           this.callsheet = file[0];
           localStorage.setItem("callSheetPath", data.filePath)
           this.docUploaded = true;

@@ -1,36 +1,42 @@
 <section class="relative h-screen flex items-center justify-center">
-<ng-container *ngIf="dialogOption == 'scan'">
-  <div class="modal-container">
-    <div class="content">
-      <h3 class="title">Processing: <em> {{this.title}}</em></h3>
-      <div class="animation-container">
-        <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" />
-   
-        <div class="message">
-       
-          <p>Sit Tight.</p>
+  
+  <ng-container *ngIf="dialogOption == 'scan'">
+    <div class="modal-container">
+      <div class="content">
+        <h3 class="title">Processing: <em> {{this.title}}</em></h3>
+        <div class="animation-container">
+          <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" />
+          <div class="message">
+            <p>Sit Tight.</p>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</ng-container>
-
-<ng-container *ngIf="dialogOption == 'payment' ">
-  <div class="modal-container">
-    <div class="content">
-      <h3 class="title">Processing: <em> {{this.title}}</em></h3>
-      <div class="animation-container">
-        <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" />
-   
-        <div class="message">
-       
-          <p>Sit Tight.</p>
+  </ng-container>
+  
+  <ng-container *ngIf="dialogOption == 'payment' ">
+    <div class="modal-container">
+      <div class="content">
+        <h3 class="title">Processing PDF <em> {{this.title}}</em></h3>
+        <div *ngFor="let scene of data.selected">
+          <p class="text-lg font-bold">
+            {{ scene.text }}
+          </p>
+        </div>
+        <div class="animation-container">
+          <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" />
+          <div class="message">
+            <p>Routing to Payment</p>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</ng-container>
-
-
+  </ng-container>
   
 </section>
+
+
+
+
+
+

@@ -95,7 +95,7 @@ export class LastLooksComponent implements OnInit {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    console.log(changes, ' cha-cha-changes');
+  
     if (this.doc && changes.resetDocState) this.resetDocumentToInitialState();
     if (this.doc && changes.undoState) this.undoService.undo();
     if (!this.canEditDocument) {
@@ -108,7 +108,6 @@ export class LastLooksComponent implements OnInit {
    
     // this.adjustLinesForDisplay(this.pages); // Add this line
     this.updateDisplayedPage();
-    console.log(this.doc)
     this.selectedLine = this.doc[0][0]; // Assuming this selects the first line
   }
   findLastLinesOfScenes(pages) {
@@ -183,11 +182,10 @@ export class LastLooksComponent implements OnInit {
       item.forEach(line => {
         if (item.category == ("scene-number-left" || "scene-number-right") && (line.trueScene ==="true-scene") ){
           item.yPos = item.yPos - 10
-          console.log("changing ypos")
+      
         } 
       
       if(line.subCategory === "CON'T") { 
-        console.log("changing " + line.text + " visibility");
         line.visible = "true"
       }
         line.bar == "bar" &&
@@ -282,7 +280,6 @@ export class LastLooksComponent implements OnInit {
 
   revealContSubcategoryLines(line: Line) {
     if (line.subCategory === "CON'T") {
-      console.log('changing ' + line.text + ' visibility');
       line.visible = 'true';
     }
   }
@@ -360,7 +357,7 @@ export class LastLooksComponent implements OnInit {
         // Restore other properties if needed
       });
     }
-    console.log(arr);
+
     return arr;
   }
   findFirstLineOfNextPage(pageIndex) {
@@ -387,7 +384,6 @@ export class LastLooksComponent implements OnInit {
       (serverRes: any) => {
         try {
           const { downloadTimeRemaining, token } = serverRes;
-          console.log(serverRes);
           this.token.setDeleteTimer(downloadTimeRemaining);
 
           // Generate a session token for Stripe checkout

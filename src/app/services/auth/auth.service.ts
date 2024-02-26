@@ -25,7 +25,6 @@ export class AuthService {
     // this.afAuth.onAuthStateChanged((user) => {
     //   if (user) {
     //     this.userData = user;
-    //     console.log(this.userData)
     //     localStorage.setItem('user', JSON.stringify(this.userData));
     //     JSON.parse(localStorage.getItem('user')!);
     //   } else {
@@ -42,7 +41,6 @@ export class AuthService {
  loginWithGoogle() {
     // return this.afAuth.signInWithPopup(new GoogleAuthProvider())
     //   .then((result) => {
-    //     console.log(result)
     //     this.ngZone.run(() => {
     //       return true
     //     });

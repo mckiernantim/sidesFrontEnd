@@ -127,7 +127,7 @@ export class DashboardRightComponent implements OnInit {
   ngOnInit(): void {
     this.intizilazeState()
     this.initializeSceneSelectionTable()
-    this.openFinalSpinner()
+    // this.openFinalSpinner()
 
   }
   ngAfterViewInit(): void {
@@ -232,15 +232,11 @@ export class DashboardRightComponent implements OnInit {
     this.upload.generatePdf(finalDocument).subscribe(
       
       (data: pdfServerRes) => {
-  
-        console.log(data, " data from server")
         this.stripe.startCheckout().subscribe(
           (res:pdfServerRes) => {
             // Handle successful response, if needed
             localStorage.setItem("stripeSession", res.id)
             window.location.href = res.url
-            console.log('Stripe checkout response:', res);
-            
           },
           (error) => {
             console.error('Stripe checkout error:', error);
@@ -256,14 +252,14 @@ export class DashboardRightComponent implements OnInit {
           },
         });
         errorRef.afterClosed().subscribe((res) => {
-          console.log(res);
+         
         });
       }
     );
   }
 
   logUpload() {
-    console.log(this.upload);
+   
   }
   
   logSelected(): void {
@@ -297,6 +293,8 @@ export class DashboardRightComponent implements OnInit {
           totalPages: this.totalPages.length - 1,
           callsheet: this.callsheet,
           waitingForScript: true,
+          title:this.script,
+          dialogOption: "payment"
         },
       });
       dialogRef.afterClosed().subscribe((result) => {
@@ -308,7 +306,7 @@ export class DashboardRightComponent implements OnInit {
     return this.scriptData[scene.lastLine].page || null;
   };
   toggleLastLooks() {
-    console.log('firigin alst looks')
+
     this.lastLooksReady = !this.lastLooksReady;
     // deprecated
     if (this.lastLooksReady) {
@@ -376,7 +374,7 @@ export class DashboardRightComponent implements OnInit {
         this.undoService.undo();
         break;
       case str === 'resetDoc':
-        console.log('firign reset');
+
         this.triggerLastLooksAction(str);
 
         break;

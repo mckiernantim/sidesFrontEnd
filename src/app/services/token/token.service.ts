@@ -22,25 +22,28 @@ export class TokenService {
   }
 
   getCookieValue(): string | null {
-    console.log(Cookies.get())
     return Cookies.get(this.tokenKey);
   }
 
   decodeToken(token: string): void {
     // this.decodedToken = jwt_decode<DecodedToken>(token);
   }
+
   initializeCountdown(): void {
     const token = this.getCookieValue();
+    console.log(token)
     if (token) {
       const expirationTimeInMilliseconds = parseInt(token);
       this.startCountdown(expirationTimeInMilliseconds);
     }
   }
+
   isTokenValid(): Observable<boolean> {
     return this.getCountdown().pipe(
       map(timeLeft => timeLeft > 0)
     );
   }
+
   startCountdown(expirationTimeInMilliseconds: number): void {
     const currentTimeInMilliseconds = Date.now();
     const timeLeftInMilliseconds = expirationTimeInMilliseconds - currentTimeInMilliseconds; // Time left in milliseconds
@@ -49,6 +52,7 @@ export class TokenService {
       takeWhile((remaining) => remaining >= 0, true)
     );
   }
+  
   getCountdown () {
     return this.countdown$
   }

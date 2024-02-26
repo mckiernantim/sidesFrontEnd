@@ -50,11 +50,10 @@ export class AdminComponent implements OnInit {
   }
   selectNewTicket(event) {
     this.selected = event;
-    console.log(event, 'parent is triggering');
-  }
+ }
   updateSelectedTicket(event) {
     alert('update');
-    console.log(event);
+  
     // this.feedback.updateTicket()
   }
 

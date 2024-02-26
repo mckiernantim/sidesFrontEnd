@@ -2,3 +2,21 @@
   width: 100vw;
   margin: 0 auto;
 }
+.warning-button {
+  background-color:var(--orange);/* This is $my-orange  from theme - may inject at bootstrap*/
+  color: white ;
+  font-weight:bolder
+}
+
+.warning-button:hover {
+  background-color: darken(#fc1c18, 5%); /* Slightly darker on hover */
+}
+
+.warning-button:focus {
+  background-color: darken(#fc1c18, 5%); 
+}
+
+.warning-button:active {
+  background-color: darken(#fc1c18, 10%); 
+}
+

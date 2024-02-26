@@ -23,7 +23,6 @@ export class MainNavComponent implements AfterViewInit {
     );
 
   constructor(private breakpointObserver: BreakpointObserver, public token:TokenService, private router:Router) {
-    console.log(this.token)
     this.countdown = 0;
     
   }

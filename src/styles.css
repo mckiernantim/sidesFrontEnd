@@ -1,5 +1,3 @@
-/* You can add global styles to this file, and also import other style files */
-
 @import "https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css";
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
@@ -12,10 +10,26 @@
     --black: rgb(0, 0, 0);
     --pink: #e6605c;
     --grey: #9e9e9e;
+    --orange:#fc1c18;
     --blue:#3f51b5
-
-    
-}
+  }
+  .warning-button {
+    background-color:var(--orange);/* This is $my-orange  from theme - may inject at bootstrap*/
+    color: white ;
+  }
+  
+  .warning-button:hover {
+    background-color: darken(#fc1c18, 5%); /* Slightly darker on hover */
+  }
+  
+  .warning-button:focus {
+    background-color: darken(#fc1c18, 5%); 
+  }
+  
+  .warning-button:active {
+    background-color: darken(#fc1c18, 10%); 
+  }
+  
 
 .red-rectangle {
     position: relative;
@@ -51,6 +65,7 @@ body {
 .mat-mdc-dialog-surface mdc-dialog__surface {
   display:flex;
   flex-direction: row;
+  max-width: 100% !important;
 }
 .mat-table {
     background-color: var(--grey)
@@ -63,7 +78,9 @@ body {
   .mat-header-row {
     background-color: var(--grey)
   }
-  
+  .cdk-overlay-pane {
+    max-width:100vw !important
+  }
 
   .mat-header-cell {
     background-color: var(--grey)
