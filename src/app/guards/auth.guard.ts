@@ -20,9 +20,9 @@ export class AuthGuard implements CanActivate {
           // Token is valid, proceed to the target route
           return true;
         } else {
-          alert("No valid checkout session detected.  Rerouting")
+          alert("Checkout session has expired - your IP has been deleted")
           // Token is not valid, redirect to login or another appropriate page
-          return this.router.parseUrl('/'); // Adjust the route as needed
+          return this.router.parseUrl('/upload'); // Adjust the route as needed
         }
       })
     );

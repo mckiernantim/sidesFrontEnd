@@ -8,12 +8,13 @@
     max-width:200px;
 }
 .app {
-    height:90vh;
+    height:100vh;
     display: grid;
     grid-area: 
     "nav"
     "body"
     "footer";
+    overflow-x: hidden;
 }
 .full-nav {
     height: 100%;

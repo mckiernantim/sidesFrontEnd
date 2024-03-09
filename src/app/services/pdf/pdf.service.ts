@@ -6,7 +6,7 @@ import { debug } from 'console';
   THIS SHOULD BE ITS OWN 4 OR 5 SERVICES ALL IMPORTED INTO THE PARENT SERVICE OF PDF 
   PERHAPPS LINE-SERVICE, SCENE-SERVICE, DOCUMENT-SERVICE ETC  
 */
-
+import { Line } from 'src/app/types/Line';
 @Injectable({
   providedIn: 'root',
 })
@@ -122,7 +122,15 @@ export class PdfService {
     // process ALL THE FUCKING DATA
     return this.processLines(merged, sortedBreaks);
   }
-
+  updatePdfState(updatedPage: Line[]) {
+    // Update the PDF state with the changes
+    // Assuming you have logic to update the relevant portion of the PDF state
+    // For example:
+    // this.pdfState.pages[this.currentPage] = updatedPage;
+    // Or replace the entire page if needed
+    console.log(this.finalDocument)
+    console.log(updatedPage)
+}
   flattenScenes(sceneArr) {
     return sceneArr.reduce((acc, scene) => acc.concat(scene), []);
   }
@@ -386,6 +394,7 @@ export class PdfService {
         line.sceneNumber = currentSceneNum;
       }
     });
+    debugger
     return merged;
   }
 

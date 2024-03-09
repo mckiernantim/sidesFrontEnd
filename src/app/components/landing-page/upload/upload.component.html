@@ -1,22 +1,25 @@
 <main [@fadeInOut]>
   <header class="w-full">
     <!-- Container -->
-    <div class="w-full px-5 pt-8 md:px-10 md:h-45 lg:h-55 flex items-center justify-center centered bg-white">
+    <div class="w-full p-0 pt-8 md:px-10 md:h-45 lg:h-55 flex items-center min-h-[75vh] justify-center centered bg-white">
       <!-- Component -->
-      <div class="grid items-center gap-8 sm:gap-20 lg:grid-cols-2 px-16">
+      <div class="hero grid items-center gap-2 sm:gap-12 lg:grid-cols-2">
         <!-- Use responsive class to shrink image on smaller screens -->
         <img src="../../../../assets/icons/logoFlat.png" alt=""
           class="inline-block h-full w-full sm:w-25rem sm:h-25rem" />
         <div>
+          <div class="blob absolute z-1 left-[30rem]" id="blob-1">
+            orange box #1
+          </div>
           <!-- Title -->
-          <div>
+          <div class="relative z-5">
             <h1 class="mb-4 text-8xl font-bold md:text-6xl">Sides-Ways</h1>
             <h2 class="mb-6 text-3xl font-bold py-4">
               Secure, Set-Ready Sides in Seconds
               <br>
               No subscriptions to worry about
               <br>
-              Nothing to sign up for
+              Nothing to sign up with
             </h2>
           </div>
           <!--    
@@ -29,11 +32,13 @@
             <br>
             That's it
           </h2>
-
-          <div class="mb-6 flex items-stretch md:mb-10 lg:mb-12">
+          <div class="blob absolute z-1 left-[30rem]" id="blob-2">
+            orange box #2
+          </div>
+          <div class="mb-6 flex items-stretch md:mb-4 lg:mb-12">
             <button mat-raised-button (click)="fileInput.click()"
               class="warning-button 
-              mr-5 rounded-md bg-black px-8 py-4 text-center font-semibold text-white md:mr-6 lg:mr-8 bg-primary">
+              mr-5 rounded-md bg-black px-20 text-center font-semibold text-white md:mr-6 lg:mr-8 bg-primary">
               Upload Script PDF
             </button>
             <!-- <button (click)="skipUploadForTest()" class="mr-5 rounded-md bg-black px-8 py-4 text-center font-semibold text-white md:mr-6 lg:mr-8 bg-primary">Skip upload</button> -->

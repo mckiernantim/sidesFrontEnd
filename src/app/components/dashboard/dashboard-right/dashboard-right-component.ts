@@ -215,6 +215,10 @@ export class DashboardRightComponent implements OnInit {
       }
     }
   }
+  onPageUpdate(updatedPage: Line[]) {
+    // Update the PDF service with the changes
+    this.pdf.updatePdfState(updatedPage);
+}
   handleCallSheetUpload(callsheet) {
     this.callsheet = callsheet;
   }
@@ -226,9 +230,24 @@ export class DashboardRightComponent implements OnInit {
     }
   }
 
+  // we should find a better way to handle this - should nelong somewhere else
+  flagStartLines(doc) {
+    doc.forEach(page => {
+      page.forEach(line => {
+        if(line.category == "scene-header" && line.visible =="true") {
+          line.bar = "startBar"
+        }
+      })
+    })
+  }
+
   //  pass the scene to be made and the breaks ponts for the scene to be changed to visible true
 
   sendFinalDocumentToServer(finalDocument) {
+    debugger
+    this.flagStartLines(finalDocument.data)
+   debugger
+   
     this.upload.generatePdf(finalDocument).subscribe(
       
       (data: pdfServerRes) => {
@@ -333,7 +352,8 @@ export class DashboardRightComponent implements OnInit {
   openConfirmPurchaseDialog() {
     if (this.modalData) {
       const dialogRef = this.dialog.open(IssueComponent, {
-        width: '60%',
+        width: '750px',
+        height:'750px',
         data: { scenes: this.modalData, selected: this.selected },
       });
       // closing of the issueComponent triggers our finalstep

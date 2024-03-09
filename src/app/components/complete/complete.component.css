@@ -33,7 +33,13 @@ mat-mdc-card {
   justify-content: space-around;
   align-items: stretch;
 }
-
+.complete-container {
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    padding: 10rem;
+    margin: 5rem;
+}
 .download-container {
   padding:25px
 }

@@ -13,7 +13,7 @@ import { Router } from '@angular/router';
 })
 export class MainNavComponent implements AfterViewInit {
   countdown:number = 0;
-  countdownValue$: Observable<number>;
+  countdownValue$: Observable<number| Boolean>;
   formattedCountdown:string;
   isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
     .pipe(
@@ -30,9 +30,9 @@ export class MainNavComponent implements AfterViewInit {
    
       this.countdownValue$ =  this.token.getCountdown();
       this.countdownValue$.subscribe(countdown => {
-        if (countdown > 0) {
+        if (countdown as number > 0) {
           
-          this.formattedCountdown = this.formatCountdown(countdown)
+          this.formattedCountdown = this.formatCountdown(countdown as number)
         } else {
           this.formattedCountdown = null;        
         }

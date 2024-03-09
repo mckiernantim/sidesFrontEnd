@@ -1,22 +1,119 @@
 .centered {
   width: 100vw;
   margin: 0 auto;
+
 }
+
+section {
+  position: relative;
+  z-index: 5;
+}
+
+.blob {
+  position: relative;
+  bottom: 1vw;
+  height: 1vw;
+  width: 5vw;
+  filter: opacity(.5);
+
+}
+
+.hero {
+  padding: 0 5rem;
+}
+
 .warning-button {
-  background-color:var(--orange);/* This is $my-orange  from theme - may inject at bootstrap*/
-  color: white ;
-  font-weight:bolder
+  background-color: var(--orange);
+  /* This is $my-orange  from theme - may inject at bootstrap*/
+  color: white;
+  font-weight: bolder;
+  padding: 1.5rem;
 }
 
 .warning-button:hover {
-  background-color: darken(#fc1c18, 5%); /* Slightly darker on hover */
+  background-color: darken(#fc1c18, 5%);
+  /* Slightly darker on hover */
 }
 
 .warning-button:focus {
-  background-color: darken(#fc1c18, 5%); 
+  background-color: darken(#fc1c18, 5%);
 }
 
 .warning-button:active {
-  background-color: darken(#fc1c18, 10%); 
+  background-color: darken(#fc1c18, 10%);
 }
 
+
+#blob-1::before {
+
+  content: '';
+  width: 27vw;
+  height: 27vw;
+  background-image: url('src/assets/blob-svgs/blob-oj-large-rounded.svg');
+  display: block;
+  position: relative;
+  left: -95vw;
+  top: -5vw;
+}
+
+#blob-2::before {
+  background-image: url('src/assets/blob-svgs/blob-oj-fish.svg');
+  content: "";
+  width: 50vw;
+  height: 70vw;
+  display: block;
+  position: relative;
+  right: 27vw;
+  bottom: 16vw;
+}
+
+@media screen and (min-width:1025px) {
+  img {
+    width: 45vw;
+    height: auto;
+    justify-self: center;
+  }
+
+  .hero {
+    gap: 1rem;
+  }
+
+  #blob-2::before {
+    bottom: 18vw;
+    right: 17vw;
+    width: 55vw
+  }
+
+  #blob-1::before {
+    top: -17vw;
+    left: -97vw;
+    height: 34vw;
+    width: 34vw;
+  }
+}
+
+@media screen and (min-width: 1500px) {
+  img {
+    width: 30rem;
+    justify-self: center;
+  }
+
+  .hero {
+    padding: 0rem 12rem;
+    gap: 5rem;
+  }
+
+  #blob-2::before {
+    bottom: 16vw;
+    right: 18vw;
+    width: 50vw
+  }
+
+  #blob-1::before {
+    top: -12vw;
+    left: -90vw;
+    height: 33vw;
+    width: 33vw;
+  }
+
+}

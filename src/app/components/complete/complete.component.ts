@@ -23,7 +23,7 @@ export class CompleteComponent implements OnInit {
     
   }
   ngOnInit() {
-
+    
   }
     
   // we download as soon as we land

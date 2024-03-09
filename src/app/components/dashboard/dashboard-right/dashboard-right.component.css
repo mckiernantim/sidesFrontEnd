@@ -10,9 +10,10 @@ li{
     padding: 0 5% 1% 5%;
 }
 tr, th{
-  text-shadow: black 1px 1px;
+  text-shadow: white 1px 1px;
   font-weight:600 !important;
-  color:whitesmoke
+  font-size:1.1rem;
+  overflow-x: hidden;
 }
 
 .mat-mdc-form-field{

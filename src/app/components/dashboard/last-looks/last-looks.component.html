@@ -10,7 +10,8 @@
     <app-last-looks-page 
     [page]="currentPage" 
     [canEditDocument]="editState"
-    [resetSelectedLine] = "selectedLine">
+    [resetSelectedLine] = "selectedLine"
+    (pageUpdate) ="handlePageUpdate($event)">
     </app-last-looks-page>
   </div>
 </main>

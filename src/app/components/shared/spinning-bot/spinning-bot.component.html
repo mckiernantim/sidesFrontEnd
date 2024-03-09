@@ -1,4 +1,4 @@
-<section class="relative h-screen flex items-center justify-center">
+
   
   <ng-container *ngIf="dialogOption == 'scan'">
     <div class="modal-container">
@@ -19,7 +19,7 @@
       <div class="content">
         <h3 class="title">Processing PDF <em> {{this.title}}</em></h3>
         <div *ngFor="let scene of data.selected">
-          <p class="text-lg font-bold">
+          <p class="text-lg font-boldp">
             {{ scene.text }}
           </p>
         </div>
@@ -33,7 +33,7 @@
     </div>
   </ng-container>
   
-</section>
+
 
 
 

@@ -11,12 +11,15 @@ module.exports = {
         '21rem': '21rem',
         "12rem" : "12rem"
       },
+      fontSize: {
+        'lg-custom':'1rem'
+      },
       colors: {
-        primary: '#001D3D',     // Dark blue
-        secondary:'#003566',   // Darker blue
-        accent: '#000814 ',      // Darker than primary blue
-        darkGrey: '#FFC300',    // Yellow
-        offWhite: '#FFD60A',    // Bright yellow
+        primary: '#001D3D',    
+        secondary:'#003566',   
+        accent: '#000814 ',    
+        darkGrey: '#FFC300',   
+        offWhite: '#E0E0E0',    
       },
     },
   },

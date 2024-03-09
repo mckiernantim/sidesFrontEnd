@@ -110,8 +110,8 @@ export class LastLooksPageComponent {
     }
   }
 
-  onLineChange(line: Line, index: number, newText: string): void {
-    this.page[index].text = newText;
+  onLineChange(line: Line, index: number, newText: string, lineCategory:string = "text"): void {
+    this.page[index][lineCategory] = newText;
     this.pageUpdate.emit(this.page); 
   }
 
@@ -119,9 +119,13 @@ export class LastLooksPageComponent {
     const dif = parseInt(str) - num;
     return dif + 'px';
   }
-
-  updateText(event: MouseEvent, line, lineIndex) {
-    const newText = (event.target as HTMLElement).textContent;
+  updateCateogry(event: MouseEvent, category:string, line:Line, lineIndex:number) {
+    if (!this.selectedLine) this.toggleSelectedLine(event, line, lineIndex);
+    this.selectedLine.category = category
+    this.onLineChange(line, lineIndex, category, category) 
+  }
+  updateText(event: MouseEvent | null, line, lineIndex) {
+    const newText = (event.target as HTMLElement).textContent ;
     if (!this.selectedLine) this.toggleSelectedLine(event, line, lineIndex);
     this.selectedLine.text = newText;
     this.onLineChange(line, lineIndex, newText)
@@ -230,7 +234,7 @@ handleMouseUp (event, line, lineIndex) {
     this.undo.addToUndoQueue({ ...this.selectedLine });
   }
 
-  changeLineCategory(newCategory: string) {
+  changeLineCategory(event:MouseEvent, newCategory: string, line:Line, lineIndex:number) {
     this.recordLineStateToUndoQueueBeforeChange();
     if (newCategory === 'line-out') {
       this.toggleStrikethroughLine();
@@ -242,6 +246,8 @@ handleMouseUp (event, line, lineIndex) {
       this.selectedLine.xPos,
         (this.selectedLine.calculatedXpos =
           this.xPositionsForLines[newCategory]);
+      this.updateCateogry(event, newCategory, line, lineIndex)
+
       this.closeContextMenu();
     }
     this.cdRef.markForCheck();

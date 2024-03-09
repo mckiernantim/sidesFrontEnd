@@ -1,55 +1,48 @@
 <main class="last-looks-container">
-{{this.mouseEvent?.clientY}}
+    {{this.mouseEvent?.clientY}}
     <div class="page" (click)="showContextMenu && closeContextMenu()">
         <div class="break">
-            <ul class="screenbox"
-            [ngClass] = "{'edit-mode': canEditDocument } ">
+            <ul class="screenbox" [ngClass]="{'edit-mode': canEditDocument } ">
                 <div class="selected-line-info" style="color:black">
-                
+
                 </div>
-                
+
                 <ng-container *ngFor="let line of page; let lineIndex = index">
 
                     <span class="watermark">{{line.watermarkText}}</span>
 
                     <!-- page number span -->
-                    <span class="draft-color-text true"
-                        (click)="toggleSelectedLine($event, line, lineIndex)">
+                    <span class="draft-color-text true" (click)="toggleSelectedLine($event, line, lineIndex)">
                         {{line.draftColorText}}
                     </span>
                     <span class="page-number-text" 
-                        [class.visible]="line.visible"
-                        (click)="toggleSelectedLine($event, line, lineIndex)">
+                        [ngClass]="{'visible': line.visible, 'hidden': line.hidden}" 
+                        (click)="toggleSelectedLine($event, line, lineIndex)"
+                        [attr.contenteditable]="canEditDocument ? 'true' : 'false'"
+                        (blur)="onLineChange(line, lineIndex, $event.target.textContent, 'pageNumberText')">
                         {{line.pageNumberText}} 
                     </span>
 
                     <!-- scene number span -->
-                    <span 
-                    *ngIf="line.category === 'scene-header'" 
-                        [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible" 
+                    <span *ngIf="line.category === 'scene-header'"
+                        [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible"
                         [attr.contenteditable]="canEditDocument ? 'true' : 'false'"
                         (click)="toggleSelectedLine($event, line, lineIndex)"
-                        (blur)="onLineChange(line, lineIndex, $event.target.textContent)"
-                        [style.bottom]="line.calculatedYpos" 
-                        [style.left]="line.calculatedXpos"
-                    >
-                        {{ line.sceneNumberText }}
+                        (blur)="onLineChange(line, lineIndex, $event.target.textContent, 'sceneNumberText')"
+                        [style.bottom]="line.calculatedYpos" [style.left]="line.calculatedXpos">
+                        {{ line.sceneNumberText }} {{line.hidden}}
                     </span>
 
                     <!-- start span -->
-                    <span  
-                        (mouseup)="dragDrop.stopDrag(line)"
-                        [class]="(line.bar ? line.bar : 'hideBar')"
-                        [style.bottom]="line.calculatedYpos"
-                        *ngIf="line.category !== 'page-number' && 
+                    <span (mouseup)="dragDrop.stopDrag(line)" [class]="(line.bar ? line.bar : 'hideBar')"
+                        [style.bottom]="line.calculatedYpos" *ngIf="line.category !== 'page-number' && 
                             line.category !== 'page-number-hidden' && 
-                            line.category !== 'injected-break'"
-                        >
+                            line.category !== 'injected-break'">
                         <span class="start-span">START {{ line.sceneNumberText }} </span>
                     </span>
 
-                        
-        
+
+
 
                     <!-- 
                     LINE SPAN 
@@ -59,32 +52,23 @@
                         Drag triggered by left click, context menu by right;
                         content is editible and updates model on text change after selecting LI
                     -->
-                        <!-- disabling content editable for now-->
+                    <!-- disabling content editable for now-->
                     <!-- [attr.contenteditable]="canEditDocument ? 'true' : 'false'" -->
 
-                    <li 
-                        autofocus
-                        tabindex="0" 
-                        [value]="lineIndex" 
-                        [class]="line.category + ' ' + line.visible + ' ' + line.hidden" 
-                        [class.selected]="isSelectedLine(line, lineIndex)" 
+                    <li autofocus tabindex="0" [value]="lineIndex"
+                        [class]="line.category + ' ' + line.visible + ' ' + line.hidden"
+                        [class.selected]="isSelectedLine(line, lineIndex)"
                         [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex), 'edit-li': canEditDocument && !selectedLine  }"
-                        [style.bottom]="line.calculatedYpos"
-                        [style.left]="line.calculatedXpos" 
-                        [attr.contenteditable]="canEditDocument ? 'true' : 'false'" 
-                        [textContent]="line.text"
-                        
-                        (input)="canEditDocument && updateText($event, line, lineIndex)"
-                        (contextmenu)="canEditDocument 
-                            && openContextMenu($event, line)"
-                        (mousedown)="canEditDocument 
+                        [style.bottom]="line.calculatedYpos" [style.left]="line.calculatedXpos"
+                        [attr.contenteditable]="canEditDocument ? 'true' : 'false'" [textContent]="line.text"
+                        (input)="canEditDocument && updateText($event, line, lineIndex)" (contextmenu)="canEditDocument 
+                            && openContextMenu($event, line)" (mousedown)="canEditDocument 
                             && !this.contextMenuLine 
                             && handleLeftClick($event, line, lineIndex)"
                         (mousemove)="determineIfWeCanDrag() ? throttledDrag($event) : null"
-                        (mouseup)="handleMouseUp($event, line, lineIndex)"
-                        > 
+                        (mouseup)="handleMouseUp($event, line, lineIndex)">
                     </li>
-                     
+
                     <!-- revision asterisks -->
                     <span [class]="line.isRevision + ' hidden'" [style.bottom]="line.calculatedYpos">
                         *
@@ -92,54 +76,48 @@
 
                     <!-- continue spans -->
                     <span class="bar-span"
-                    (mousedown)="canEditDocument && !contextMenuLine && handleLeftClick($event, line, lineIndex, true)"
-                    [class]="(line.cont ? line.cont : 'hideCont') + ' ' + line.hidden"
-                    [style.bottom]="line.calculatedBarY"
-                    (mousemove)="determineIfWeCanDrag() ? throttledDragBar($event) : null"
-                    (mouseup)="dragDrop.stopDrag($event)"
-                    *ngIf="line.category !== 'page-number' && 
+                        (mousedown)="canEditDocument && !contextMenuLine && handleLeftClick($event, line, lineIndex, true)"
+                        [class]="(line.cont ? line.cont : 'hideCont') + ' ' + line.hidden"
+                        [style.bottom]="line.calculatedBarY"
+                        (mousemove)="determineIfWeCanDrag() ? throttledDragBar($event) : null"
+                        (mouseup)="dragDrop.stopDrag($event)" *ngIf="line.category !== 'page-number' && 
                             line.category !== 'page-number-hidden' && 
-                            line.category !== 'injected-break'"
-                >
-                    <span class="continue-span"> ↓↓↓ {{line.sceneNumberText}} CONTINUED ↓↓↓</span>
-                </span>
-                
-                <!-- end span -->
-                <span class="bar-span"
-                    (click)="toggleSelectedLine($event, line, lineIndex)" 
-                    [class]="(line.end === 'END' ? 'END' : 'hideEnd') + ' ' + line.hidden"
-                    [style.bottom]="line.calculatedEnd"
-                    *ngIf="line.category !== 'page-number' && 
+                            line.category !== 'injected-break'">
+                        <span class="continue-span"> ↓↓↓ {{line.sceneNumberText}} CONTINUED ↓↓↓</span>
+                    </span>
+
+                    <!-- end span -->
+                    <span class="bar-span" (click)="toggleSelectedLine($event, line, lineIndex)"
+                        [class]="(line.end === 'END' ? 'END' : 'hideEnd') + ' ' + line.hidden"
+                        [style.bottom]="line.calculatedEnd" *ngIf="line.category !== 'page-number' && 
                             line.category !== 'page-number-hidden' && 
-                            line.category !== 'injected-break'"
-                >
-                    <span class="end-span"> END {{line.sceneNumberText}} </span>
-                </span>
+                            line.category !== 'injected-break'">
+                        <span class="end-span"> END {{line.sceneNumberText}} </span>
+                    </span>
 
                     <!-- right scene number span -->
-                    <span *ngIf="line.category === 'scene-header'" class="scene-number-right {{ line.trueScene }} {{ line.visible }}"
-                        (click)="toggleSelectedLine($event, line, lineIndex)"
-                        [style.bottom]="line.calculatedYpos" [style.right]="line.calculatedXPos">
+                    <span *ngIf="line.category === 'scene-header'"
+                        class="scene-number-right {{ line.trueScene }} {{ line.visible }}"
+                        (click)="toggleSelectedLine($event, line, lineIndex)" [style.bottom]="line.calculatedYpos"
+                        [style.right]="line.calculatedXPos">
                         {{ line.sceneNumberText }}
                     </span>
+                    <div *ngIf="showContextMenu" class="context-menu" [style.left.px]="mouseEvent.clientX"
+                        [style.top.px]="mouseEvent.clientY">
+                        <ul>
+                            <li *ngFor="let choice of classificationChoices"
+                                (click)="changeLineCategory($event, choice, line, lineIndex)"
+                                class="classification-option">
+                                {{ choice }}
+                            </li>
+                            <li (click)="changeLineCategory($event, 'hidden', line, lineIndex)"
+                                class="classification-option">delete</li>
+                        </ul>
+                    </div>
+
                 </ng-container>
-                
-                <div *ngIf="showContextMenu" class="context-menu" [style.left.px]="mouseEvent.clientX"
-                    [style.top.px]="mouseEvent.clientY">
-                    <ul>
-                         <li *ngFor="let choice of classificationChoices" (click)="changeLineCategory(choice)"
-                            class="classification-option">  
-                            {{ choice }}
-                        </li>
-                        <li (click)="changeLineCategory('hidden')" class="classification-option">delete</li>
-                    </ul>
-                </div>
             </ul>
             <li class=footer>made by Sides-Ways</li>
         </div>
     </div>
 </main>
-        
-                    
-                 
-                        

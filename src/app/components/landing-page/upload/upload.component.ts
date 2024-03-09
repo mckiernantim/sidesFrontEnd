@@ -79,9 +79,10 @@ export class UploadComponent implements OnInit, OnDestroy {
   openDialog(title, dialogOption) {
     if (this.working) {
       const dialogRef = this.dialog.open(SpinningBotComponent, {
-        height:'100%',
-        width:'100%',
-        data:{ title, dialogOption }
+        height:'750px',
+        width:'750px',
+        data:{ title, dialogOption },
+        disableClose:false,
       });
       dialogRef.afterClosed().subscribe((result) => {
         this.toggleWorking()

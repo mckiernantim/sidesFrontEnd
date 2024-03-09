@@ -14,27 +14,31 @@ export class AboutItemGridComponent {
     `../../../../../assets/icons/bot-about-images/happy-bot.jpg`,
   ];
   content: string[] = [
-    `Your script is scanned, returned, and instantly deleted. We're backed by Google for added peace of mind. 
+    `Your script is scanned, returned, 
+    <br>
+    and instantly deleted from our servers. 
+    <br>
+    We're backed by Google for added peace of mind. 
     <br>
     Nothing is saved — ever.`,
 
-    `We make your sides.
+    `Select what your shooting and we'll do the rest.
     <br>
-   Need a callsheet?  Add one.
-    <br>
-    Watermarks? No problem. 
+   Need a callsheet?  Add one.  Watermarks? No problem. 
     <br>Everything you need.
     Easy.`,
 
-    `Secure in-browser editing to catch any issues.  
+    `Preview your sides before payment.  
+    <br>
+    Secure in browser editing for any last minute changes
     <br>
     Your Download is encrypted.
-
     <br>
     Everything deleted in 10 minutes - tops.
     <br>
-
     And nothing is saved — ever.
-`,
+  `,
+
+
   ];
 }

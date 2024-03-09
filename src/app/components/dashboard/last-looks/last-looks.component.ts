@@ -26,7 +26,7 @@ import { fadeInOutAnimation } from 'src/app/animations/animations';
   selector: 'app-last-looks',
   templateUrl: './last-looks.component.html',
   styleUrls: ['./last-looks.component.css'],
-  animations:[fadeInOutAnimation]
+  animations: [fadeInOutAnimation],
 })
 export class LastLooksComponent implements OnInit {
   constructor(
@@ -37,10 +37,10 @@ export class LastLooksComponent implements OnInit {
     private token: TokenService,
     private router: Router,
     private cdRef: ChangeDetectorRef,
-    public pdf:PdfService
+    public pdf: PdfService
   ) {}
   // doc is given to our component
-  doc:any 
+  doc: any;
   @Input() editState: boolean;
   @Input() resetDocState: string;
   @Input() selectedLineState: string;
@@ -48,6 +48,7 @@ export class LastLooksComponent implements OnInit {
   @Input() triggerLastLooksAction: Function;
   @Output() selectedEditFunctionChange: EventEmitter<string> =
     new EventEmitter<string>();
+  @Output() pageUpdate = new EventEmitter<Line[]>();
   pages: any[];
   initialDocState: any[];
   currentPageIndex: number = 0;
@@ -58,8 +59,8 @@ export class LastLooksComponent implements OnInit {
   selectedEditFunction: string = 'toggleSelected';
   selectedLine: Line | null = null;
   undoQueue: Subscription;
-  sceneBreaks:any[];
-   acceptableCategoriesForFirstLine = [
+  sceneBreaks: any[];
+  acceptableCategoriesForFirstLine = [
     'dialog',
     'character',
     'description',
@@ -68,7 +69,7 @@ export class LastLooksComponent implements OnInit {
     'short-dialog',
     'parenthetical',
     'more',
-    "shot"
+    'shot',
   ];
 
   ngOnInit(): void {
@@ -81,13 +82,13 @@ export class LastLooksComponent implements OnInit {
 
     this.undoQueue = this.undoService.undoQueue$.subscribe((change) => {
       const { pageIndex, line } = change;
-      const indexToUpdate =this.doc[pageIndex].findIndex(
+      const indexToUpdate = this.doc[pageIndex].findIndex(
         (l) => l.index === line.index
       );
 
       if (indexToUpdate !== -1) {
         // Replace the entire object in the array
-       this.doc[pageIndex][indexToUpdate] = line;
+        this.doc[pageIndex][indexToUpdate] = line;
         // Trigger change detection
         this.cdRef.markForCheck();
       }
@@ -95,7 +96,6 @@ export class LastLooksComponent implements OnInit {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-  
     if (this.doc && changes.resetDocState) this.resetDocumentToInitialState();
     if (this.doc && changes.undoState) this.undoService.undo();
     if (!this.canEditDocument) {
@@ -103,16 +103,13 @@ export class LastLooksComponent implements OnInit {
     }
   }
   establishInitialLineState() {
-    
     this.processLinesForLastLooks(this.doc);
-   
-    // this.adjustLinesForDisplay(this.pages); // Add this line
     this.updateDisplayedPage();
     this.selectedLine = this.doc[0][0]; // Assuming this selects the first line
+    // this.adjustLinesForDisplay(this.pages); // Add this line
   }
   findLastLinesOfScenes(pages) {
     const lastLinesOfScenes = {};
-
     pages.forEach((page) => {
       page.forEach((line) => {
         if (line.category !== 'hidden' && line.category !== 'pagenumber') {
@@ -120,14 +117,18 @@ export class LastLooksComponent implements OnInit {
         }
       });
     });
-
     return lastLinesOfScenes;
+  }
+  // updates the entire page 
+  handlePageUpdate(updatedPage: any) {
+    debugger
+    this.pages[this.currentPage] = updatedPage;
+    this.pageUpdate.emit(this.pages[this.currentPage]);
   }
 
   processLinesForLastLooks(arr) {
-    
     // this.getSceneBreaks(arr)
-    // this.setContAndEndVals()
+    // this.establishContAndEnd(arr)
     
     arr.forEach((page) => {
       let lastSceneIndex = -1;
@@ -137,18 +138,20 @@ export class LastLooksComponent implements OnInit {
         this.adjustSceneNumberPosition(line);
         // this.adjustSceneHeader(line);
         this.revealContSubcategoryLines(line);
+        
         this.adjustBarPosition(line);
         this.calculateYPositions(line);
-        line.calculatedXpos = Number(line.xPos) * 1.3 + 'px';
-     
         
+        line.calculatedXpos = Number(line.xPos) * 1.3 + 'px';
+
         line.calculatedEnd =
           Number(line.yPos) > 90 ? Number(line.yPos) * 1.3 + 'px' : '90px';
       });
     });
+    
   }
   getSceneBreaks(sceneArr) {
-   sceneArr.forEach((scene) => {
+    sceneArr.forEach((scene) => {
       // RECORD SCENE BREAKS FOR TRUE AND FALSE VALUES LATER
       // not getting firstLine for all scenes for some reason
       let breaks = {
@@ -161,68 +164,77 @@ export class LastLooksComponent implements OnInit {
       this.sceneBreaks.push(breaks);
     });
   }
-  hideBars(line:Line) {
-    if(line.bar != 'bar') line.bar = "hideBar"
-    if(line.end != 'END') line.bar = "hideEnd"
-    if(!line.cont) line.cont = "hideCont"
+  hideBars(line: Line) {
+    if (line.bar != 'bar') line.bar = 'hideBar';
+    if (line.end != 'END') line.bar = 'hideEnd';
+    if (!line.cont) line.cont = 'hideCont';
   }
-// 
-  
+  //
+
   resetDocumentToInitialState() {
     this.undoService.resetQueue();
     this.doc = this.initialDocState;
     this.processLinesForLastLooks(this.pages);
   }
   updateDisplayedPage() {
-    this.currentPage =this.doc[this.currentPageIndex];
+    this.currentPage = this.doc[this.currentPageIndex];
     this.undoService.currentPageIndex = this.currentPageIndex;
   }
-  establishContAndEnd(sceneData) {
-    sceneData.forEach(item => {
-      item.forEach(line => {
-        if (item.category == ("scene-number-left" || "scene-number-right") && (line.trueScene ==="true-scene") ){
-          item.yPos = item.yPos - 10
-      
-        } 
-      
-      if(line.subCategory === "CON'T") { 
-        line.visible = "true"
-      }
-        line.bar == "bar" &&
-          !this.startingLinesOfDoc.includes(line.sceneIndex) &&
-          line.sceneIndex > 0 ?
-            this.startingLinesOfDoc.push(line.sceneIndex) : 
-            line.bar = "hideBar"
-  
-        line.yPos = parseInt(line.yPos)
-        line.xPos = (((line.xPos)))
-        if (line.category == "scene-header" && line.visible == "true") {
-          line.trueScene = "true-scene"
-        }
-        if (line.end === "END" && this.startingLinesOfDoc.includes(line.sceneIndex)) {
-          // END CONDITION
-          line.endY = line.yPos - 5
-          line.hideCont = "hideCont"
-          line.bar = "hideBar"
-          // CONTINUE CONDITION
-        } else if (line.cont && line.cont != "hideCont" && this.startingLinesOfDoc.includes(line.sceneIndex)) {
-          line.hideEnd = "hideEnd"
-          line.bar = "hideBar"
-          // START SCENE CONDITION
-        } else if (line.bar && line.bar !== 'hideBar')(
-          line.hideEnd = "hideEnd",
-          line.hideCont = "hideCont",
-          line.barY = line.yPos + 65
-  
-        )
-        else(
-          line.hideEnd = "hideEnd",
-          line.hideCont = "hideCont",
-          line.bar = "hideBar")
-        })
-      })
-  }
+  // establishContAndEnd(sceneData) {
+  //   sceneData.forEach((page) => {
+  //     page.forEach((line) => {
+  //       if (
+  //         line.category === 'scene-number-left' ||
+  //         (line.category === 'scene-number-right' &&
+  //           line.trueScene === 'true-scene')
+  //       ) {
+  //         line.yPos = line.yPos - 10;
+  //       }
+  //       if (line.subCategory === "CON'T") {
+  //         line.visible = 'true';
+  //       }
+   
+  //       if (
+  //         line.bar == 'bar' &&
+  //         !this.startingLinesOfDoc.includes(line.sceneIndex) &&
+  //         line.sceneIndex > 0
+  //       ) {
+  //         this.startingLinesOfDoc.push(line.sceneIndex);
+  //       } else {
+  //         line.bar = 'hideBar';
+  //       }
 
+  //       line.yPos = parseInt(line.yPos);
+  //       line.xPos = line.xPos;
+  //       if (line.category == 'scene-header' && line.visible == 'true') {
+  //         line.trueScene = 'true-scene';
+  //         (line.hideEnd = 'hideEnd'),
+  //           (line.hideCont = 'hideCont'),
+  //           (line.barY = line.yPos + 65);
+  //       } else if (
+  //         line.end === 'END' &&
+  //         this.startingLinesOfDoc.includes(line.sceneIndex)
+  //       ) {
+  //         // END CONDITION
+  //         line.endY = line.yPos - 5;
+  //         line.hideCont = 'hideCont';
+  //         line.bar = 'hideBar';
+  //         // CONTINUE CONDITION
+  //       } else if (
+  //         line.cont &&
+  //         line.cont != 'hideCont' &&
+  //         this.startingLinesOfDoc.includes(line.sceneIndex)
+  //       ) {
+  //         line.hideEnd = 'hideEnd';
+  //         line.bar = 'hideBar';
+  //         // START SCENE CONDITION
+  //       } else
+  //         (line.hideEnd = 'hideEnd'),
+  //           (line.hideCont = 'hideCont'),
+  //           (line.bar = 'hideBar');
+  //     });
+  //   });
+  // }
 
   toggleEditMode() {
     this.canEditDocument = !this.canEditDocument;
@@ -235,14 +247,14 @@ export class LastLooksComponent implements OnInit {
   handleFunctionNullified() {
     this.selectEditFunction = null;
   }
-  startSingle (barY) {
+  startSingle(barY) {
     return barY * 1.3 - 44 + 'px';
-  };
-  formatEndY (endY) {
+  }
+  formatEndY(endY) {
     if (endY > 90) {
       return endY + 'px';
     } else return 90 + 'px';
-  };
+  }
   previousPage() {
     if (this.currentPageIndex > 0) {
       this.currentPageIndex--;
@@ -250,14 +262,13 @@ export class LastLooksComponent implements OnInit {
     }
   }
   nextPage() {
-    if (this.currentPageIndex <this.doc.length) {
+    if (this.currentPageIndex < this.doc.length) {
       this.currentPageIndex++;
       this.updateDisplayedPage();
     }
   }
   adjustLinesForDisplay(pages) {
     // const lastLinesOfScenes = this.findLastLinesOfScenes(pages);
-
     // pages.forEach((page, pageIndex, pagesArray) => {
     //   page.forEach((line, lineIndex) => {
     //     // Reset properties
@@ -272,7 +283,7 @@ export class LastLooksComponent implements OnInit {
     if (
       (line.category === 'scene-number-left' ||
         line.category === 'scene-number-right') &&
-      line.trueScene === 'true-scene'
+        line.trueScene === 'true-scene'
     ) {
       line.calculatedYpos = line.yPos - 10;
     }
@@ -285,7 +296,6 @@ export class LastLooksComponent implements OnInit {
   }
 
   adjustStartingLinesOfDoc(line: Line) {
-    
     // if (
     //   line.bar === 'bar' &&
     //   !this.startingLinesOfDoc.includes(line.sceneIndex) &&
@@ -297,31 +307,30 @@ export class LastLooksComponent implements OnInit {
   }
 
   adjustSceneHeader(line: Line) {
+  
     if (line.category === 'scene-header') {
-      if (line.visible === "true") {
+      console.log("changing scene header for " + line.index)
+      if (line.visible === 'true') {
         line.trueScene = 'true-scene';
         line.bar = 'bar';
       } else {
-        line.bar = "hideBar"
+        line.bar = 'hideBar';
       }
     }
   }
-
-
-
 
   adjustBarPosition(line: Line) {
     if (line.bar) {
       line.barY = line.yPos + 65;
     } else {
-      line.bar = "hideBar";
+      line.bar = 'hideBar';
     }
     if (line.end === 'END') {
       line.barY = line.yPos + 65;
     } else {
-
-      line.end === "hideEnd"
+      line.end === 'hideEnd';
     }
+
   }
   adjustYpositionAndReturnString(lineYPos: number): string {
     return Number(lineYPos) > 1 ? Number(lineYPos) * 1.3 + 'px' : '0';
@@ -332,7 +341,7 @@ export class LastLooksComponent implements OnInit {
 
     // if (line.cont || line.end) {
     //   // either End or CONT valie
-    //   debugger
+    //   
     //   line.calculatedBarY = this.adjustYpositionAndReturnString(yPos - 5);
     // }
   }
@@ -361,25 +370,31 @@ export class LastLooksComponent implements OnInit {
     return arr;
   }
   findFirstLineOfNextPage(pageIndex) {
-    const nextPage =this.doc[pageIndex + 1];
+    const nextPage = this.doc[pageIndex + 1];
     const acceptableCategories = this.acceptableCategoriesForFirstLine;
     let nextPageFirst = undefined;
-  
+
     if (nextPage) {
       for (let j = 0; j < 15; j++) {
         const lineToCheck = nextPage[j];
-        if (lineToCheck && acceptableCategories.includes(lineToCheck.category)) {
+        if (
+          lineToCheck &&
+          acceptableCategories.includes(lineToCheck.category)
+        ) {
           nextPageFirst = lineToCheck;
           break;
         }
       }
     }
-  
+
     return nextPageFirst;
   }
+
+ 
   getPDF() {
     alert('geting sides');
     const adjustedFinalDoc = this.restorePositionsInDocument(this.doc);
+
     this.upload.generatePdf(adjustedFinalDoc).subscribe(
       (serverRes: any) => {
         try {
@@ -402,10 +417,10 @@ export class LastLooksComponent implements OnInit {
     );
   }
   setContAndEndVals() {
-    for (let i = 0; i <this.doc.length; i++) {
+    for (let i = 0; i < this.doc.length; i++) {
       // ESTABLISH FIRST AND LAST FOR CONT ARROWS
-      let currentPage =this.doc[i];
-      let nextPage =this.doc[i + 1] || null;
+      let currentPage = this.doc[i];
+      let nextPage = this.doc[i + 1] || null;
       let first,
         last,
         nextPageFirst = undefined;
@@ -413,9 +428,11 @@ export class LastLooksComponent implements OnInit {
       // loop and find the next page first actual line and check it's not a page number
       for (let j = 0; j < 5; j++) {
         if (this.pages[i + 1]) {
-          let lineToCheck =this.doc[i + 1][j];
-          if (this.acceptableCategoriesForFirstLine.includes(lineToCheck.category)) {
-            nextPageFirst =this.doc[i + 1][j];
+          let lineToCheck = this.doc[i + 1][j];
+          if (
+            this.acceptableCategoriesForFirstLine.includes(lineToCheck.category)
+          ) {
+            nextPageFirst = this.doc[i + 1][j];
             break;
           }
         }
@@ -423,13 +440,17 @@ export class LastLooksComponent implements OnInit {
       // LOOP FOR LINES
       for (let j = 0; j < currentPage.length; j++) {
         let lastLineChecked = currentPage[currentPage.length - j - 1];
-        let currentLine =this.doc[i][j];
-        currentLine.end === 'END' ? (currentLine.endY = currentLine.yPos - 5) : currentLine;
+        let currentLine = this.doc[i][j];
+        currentLine.end === 'END'
+          ? (currentLine.endY = currentLine.yPos - 5)
+          : currentLine;
         // get first and last lines of each page to make continue bars
         if (
           currentPage &&
           // check last category
-          this.acceptableCategoriesForFirstLine.includes(lastLineChecked.category) &&
+          this.acceptableCategoriesForFirstLine.includes(
+            lastLineChecked.category
+          ) &&
           !last
         ) {
           last = lastLineChecked;
@@ -438,8 +459,10 @@ export class LastLooksComponent implements OnInit {
           (nextPage &&
             nextPage[j] &&
             !first &&
-            this.acceptableCategoriesForFirstLine.includes(nextPage[j].category)) ||
-          i ===this.doc.length - 1
+            this.acceptableCategoriesForFirstLine.includes(
+              nextPage[j].category
+            )) ||
+          i === this.doc.length - 1
         ) {
           first = currentPage[j];
         }
@@ -450,7 +473,9 @@ export class LastLooksComponent implements OnInit {
             first.category != 'scene-header'
           ) {
             first.cont = 'CONTINUE-TOP';
-            last.finalLineOfScript ? (last.cont = 'hideCont') : (last.cont = 'CONTINUE');
+            last.finalLineOfScript
+              ? (last.cont = 'hideCont')
+              : (last.cont = 'CONTINUE');
             first.barY = first.yPos + 10;
             last.barY = 55;
           }
@@ -468,7 +493,4 @@ export class LastLooksComponent implements OnInit {
       }
     }
   }
-
-  
 }
-
