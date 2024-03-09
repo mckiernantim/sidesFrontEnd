@@ -121,7 +121,7 @@ export class LastLooksComponent implements OnInit {
   }
   // updates the entire page 
   handlePageUpdate(updatedPage: any) {
-    debugger
+    console.log("UPDATING PAGE! ", updatedPage)
     this.pages[this.currentPage] = updatedPage;
     this.pageUpdate.emit(this.pages[this.currentPage]);
   }

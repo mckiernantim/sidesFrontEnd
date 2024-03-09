@@ -4,6 +4,7 @@ import {
   EventEmitter,
   SimpleChanges,
   ElementRef,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { Input, ChangeDetectorRef, HostListener } from '@angular/core';
 import { DragDropService } from 'src/app/services/drag-drop/drag-drop.service';
@@ -15,6 +16,7 @@ import { DragDropOptions } from 'src/app/types/DragDropOptions';
   selector: 'app-last-looks-page',
   templateUrl: './last-looks-page.component.html',
   styleUrls: ['./last-looks-page.component.css'],
+  changeDetection:ChangeDetectionStrategy.OnPush
 })
 export class LastLooksPageComponent {
   @Input() page: any;
@@ -99,6 +101,7 @@ export class LastLooksPageComponent {
   }
 
   ngOnChanges(changes: SimpleChanges) {
+    console.log("something changed!#!@#!@#! ", changes)
     if (
       changes.selectedFunction &&
       changes.selectedFunction.currentValue !== this.selectedFunction
@@ -111,6 +114,7 @@ export class LastLooksPageComponent {
   }
 
   onLineChange(line: Line, index: number, newText: string, lineCategory:string = "text"): void {
+    console.log("firing line change!@#!@")
     this.page[index][lineCategory] = newText;
     this.pageUpdate.emit(this.page); 
   }

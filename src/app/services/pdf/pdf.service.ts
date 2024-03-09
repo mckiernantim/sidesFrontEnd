@@ -394,7 +394,6 @@ export class PdfService {
         line.sceneNumber = currentSceneNum;
       }
     });
-    debugger
     return merged;
   }
 

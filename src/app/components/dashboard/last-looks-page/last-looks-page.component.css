@@ -68,6 +68,7 @@ span {
     font-size: 12pt;
     color: black;
 }
+
 .bar-span {
 
 }
@@ -86,7 +87,7 @@ span {
 }
 
 li.page-number {
-    text-decoration: none !important;
+    display: none !important;
 }
 
 .true-scene {

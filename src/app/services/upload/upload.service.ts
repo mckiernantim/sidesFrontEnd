@@ -163,7 +163,6 @@ export class UploadService {
   }
 
   generatePdf(sceneArr) {
-    debugger
     let params = new HttpParams().append('name', sceneArr.name);
     this.httpOptions.headers = new Headers();
     this.httpOptions.params = params;

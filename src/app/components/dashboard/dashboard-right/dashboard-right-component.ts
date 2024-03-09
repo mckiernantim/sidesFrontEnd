@@ -244,9 +244,9 @@ export class DashboardRightComponent implements OnInit {
   //  pass the scene to be made and the breaks ponts for the scene to be changed to visible true
 
   sendFinalDocumentToServer(finalDocument) {
-    debugger
+    
     this.flagStartLines(finalDocument.data)
-   debugger
+   
    
     this.upload.generatePdf(finalDocument).subscribe(
       
