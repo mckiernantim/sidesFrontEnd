@@ -195,7 +195,7 @@ export class DashboardRightComponent implements OnInit {
   addWaterMark(line) {
     this.watermark = line;
     alert(line + ' has been recorded as watermark');
-    this.waterMarkPages(this.watermark, this.finalDocument.doc.data);
+    this.waterMarkPages(this.watermark, this.pdf.finalDocument.data);
   }
   getPreview(ind) {
     return (this.scenes[ind].preview =
@@ -322,6 +322,7 @@ export class DashboardRightComponent implements OnInit {
     }
   }
   getLastPage = (scene) => {
+    
     return this.scriptData[scene.lastLine].page || null;
   };
   toggleLastLooks() {
@@ -408,30 +409,36 @@ export class DashboardRightComponent implements OnInit {
   }
 
   setLastLines(i) {
-    let last;
-    let currentScene = this.scenes[i];
-    let sceneInd;
-    let next = this.scenes[i + 1];
-    if (next || i === this.scenes.length - 1) {
-      if (next) {
-        last = next.index;
-        sceneInd = currentScene.sceneIndex;
-        currentScene.index === 0
-          ? (currentScene.firstLine = 0)
-          : (currentScene.firstLine =
-              this.scriptData[currentScene.index - 1].index);
-        currentScene.preview = this.getPreview(i);
-        currentScene.lastPage = this.getLastPage(currentScene);
-      } else {
-        // get first and last lines for last scenes
-        last =
-          this.scriptData[this.scriptData.length - 1].index ||
-          this.scriptData.length - 1;
-        currentScene.firstLine = this.scriptData[currentScene.index - 1].index;
-        currentScene.lastLine = last;
-        currentScene.lastPage = this.getLastPage(currentScene);
-        currentScene.preview = this.getPreview(i);
+    try {
+      let last;
+      let currentScene = this.scenes[i];
+      let sceneInd;
+      let next = this.scenes[i + 1];
+      if (next || i === this.scenes.length - 1) {
+        if (next) {
+          last = next.index;
+          sceneInd = currentScene.sceneIndex;
+          currentScene.index === 0
+            ? (currentScene.firstLine = 0)
+            : (currentScene.firstLine =
+                this.scriptData[currentScene.index - 1].index);
+          currentScene.preview = this.getPreview(i);
+          currentScene.lastPage = this.getLastPage(currentScene);
+        } else {
+          // get first and last lines for last scenes
+          last =
+            this.scriptData[this.scriptData.length - 1].index ||
+            this.scriptData.length - 1;
+          currentScene.firstLine = this.scriptData[currentScene.index - 1].index;
+          currentScene.lastLine = last;
+          currentScene.lastPage = this.getLastPage(currentScene);
+          currentScene.preview = this.getPreview(i);
+        }
       }
+    } catch (err) {
+      console.log(err);
+      console.error("failed during setLastLines dashboard-right-component")
     }
+
   }
 }

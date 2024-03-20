@@ -151,6 +151,7 @@ export class UploadService {
       .post(this.url + '/api', formData, this.httpOptions)
       .pipe(
         map((data) => {
+          
           this.lineArr = data[0];
           this.pagesArr = data[1];
           this.lineCount = [];

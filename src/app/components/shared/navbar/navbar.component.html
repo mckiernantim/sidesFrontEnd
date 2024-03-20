@@ -6,7 +6,7 @@
         <button mat-flat-button color="primary-light" class="right" id="{{option.text}}" (click)="toggleHidden($event.target.id)"
           routerLink="{{option.text}}">{{option.text.toUpperCase()}}</button>
       </li>
-      <ng-container *ngIf="(token.getCountdown() | async) as countdown">
+      <ng-container *ngIf="(token.countdown$ | async) as countdown">
         <!-- Display the countdown value -->
         <div class="right nav-item">Deleting your IP in : {{ countdown }}  </div>
       </ng-container>

@@ -22,7 +22,7 @@ export interface Line {
   // display or hide continue bar
   bar?:string,
   finalLineOfScript?:boolean,
-  barY?:number,
+  barY?:number|string,
   cont?:string,
   endY?:number,
   hideEnd?:string,
@@ -37,7 +37,7 @@ export interface Line {
   calculatedBarY?:string|number,
   calculatedXpos?:any
   calculatedYpos?:any
-  calculatedEnd?:string | number
+  calculatedEnd?: string | number
   hidden?:"hidden" | null;
   
   

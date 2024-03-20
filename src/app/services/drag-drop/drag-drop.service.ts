@@ -23,9 +23,8 @@ export class DragDropService {
   currentXPosDiff: number = 0; // Store the current X position difference
   currentYPosDiff: number = 0; // Store the current Y position difference
   initialBarY:any = 0;
-  barY: number = 0; // calculate the current Y position of the contine bar
-  // Other properties and methods related to drag and drop
-  // calculated  vals to offset the browser renders for the page
+  barY:  string|number = 0; // calculate the current Y position of the contine bar
+
   yOffset: number | string = 0;
   allowDragTimer: any;
 
@@ -34,6 +33,7 @@ export class DragDropService {
   // emits value from observable to stop signal end of update
   updateComponent() {
     // drag is not firing here for some reason - maybe the stop isnt 
+    
     // either emits the current selectedLine to the component or a TRUE to signal end of edit
     const valueToEmit = this.selectedLine || this.draggingBar ? this.selectedLine : true
     this.update.next(valueToEmit);
@@ -46,38 +46,51 @@ export class DragDropService {
     this.selectedLine = line;
   }
   drag(event: MouseEvent, bar?:boolean) {
-
-    
     if (this.draggingLine) {
     this.currentXPosDiff = event.clientX - this.initialMouseX;
     this.currentYPosDiff = event.clientY - this.initialMouseY;
     this.selectedLine.calculatedYpos = this.initialLineY - this.currentYPosDiff + 'px';
     this.updateComponent();
   } else {
-    this.currentXPosDiff = event.clientX - this.selectedLine.barY
+    this.currentXPosDiff = event.clientX - parseInt(this.selectedLine.barY as string) 
   }
 }
+
+    
     
 
   dragBar(event: MouseEvent) {
+    const target = event.target as HTMLSpanElement;
+    let cssClassToChange = 'calculatedBarY';
+    target.classList.forEach(el => {
+      if (el.match("end")) {
+        cssClassToChange = "calculatedEnd"
+      }
+    });
     const deltaY = event.clientY - this.initialMouseY;
     // Calculate the new bar position
-    const newBarY = this.initialBarY + deltaY;
-    this.selectedLine.calculatedBarY = newBarY.toFixed(2) + 'px';
-    event.preventDefault();
-    this.updateComponent();
+    if(this.selectedLine) {
+      const newBarY = parseInt(this.initialBarY) - deltaY;
+ 
+      this.selectedLine[cssClassToChange] = newBarY;
+      this.updateComponent();
+    }
   }
+
     
 
    
   startDragBar(event: MouseEvent) {
-   
+    let target = event.target as HTMLSpanElement;
+    console.log(target.classList)
+
+    const lineId = (event.target as HTMLElement).dataset.lineId;
     this.draggingBar = true;
+    this.initialBarY = parseInt(this.selectedLine.calculatedEnd as string) || 0; // Store the initial bar Y position
     this.initialMouseY = event.clientY;
     this.initialMouseX = event.clientX;
-    this.initialBarY = this.selectedLine.calculatedBarY; // Store the initial bar Y position
+    console.log(`changing barY: ${this.initialBarY}}`)
 
-    // Prevent the default browser behavior (text selection, etc.)
     event.preventDefault();
   }
   startDrag(options:DragDropOptions) {
@@ -86,10 +99,10 @@ export class DragDropService {
     this.isLineSelected = true;
     this.draggingLine = true;
     // Record the initial positions
-    this.initialLineY = parseFloat(line.calculatedYpos);
-    this.initialLineX = parseFloat(line.calculatedXpos);
     this.initialMouseY = event.clientY;
     this.initialMouseX = event.clientX;
+    this.initialLineY = parseFloat(line.calculatedYpos);
+    this.initialLineX = parseFloat(line.calculatedXpos);
     // add barY? add barX?
 
     // Select the line
@@ -119,7 +132,7 @@ export class DragDropService {
     } else if (this.draggingBar) {
       // Calculate the final position of the bar
       // Update the bar position in the line object
-      this.processBarChange(0); 
+     const newVal =  this.processBarChange(event.clientY); 
       this.draggingBar = false;
     }
     // Reset the dragging state
@@ -136,7 +149,7 @@ export class DragDropService {
   }
   processBarChange(newBarPosition) {
     const newBarY = this.initialBarY - newBarPosition
-    this.selectedLine.calculatedBarY = newBarY.toFixed(2) + 'px';
+    return newBarY + 'px';
   }
   
   updateSelectedLine(x:number,y:number) {

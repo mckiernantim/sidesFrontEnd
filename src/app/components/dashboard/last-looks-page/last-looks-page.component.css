@@ -10,9 +10,17 @@
     box-shadow:0 0 50px rgba(255, 255, 0, 0.7);
     background-color: rgba(255, 255, 0, 0.4) ;
     transition: box-shadow 0.2s ease; 
+        -webkit-touch-callout: none; /* iOS Safari */
+        -webkit-user-select: none; /* Safari */
+        -khtml-user-select: none; /* Konqueror HTML */
+        -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+        user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera, and Firefox */
+    
+      
 }
 .edit-li:hover, .bar-span:hover {
-    transform: scale(1.05);
+    transform: scale(1.10);
     cursor: grab;
 }
 .page {
@@ -80,7 +88,7 @@ span {
     bottom: 975px
 }
 
-.draft-color-text {
+.draft-text {
     bottom: 975px;
     position: absolute;
     right: 43%
@@ -208,8 +216,7 @@ li.page-number {
 
 
 
-.page-number-hidden,
-.page-number {
+.page-number-hidden {
     display: none !important;
 }
 
@@ -261,7 +268,8 @@ li.page-number {
 .selected {
     border:2px solid black;
     background-color:yellow;
-    transform: scale(1.02);
+    transform: scale(1.1);
+    z-index: 10000000;
 }
 
 .isRevision {
@@ -269,7 +277,7 @@ li.page-number {
     right: 35px !important
 }
 .continue-span {
-    right:70%;
+
     font-size: 16pt
 }
 

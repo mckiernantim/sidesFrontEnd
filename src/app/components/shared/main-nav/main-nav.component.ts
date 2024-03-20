@@ -28,7 +28,7 @@ export class MainNavComponent implements AfterViewInit {
   }
   ngAfterViewInit(): void {
    
-      this.countdownValue$ =  this.token.getCountdown();
+      this.countdownValue$ =  this.token.countdown$;
       this.countdownValue$.subscribe(countdown => {
         if (countdown as number > 0) {
           

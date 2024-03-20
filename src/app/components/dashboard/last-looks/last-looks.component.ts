@@ -79,7 +79,7 @@ export class LastLooksComponent implements OnInit {
     this.pages = this.doc;
     this.initialDocState = this.doc.map((page) => [...page] as Line[]);
     this.establishInitialLineState();
-
+    // set up undo observable to respond to changes and refresh
     this.undoQueue = this.undoService.undoQueue$.subscribe((change) => {
       const { pageIndex, line } = change;
       const indexToUpdate = this.doc[pageIndex].findIndex(
@@ -103,10 +103,11 @@ export class LastLooksComponent implements OnInit {
     }
   }
   establishInitialLineState() {
+    
     this.processLinesForLastLooks(this.doc);
     this.updateDisplayedPage();
-    this.selectedLine = this.doc[0][0]; // Assuming this selects the first line
-    // this.adjustLinesForDisplay(this.pages); // Add this line
+    this.selectedLine = this.doc[0][0]; 
+    // this.adjustLinesForDisplay(this.pages); 
   }
   findLastLinesOfScenes(pages) {
     const lastLinesOfScenes = {};
@@ -125,6 +126,9 @@ export class LastLooksComponent implements OnInit {
     this.pages[this.currentPage] = updatedPage;
     this.pageUpdate.emit(this.pages[this.currentPage]);
   }
+  handleWaterMarkUpdate(newWatermark:string) {
+    
+  }
 
   processLinesForLastLooks(arr) {
     // this.getSceneBreaks(arr)
@@ -133,18 +137,15 @@ export class LastLooksComponent implements OnInit {
     arr.forEach((page) => {
       let lastSceneIndex = -1;
       page.forEach((line, index) => {
-        // this.hideBars(line)
+
         // // Existing adjustments
         this.adjustSceneNumberPosition(line);
-        // this.adjustSceneHeader(line);
         this.revealContSubcategoryLines(line);
-        
         this.adjustBarPosition(line);
         this.calculateYPositions(line);
-        
         line.calculatedXpos = Number(line.xPos) * 1.3 + 'px';
-
-        line.calculatedEnd =
+        // value to determine styling of end bar
+         line.calculatedEnd =
           Number(line.yPos) > 90 ? Number(line.yPos) * 1.3 + 'px' : '90px';
       });
     });
@@ -290,6 +291,8 @@ export class LastLooksComponent implements OnInit {
   }
 
   revealContSubcategoryLines(line: Line) {
+    // this is what is causing all cont lines to be revealead
+      // check in later
     if (line.subCategory === "CON'T") {
       line.visible = 'true';
     }

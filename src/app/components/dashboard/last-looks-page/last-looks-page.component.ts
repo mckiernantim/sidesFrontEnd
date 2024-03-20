@@ -16,14 +16,14 @@ import { DragDropOptions } from 'src/app/types/DragDropOptions';
   selector: 'app-last-looks-page',
   templateUrl: './last-looks-page.component.html',
   styleUrls: ['./last-looks-page.component.css'],
-  changeDetection:ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LastLooksPageComponent {
   @Input() page: any;
   @Input() selectedFunction: string;
   @Input() selectedEditFunction: string;
   @Input() editPdfOptions: string[];
-  @Input() resetSelectedLine:string | boolean;
+  @Input() resetSelectedLine: string | boolean;
   @Input() canEditDocument: boolean;
   @Output() functionNullified: EventEmitter<void> = new EventEmitter<void>();
   @Output() pageUpdate = new EventEmitter<Line[]>();
@@ -36,7 +36,7 @@ export class LastLooksPageComponent {
   isLineSelected: boolean = false;
   showContextMenu: boolean = false;
   mouseEvent: MouseEvent | null = null;
-  dragRefreshDelay: number = 100; // miliseconds to throttle the drag action
+  dragRefreshDelay: number = 10; // miliseconds to throttle the drag action
   currentYPosDiff: number = 0;
   currentXPosDiff: number = 0;
   yOffset: number | string = 0;
@@ -44,7 +44,7 @@ export class LastLooksPageComponent {
   contextMenuY: number = 150;
   contextMenuX: number = 150;
   contextMenuLine: Line | null = null;
-  mouseX:number;
+  mouseX: number;
   classificationChoices: string[];
   xPositionsForLines: any = {
     parenthetical: '271.7px',
@@ -54,7 +54,7 @@ export class LastLooksPageComponent {
     'scene-header': '96px',
     shot: '455px',
   };
-
+  contBarOffset:number = 35 // amount of pixels offset by styling the cont bar - needed for dragging
   heldInterval: any = null;
   // calculated  vals to offset the browser renders for the page
   mousePosition: { x: number; y: number } = { x: 0, y: 0 };
@@ -90,18 +90,15 @@ export class LastLooksPageComponent {
     }, this.dragRefreshDelay);
 
     this.dragDrop.update.subscribe((reset: null | true) => {
-      if (reset) {
-        const ind = this.selectedLine.index;
-        ;
-
-        this.selectedLine = null;
+      if (reset === true) {
+        //  this.selectedLine = null;
+         
       }
       this.cdRef.markForCheck();
     });
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    console.log("something changed!#!@#!@#! ", changes)
     if (
       changes.selectedFunction &&
       changes.selectedFunction.currentValue !== this.selectedFunction
@@ -113,31 +110,44 @@ export class LastLooksPageComponent {
     }
   }
 
-  onLineChange(line: Line, index: number, newText: string, lineCategory:string = "text"): void {
-    console.log("firing line change!@#!@")
+  onLineChange(
+    line: Line,
+    index: number,
+    newText: string,
+    lineCategory: string = 'text'
+  ): void {
+    console.log('firing line change!@#!@');
     this.page[index][lineCategory] = newText;
-    this.pageUpdate.emit(this.page); 
+    this.pageUpdate.emit(this.page);
   }
 
   updatePositon(num: number, str: string): string {
     const dif = parseInt(str) - num;
     return dif + 'px';
   }
-  updateCateogry(event: MouseEvent, category:string, line:Line, lineIndex:number) {
+  updateCateogry(
+    event: MouseEvent,
+    category: string,
+    line: Line,
+    lineIndex: number
+  ) {
     if (!this.selectedLine) this.toggleSelectedLine(event, line, lineIndex);
-    this.selectedLine.category = category
-    this.onLineChange(line, lineIndex, category, category) 
+    this.selectedLine.category = category;
+    this.onLineChange(line, lineIndex, category, category);
   }
   updateText(event: MouseEvent | null, line, lineIndex) {
-    const newText = (event.target as HTMLElement).textContent ;
+    const newText = (event.target as HTMLElement).textContent;
     if (!this.selectedLine) this.toggleSelectedLine(event, line, lineIndex);
     this.selectedLine.text = newText;
-    this.onLineChange(line, lineIndex, newText)
+    this.onLineChange(line, lineIndex, newText);
     // You can also perform any additional logic here.
   }
 
   determineIfWeCanDrag(): boolean {
-    if (!this.contextMenuLine && this.dragDrop.draggingLine) {
+    if (
+      (!this.contextMenuLine && this.dragDrop.draggingLine) ||
+      this.dragDrop.draggingBar
+    ) {
       return true;
     }
     return false;
@@ -150,30 +160,29 @@ export class LastLooksPageComponent {
     lineIndex: number,
     isDragBar?: boolean
   ) {
+    if (!this.canEditDocument) return;
     if (event.button !== 0 || this.contextMenuLine) return;
 
     this.mouseEvent = event;
     this.toggleSelectedLine(event, line, lineIndex);
+    this.undo.addToUndoQueue({ ...this.selectedLine });
 
     if (isDragBar) {
       // add to the queue at start of drag
       this.dragDrop.startDragBar(event);
     } else {
-     
       // add to the queue at start of drag
-      this.undo.addToUndoQueue({ ...this.selectedLine });
+  
       this.dragDrop.startDrag({ event, line, lineIndex });
     }
   }
-handleMouseUp (event, line, lineIndex) {
-  
-  this.toggleSelectedLine(event, line, lineIndex);
-  this.dragDrop.stopDrag(event);
-}
+  handleMouseUp(event, line, lineIndex) {
+    // this.toggleSelectedLine(event, line, lineIndex);
+    this.dragDrop.stopDrag(event);
+  }
   isSelectedLine(line: Line, lineIndex: number) {
     return this.selectedLine === this.page[lineIndex];
   }
-
 
   toggleSelectedLine(event: MouseEvent, line: any, lineIndex: number) {
     if (this.isSelectedLine(line, lineIndex)) {
@@ -192,7 +201,9 @@ handleMouseUp (event, line, lineIndex) {
     line.visible = line.visible === 'true' ? 'false' : 'true';
     this.cdRef.markForCheck();
   }
-
+  getEditState() {
+    return this.canEditDocument
+  }
   getMouseEvent(event: MouseEvent) {
     this.mouseEvent = event;
   }
@@ -238,11 +249,16 @@ handleMouseUp (event, line, lineIndex) {
     this.undo.addToUndoQueue({ ...this.selectedLine });
   }
 
-  changeLineCategory(event:MouseEvent, newCategory: string, line:Line, lineIndex:number) {
+  changeLineCategory(
+    event: MouseEvent,
+    newCategory: string,
+    line: Line,
+    lineIndex: number
+  ) {
     this.recordLineStateToUndoQueueBeforeChange();
     if (newCategory === 'line-out') {
       this.toggleStrikethroughLine();
-    } else if ((newCategory === 'delete')) {
+    } else if (newCategory === 'delete') {
       this.toggleHiddenOnLine();
     } else {
       this.selectedLine.calculatedXpos = this.xPositionsForLines[newCategory];
@@ -250,7 +266,7 @@ handleMouseUp (event, line, lineIndex) {
       this.selectedLine.xPos,
         (this.selectedLine.calculatedXpos =
           this.xPositionsForLines[newCategory]);
-      this.updateCateogry(event, newCategory, line, lineIndex)
+      this.updateCateogry(event, newCategory, line, lineIndex);
 
       this.closeContextMenu();
     }

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { TokenService } from '../services/token/token.service';
-import { map } from 'rxjs/operators';
+import { map, take,} from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root',
@@ -13,18 +13,18 @@ export class AuthGuard implements CanActivate {
   canActivate(
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
-  ): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-    return this.tokenService.isTokenValid().pipe(
+): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
+    return this.tokenService.tokenValidity$.pipe(
+      take(1),
       map(isValid => {
-        if (isValid) {
-          // Token is valid, proceed to the target route
-          return true;
-        } else {
-          alert("Checkout session has expired - your IP has been deleted")
-          // Token is not valid, redirect to login or another appropriate page
-          return this.router.parseUrl('/upload'); // Adjust the route as needed
+        if(!isValid) {
+          alert("no ticket")
+          this.router.navigate(["/"]);
+          return false;
         }
+        return true
       })
-    );
+      )
+    
   }
 }

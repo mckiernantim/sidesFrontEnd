@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import jwt_decode from 'jwt-decode';
 import Cookies from 'js-cookie';
-import { Observable, timer, of } from 'rxjs';
-import { concatWith, map, takeWhile } from 'rxjs/operators';
+import { Observable, timer, of, BehaviorSubject } from 'rxjs';
+import { concatWith, map, takeWhile, shareReplay } from 'rxjs/operators';
+import { Router } from '@angular/router';
 
 interface DecodedToken {
   sessionId: string;
@@ -13,63 +14,58 @@ interface DecodedToken {
   providedIn: 'root',
 })
 export class TokenService {
-  private readonly tokenKey = 'dltr_sidesWays';
-  public countdown$: Observable<number| Boolean>;
-  private decodedToken: string | null = null;
+  private readonly tokenKey = 'token_expiry';
+  private tokenValiditySource = new BehaviorSubject<boolean>(true);
+  public tokenValidity$ = this.tokenValiditySource.asObservable();
+  private countdownSource = new BehaviorSubject<number>(0);
+  public countdown$ = this.countdownSource.asObservable().pipe(shareReplay(1));
 
   constructor() {
     this.initializeCountdown();
   }
 
-  getCookieValue(): string | null {
+  private getCookieValue(): string | null {
     return Cookies.get(this.tokenKey);
   }
-
-  decodeToken(token: string): void {
-    // this.decodedToken = jwt_decode<DecodedToken>(token);
+  setDeleteTimer(expirationTimeInMilliseconds: number): void {
+    this.startCountdown(expirationTimeInMilliseconds);
   }
-
-  initializeCountdown(): void {
+  
+  private initializeCountdown(): void {
     const token = this.getCookieValue();
-    console.log(token)
     if (token) {
-      const expirationTimeInMilliseconds = parseInt(token);
-      this.startCountdown(expirationTimeInMilliseconds);
+      const expirationTime = parseInt(token, 10);
+      const currentTime = Date.now();
+      const timeLeft = expirationTime - currentTime;
+      
+      if (timeLeft > 0) {
+        this.startCountdown(expirationTime);
+      } else {
+        this.tokenValiditySource.next(false);
+      }
+    } else {
+      this.tokenValiditySource.next(false);
     }
   }
-  
-  /* 
 
-    Delete countdown observable begins a countdown that emits values to other components
-    While > 0 the user can download their documentation and we can pipe into the 
-    Observable to see the reamining time
+  private startCountdown(expirationTime: number): void {
+    timer(0, 1000).pipe(
+      map(() => {
+        const currentTime = Date.now();
+        const timeLeft = Math.max(expirationTime - currentTime, 0);
+        return timeLeft;
+      }),
+      takeWhile(timeLeft => timeLeft >= 0, true)
+    ).subscribe(timeLeft => {
+      this.countdownSource.next(Math.floor(timeLeft / 1000));
+      if (timeLeft <= 0) {
+        this.tokenValiditySource.next(false);
+      }
+    });
+  }
 
-  */
-  startCountdown(expirationTimeInMilliseconds: number): void {
-    const currentTimeInMilliseconds = Date.now();
-    const timeLeftInMilliseconds = expirationTimeInMilliseconds - currentTimeInMilliseconds; // Time left in milliseconds
-    this.countdown$ = timer(0, 1000).pipe(
-      map((elapsed) => Math.floor((timeLeftInMilliseconds - (elapsed * 1000)) / 1000)),
-      takeWhile((remaining) => remaining >= 0, true),
-      concatWith(of(-1))
-    );
-  }
-  
-  getCountdown () {
-    return this.countdown$
-  }
-  setDeleteTimer(time) {
-    this.startCountdown(time)
-  }
   isTokenValid(): Observable<boolean> {
-    return this.getCountdown().pipe(
-      map(timeLeft => timeLeft as number > 0)
-    );
+    // Directly use tokenValidity$ for guard or other checks
+    return this.tokenValidity$;
   }
-
-
-  getDeleteTimer() {
-    
-  } 
-
 }

@@ -31,7 +31,7 @@ export class NavbarComponent implements OnInit {
     return target.selected ? false : true
   }
   ngOnInit(): void {
-    this.token.getCountdown().subscribe(countdown => this.countdown = countdown as number)
+    this.token.countdown$.subscribe(countdown => this.countdown = countdown as number)
   } 
 
 }
