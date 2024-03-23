@@ -6,4 +6,5 @@ dist
 development_utils
 
 app/*.json
+*/app/testingData
 */*.pdf
