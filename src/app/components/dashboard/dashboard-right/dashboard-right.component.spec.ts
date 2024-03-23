@@ -75,7 +75,7 @@ testCases.forEach(
         let expectedFinalDoc = (await import(finalDocPath)).default;
 
         const uploadServiceMock = {
-          lineArr: lineData,
+          git lineArr: lineData,
           pagesArr: pageData,
           lineCount: [],
         };
