@@ -14,7 +14,7 @@ import { UndoService } from '../../../services/edit/undo.service';
 import { Line } from 'src/app/types/Line';
 import { PdfService } from '../../../services/pdf/pdf.service';
 
-import { fadeInOutAnimation } from 'src/app/animations/animations';
+import { fadeInOutAnimation } from '../../../animations/animations'
 import { SpinningBotComponent } from '../../shared/spinning-bot/spinning-bot.component';
 
 export interface pdfServerRes {

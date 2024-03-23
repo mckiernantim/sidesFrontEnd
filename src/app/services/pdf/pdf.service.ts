@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { UploadService } from '../upload/upload.service';
 import { skip } from 'rxjs/operators';
-import { debug } from 'console';
+import { LINE_TYPES} from '../../types/LineTypes'
 /*  
   THIS SHOULD BE ITS OWN 4 OR 5 SERVICES ALL IMPORTED INTO THE PARENT SERVICE OF PDF 
   PERHAPPS LINE-SERVICE, SCENE-SERVICE, DOCUMENT-SERVICE ETC  
@@ -11,30 +11,22 @@ import { Line } from 'src/app/types/Line';
   providedIn: 'root',
 })
 export class PdfService {
-  conditions = [
-    'dialog',
-    'character',
-    'description',
-    'first-description',
-    // 'scene-header',
-    'short-dialog',
-    'parenthetical',
-    'shot',
-    'delete',
-  ];
-  finalPdfData: any; // Adjust the type according to your data structure
+  // remove the first option as we dont want scene headers in our data
+  conditions = [, ...LINE_TYPES];
+  finalPdfData: any; 
   callsheet: string;
-  selected: any[]; // Specify the type if known, e.g., SelectedItem[]
+  selected: any[]; 
   watermark: string;
-  script: string; // Presumably the name of the script or relevant data // Total number of pages in the PDF
-  finalDocument: any; // Adjust the type to match your document structure
-  initialFinalDocState: any; // Type this according to your initial document state
+  script: string; 
+  finalDocument: any; 
+  initialFinalDocState: any; 
   scriptData: any[];
   totalPages: any[];
   finalDocReady: boolean = false;
   scenes: any[];
   initialSelection: any[] = [];
   pages: any[];
+
   // DOCUMENT OPTIONS
   characters: any;
   charactersCount: number;
@@ -48,6 +40,7 @@ export class PdfService {
   scriptLength: number;
   date: number;
   totalLines: any;
+
   // 1/5 WE NEED TO MOVE THIS SO THAT THIS FIRES EVERY TIME THE USER NAVIGATES TO UPLOAD COMPONENT
   constructor(public upload: UploadService) {
     // Initialize your properties if needed
