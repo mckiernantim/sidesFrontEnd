@@ -377,7 +377,7 @@ export class PdfService {
       if (line.category === 'scene-header')
         currentSceneNum = line.sceneNumberText;
       if (
-        line.category === 'page-number-hidden' ||
+        // line.category === 'page-number-hidden' ||
         line.category === 'page-number'
       ) {
         line.visible = 'true';
@@ -465,8 +465,9 @@ export class PdfService {
     return pages;
   }
   processPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
+    
     this.initializePdfDocument(name, numPages, callSheetPath);
-
+   
     let pages = this.collectPageNumbers(sceneArr);
 
     let sceneBreaks = this.recordSceneBreaks(sceneArr,numPages);
@@ -618,32 +619,39 @@ export class PdfService {
             let lineToCheck = currentPage[i];
             if (
               this.conditions.includes(lineToCheck.category) &&
+            
               lineToCheck.visible === 'true' &&
               !foundContinue
-            ) {
-              lineToCheck.cont = 'CONTINUE';
-              foundContinue = true;
-              break;
-            }
-          }
-
-          // Check the next page for 'CONTINUE-TOP'
-          if (foundContinue && nextPage) {
-            for (let j = 0; j < Math.min(5, nextPage.length); j++) {
-              let nextLineToCheck = nextPage[j];
-              if (
-                nextLineToCheck.scene === currentScene &&
-                this.conditions.includes(nextLineToCheck.category) &&
-                nextLineToCheck.category !== 'page-number' &&
-                nextLineToCheck.visible === 'true'
               ) {
-                nextLineToCheck.cont = 'CONTINUE-TOP';
+              if(lineToCheck.finalLineOfScript || lineToCheck.end === "END") {
+                break
+              }
+                foundContinue = true;
+                lineToCheck.cont = 'CONTINUE';
                 break;
               }
             }
+            if (foundContinue && nextPage) {
+              for (let j = 0; j < Math.min(5, nextPage.length); j++) {
+                let nextLineToCheck = nextPage[j];
+                if (
+                  nextLineToCheck.scene === currentScene &&
+                  this.conditions.includes(nextLineToCheck.category) &&
+                  nextLineToCheck.category !== 'page-number' &&
+                  nextLineToCheck.visible === 'true'
+                ) {
+                  nextLineToCheck.cont = 'CONTINUE-TOP';
+                  break;
+                }
+              }
+            }
           }
-        }
-      });
+        });
+            
+            
+
+
+          // Check the next page for 'CONTINUE-TOP'
 
       // Reset foundContinue for the next page
       foundContinue = false;

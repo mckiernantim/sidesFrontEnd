@@ -8,158 +8,196 @@ import { of } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { LINE_TYPES } from '../../../types/LineTypes';
-// scripts to test
+
+import { Line } from '../../../types/Line'
+import _, { difference } from 'lodash';
+
+import lineDataNoteworthy from "../../../testingData/pdfServiceData/finalDocData/NOTEWORTHY/NOTEWORTHY-lineArr-mock-data.json"
+import pageDataNoteworthy from "../../../testingData/pdfServiceData/finalDocData/NOTEWORTHY/NOTEWORTHY-pagesArr-mock-data.json"
+import finalDocDataNoteworthy from "../../../testingData/pdfServiceData/finalDocData/NOTEWORTHY/NOTEWORTHY[1,2,5,11,12,22,28].json"
+
+import lineDataKidnapped from "../../../testingData/pdfServiceData/finalDocData/KIDNAPPED/KIDNAPPED-lineArr-mock-data.json"
+import pageDataKidnapped from "../../../testingData/pdfServiceData/finalDocData/KIDNAPPED/KIDNAPPED-pagesArr-mock-data.json"
+import finalDocDataKidnapped from "../../../testingData/pdfServiceData/finalDocData/KIDNAPPED/KIDNAPPED[2,13,22,A24,74,157].json"
+
+import lineDataTheFinalRose from "../../../testingData/pdfServiceData/finalDocData/THE FINAL ROSE/THE FINAL ROSE-lineArr-mock-data.json"
+import pageDataTheFinalRose from "../../../testingData/pdfServiceData/finalDocData/THE FINAL ROSE/THE FINAL ROSE-pagesArr-mock-data.json"
+import finalDocDataTheFinalRose from "../../../testingData/pdfServiceData/finalDocData/THE FINAL ROSE/THE FINAL ROSE[2,4,5,7,9,18B,18C,32,104].json"
+
 const BASE_PATH = '../../../testingData/pdfServiceData/finalDocData';
-
-import mockLinesDataForNextDoor from '../../../testingData/pdfServiceData/finalDocData/NEXT DOOR/NEXT DOOR-lineArr-mock-data.json';
-import mockPagesDataForNextDoor from '../../../testingData/pdfServiceData/finalDocData/NEXT DOOR/NEXT DOOR-pagesArr-mock-data.json';
-import nextDoorMockFinalDoc from '../../../testingData/pdfServiceData/finalDocData/NEXT DOOR/NEXT DOOR[2,3,7,11,20].json';
-
-import mockLinesDataForTheFinalRose from '../../../testingData/pdfServiceData/finalDocData/THE FINAL ROSE/THE FINAL ROSE-lineArr-mock-data.json';
-import mockPagesDataForTheFinalRose from '../../../testingData/pdfServiceData/finalDocData/THE FINAL ROSE/THE FINAL ROSE-pagesArr-mock-data.json';
-import theFinalRoseMockFinalDoc from '../../../testingData/pdfServiceData/finalDocData/THE FINAL ROSE/THE FINAL ROSE[2,4,5,7,9].json';
-
-import mockLinesDataForKinapped from '../../../testingData/pdfServiceData/finalDocData/KIDNAPPED/KIDNAPPED-lineArr-mock-data.json';
-import mockPagesDataForKinapped from '../../../testingData/pdfServiceData/finalDocData/KIDNAPPED/KIDNAPPED-pagesArr-mock-data.json';
-import kidnappedMockFinalDoc from '../../../testingData/pdfServiceData/finalDocData/KIDNAPPED/KIDNAPPED[2,4,5,7,10,13].json';
-
-import mockPagesDataForNoteworthy from '../../../testingData/pdfServiceData/finalDocData/NOTEWORTHY/NOTEWORTHY-pagesArr-mock-data.json';
-import mockLinesDataForNoteworthy from '../../../testingData/pdfServiceData/finalDocData/NOTEWORTHY/NOTEWORTHY-lineArr-mock-data.json';
-import noterworthyMockFinalDoc from '../../../testingData/pdfServiceData/finalDocData/NOTEWORTHY/NOTEWORTHY[1,2,5,11,12,22,28].json';
-
 const extractSceneNumbers = (filePath) => {
-  //
+  
   const match = filePath.match(/\[(.*?)\]/);
   return match ? match[1].split(',').map(Number) : [];
 };
-const testCases = [
-  // {
-  //   name: "NEXT DOOR",
-  //   lineDataPath: `${BASE_PATH}/NEXT DOOR/NEXT DOOR-lineArr-mock-data.json`,
-  //   pageDataPath: `${BASE_PATH}/NEXT DOOR/NEXT DOOR-pagesArr-mock-data.json`,
-  //   finalDocPath: `${BASE_PATH}/NEXT DOOR/NEXT DOOR[2,3,7,11,20].json`,
-  //   scenes: extractSceneNumbers(`${BASE_PATH}/NEXT DOOR/NEXT DOOR[2,3,7,11,20].json`)
-  // },
-  // {
-  //   name: "THE FINAL ROSE",
-  //   lineDataPath: `${BASE_PATH}/THE FINAL ROSE/THE FINAL ROSE-lineArr-mock-data.json`,
-  //   pageDataPath: `${BASE_PATH}/THE FINAL ROSE/THE FINAL ROSE-pagesArr-mock-data.json`,
-  //   finalDocPath: `${BASE_PATH}/THE FINAL ROSE/THE FINAL ROSE[2,4,5,7,9].json`,
-  //   scenes: extractSceneNumbers(`${BASE_PATH}/THE FINAL ROSE/THE FINAL ROSE[2,4,5,7,9].json`)
-  // },
-  // {
-  //   name: "KIDNAPPED",
-  //   lineDataPath: `${BASE_PATH}/KIDNAPPED/KIDNAPPED-lineArr-mock-data.json`,
-  //   pageDataPath: `${BASE_PATH}/KIDNAPPED/KIDNAPPED-pagesArr-mock-data.json`,
-  //   finalDocPath: `${BASE_PATH}/KIDNAPPED/KIDNAPPED[2,4,5,7,10,13].json`,
-  //   scenes: extractSceneNumbers(`${BASE_PATH}/KIDNAPPED/KIDNAPPED[2,4,5,7,10,13].json`)
-  // },
-  {
-    name: 'NOTEWORTHY',
-    lineDataPath: `${BASE_PATH}/NOTEWORTHY/NOTEWORTHY-lineArr-mock-data.json`,
-    pageDataPath: `${BASE_PATH}/NOTEWORTHY/NOTEWORTHY-pagesArr-mock-data.json`,
-    finalDocPath: `${BASE_PATH}/NOTEWORTHY/NOTEWORTHY[1,2,5,11,12,22,28].json`,
-    scenes: extractSceneNumbers(
-      `${BASE_PATH}/NOTEWORTHY/NOTEWORTHY[1,2,5,11,12,22,28].json`
-    ),
-  },
-];
-testCases.forEach(
-  ({ name, lineDataPath, pageDataPath, finalDocPath, scenes }) => {
-    describe(`DashboardRightComponent - ${name} Scene Selection and PDF Generation`, () => {
-      let component;
-      beforeEach(async () => {
-        // Dynamic import of data
-        const lineData = (await import(lineDataPath)).default;
-        const pageData = (await import(pageDataPath)).default;
-        let expectedFinalDoc = (await import(finalDocPath)).default;
-
-        const uploadServiceMock = {
-          git lineArr: lineData,
-          pagesArr: pageData,
-          lineCount: [],
-        };
-        let pdfService = new PdfService(uploadServiceMock as any);
-        await TestBed.configureTestingModule({
-          imports: [
-            MatDialogModule,
-            HttpClientTestingModule,
-            NoopAnimationsModule,
-          ],
-          declarations: [DashboardRightComponent],
-          providers: [
-            { provide: UploadService, useValue: uploadServiceMock },
-            { provide: PdfService, useValue: pdfService },
-          ],
-          schemas: [NO_ERRORS_SCHEMA],
-        }).compileComponents();
-
+function deepDiff(expected, actual) {
+  // Items in expected that are not in actual
+  const uniqueToExpected = _.differenceWith(expected, actual, _.isEqual);
   
-        let fixture = TestBed.createComponent(DashboardRightComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+  // Items in actual that are not in expected
+  const uniqueToActual = _.differenceWith(actual, expected, _.isEqual);
+  
+  // Optionally, find items that are in both but differ
+  // This part requires a more customized approach, depending on what "differ" means
+  
+  return [
+    uniqueToExpected,
+    uniqueToActual,
+    // differencesInBoth: [], // Populate this array if necessary
+  ];
+}
 
-        // Setting the component's data according to the test case
-        component.scriptData = lineData;
-        component.selected = scenes;
-        component.finalDocument = expectedFinalDoc;
-        component.toggleLastLooks();
-      });
+function sanitizeLinesForCompare(arr, category, cssClassForFinal) {
+  return arr.flat().filter(line => line[category] === cssClassForFinal)
+    .map(line => ({
+      text: line.text, 
+      category: line.category, 
+      xPos: line.xPos, 
+      yPos: line.yPos, 
+      cont: line.cont, 
+      visible: line.visible,
+      end: line.end,
+      sceneNumberText: line.sceneNumberText
+    })
+  )
+}
+interface TestCase {
+  name:string,
+  lineData:any[],
+  pageData:any[],
+  finalDoc:any[],
+  scenes:string[];
+}
 
-      it('should have a defined component', () => {
-        expect(component).toBeDefined();
-      });
+const testCases:TestCase[] = [
+  {
+    name: "THE FINAL ROSE",
+    lineData: lineDataTheFinalRose,
+    pageData: pageDataTheFinalRose,
+    finalDoc: finalDocDataTheFinalRose,
+    scenes:['2','4','5','7','9','18B','18C','32','104']
+  },
+  {
+    name: "KIDNAPPED",
+    lineData: lineDataKidnapped,
+    pageData: pageDataKidnapped,
+    finalDoc: finalDocDataKidnapped,
+    scenes: ['2','13','22','A24','74','157']
+  },
+  {
+    name: "NOTEWORTHY",
+    lineData: lineDataNoteworthy,
+    pageData: pageDataNoteworthy,
+    finalDoc: finalDocDataNoteworthy,
+    scenes: ['1','2','5','11','12','22','28']
+  },
+  // Include other test cases if needed
+];
 
-      // Define other "it" tests as needed, utilizing `expectedFinalDoc` and other dynamically loaded data
-    });
-  }
-);
 
-//     it('finalDocument and initial should not equal each other', () => {
-//       // Assuming you have an initial state of finalDocument before processing
-//       const finalDocumentActual = { ...pdfService.finalDocument };
-//       expect(expectedFinalDoc).not.toEqual(finalDocumentActual);
-//     });
+describe('DashboardRightComponent - NOTEWORTHY Scene Selection and PDF Generation', () => {
+  let component: DashboardRightComponent;
+  let fixture: ComponentFixture<DashboardRightComponent>;
+  let pdfService: PdfService;
+  let finalDocExpected;
+  let finalDocActual;
 
-//     it("should have the same true values", () => {
-//       const initialFinalDocumentState = { ...pdfService.finalDocument };
+  beforeEach(async () => {
+    const scenes = testCases[2].scenes;
+    const uploadServiceMock = {
+      lineArr: lineDataNoteworthy,
+      pagesArr: pageDataNoteworthy,
+      lineCount: [],
+    };
 
-//     })
+    await TestBed.configureTestingModule({
+      imports: [MatDialogModule, HttpClientTestingModule, NoopAnimationsModule],
+      declarations: [DashboardRightComponent],
+      providers: [
+        { provide: UploadService, useValue: uploadServiceMock },
+        // PdfService will use the mock UploadService
+        PdfService,
+      ],
+      schemas: [NO_ERRORS_SCHEMA],
+    }).compileComponents();
+    // remove injected breaks as this step occurs later in the pipeline
+    finalDocExpected = finalDocDataNoteworthy.map(page => page.filter(el => el.category != "injected-break"))
+    fixture = TestBed.createComponent(DashboardRightComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    // Simulate the component receiving the script data and selected scenes
+    component.scriptData = lineDataNoteworthy;
+    component.script = testCases[2].name
+    component.selected = component.scriptData.filter(line => 
+      scenes.includes(line.sceneNumberText) && line.category === "scene-header");
+      component.toggleLastLooks()
+      finalDocActual = component.pdf.finalDocument.data
+      component.finalDocument = component.pdf.getPdf(component.selected, component.script, component.totalPages, null)
+  
+  });
 
-//     it("should have the same false values", () => {
+  it('should have a defined component', () => {
+    expect(component).toBeDefined();
+  });
 
-//     })
+  it('finalDocument should be the same number of pages', () => {
+    expect(finalDocActual.length).toBe(finalDocExpected.length)
+  })
 
-//     it("should have the same start lines values", () => {
 
-//     })
 
-//     it("should have the same end lines", () => {
 
-//     })
+  it('finalDocument should have same visible: "true" lines as expected document for  NOTEWORTHY', () => {
+    // We need to sanitize the lines to only remove and addd keys /vals used in previewing the display
+    const expectedTrueLines = finalDocExpected.flat().filter(line => line.visible === "true").map(line => ({
+      text:line.text,
+      index:line.index
+    }))
+    const actualTrueLines = finalDocActual.flat().filter(line => line.visible === "true").map(line => ({
+      text:line.text,
+      index:line.index
+    }))
+    const differenceLimit = 5;
+    const [uniqueToExpected, uniqueToActual] = deepDiff(expectedTrueLines,  actualTrueLines)
+    expect(uniqueToExpected.length).toBeLessThanOrEqual(uniqueToActual.length + differenceLimit);
+    expect(uniqueToExpected.length).toBeGreaterThanOrEqual(uniqueToActual.length - differenceLimit);
 
-//     it('should have continue lines in the same spot on the page', () => {
+  });
 
-//     })
+  // it('finalDocument should have same visible: "false" lines as expected document for  NOTEWORTHY', () => {
+  //   const expectedFalseLines = sanitizeLinesForCompare(linesActual, 'visible', "false");
+  //   const actualFalseLines = sanitizeLinesForCompare(finalDocExpected ,'visible', "false");
 
-//     it('should have start lines in the same spot on the page', () => {
+  //   expect(expectedFalseLines).toEqual(actualFalseLines);
+  // });
 
-//     });
+  // it('should have the same "cont" lines values', () => {
+  //   const expectedContLines = sanitizeLinesForCompare(linesActual, 'cont', "CON'T");
+  //   const actualContLines = sanitizeLinesForCompare(finalDocExpected, 'cont', "CON'T");
 
-//     it('should have one scene number visible per page', () => {
+  //   expect(expectedContLines).toEqual(actualContLines)
+  // })
+  // it('should have an equal number of end lines as scenes', () => {
+  //   const expectedEndLines = sanitizeLinesForCompare(linesActual, "end", "END")
+  //   const actualEndLines = sanitizeLinesForCompare(finalDocExpected, "end", "END")
 
-//     })
+  //   expect(expectedEndLines).toEqual(actualEndLines.length)
 
-//     it('should be within 5% of the original in terms of diff', () => {
-//       // here we want a way to diff the object arrays and not do an assertion but more show how close they are in terms of percentage
-//         //
-//     })
+  // })
+  // it('should have the same "end" lines values', () => {
+  //   const expectedEndLines = sanitizeLinesForCompare(linesActual, "end", "END")
+  //   const actualEndLines = sanitizeLinesForCompare(finalDocExpected, "end", "END")
 
-//     it('should have page numbers and pageNumber text within a reasonable difference of each other - like +/- 3', () => {
+  //   expect(expectedEndLines).toEqual(actualEndLines.length)
+  // })
+  // it('should have one page number visible per page', () => {
+  //   const actualNumbersVisible = linesActual.flat()
+  //     .filter(line => line.category === "scene-number" && line.visible ==="true")
+  //   const expectedNumbersVisible = finalDocExpected.flat()
+  //     .filter(line => line.category === "scene-number" && line.visible ==="true")
 
-//     })
+  //   expect(actualNumbersVisible).toEqual(expectedNumbersVisible)
+  // })
+});
 
-//     it('should have each page end with an injected break', () => {})
 
-//   });
-// });

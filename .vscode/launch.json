@@ -10,6 +10,16 @@
             "name": "Launch Chrome against localhost",
             "url": "http://localhost:4200",
             "webRoot": "${workspaceFolder}"
-        }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Run npm test: right",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["run", "test", "--", "right"],
+            "port": 9229,
+            "skipFiles": ["<node_internals>/**"],
+            "console": "integratedTerminal"
+          }
     ]
 }

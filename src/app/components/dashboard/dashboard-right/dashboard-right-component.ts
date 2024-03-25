@@ -326,7 +326,6 @@ export class DashboardRightComponent implements OnInit {
     return this.scriptData[scene.lastLine].page || null;
   };
   toggleLastLooks() {
-
     this.lastLooksReady = !this.lastLooksReady;
     // deprecated
     if (this.lastLooksReady) {
@@ -343,7 +342,6 @@ export class DashboardRightComponent implements OnInit {
       this.selected.sort((a,b) => a.sceneIndex - b.sceneIndex)
    
       this.pdf.processPdf(this.selected, this.script, this.totalPages, this.callsheet);
-      // this.pdf.getPdf(this.selected, this.script, this.totalPages, this.callsheet);
     }
   }
 

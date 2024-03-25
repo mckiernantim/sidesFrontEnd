@@ -113,7 +113,7 @@ export class LastLooksComponent implements OnInit {
     const lastLinesOfScenes = {};
     pages.forEach((page) => {
       page.forEach((line) => {
-        if (line.category !== 'hidden' && line.category !== 'pagenumber') {
+        if (line.category !== 'hidden' && line.category !== 'page-number') {
           lastLinesOfScenes[line.sceneIndex] = line.index;
         }
       });
