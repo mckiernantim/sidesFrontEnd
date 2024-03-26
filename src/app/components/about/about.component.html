@@ -1,10 +1,29 @@
-<div class="about-container">
-  <div *ngFor="let blurb of blurbs">
+<section [@fadeInOut] class="container mx-auto px-4 py-12 md:py-16 lg:py-20">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+      <!-- Scott's Section -->
+      <div class="about-card flex flex-col md:flex-row items-center md:rounded-lg bg-white shadow-lg overflow-hidden">
+          <div class="image-wrapper  md:order-1 order-2">
+              <img src="/assets/headshots/scottHead.jpg" alt="Scott Reynolds" class="w-full h-auto">
+          </div>
+          <div class="px-6 py-8 md:w-2/3 md:order-2 order-1">
+              <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6">Scott Reynolds</h1>
+              <p class="text-sm md:text-base font-semibold mb-2">Founder & Former PA/AD</p>
+              <p class="text-sm md:text-base">Consectetur adipiscing elit duis tristique sollicitudin nibh. Augue mauris augue neque gravida in fermentum. Sapien pellentesque habitant morbi tristique pellentesque.</p>
+              <a href="#" class="inline-block mt-4 px-6 py-3 bg-black text-white rounded-md hover:bg-gray-800 transition duration-300">Email Scott</a>
+          </div>
+      </div>
 
-    <app-text-block [image]="blurb.image" [text]="blurb.text" [align]="blurb.align"></app-text-block>
-    <br>
+      <!-- Tim's Section -->
+      <div class="about-card flex flex-col md:flex-row items-center md:rounded-lg bg-white shadow-lg overflow-hidden">
+          <div class="image-wrapper  md:order-1 order-2">
+              <img src="/assets/headshots/timHead.jpg" alt="Tim McKiernan" class="w-full h-auto">
+          </div>
+          <div class="px-6 py-8 md:w-2/3 md:order-2 order-1">
+              <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6">Tim McKiernan</h1>
+              <p class="text-sm md:text-base font-semibold mb-2">Founder, Actor, Dev</p>
+              <p class="text-sm md:text-base">Consectetur adipiscing elit duis tristique sollicitudin nibh. Augue mauris augue neque gravida in fermentum. Sapien pellentesque habitant morbi tristique pellentesque.</p>
+              <a href="#" class="inline-block mt-4 px-6 py-3 bg-black text-white rounded-md hover:bg-gray-800 transition duration-300">Email Tim</a>
+          </div>
+      </div>
   </div>
-  <button mat-raised-button href="">DONATE</button>
-  <p> Give us MONEY please. We are free while in BETA, but still need to eat (and drink beer). </p>
-
-</div>
+</section>

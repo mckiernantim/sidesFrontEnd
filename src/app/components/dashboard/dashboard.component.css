@@ -17,7 +17,15 @@
     /* height:250px;
     width:250px; */
 }
-
+.main-container {
+    display:flex;
+    flex-direction: column-reverse;
+}
+@media screen and (min-width: 1200px) {
+    .main-container {
+        flex-direction: row;
+    }
+}
 @media screen and (max-width: 768px) {
     .white-logo{
         display:none

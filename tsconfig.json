@@ -8,6 +8,8 @@
     "declaration": false,
     "downlevelIteration": true,
     "experimentalDecorators": true,
+    "resolveJsonModule": true,
+   
     "module": "esnext",
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
@@ -23,18 +25,24 @@
       "express",
       "zone.js",
       "jest",
-      "jasmine"
     ],
     "paths": {
       "stream": [
         "./node_modules/stream-browserify"
-      ]
+      ],
+      "fs": ["./node_modules/fs-web"]
     },
     "useDefineForClassFields": false
   },
   "angularCompilerOptions": {
     "fullTemplateTypeCheck": true,
     "strictInjectionParameters": true,
-    "types": [ "node" ]
+    "types": [ "node" ],
+    "enableIvy":false,
   },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.json" // Include JSON files in your TypeScript project
+  ]
 }

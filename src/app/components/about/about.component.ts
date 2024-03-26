@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { Blurb, blurbs } from './aboutText';
+import { fadeInOutAnimation } from 'src/app/animations/animations';
 @Component({
   selector: 'app-about',
   templateUrl: './about.component.html',
-  styleUrls: ['./about.component.css']
+  styleUrls: ['./about.component.css'],
+  animations:[fadeInOutAnimation]
 })
 export class AboutComponent implements OnInit {
 
@@ -11,7 +13,7 @@ export class AboutComponent implements OnInit {
     
   }
     blurbs:Blurb[] = blurbs
-  ngOnInit(): void {
+    ngOnInit(): void {
   }
 
 }

@@ -1,5 +1,6 @@
 export const environment = {
   production: true,
+  stripe:"pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ",
   firebaseConfig:{
     apiKey: "AIzaSyBXD5kQfAS4lrmSJxYAuEUq8sxvXgWmCio",
     authDomain: "scriptthing.firebaseapp.com",
@@ -12,3 +13,6 @@ export const environment = {
   },
   url: 'https://sides3.herokuapp.com'
 };
+
+
+

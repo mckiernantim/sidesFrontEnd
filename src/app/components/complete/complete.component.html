@@ -1,37 +1,27 @@
-<div class="container flex-center black-card shadow" >
+<div class="complete-container mx-auto flex justify-center bg-primary shadow-lg p-16 rounded-lg">
   <div>
-    <h1>Processing complete on {{ name }} </h1>
-    <mat-card appearance="outlined" class="black-card">
-      <mat-card-header>
-        <div>
-          <h2>Thanks helping us with Sides-Ways! </h2>
-          <h2>Please let us know if you had any issues.</h2>
+    <h1 class="text-white txt-bold text-4xl mb-4 font-bold">Processing complete on: <em>{{ name }}</em></h1>
+    <div class="bg-secondary border border-gray-200 p-16 rounded-lg">
+      <div class="p-4 border-b border-gray-200">
+        <h2 class="text-white text-2xl font-bold">Thanks for helping us with Sides-Ways!</h2>
+        <div class="mt-4">
+          <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" (click)="downloadPDF()">Download {{ name }}</button>
+        </div>
+        <h2 class="text-white text-2xl font-bold">Please let us know if you had any issues.</h2>
+      </div>
+      <!-- <div class="p-4">
+        <div class="bg-secondary p-4 rounded-lg">
+          <app-feedback [title]="this.name"></app-feedback>
+        </div>
+      </div> -->
+      <div class="p-4">
+        <h4 class="text-white pl-4">
+          Thanks so much for your help as we move forward.
           <br>
-        </div>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="form-container black-card">
-          <app-feedback [title] = this.name></app-feedback>
-        </div>
-      </mat-card-content>
-      <mat-card-footer>
-        <div>
-        <h4 class = "indent"> Thanks so much for your help as we move forward.
-          <br>
-          and if you go the time <a routerLink="">Do it again!</a>
-          </h4>
-        </div>
-      </mat-card-footer>
-    </mat-card>
-    <div class ="download-container">
-      <button mat-raised-button color="warn" (click)="downloadPDF()"> Download {{ name }} </button>
+          And if you got the time <a href="#" class="text-blue-500 hover:text-blue-700">Do it again!</a>
+        </h4>
+      </div>
     </div>
   </div>
 </div>
-
-
-
-
-
-
-
+    

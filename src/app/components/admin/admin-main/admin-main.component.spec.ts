@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AdminMainComponent } from './admin-main.component';
-import 'jasmine'
+
 
 describe('AdminMainComponent', () => {
   let component: AdminMainComponent;

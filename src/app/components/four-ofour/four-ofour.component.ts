@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { SpinningBotComponent } from '../spinning-bot/spinning-bot.component';
+import { SpinningBotComponent } from '../shared/spinning-bot/spinning-bot.component';
 
 @Component({
   selector: 'app-four-ofour',

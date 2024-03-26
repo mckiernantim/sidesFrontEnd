@@ -6,7 +6,7 @@ import { MatCard } from '@angular/material/card';
 import { Router } from '@angular/router';
 import { FeedbackService } from '../../services/feedback/feedback.service';
 import { MatDialog } from '@angular/material/dialog';
-import { ConfirmationDialogComponent } from '../confirmation-dialog/confirmation-dialog.component';
+import { ConfirmationDialogComponent } from './confirmation-dialog/confirmation-dialog.component';
 @Component({
   selector: 'app-admin',
   templateUrl: './admin.component.html',
@@ -50,51 +50,14 @@ export class AdminComponent implements OnInit {
   }
   selectNewTicket(event) {
     this.selected = event;
-    console.log(event, 'parent is triggering');
-  }
+ }
   updateSelectedTicket(event) {
     alert('update');
-    console.log(event);
+  
     // this.feedback.updateTicket()
   }
 
-  createTicket(ticket: FeedbackTicket): void {
-    // Add the new ticket to the database
-    this.upload._db
-      .collection('feedbackTickets')
-      .add(ticket)
-      .then(() => {
-        // Show success message and redirect to the admin page
-        alert('Ticket created successfully!');
-        this.router.navigate(['/admin']);
-      })
-      .catch((error) => {
-        // Show error message
-        console.error('Error creating ticket: ', error);
-        alert(
-          'An error occurred while creating the ticket. Please try again later.'
-        );
-      });
-  }
-  updateTicket(ticket: FeedbackTicket): void {
-    // Update the ticket in the database
-    this.upload._db
-      .collection('feedbackTickets')
-      .doc(ticket.id)
-      .update(ticket)
-      .then(() => {
-        // Show success message and redirect to the admin page
-        alert('Ticket updated successfully!');
-        this.router.navigate(['/admin']);
-      })
-      .catch((error) => {
-        // Show error message
-        console.error('Error updating ticket: ', error);
-        alert(
-          'An error occurred while updating the ticket. Please try again later.'
-        );
-      });
-  }
+ 
 
   deleteSelectedTicket(event): void {
     const dialogRef = this.dialog.open(ConfirmationDialogComponent, {

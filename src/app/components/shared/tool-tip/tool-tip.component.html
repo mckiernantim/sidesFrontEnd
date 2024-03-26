@@ -1,0 +1,20 @@
+<section>
+
+  <div class="tooltip-container flex justify-center">
+      <div class="w-full  bg-whit shadow-xl">
+        <div class="mx-auto p-6 bg-white shadow-xl rounded-md" style="max-width: calc(80% - 2rem);">
+          <h4 class="text-2xl font-bold">Introducing</h4>
+          <h2 class="text-4xl font-bold">Last Looks Editing</h2>
+          <p class="text-lg mb-4 font-bold italic">Confirm everything looks OK before payment</p>
+          <div *ngFor="let item of data">
+            <p class="text-lg text-black px-8"><strong class="font-semibold">{{item.title}}:</strong> {{item.text}}</p>
+          </div>
+          <div class="flex flex-row justify-around p-8">
+            <button mat-raised-button color="warn" class="font-semibold" (click)="buttonAction.emit('resetDoc')">Reset Document</button>
+            <button mat-raised-button color="warn" class="font-semibold" (click)="buttonAction.emit('stopEdit')">Stop Editing</button>
+            <button mat-raised-button color="warn" class="font-semibold" (click)="buttonAction.emit('undo')">Undo</button>
+          </div>
+        </div>
+      </div>
+  </div>
+</section>

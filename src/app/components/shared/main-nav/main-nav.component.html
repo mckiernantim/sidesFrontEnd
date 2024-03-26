@@ -1,0 +1,23 @@
+
+
+  
+    <mat-toolbar class="!bg-secondary text-offWhite top-0  realtive z-10000 w-full">
+
+      <span class="logo nav-item text-white">Sides-Ways</span>
+      <span class="spacer"></span>
+
+      <ng-container *ngIf="formattedCountdown">
+        <!-- Display the countdown value -->
+        <div class="right nav-item text-red-500">Deleting your IP in: {{ formattedCountdown }}</div>
+      </ng-container>
+
+      <button mat-raised-button  class="nav-item text-offWhite " routerLink="/">Home</button>
+      <button mat-raised-button  class="nav-item text-offWhite" routerLink="/About">About</button>
+      <div class="right nav-item">
+      </div>
+
+    </mat-toolbar>
+    <div class="app-container bg-secondary">
+      <router-outlet></router-outlet>
+    </div>
+

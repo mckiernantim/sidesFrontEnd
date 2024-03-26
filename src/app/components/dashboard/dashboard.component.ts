@@ -1,4 +1,4 @@
-import { Router } from '@angular/router';
+ import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { UploadService } from '../../services/upload/upload.service';
 import { Component, OnInit } from '@angular/core';
@@ -16,12 +16,12 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.file = localStorage.getItem("name")
 }
-  getSheet(){
-        this.upload.getFile(this.file).subscribe(data =>{
-    var url = window.URL.createObjectURL(data);
-        window.open(url);
-    this.router.navigate([""])
-        }
+  getSheet() {
+      this.upload.getFile(this.file).subscribe(data => {
+      var url = window.URL.createObjectURL(data);
+      window.open(url);
+      this.router.navigate([""])
+    }
   )
 }
 

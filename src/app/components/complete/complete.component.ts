@@ -1,36 +1,63 @@
 import { saveAs } from 'file-saver';
 import { UploadService } from '../../services/upload/upload.service';
-import { Component, OnInit } from '@angular/core';
-import { FeedbackComponent } from '../feedback/feedback.component';
+import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { TokenService } from 'src/app/services/token/token.service';
+import { catchError } from 'rxjs/operators';
+import { throwError, of } from 'rxjs';
 
 @Component({
   selector: 'app-complete',
   templateUrl: './complete.component.html',
   styleUrls: ['./complete.component.css'],
 })
+
 export class CompleteComponent implements OnInit {
   name: string = localStorage.getItem('name');
+  
   layout: string = localStorage.getItem('layout');
   callsheet: string = localStorage.getItem('callsheet');
-  constructor(public upload: UploadService) {}
-  ngOnInit(): void {
+  downloadTimeRemaining:number = Infinity;
+  pdfToken:string = '';
+  downloadToken:number;
+  constructor(public upload: UploadService, private token:TokenService) {
     
   }
+  ngOnInit() {
+    
+  }
+    
   // we download as soon as we land
   ngAfterViewInit(): void {
     this.downloadPDF();
   }
-  downloadPDF(): void {
-  try {
-    let _dataSubscriptiopn = this.upload.getPDF(this.name, "whatever");
-    _dataSubscriptiopn.subscribe((data) => {
-       console.log(data)
-       let date =  new Date().toISOString().substring(0,10)
-        saveAs(data, `${this.name}-${date}.zip`, { type:"application/zip" } )
+  calculateDownloadTime() {
+    try {
+
+    } catch (e) {
+      console.error("no cookie detected")
+    }
+  } 
+
+    downloadPDF(): void {
+    
+      this.upload.getPDF(this.name, 'whatever')
+        .pipe(
+          catchError((error:any) => {
+            if(error) {
+              console.error(error)
+              alert("Checkout token exipred - unable to please upload script again");
+              return of(null)
+            }
+
+          })
+        )
+        .subscribe((data) => { 
+          if(data) {
+            const date = new Date().toISOString().substring(0, 10);
+            saveAs(data, `${this.name}-${date}-sides-ways.zip`, { type: 'application/zip' });
+          }
+
       })
-    } 
-    catch (e) { 
-      alert(e) 
-     } 
+    
     }
 }

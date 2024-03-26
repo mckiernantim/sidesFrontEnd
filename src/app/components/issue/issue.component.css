@@ -4,14 +4,7 @@
   padding:2%;
   text-align:center
 }
-h1,
-h2,
-h3,
-h4,
-li,
-p {
-  color:white;
-}
+
 .selections-container{
     display:grid;
     grid-template-columns: 1fr 1fr;

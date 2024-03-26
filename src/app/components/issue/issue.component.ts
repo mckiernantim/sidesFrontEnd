@@ -18,6 +18,7 @@ import {
   MatDialog,
   MAT_DIALOG_DATA,
 } from '@angular/material/dialog';
+import { SpinningBotComponent } from '../shared/spinning-bot/spinning-bot.component';
 
 
 @Component({
@@ -27,11 +28,12 @@ import {
 })
 export class IssueComponent implements OnInit, AfterViewInit {
   @ViewChild('callSheet') el: ElementRef;
-
+  @Input()onClick: Function;
   dualReady: boolean = false;
   dualEdit: boolean = false;
   pdfIssues: boolean = false;
   loggedIn: boolean = false;
+  paid:boolean = true;
   file: File;
   callsheet: any;
   selected: string;
@@ -41,26 +43,29 @@ export class IssueComponent implements OnInit, AfterViewInit {
   selectionMade: boolean = false;
   waitingForScript: boolean = false;
   error:boolean = false;
+  agreeToTerms:boolean = false;
 
   constructor(
     public upload: UploadService,
     public dialogRef: MatDialogRef<IssueComponent>,
     public errorDialogRef: MatDialogRef<IssueComponent>,
     public cdr: ChangeDetectorRef,
-    public auth: AuthService,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {}
 
   ngOnInit(): void {
+    this.paid = false;
     this.callsheet = undefined;
     this.selected = undefined;
     this.callsheetReady = false;
     this.callsheet = undefined;
     this.awaitingData = false;
     this.loggedIn = true;
+    this.agreeToTerms = false;
     this.data.waitingForScript
       ? (this.waitingForScript = true)
-      : (this.waitingForScript = false);;
+      : (this.waitingForScript = false);
+
 
   }
   ngAfterViewInit(): void {
@@ -71,11 +76,11 @@ export class IssueComponent implements OnInit, AfterViewInit {
     this.dialogRef.close({
       selected: this.selected,
       callsheet: this.file,
-    });
+  });
   }
-  async googleSignIn (){
-   this.auth.loginWithGoogle()
-  }
+  // async googleSignIn (){
+  //  this.auth.loginWithGoogle()
+  // }
 
   // need to give option for no callsheet
   handleFileInput(file) {
@@ -92,7 +97,6 @@ export class IssueComponent implements OnInit, AfterViewInit {
 
       } else {
         this.upload.postCallSheet(file[0]).subscribe((data) => {
-          console.log(data)
           this.callsheet = file[0];
           localStorage.setItem("callSheetPath", data.filePath)
           this.docUploaded = true;
@@ -105,5 +109,9 @@ export class IssueComponent implements OnInit, AfterViewInit {
   selectOption(option) {
     this.selectionMade = true;
     this.selected = option;
+  }
+
+  handleClick() {
+    this.onClick()
   }
 }

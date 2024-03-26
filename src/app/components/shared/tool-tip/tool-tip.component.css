@@ -1,0 +1,23 @@
+/* Inside tool-tip.component.css */
+/* .tooltip-desktop-position {
+    position: fixed;
+    top: 0%;
+    left: 50%;
+    z-index: 20;
+  }
+  
+
+  .tooltip-container {
+
+    bottom: 0;
+    right: 0;
+  } */
+  
+  .tooltip-mobile {
+    /* Styles for the tooltip on mobile screens */
+  }
+  
+  .tooltip-desktop {
+    /* Styles for the tooltip on larger screens */
+  }
+  

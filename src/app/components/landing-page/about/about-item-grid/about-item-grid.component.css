@@ -1,0 +1,7 @@
+.accent-bg {
+    background-color: var(--orange);
+    padding: 1rem;
+    display: inline-block;
+    transform: skew(-20deg);
+    padding: 0.55rem 0.2rem;
+  }

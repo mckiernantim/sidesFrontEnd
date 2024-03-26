@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DonateComponent } from './donate.component';
-import 'jasmine'
+
 
 describe('DonateComponent', () => {
   let component: DonateComponent;

@@ -19,21 +19,18 @@
             "polyfills": "src/polyfills.ts",
             "tsConfig": "tsconfig.app.json",
             "aot": true,
-            "assets": [
-              "src/favicon.ico",
-              "src/assets"
-            ],
-            "styles": [
-              "src/styles.css",
-              "src/theme.scss"
-            ],
+            "assets": ["src/favicon.ico", "src/assets"],
+            "styles": ["src/styles.css", "src/theme.scss"],
+
             "scripts": [],
-            "allowedCommonJsDependencies": [
-              "angular-slickgrid",
-              "stream"
-            ]
+            "allowedCommonJsDependencies": ["angular-slickgrid"]
           },
-          "proxyConfig": "src/proxy.conf.json",
+          "test": {
+            "builder": "@angular-builders/jest:run",
+            "options": {
+              "configPath": "./jest.config.js"
+            }
+          },
           "configurations": {
             "production": {
               "fileReplacements": [
@@ -76,14 +73,14 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "sideWays:build"
+            "buildTarget": "sideWays:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "sideWays:build:production"
+              "buildTarget": "sideWays:build:production"
             },
             "dev": {
-              "browserTarget": "sideWays:build:dev"
+              "buildTarget": "sideWays:build:dev"
             }
           },
           "defaultConfiguration": "dev"
@@ -91,27 +88,10 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "sideWays:build"
+            "buildTarget": "sideWays:build"
           }
         },
-        "test": {
-          "builder": "@angular-devkit/build-angular:karma",
-          "options": {
-            "main": "src/test.ts",
-            "polyfills": "src/polyfills.ts",
-            "tsConfig": "tsconfig.spec.json",
-            "karmaConfig": "karma.conf.js",
-            "assets": [
-              "src/favicon.ico",
-              "src/assets"
-            ],
-            "styles": [
-              "./node_modules/@angular/material/prebuilt-themes/purple-green.css",
-              "src/styles.css"
-            ],
-            "scripts": []
-          }
-        },
+
         "e2e": {
           "builder": "@angular-devkit/build-angular:protractor",
           "options": {
@@ -127,7 +107,6 @@
       }
     }
   },
-  "defaultProject": "sideWays",
   "cli": {
     "analytics": "14f604da-02cd-43dd-aa3d-4397a621a365"
   }
