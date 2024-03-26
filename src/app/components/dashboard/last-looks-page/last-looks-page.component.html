@@ -2,8 +2,7 @@
     {{this.mouseEvent?.clientY}}
     <div class="page" (click)="showContextMenu && closeContextMenu()">
         <div class="break">
-            <ul class="screenbox" [ngClass]="{'edit-mode': canEditDocument }"
-           >
+            <ul class="screenbox" [ngClass]="{'edit-mode': canEditDocument }">
            <!--  [attr.contenteditable]="canEditDocument ? 'true' : 'false'" this line will activate easy edit - -->
                 <div class="selected-line-info" style="color:black">
                         {{canEditDocument}} {{selectedLine?.text}} : {{selectedLine?.index}}

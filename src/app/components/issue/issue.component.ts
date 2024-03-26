@@ -76,7 +76,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
     this.dialogRef.close({
       selected: this.selected,
       callsheet: this.file,
-    });
+  });
   }
   // async googleSignIn (){
   //  this.auth.loginWithGoogle()

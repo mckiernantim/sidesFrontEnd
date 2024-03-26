@@ -305,7 +305,8 @@ export class DashboardRightComponent implements OnInit {
     if (this.waitingForScript) {
       // starts process to navigate
       const dialogRef = this.dialog.open(SpinningBotComponent, {
-        width: '100vw',
+        width: '75vw',
+        height:'75vw',
         data: {
           selected: this.selected,
           script: this.script,
@@ -355,6 +356,7 @@ export class DashboardRightComponent implements OnInit {
         height:'750px',
         data: { scenes: this.modalData, selected: this.selected },
       });
+  
       // closing of the issueComponent triggers our finalstep
       dialogRef.afterClosed().subscribe((result) => {
         let coverSheet = localStorage.getItem('callSheetPath');
