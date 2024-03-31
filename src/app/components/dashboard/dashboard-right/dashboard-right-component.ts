@@ -16,6 +16,7 @@ import { PdfService } from '../../../services/pdf/pdf.service';
 
 import { fadeInOutAnimation } from '../../../animations/animations'
 import { SpinningBotComponent } from '../../shared/spinning-bot/spinning-bot.component';
+import { TokenService } from 'src/app/services/token/token.service';
 
 export interface pdfServerRes {
   url:string,
@@ -116,7 +117,8 @@ export class DashboardRightComponent implements OnInit {
     public dialog: MatDialog,
     public errorDialog: MatDialog,
     public lineOut: LineOutService,
-    public pdf:PdfService
+    public pdf:PdfService,
+    public token:TokenService
   ) {
     // DATA ITEMS FOR FUN
 
@@ -253,6 +255,7 @@ export class DashboardRightComponent implements OnInit {
       (data: pdfServerRes) => {
         this.stripe.startCheckout().subscribe(
           (res:pdfServerRes) => {
+            debugger
             // Handle successful response, if needed
             localStorage.setItem("stripeSession", res.id)
             window.location.href = res.url
@@ -360,10 +363,12 @@ export class DashboardRightComponent implements OnInit {
       // closing of the issueComponent triggers our finalstep
       dialogRef.afterClosed().subscribe((result) => {
         let coverSheet = localStorage.getItem('callSheetPath');
+        const { downloadTimeRemaining, token } = result;
         this.waitingForScript = true;
         this.callsheet = result?.callsheet.name || null;
         this.openFinalSpinner();
         this.finalDocument = this.pdf.getPdf(this.selected, this.script, this.totalPages, coverSheet);
+        this.token.initializeCountdown(downloadTimeRemaining);
         this.finalDocReady = true;
         this.waitingForScript = true;
         this.sendFinalDocumentToServer(this.finalDocument)

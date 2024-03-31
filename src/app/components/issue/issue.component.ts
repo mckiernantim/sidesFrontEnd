@@ -47,6 +47,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
   waitingForScript: boolean = false;
   error:boolean = false;
   agreeToTerms:boolean = false;
+  showTerms:boolean = false;
 
   constructor(
     public upload: UploadService,
