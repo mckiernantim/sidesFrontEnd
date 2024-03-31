@@ -8,8 +8,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { UploadService } from '../../../services/upload/upload.service';
 import { PdfService } from '../../../services/pdf/pdf.service'
 import { Router } from '@angular/router';
-import { fadeInOutAnimation } from 'src/app/animations/animations';
-
+import { fadeInOutAnimation } from '../../../animations/animations';
+import { environment } from '../../../../environments/environment.prod';
 import {
   MatDialog,
   MAT_DIALOG_DATA,
@@ -26,6 +26,12 @@ const dummyData = require("./dummyScript.json")
   animations:[fadeInOutAnimation]
 })
 export class UploadComponent implements OnInit, OnDestroy {
+  // simple beta password
+
+  enteredPassword = '';
+  password = environment.password
+  isButtonDisabled: boolean = true;
+
   logo: string = '../../assets/icons/logoFlat.png';
   devDataPath: string = "../../../../../../SidesWaysBackEnd/test-data/dummyScript.json";
   fileToUpload: File;

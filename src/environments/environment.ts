@@ -15,7 +15,7 @@ export const environment = {
     appId: "1:195325163986:web:e7a70646f087850353300b",
     measurementId: "G-XM3P84P6N7"
   },
-  url:"https://sides3.herokuapp.com"
+  url:"http://localhost:8080"
 };
 
 /*
