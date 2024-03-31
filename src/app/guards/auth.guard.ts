@@ -18,7 +18,7 @@ export class AuthGuard implements CanActivate {
       take(1),
       map(isValid => {
         if(!isValid) {
-          alert("no ticket")
+          alert("your download session has expired - please start a new session")
           this.router.navigate(["/"]);
           return false;
         }

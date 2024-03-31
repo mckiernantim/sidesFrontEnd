@@ -79,7 +79,7 @@ body {
    width:40% !important; */
    background-color: transparent !important;
    box-shadow: none !important;
-   border:2px solid orange
+   /* border:2px solid orange */
 }
   .mat-header-row {
     background-color: var(--grey)

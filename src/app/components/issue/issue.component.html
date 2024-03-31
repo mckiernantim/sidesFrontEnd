@@ -9,7 +9,7 @@
      <app-spinning-bot></app-spinning-bot>
    </div>
   } @else {
-    <div class="container mx-auto mt-8 flex flex-col justify-center bg-white items-center">
+    <div class="container mx-auto mt-8 flex flex-col justify-center bg-white items-center p-12 text-center">
       <!-- Selected Scenes -->
       <div>
         <h3 class="text-xl font-bold mb-4">Selected Scenes:</h3>
@@ -21,10 +21,21 @@
     
       <!-- Checkbox for Terms and Conditions -->
       <div class="mt-6">
-        <label class="flex items-center">
-          <input type="checkbox" class="form-checkbox mr-2" [(ngModel)]="agreeToTerms" required>
-          <span class="text-sm">I agree with the terms and conditions</span>
-        </label>
+        <div class="terms-of-service text-sm">
+          <label>
+              <input type="checkbox" name="terms" [(ngModel)]="agreeToTerms" required>
+              I agree to the Terms of Service.
+          </label>
+          <p>By checking this box, I acknowledge and agree to the following terms:</p>
+          <ul>
+              <li>I have reviewed the preview of the document provided and confirm that it meets my expectations and requirements. I understand that once I proceed with the purchase, any changes or corrections to the document will not be possible.</li>
+              <li>I understand that for security and privacy reasons, Sides-Ways will automatically delete all records of my document from their servers 10 minutes after initiating the checkout process. It is my responsibility to ensure that I have saved and backed up my document before this timeframe elapses.</li>
+              <li>Sides-Ways is not responsible for any errors, omissions, or improper formatting in the final document. It is my responsibility to ensure the accuracy and completeness of the document before purchase.</li>
+              <li>Sides-Ways disclaims all liability for any intellectual property (IP) leaks or dissemination issues that may arise from the use or sharing of the document. It is my responsibility to manage and secure the distribution of my document appropriately.</li>
+          </ul>
+          <p>By agreeing to these terms, I release Sides-Ways from any claims, damages, or liabilities that may arise from my use of their service.</p>
+      </div>
+      
       </div>
     
       <!-- Button Wrapper -->

@@ -49,6 +49,8 @@ export class UploadService {
   msg: any;
 
   private url: string = environment.url;
+
+
   // Firestore will manage all of our fundata and our tickets for feedback
 
   constructor(

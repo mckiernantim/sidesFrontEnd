@@ -29,6 +29,9 @@ import { SpinningBotComponent } from '../shared/spinning-bot/spinning-bot.compon
 export class IssueComponent implements OnInit, AfterViewInit {
   @ViewChild('callSheet') el: ElementRef;
   @Input()onClick: Function;
+
+
+  
   dualReady: boolean = false;
   dualEdit: boolean = false;
   pdfIssues: boolean = false;

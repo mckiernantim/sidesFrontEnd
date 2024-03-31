@@ -14,7 +14,7 @@ interface DecodedToken {
   providedIn: 'root',
 })
 export class TokenService {
-  private readonly tokenKey = 'token_expiry';
+  private readonly tokenKey = 'dltr_sidesWays';
   private tokenValiditySource = new BehaviorSubject<boolean>(true);
   public tokenValidity$ = this.tokenValiditySource.asObservable();
   private countdownSource = new BehaviorSubject<number>(0);
