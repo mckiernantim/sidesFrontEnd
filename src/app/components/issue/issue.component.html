@@ -1,10 +1,13 @@
-<div class="">
-  <ng-container *ngIf="error">
-    <h3>Soemthing went wrong</h3>
-    {{ data }}
-  </ng-container>
-</div>
-@if (waitingForScript) {
+@if (error) { 
+  <div class="container mx-auto mt-8 flex flex-col justify-center bg-white items-center p-12 text-center">
+    <ng-container>
+      <h3>Soemthing went wrong</h3>
+      {{ errorDetails }}
+    </ng-container>
+  </div>
+}
+
+@else if (waitingForScript) {
 <div>
   <app-spinning-bot></app-spinning-bot>
 </div>
@@ -23,6 +26,7 @@
   <!-- Checkbox for Terms and Conditions -->
   <div class="mt-6">
     <div class="mt-8 p-4">
+      <!-- CLOSES BUTTON TO FIRE GETPDF FROM DASHBOARD RIGHT -->
       <button (click)="this.dialogRef.close()" [class.bg-gray-200]="!agreeToTerms" [class.bg-blue-500]="agreeToTerms"
         class="text-white py-2 px-4 rounded hover:bg-blue-600 focus:outline-none" [disabled]="!agreeToTerms">
         Get My Sides

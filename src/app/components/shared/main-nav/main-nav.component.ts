@@ -1,58 +1,42 @@
-import { AfterViewInit, Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Observable } from 'rxjs';
 import { map, shareReplay } from 'rxjs/operators';
 import { TokenService } from 'src/app/services/token/token.service';
-import { Router } from '@angular/router';
-
 
 @Component({
   selector: 'app-main-nav',
   templateUrl: './main-nav.component.html',
   styleUrls: ['./main-nav.component.css']
 })
-export class MainNavComponent implements AfterViewInit {
-  countdown:number = 0;
-  countdownValue$: Observable<number| Boolean>;
-  formattedCountdown:string;
+export class MainNavComponent implements OnInit {
+  formattedCountdown: string | null = null;
   isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
     .pipe(
       map(result => result.matches),
-      // this replays the value that was passed to map - in this case result
       shareReplay()
     );
 
-  constructor(private breakpointObserver: BreakpointObserver, public token:TokenService, private router:Router) {
-    this.countdown = 0;
+  constructor(
+    private breakpointObserver: BreakpointObserver, 
+    private tokenService: TokenService
+  ) {}
+
+  ngOnInit(): void {
+    this.tokenService.getCountdownObservable().subscribe(countdown => {
     
+      let countDownInSeconds = Math.floor(countdown/1000) 
+      this.formattedCountdown = countdown > 0 ? this.formatCountdown(countDownInSeconds) : null;
+    });
   }
-  ngAfterViewInit(): void {
-   
-      this.countdownValue$ =  this.token.countdown$;
-      this.countdownValue$.subscribe(countdown => {
-        if (countdown as number > 0) {
-          
-          this.formattedCountdown = this.formatCountdown(countdown as number)
-        } else {
-          this.formattedCountdown = null;        
-        }
-      });
-    }
-    
+  
   formatCountdown(timer: number): string {
-    
-    // Calculate hours, minutes, and seconds
     const hours = Math.floor(timer / 3600);
     const minutes = Math.floor((timer % 3600) / 60);
     const seconds = timer % 60;
-  
-    // Format the result as HH:MM:SS
-    const formattedHours = hours < 10 ? `0${hours}` : `${hours}`;
-    const formattedMinutes = minutes < 10 ? `0${minutes}` : `${minutes}`;
-    const formattedSeconds = seconds < 10 ? `0${seconds}` : `${seconds}`;
-  
+    const formattedHours = hours.toString().padStart(2, '0');
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+    const formattedSeconds = seconds.toString().padStart(2, '0');
     return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
   }
-  
-
 }

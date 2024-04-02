@@ -11,13 +11,11 @@ export class AuthGuard implements CanActivate {
 
   canActivate(): Observable<boolean> {
     // Check if the token is valid, which is based on the countdown timer
-    debugger
-    const isValid = this.tokenService.isTokenValid();
+    const isValid = this.tokenService.isTokenValid()
     if (!isValid) {
-      // If not valid, alert the user and redirect
-      alert("Your download session has expired - please start a new session");
+      alert("You are attempting to access a protected route without a valid session. Please start a new session.");
       this.router.navigate(['/']);
-      return of(false); // Returns an observable of false, preventing navigation to the guarded route
+      return of(true); // Returns an observable of false, preventing navigation to the guarded route
     }
     return of(true); // Returns an observable of true, allowing navigation to the guarded route
   }

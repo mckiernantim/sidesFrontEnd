@@ -402,7 +402,7 @@ export class LastLooksComponent implements OnInit {
       (serverRes: any) => {
         try {
           const { downloadTimeRemaining, token } = serverRes;
-          debugger
+     
           this.token.initializeCountdown(downloadTimeRemaining);
 
           // Generate a session token for Stripe checkout

@@ -37,6 +37,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
   pdfIssues: boolean = false;
   loggedIn: boolean = false;
   paid:boolean = true;
+
   file: File;
   callsheet: any;
   selected: string;
@@ -46,6 +47,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
   selectionMade: boolean = false;
   waitingForScript: boolean = false;
   error:boolean = false;
+  errorDetails:string = "";
   agreeToTerms:boolean = false;
   showTerms:boolean = false;
 
@@ -59,6 +61,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.paid = false;
+    
     this.callsheet = undefined;
     this.selected = undefined;
     this.callsheetReady = false;
@@ -70,6 +73,10 @@ export class IssueComponent implements OnInit, AfterViewInit {
       ? (this.waitingForScript = true)
       : (this.waitingForScript = false);
 
+      if (this.data && this.data.error) {
+        this.errorDetails = this.data.error;
+        this.error = true; // To indicate that there's an error
+      }
 
   }
   ngAfterViewInit(): void {
