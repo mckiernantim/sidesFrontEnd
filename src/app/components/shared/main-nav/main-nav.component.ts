@@ -24,9 +24,10 @@ export class MainNavComponent implements OnInit {
 
   ngOnInit(): void {
     this.tokenService.getCountdownObservable().subscribe(countdown => {
-    
-      let countDownInSeconds = Math.floor(countdown/1000) 
-      this.formattedCountdown = countdown > 0 ? this.formatCountdown(countDownInSeconds) : null;
+  
+      
+      let countDownInSeconds = Math.floor(countdown - Date.now()) 
+      this.formattedCountdown = countDownInSeconds > 0 ? this.formatCountdown(countDownInSeconds) : null;
     });
   }
   

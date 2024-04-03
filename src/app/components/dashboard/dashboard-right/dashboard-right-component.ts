@@ -257,7 +257,8 @@ export class DashboardRightComponent implements OnInit {
     this.upload.generatePdf(finalDocument)
       .subscribe(
         (serverRes: pdfServerRes) => {
-        const { expirationTime } = serverRes;
+        let { expirationTime } = serverRes;
+        expirationTime *= 1000
         debugger
         this.token.initializeCountdown(Number(expirationTime));
         this.stripe.startCheckout().subscribe(
