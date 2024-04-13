@@ -74,7 +74,7 @@ export class DashboardRightComponent implements OnInit {
     },
   ];
   // DATA FOR SCRIPT
-  scriptData;
+  allLines;
   displayedColumns: string[] = ['number', 'text', 'select'];
   dataSource: MatTableDataSource<any>;
   scenes: any[];
@@ -90,7 +90,7 @@ export class DashboardRightComponent implements OnInit {
   selectedOB: any;
   pageLengths: any[];
   length: number;
-  totalPages: any;
+  individualPages: any;
   callSheetPath: string;
   scriptLength: number;
   date: number;
@@ -137,7 +137,7 @@ export class DashboardRightComponent implements OnInit {
 
   }
   ngAfterViewInit(): void {
-    this.scriptLength = this.totalPages.length - 1 || 0;
+    this.scriptLength = this.individualPages.length - 1 || 0;
     this.dataReady = true;
     this.cdr.detectChanges();
   }
@@ -157,13 +157,13 @@ export class DashboardRightComponent implements OnInit {
     this.scriptProblems = [];
     this.modalData = [];
     // SAVED ON THE SERVICE
-    this.scriptData = this.pdf.scriptData;
-    this.totalPages = this.pdf.totalPages || null;
+    this.allLines = this.pdf.allLines;
+    this.individualPages = this.pdf.individualPages || null;
     this.lastLooksReady = false;
   }
 
   initializeSceneSelectionTable() {
-    if(!this.pdf.scriptData) {
+    if(!this.pdf.allLines) {
       alert("No Script data detected - routing to upload ")
       this.router.navigate(["/"])
     }
@@ -171,21 +171,21 @@ export class DashboardRightComponent implements OnInit {
     this.dataSource = new MatTableDataSource(this.pdf.scenes);
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
-    this.length = this.pdf.scriptData.length;
+    this.length = this.pdf.allLines.length;
   }
   
   // lets get lookback tighter  - should be able to refrence lastCharacterIndex
   lookBack(line) {
     let newText = '';
-    newText = this.scriptData[line.lastCharIndex].text;
+    newText = this.allLines[line.lastCharIndex].text;
     let ind = line.index;
     for (let i = line.lastCharIndex + 1; i < ind + 1; i++) {
-      newText = newText + '\n' + this.scriptData[i].text;
+      newText = newText + '\n' + this.allLines[i].text;
       if (
-        this.scriptData[i].category === 'more' ||
-        this.scriptData[i].category === 'page-number' ||
-        this.scriptData[i].category === 'page-number-hidden' ||
-        this.scriptData[i].subCategory === 'parenthetical'
+        this.allLines[i].category === 'more' ||
+        this.allLines[i].category === 'page-number' ||
+        this.allLines[i].category === 'page-number-hidden' ||
+        this.allLines[i].subCategory === 'parenthetical'
       ) {
       }
     }
@@ -205,10 +205,10 @@ export class DashboardRightComponent implements OnInit {
   }
   getPreview(ind) {
     return (this.scenes[ind].preview =
-      this.scriptData[this.scenes[ind].index + 1].text +
+      this.allLines[this.scenes[ind].index + 1].text +
       ' ' +
-      this.scriptData[this.scenes[ind].index + 2].text)
-      ? this.scriptData[this.scenes[ind].index + 2].text
+      this.allLines[this.scenes[ind].index + 2].text)
+      ? this.allLines[this.scenes[ind].index + 2].text
       : ' ';
   }
   getPages(data) {
@@ -322,7 +322,7 @@ export class DashboardRightComponent implements OnInit {
         data: {
           selected: this.selected,
           script: this.script,
-          totalPages: this.totalPages.length - 1,
+          individualPages: this.individualPages.length - 1,
           callsheet: this.callsheet,
           waitingForScript: true,
           title:this.script,
@@ -336,7 +336,7 @@ export class DashboardRightComponent implements OnInit {
   }
   getLastPage = (scene) => {
     
-    return this.scriptData[scene.lastLine].page || null;
+    return this.allLines[scene.lastLine].page || null;
   };
   toggleLastLooks() {
     this.lastLooksReady = !this.lastLooksReady;
@@ -345,7 +345,7 @@ export class DashboardRightComponent implements OnInit {
       this.finalPdfData = {
         selected: this.selected,
         script: this.script,
-        totalPages: this.totalPages.length - 1,
+        individualPages: this.individualPages.length - 1,
         callsheet: this.callsheet,
         waitingForScript: true,
       };
@@ -354,7 +354,7 @@ export class DashboardRightComponent implements OnInit {
       // this.openFinalSpinner();
       this.selected.sort((a,b) => a.sceneIndex - b.sceneIndex)
    
-      this.pdf.processPdf(this.selected, this.script, this.totalPages, this.callsheet);
+      this.pdf.processPdf(this.selected, this.script, this.individualPages, this.callsheet);
     }
   }
 
@@ -376,7 +376,7 @@ export class DashboardRightComponent implements OnInit {
         this.waitingForScript = true;
         this.callsheet = result?.callsheet.name || null;
         this.openFinalSpinner();
-        this.finalDocument = this.pdf.getPdf(this.selected, this.script, this.totalPages, coverSheet);
+        this.finalDocument = this.pdf.getPdf(this.selected, this.script, this.individualPages, coverSheet);
         // this.token.initializeCountdown(downloadTimeRemaining);
         this.finalDocReady = true;
         this.waitingForScript = true;
@@ -384,7 +384,7 @@ export class DashboardRightComponent implements OnInit {
         this.sendFinalDocumentToServer(this.finalDocument)
       });
     } else {
-      this.finalDocument = this.pdf.getPdf(this.selected, this.script, this.totalPages, '');
+      this.finalDocument = this.pdf.getPdf(this.selected, this.script, this.individualPages, '');
       this.finalDocReady = true;
       this.waitingForScript = true;
       this.openFinalSpinner();
@@ -436,15 +436,15 @@ export class DashboardRightComponent implements OnInit {
           currentScene.index === 0
             ? (currentScene.firstLine = 0)
             : (currentScene.firstLine =
-                this.scriptData[currentScene.index - 1].index);
+                this.allLines[currentScene.index - 1].index);
           currentScene.preview = this.getPreview(i);
           currentScene.lastPage = this.getLastPage(currentScene);
         } else {
           // get first and last lines for last scenes
           last =
-            this.scriptData[this.scriptData.length - 1].index ||
-            this.scriptData.length - 1;
-          currentScene.firstLine = this.scriptData[currentScene.index - 1].index;
+            this.allLines[this.allLines.length - 1].index ||
+            this.allLines.length - 1;
+          currentScene.firstLine = this.allLines[currentScene.index - 1].index;
           currentScene.lastLine = last;
           currentScene.lastPage = this.getLastPage(currentScene);
           currentScene.preview = this.getPreview(i);

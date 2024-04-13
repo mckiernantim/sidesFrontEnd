@@ -21,6 +21,14 @@ import { idToken } from '@angular/fire/auth';
 import { Line } from '../../types/Line';
 import { TokenService } from '../token/token.service';
 
+type ClassifyResponse = {
+  allLines:string, 
+  allChars:string, 
+  individualPages:string, 
+  title:string, 
+  firstAndLastLinesOfScene:string 
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -29,9 +37,11 @@ export class UploadService {
   // values from script
   script: string;
   // lines
-  lineArr: Line[];
+  allLines: Line[];
   lineCount: any;
-  pagesArr: any[];
+  individualPages: any[];
+  allChars: any[];
+  title: string;
   underConstruction: boolean = false;
   // old DB valies
   issues: any;
@@ -47,7 +57,6 @@ export class UploadService {
     responseType: null,
   };
   msg: any;
-
   private url: string = environment.url;
 
 
@@ -152,12 +161,14 @@ export class UploadService {
     return this.httpClient
       .post(this.url + '/api', formData, this.httpOptions)
       .pipe(
-        map((data) => {
-          
-          this.lineArr = data[0];
-          this.pagesArr = data[1];
+        map((data:any) => {
+          let {allLines, allChars, individualPages, title, firstAndLastLinesOfScene} = data
+          this.allLines = allLines;
+          this.individualPages = individualPages;
+          this.allChars = allChars
+          this.title = title;
           this.lineCount = [];
-          this.pagesArr.forEach((page) => {
+          this.individualPages.forEach((page) => {
             this.lineCount.push(page.filter((item) => item.totalLines));
           });
           return data;
@@ -199,10 +210,10 @@ export class UploadService {
     if (this.underConstruction) {
       localStorage.setItem('name', this._devPdfPath);
     }
-    this.lineArr = data[0];
-    this.pagesArr = data[1];
+    this.allLines = data[0];
+    this.individualPages = data[1];
     this.lineCount = [];
-    this.pagesArr.forEach((page) => {
+    this.individualPages.forEach((page) => {
       this.lineCount.push(page.filter((item) => item.totalLines));
     });
   }

@@ -20,8 +20,8 @@ export class PdfService {
   script: string; 
   finalDocument: any; 
   initialFinalDocState: any; 
-  scriptData: any[];
-  totalPages: any[];
+  allLines: any[];
+  individualPages: any[];
   finalDocReady: boolean = false;
   scenes: any[];
   initialSelection: any[] = [];
@@ -52,9 +52,9 @@ export class PdfService {
     this.initializeData();
   }
   initializeData() {
-    this.scriptData = this.upload.lineArr;
-    this.totalPages = this.upload.pagesArr || null;
-    if (this.scriptData) {
+    this.allLines = this.upload.allLines;
+    this.individualPages = this.upload.individualPages || null;
+    if (this.allLines) {
       this.initializeCharactersAndScenes();
     }
   }
@@ -66,9 +66,9 @@ export class PdfService {
   }
 
   getCharacters() {
-    if (this.scriptData) {
+    if (this.allLines) {
       // GET CHARS
-      this.characters = this.scriptData.filter((line) => {
+      this.characters = this.allLines.filter((line) => {
         return line.category === 'character';
       });
       this.characters = [
@@ -77,13 +77,13 @@ export class PdfService {
     }
   }
   getScenes() {
-    if (this.totalPages && this.scriptData) {
-      this.scenes = this.scriptData.filter((line) => {
+    if (this.individualPages && this.allLines) {
+      this.scenes = this.allLines.filter((line) => {
         return line.category === 'scene-header';
       });
       for (let i = 0; i < this.scenes.length; i++) {
         let sceneRefInTable = this.scenes[i];
-        let sceneInActualScript = this.scriptData[sceneRefInTable.index];
+        let sceneInActualScript = this.allLines[sceneRefInTable.index];
         // give scenes extra data for later
         this.setLastLines(i);
 
@@ -95,14 +95,14 @@ export class PdfService {
       }
     }
 
-    this.length = this.scriptData.length || 0;
+    this.length = this.allLines.length || 0;
     // assign PAGENUMBER values to page 0 and 1 in order for future
     for (let i = 0; i < 200; i++) {
-      this.scriptData[i].page == 0
-        ? (this.scriptData[i].pageNumber = 0)
-        : this.scriptData[i].page == 1
-        ? (this.scriptData[i].pageNumber = 1)
-        : this.scriptData;
+      this.allLines[i].page == 0
+        ? (this.allLines[i].pageNumber = 0)
+        : this.allLines[i].page == 1
+        ? (this.allLines[i].pageNumber = 1)
+        : this.allLines;
     }
   }
 
@@ -530,7 +530,7 @@ export class PdfService {
 
   constructFullPages(pages) {
     return pages.map((page) => {
-      let doc = this.scriptData.filter((scene) => scene.page === page);
+      let doc = this.allLines.filter((scene) => scene.page === page);
       doc.push({
         page: page,
         bar: 'noBar',
@@ -738,7 +738,7 @@ export class PdfService {
 
     // GET ONLY PROPER PAGES FROM TOTAL SCRIPT
     pages.forEach((page) => {
-      let doc = this.scriptData.filter((scene) => scene.page === page);
+      let doc = this.allLines.filter((scene) => scene.page === page);
       //  BEGIN THE CLASSIFYING FOR TEMPLATE
       // add a SCENE BREAK LINE
       doc.push({
@@ -916,15 +916,15 @@ export class PdfService {
         currentScene.index === 0
           ? (currentScene.firstLine = 0)
           : (currentScene.firstLine =
-              this.scriptData[currentScene.index - 1].index);
+              this.allLines[currentScene.index - 1].index);
         currentScene.preview = this.getPreview(i);
         currentScene.lastPage = this.getLastPage(currentScene);
       } else {
         // get first and last lines for last scenes
         last =
-          this.scriptData[this.scriptData.length - 1].index ||
-          this.scriptData.length - 1;
-        currentScene.firstLine = this.scriptData[currentScene.index - 1].index;
+          this.allLines[this.allLines.length - 1].index ||
+          this.allLines.length - 1;
+        currentScene.firstLine = this.allLines[currentScene.index - 1].index;
         currentScene.lastLine = last;
         currentScene.lastPage = this.getLastPage(currentScene);
         currentScene.preview = this.getPreview(i);
@@ -934,15 +934,15 @@ export class PdfService {
 
   getLastPage = (scene) => {
     
-    return this.scriptData[scene.lastLine].page || null;
+    return this.allLines[scene.lastLine].page || null;
   };
 
   getPreview(ind) {
     return (this.scenes[ind].preview =
-      this.scriptData[this.scenes[ind].index + 1]?.text +
+      this.allLines[this.scenes[ind].index + 1]?.text +
       ' ' +
-      this.scriptData[this.scenes[ind].index + 2]?.text)
-      ? this.scriptData[this.scenes[ind].index + 2]?.text
+      this.allLines[this.scenes[ind].index + 2]?.text)
+      ? this.allLines[this.scenes[ind].index + 2]?.text
       : ' ';
   }
 }
