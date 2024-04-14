@@ -26,7 +26,7 @@ type ClassifyResponse = {
   allChars:string, 
   individualPages:string, 
   title:string, 
-  firstAndLastLinesOfScene:string 
+  firstAndLastLinesOfScenes:string 
 }
 
 @Injectable({
@@ -41,6 +41,7 @@ export class UploadService {
   lineCount: any;
   individualPages: any[];
   allChars: any[];
+  firstAndLastLinesOfScenes:any[];
   title: string;
   underConstruction: boolean = false;
   // old DB valies
@@ -162,8 +163,9 @@ export class UploadService {
       .post(this.url + '/api', formData, this.httpOptions)
       .pipe(
         map((data:any) => {
-          let {allLines, allChars, individualPages, title, firstAndLastLinesOfScene} = data
+          let {allLines, allChars, individualPages, title, firstAndLastLinesOfScenes} = data
           this.allLines = allLines;
+          this.firstAndLastLinesOfScenes = firstAndLastLinesOfScenes
           this.individualPages = individualPages;
           this.allChars = allChars
           this.title = title;

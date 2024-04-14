@@ -352,7 +352,8 @@ export class DashboardRightComponent implements OnInit {
       this.callsheet = localStorage.getItem('callSheetPath');
       this.waitingForScript = true;
       // this.openFinalSpinner();
-      this.selected.sort((a,b) => a.sceneIndex - b.sceneIndex)
+      // WE SHOULD CHANGE THIS TO PARSEINT AND - OR DO WE EVEN NEED TO SORT THEM?
+      this.selected.sort((a,b) => a.index - b.Index)
    
       this.pdf.processPdf(this.selected, this.script, this.individualPages, this.callsheet);
     }

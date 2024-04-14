@@ -21,6 +21,7 @@ export class PdfService {
   finalDocument: any; 
   initialFinalDocState: any; 
   allLines: any[];
+  firstAndLastLinesOfScene:any[];
   individualPages: any[];
   finalDocReady: boolean = false;
   scenes: any[];
@@ -53,6 +54,7 @@ export class PdfService {
   }
   initializeData() {
     this.allLines = this.upload.allLines;
+    this.firstAndLastLinesOfScene = this.upload.firstAndLastLinesOfScenes
     this.individualPages = this.upload.individualPages || null;
     if (this.allLines) {
       this.initializeCharactersAndScenes();
@@ -480,8 +482,6 @@ export class PdfService {
 
     this.assignContinueMarkers(linesAsPages);
 
-    // this.markEndLines(linesAsPages, sceneBreaks);
-
     let sanitizedPages = this.hideExtraPageNumberText(linesAsPages);
 
     sanitizedPages = this.hideExtraDraftVersionText(sanitizedPages);
@@ -512,7 +512,7 @@ export class PdfService {
 
     let scenesWithAdjustedEnds = sceneArr.map(scene => {
 
-        let lastLineIndex = scene.lastLine;
+        let lastLineIndex = scene.lastLine || sceneArr.length;
         while (lastLineIndex > scene.firstLine && !acceptableTypes.includes(flattenedLines[lastLineIndex].category)) {
             lastLineIndex--;
         }
@@ -520,7 +520,7 @@ export class PdfService {
         return {
             first: scene.firstLine,
             last: lastLineIndex,
-            scene: scene.sceneNumber,
+            scene: scene.sceneNumberText,
             firstPage: scene.page,
         };
     });
