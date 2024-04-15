@@ -353,7 +353,7 @@ export class DashboardRightComponent implements OnInit {
       this.waitingForScript = true;
       // this.openFinalSpinner();
       // WE SHOULD CHANGE THIS TO PARSEINT AND - OR DO WE EVEN NEED TO SORT THEM?
-      this.selected.sort((a,b) => a.index - b.Index)
+      this.selected.sort((a,b) => a.index - b.index)
    
       this.pdf.processPdf(this.selected, this.script, this.individualPages, this.callsheet);
     }
