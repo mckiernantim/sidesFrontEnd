@@ -6,7 +6,8 @@ import { catchError, subscribeOn } from 'rxjs/operators';
 import { throwError, of, Subscription, Observable, switchMap } from 'rxjs';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
+import { WarningComponent } from '../warning/warning.component';
 @Component({
   selector: 'app-complete',
   templateUrl: './complete.component.html',
@@ -26,7 +27,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
   constructor(
     public upload: UploadService,
     public token: TokenService,
-    public dialog:MatDialogRef<Warning>,
+    public dialog:MatDialog,
     private router: Router
   ) {}
   ngOnInit() {
@@ -100,7 +101,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
           const url = window.URL.createObjectURL(blob);
           const anchor = document.createElement('a');
           anchor.href = url;
-          anchor.download = `${name}-document.zip`;
+          anchor.download = `${name}-Sides-Ways.zip`;
           anchor.click();
 
           window.URL.revokeObjectURL(url);
@@ -123,7 +124,18 @@ export class CompleteComponent implements OnInit, OnDestroy {
         }
       );
   }
-  deleteDocFromServer() {
-    
+  handleDeleteClick() {
+    const dialogRef = this.dialog.open(WarningComponent, {
+      width: '500px'
+    })
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.upload.deleteFinalDocument("whatever").subscribe(data => {
+          if (data) this.token.removeToken();
+          this.router.navigate["/"]
+        })
+      }
+    })
   }
 }

@@ -3,6 +3,7 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Observable } from 'rxjs';
 import { map, shareReplay } from 'rxjs/operators';
 import { TokenService } from 'src/app/services/token/token.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-main-nav',
@@ -20,11 +21,16 @@ export class MainNavComponent implements OnInit {
 
   constructor(
     private breakpointObserver: BreakpointObserver, 
-    private token: TokenService
+    private token: TokenService,
+    private router:Router
   ) {}
 
   ngOnInit(): void {
     this.token.countdown$.subscribe(countdown => {
+      if(!countdown) {
+        alert("sessoin expired - rerouting.  Your IP has been deleted");
+        this.router.navigate(["/"])
+      }
       this.countdownClock = this.formatTime(countdown) as string
       console.log("countdown: " + this.countdownClock)
     })

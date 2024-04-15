@@ -20,7 +20,7 @@ import { environment } from '../../../environments/environment';
 import { idToken } from '@angular/fire/auth';
 import { Line } from '../../types/Line';
 import { TokenService } from '../token/token.service';
-
+import  Cookies from "js-cookie";
 type ClassifyResponse = {
   allLines:string, 
   allChars:string, 
@@ -219,4 +219,18 @@ export class UploadService {
       this.lineCount.push(page.filter((item) => item.totalLines));
     });
   }
+
+  deleteFinalDocument(tokenId: string) {
+    const sessionToken = Cookies.get("") // Assuming 'session_token' is the name of your cookie
+
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionToken}` // Include the session token in the Authorization header
+      })
+    };
+
+    return this.httpClient.post(`${this.url}/delete`, { tokenId }, httpOptions);
+  }
 }
+

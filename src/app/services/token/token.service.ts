@@ -14,24 +14,23 @@ export class TokenService {
 
   constructor() {
     const expirationTimestamp = parseInt(Cookies.get(this.tokenKey) || '0', 10);
-    const currentTime = Date.now();
-    debugger
-    const endTime = expirationTimestamp + currentTime;
-
-    this.initialTimeSource.next(endTime); // We now send the calculated end time directly
+    
+    this.initialTimeSource.next(expirationTimestamp);
     this.countdown$ = this.initialTimeSource.asObservable().pipe(
       switchMap(endTime => {
-        // timer sets an interval of 1 second to emit new values
         return timer(0, 1000).pipe(
-          map(() => Math.max(endTime - Date.now(), 0)),
-          map(timeLeft => Math.floor(timeLeft)),
-          takeWhile(timeLeft => timeLeft >= 0, true)
+          map(() => {
+            const now = Date.now();
+            const timeLeft = endTime - now;
+            return Math.max(timeLeft, 0); 
+          }),
+          takeWhile(timeLeft => timeLeft > 0, true),
+          startWith(Math.max(expirationTimestamp - Date.now(), 0))
         );
-      }),
-      startWith(0) 
+      })
     );
   }
-
+  
 
   public initializeCountdown(initialTime: number): void {
     debugger
@@ -39,7 +38,9 @@ export class TokenService {
       // but it can also be given a value via .next()
     this.initialTimeSource.next(initialTime);
   }
-
+  public removeToken() {
+    Cookies.delete(this.tokenKey)
+  }
   public getCountdownObservable(): Observable<number> {
     return this.countdown$;
   }

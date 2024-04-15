@@ -647,13 +647,6 @@ export class PdfService {
             }
           }
         });
-            
-            
-
-
-          // Check the next page for 'CONTINUE-TOP'
-
-      // Reset foundContinue for the next page
       foundContinue = false;
     });
   }

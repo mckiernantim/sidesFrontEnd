@@ -53,7 +53,7 @@ import { FeatureGridComponent } from './components/landing-page/feature/feature-
 import { AboutItemComponent } from './components/landing-page/about/about-item/about-item.component';
 import { AboutItemGridComponent } from './components/landing-page/about/about-item-grid/about-item-grid.component';
 import { AddWatermarkComponent } from './components/add-watermark/add-watermark.component';
-import {WarningComponent} from "./components/warning/warning.component"
+import { WarningComponent } from "./components/warning/warning.component"
 import { AddCallsheetComponent } from './components/add-callsheet/add-callsheet.component';
 import { ToolTipComponent } from './components/shared/tool-tip/tool-tip.component'
 

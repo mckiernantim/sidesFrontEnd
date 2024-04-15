@@ -1,17 +1,20 @@
 import { Component } from '@angular/core';
+import { MatDialogRef } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-warning',
-  standalone: true,
-  imports: [],
   templateUrl: './warning.component.html',
-  styleUrl: './warning.component.css'
+  styleUrls: ['./warning.component.css']
 })
 export class WarningComponent {
 
-  confirmDelete : boolean = false
+  constructor(private dialogRef: MatDialogRef<WarningComponent>) {}
 
-  constructor() {
-    
+  confirmDelete() {
+    this.dialogRef.close(true); // Close the dialog and emit true
+  }
+
+  cancel() {
+    this.dialogRef.close(false); // Close the dialog and emit false
   }
 }

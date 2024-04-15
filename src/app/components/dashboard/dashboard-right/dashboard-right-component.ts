@@ -259,7 +259,6 @@ export class DashboardRightComponent implements OnInit {
         (serverRes: pdfServerRes) => {
         let { expirationTime } = serverRes;
         expirationTime *= 1000
-        debugger
         this.token.initializeCountdown(Number(expirationTime));
         this.stripe.startCheckout().subscribe(
           (res:stripeRes) => {

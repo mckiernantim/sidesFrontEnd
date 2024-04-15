@@ -141,7 +141,7 @@ export class LastLooksComponent implements OnInit {
 
         // // Existing adjustments
         this.adjustSceneNumberPosition(line);
-        this.revealContSubcategoryLines(line);
+        // this.revealContSubcategoryLines(line);
         this.adjustBarPosition(line);
         this.calculateYPositions(line);
         line.calculatedXpos = Number(line.xPos) * 1.3 + 'px';
