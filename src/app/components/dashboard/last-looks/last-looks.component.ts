@@ -238,7 +238,7 @@ export class LastLooksComponent implements OnInit {
   revealContSubcategoryLines(line: Line) {
     // this is what is causing all cont lines to be revealead
       // check in later
-    if (line.subCategory === "CON'T") {
+    if (line.subCategory === "CON'T" && (line.yPos > 720 || line.yPos < 150)){
       line.visible = 'true';
     }
   }

@@ -10,7 +10,8 @@ import { TokenService } from 'src/app/services/token/token.service';
   styleUrls: ['./main-nav.component.css']
 })
 export class MainNavComponent implements OnInit {
-  formattedCountdown: string | null = null;
+  countdown:number = 0;
+ countdownClock: string | null = null;
   isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
     .pipe(
       map(result => result.matches),
@@ -19,25 +20,28 @@ export class MainNavComponent implements OnInit {
 
   constructor(
     private breakpointObserver: BreakpointObserver, 
-    private tokenService: TokenService
+    private token: TokenService
   ) {}
 
   ngOnInit(): void {
-    this.tokenService.getCountdownObservable().subscribe(countdown => {
+    this.token.countdown$.subscribe(countdown => {
+      this.countdownClock = this.formatTime(countdown) as string
+      console.log("countdown: " + this.countdownClock)
+    })
+  } 
+  formatTime(milliseconds) {
+    let seconds:string|number = Math.floor(milliseconds / 1000);
+    let minutes:string|number = Math.floor(seconds / 60);
+    let hours:string|number = Math.floor(minutes / 60);
   
-      
-      let countDownInSeconds = Math.floor(countdown - Date.now()) 
-      this.formattedCountdown = countDownInSeconds > 0 ? this.formatCountdown(countDownInSeconds) : null;
-    });
-  }
+    seconds = seconds % 60; // remainder of seconds divided by 60
+    minutes = minutes % 60; // remainder of minutes divided by 60
   
-  formatCountdown(timer: number): string {
-    const hours = Math.floor(timer / 3600);
-    const minutes = Math.floor((timer % 3600) / 60);
-    const seconds = timer % 60;
-    const formattedHours = hours.toString().padStart(2, '0');
-    const formattedMinutes = minutes.toString().padStart(2, '0');
-    const formattedSeconds = seconds.toString().padStart(2, '0');
-    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+    // Padding numbers to make sure there are always two digits
+    hours = String(hours).padStart(2, '0');
+    minutes = String(minutes).padStart(2, '0');
+    seconds = String(seconds).padStart(2, '0');
+  
+    return `${hours}:${minutes}:${seconds}`;
   }
 }

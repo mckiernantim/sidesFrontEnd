@@ -15,20 +15,16 @@ export class TokenService {
   constructor() {
     const expirationTimestamp = parseInt(Cookies.get(this.tokenKey) || '0', 10);
     const currentTime = Date.now();
-    const remainingTime = expirationTimestamp  + currentTime;
+    debugger
+    const endTime = expirationTimestamp + currentTime;
 
-    this.initialTimeSource.next(remainingTime > 0 ? remainingTime : 0);
+    this.initialTimeSource.next(endTime); // We now send the calculated end time directly
     this.countdown$ = this.initialTimeSource.asObservable().pipe(
-      // switchMap will cancel the last observable so we dont have an obs for each second
-      switchMap(initialTime => {
-        const endTime = Date.now() + initialTime;
+      switchMap(endTime => {
         // timer sets an interval of 1 second to emit new values
-        // this is the actual returned obs with a new Date.now iterating every second;  
         return timer(0, 1000).pipe(
           map(() => Math.max(endTime - Date.now(), 0)),
           map(timeLeft => Math.floor(timeLeft)),
-          // second arg to takeWhile is inclusivitiy 
-          // only emitting while the value is above -1
           takeWhile(timeLeft => timeLeft >= 0, true)
         );
       }),

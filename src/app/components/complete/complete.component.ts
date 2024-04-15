@@ -6,6 +6,7 @@ import { catchError, subscribeOn } from 'rxjs/operators';
 import { throwError, of, Subscription, Observable, switchMap } from 'rxjs';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { MatDialogRef } from '@angular/material/dialog';
 @Component({
   selector: 'app-complete',
   templateUrl: './complete.component.html',
@@ -25,6 +26,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
   constructor(
     public upload: UploadService,
     public token: TokenService,
+    public dialog:MatDialogRef<Warning>,
     private router: Router
   ) {}
   ngOnInit() {
@@ -89,7 +91,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
       return throwError(() => error);
     }
   }
-
+  
   downloadPDF(name: string, callsheet: string) {
     this.upload
       .getPDF(name, callsheet)
@@ -120,5 +122,8 @@ export class CompleteComponent implements OnInit, OnDestroy {
           );
         }
       );
+  }
+  deleteDocFromServer() {
+    
   }
 }
