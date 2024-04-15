@@ -77,6 +77,7 @@ export class LastLooksComponent implements OnInit {
     this.doc = this.pdf.finalDocument.data;
 
     this.pages = this.doc;
+    
     this.initialDocState = this.doc.map((page) => [...page] as Line[]);
     this.establishInitialLineState();
     // set up undo observable to respond to changes and refresh
@@ -127,8 +128,8 @@ export class LastLooksComponent implements OnInit {
     this.pageUpdate.emit(this.pages[this.currentPage]);
   }
   handleWaterMarkUpdate(newWatermark:string) {
-    
   }
+    
 
   processLinesForLastLooks(arr) {
     // this.getSceneBreaks(arr)
@@ -140,7 +141,7 @@ export class LastLooksComponent implements OnInit {
 
         // // Existing adjustments
         this.adjustSceneNumberPosition(line);
-        this.revealContSubcategoryLines(line);
+        // this.revealContSubcategoryLines(line);
         this.adjustBarPosition(line);
         this.calculateYPositions(line);
         line.calculatedXpos = Number(line.xPos) * 1.3 + 'px';
@@ -181,62 +182,6 @@ export class LastLooksComponent implements OnInit {
     this.currentPage = this.doc[this.currentPageIndex];
     this.undoService.currentPageIndex = this.currentPageIndex;
   }
-  // establishContAndEnd(sceneData) {
-  //   sceneData.forEach((page) => {
-  //     page.forEach((line) => {
-  //       if (
-  //         line.category === 'scene-number-left' ||
-  //         (line.category === 'scene-number-right' &&
-  //           line.trueScene === 'true-scene')
-  //       ) {
-  //         line.yPos = line.yPos - 10;
-  //       }
-  //       if (line.subCategory === "CON'T") {
-  //         line.visible = 'true';
-  //       }
-   
-  //       if (
-  //         line.bar == 'bar' &&
-  //         !this.startingLinesOfDoc.includes(line.sceneIndex) &&
-  //         line.sceneIndex > 0
-  //       ) {
-  //         this.startingLinesOfDoc.push(line.sceneIndex);
-  //       } else {
-  //         line.bar = 'hideBar';
-  //       }
-
-  //       line.yPos = parseInt(line.yPos);
-  //       line.xPos = line.xPos;
-  //       if (line.category == 'scene-header' && line.visible == 'true') {
-  //         line.trueScene = 'true-scene';
-  //         (line.hideEnd = 'hideEnd'),
-  //           (line.hideCont = 'hideCont'),
-  //           (line.barY = line.yPos + 65);
-  //       } else if (
-  //         line.end === 'END' &&
-  //         this.startingLinesOfDoc.includes(line.sceneIndex)
-  //       ) {
-  //         // END CONDITION
-  //         line.endY = line.yPos - 5;
-  //         line.hideCont = 'hideCont';
-  //         line.bar = 'hideBar';
-  //         // CONTINUE CONDITION
-  //       } else if (
-  //         line.cont &&
-  //         line.cont != 'hideCont' &&
-  //         this.startingLinesOfDoc.includes(line.sceneIndex)
-  //       ) {
-  //         line.hideEnd = 'hideEnd';
-  //         line.bar = 'hideBar';
-  //         // START SCENE CONDITION
-  //       } else
-  //         (line.hideEnd = 'hideEnd'),
-  //           (line.hideCont = 'hideCont'),
-  //           (line.bar = 'hideBar');
-  //     });
-  //   });
-  // }
-
   toggleEditMode() {
     this.canEditDocument = !this.canEditDocument;
     this.drag;
@@ -293,7 +238,7 @@ export class LastLooksComponent implements OnInit {
   revealContSubcategoryLines(line: Line) {
     // this is what is causing all cont lines to be revealead
       // check in later
-    if (line.subCategory === "CON'T") {
+    if (line.subCategory === "CON'T" && (line.yPos > 720 || line.yPos < 150)){
       line.visible = 'true';
     }
   }
@@ -402,7 +347,8 @@ export class LastLooksComponent implements OnInit {
       (serverRes: any) => {
         try {
           const { downloadTimeRemaining, token } = serverRes;
-          this.token.setDeleteTimer(downloadTimeRemaining);
+     
+          this.token.initializeCountdown(downloadTimeRemaining);
 
           // Generate a session token for Stripe checkout
           this.stripe.startCheckout().subscribe((stripeRes: any) => {

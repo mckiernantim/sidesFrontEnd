@@ -160,7 +160,7 @@ li.page-number {
 
 .bar {
     border-top: 2.5px solid;
-    width: 87%;
+    width: 95%;
     text-align: right;
     font-size: 11.5px;
     padding-left: -5%;
@@ -245,7 +245,7 @@ li.page-number {
 }
 
 .start-span {
-    right: 25%;
+    right: 5%;
     font-size: 16pt;
 
 }

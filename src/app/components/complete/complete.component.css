@@ -1,16 +1,4 @@
-.flex-center{
-    display: flex;
-    flex-direction: row;
-    align-content: space-around;
-    flex-wrap: wrap;
-    justify-content: space-around;
 
-}
-.form-container{
-    max-width:70%;
-    margin: 0 auto;
-
-}
 
 
 /* TODO(mdc-migration): The following rule targets internal classes of card that may no longer apply for the MDC version. */
@@ -33,13 +21,4 @@ mat-mdc-card {
   justify-content: space-around;
   align-items: stretch;
 }
-.complete-container {
-    height: 90vh;
-    display: flex;
-    flex-direction: column;
-    padding: 10rem;
-    margin: 5rem;
-}
-.download-container {
-  padding:25px
-}
+

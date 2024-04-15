@@ -1,25 +1,13 @@
-<div class="complete-container mx-auto flex justify-center bg-primary shadow-lg p-16 rounded-lg">
+<div class="complete-container mx-auto flex flex-col justify-around bg-primary shadow-lg p-10 rounded-lg">
   <div>
     <h1 class="text-white txt-bold text-4xl mb-4 font-bold">Processing complete on: <em>{{ name }}</em></h1>
-    <div class="bg-secondary border border-gray-200 p-16 rounded-lg">
-      <div class="p-4 border-b border-gray-200">
+    <div class="bg-secondary flex flex-col justify-around border border-gray-200 p-16 rounded-lg">
+      <div class="p-4 border-b border-gray-200 flex flex-col justify-between">
         <h2 class="text-white text-2xl font-bold">Thanks for helping us with Sides-Ways!</h2>
         <div class="mt-4">
-          <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" (click)="downloadPDF()">Download {{ name }}</button>
+          <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" (click)="downloadPDF(name, callsheet)">Download {{ name }}</button>
         </div>
         <h2 class="text-white text-2xl font-bold">Please let us know if you had any issues.</h2>
-      </div>
-      <!-- <div class="p-4">
-        <div class="bg-secondary p-4 rounded-lg">
-          <app-feedback [title]="this.name"></app-feedback>
-        </div>
-      </div> -->
-      <div class="p-4">
-        <h4 class="text-white pl-4">
-          Thanks so much for your help as we move forward.
-          <br>
-          And if you got the time <a href="#" class="text-blue-500 hover:text-blue-700">Do it again!</a>
-        </h4>
       </div>
     </div>
   </div>

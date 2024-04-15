@@ -43,12 +43,12 @@ export class UploadComponent implements OnInit, OnDestroy {
   underConstruction: boolean;
   working: boolean;
   displayData: {
-    lines: number;
+    allLines: number;
     characters: number;
     scenes: number;
   };
   // we should change this to a line array at some point
-  lines: any[];
+  allLines: any[];
   $script_data: Observable<any>;
   constructor(
     public upload: UploadService,
@@ -102,10 +102,10 @@ export class UploadComponent implements OnInit, OnDestroy {
     } else {
       this.resetLocalData();
     }
-    this.upload.lineArr = dummyData[0];
-    this.upload.pagesArr = dummyData[1];
+    this.upload.allLines = dummyData[0];
+    this.upload.individualPages = dummyData[1];
     this.upload.lineCount = [];
-    this.upload.pagesArr.forEach((page) => {
+    this.upload.individualPages.forEach((page) => {
       this.upload.lineCount.push(page.filter((item) => item.totalLines));
       this.router.navigate(['/download']);
     });
@@ -125,16 +125,16 @@ export class UploadComponent implements OnInit, OnDestroy {
         })
       )
       .subscribe((data) => {
-        // grab the pages and inseert 'page 2.'  so we know where it is
-        this.lines = data[0];
-        if (this.addTwo(data[0]).category) {
-          let two = this.addTwo(data[0]);
-          data[0][two].category = 'page-number';
+        // grab the pages and insert 'page 2.'  so we know where it is
+        const { allLines, title } = data
+        this.allLines = allLines;
+        if (this.addTwo(allLines).category) {
+          let indexOfTwo = this.addTwo(allLines);
+          allLines[indexOfTwo].category = 'page-number';
         }
         alert(
-          'your IP is safe. ' + data[3] + ' was just deleted from our servers.'
+          'your IP is safe. ' + title + ' was just deleted from our servers.'
         );
-        data.pop();
         this.dialog.closeAll();
         this.pdf.initializeData()
         this.router.navigate(['download']);

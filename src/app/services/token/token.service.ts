@@ -1,71 +1,50 @@
 import { Injectable } from '@angular/core';
-import jwt_decode from 'jwt-decode';
-import Cookies from 'js-cookie';
-import { Observable, timer, of, BehaviorSubject } from 'rxjs';
-import { concatWith, map, takeWhile, shareReplay } from 'rxjs/operators';
-import { Router } from '@angular/router';
-
-interface DecodedToken {
-  sessionId: string;
-  exp: number; // Expiration time in seconds
-}
+import { BehaviorSubject, Observable, timer } from 'rxjs';
+import { map, startWith, switchMap, takeWhile } from 'rxjs/operators';
+import  Cookies  from 'js-cookie'
 
 @Injectable({
   providedIn: 'root',
 })
 export class TokenService {
   private readonly tokenKey = 'dltr_sidesWays';
-  private tokenValiditySource = new BehaviorSubject<boolean>(true);
-  public tokenValidity$ = this.tokenValiditySource.asObservable();
-  private countdownSource = new BehaviorSubject<number>(0);
-  public countdown$ = this.countdownSource.asObservable().pipe(shareReplay(1));
+  private initialTimeSource = new BehaviorSubject<number>(0);
+  public countdown$: Observable<number>;
+  
 
   constructor() {
-    this.initializeCountdown();
-  }
-
-  private getCookieValue(): string | null {
-    return Cookies.get(this.tokenKey);
-  }
-  setDeleteTimer(expirationTimeInMilliseconds: number): void {
-    this.startCountdown(expirationTimeInMilliseconds);
+    const expirationTimestamp = parseInt(Cookies.get(this.tokenKey) || '0', 10);
+    
+    this.initialTimeSource.next(expirationTimestamp);
+    this.countdown$ = this.initialTimeSource.asObservable().pipe(
+      switchMap(endTime => {
+        return timer(0, 1000).pipe(
+          map(() => {
+            const now = Date.now();
+            const timeLeft = endTime - now;
+            return Math.max(timeLeft, 0); 
+          }),
+          takeWhile(timeLeft => timeLeft > 0, true),
+          startWith(Math.max(expirationTimestamp - Date.now(), 0))
+        );
+      })
+    );
   }
   
-  private initializeCountdown(): void {
-    const token = this.getCookieValue();
-    if (token) {
-      const expirationTime = parseInt(token, 10);
-      const currentTime = Date.now();
-      const timeLeft = expirationTime - currentTime;
-      
-      if (timeLeft > 0) {
-        this.startCountdown(expirationTime);
-      } else {
-        this.tokenValiditySource.next(false);
-      }
-    } else {
-      this.tokenValiditySource.next(false);
-    }
-  }
 
-  private startCountdown(expirationTime: number): void {
-    timer(0, 1000).pipe(
-      map(() => {
-        const currentTime = Date.now();
-        const timeLeft = Math.max(expirationTime - currentTime, 0);
-        return timeLeft;
-      }),
-      takeWhile(timeLeft => timeLeft >= 0, true)
-    ).subscribe(timeLeft => {
-      this.countdownSource.next(Math.floor(timeLeft / 1000));
-      if (timeLeft <= 0) {
-        this.tokenValiditySource.next(false);
-      }
-    });
+  public initializeCountdown(initialTime: number): void {
+    debugger
+    // intial timeSource is a behaviorSubject  meaning it can be an observable
+      // but it can also be given a value via .next()
+    this.initialTimeSource.next(initialTime);
   }
-
-  isTokenValid(): Observable<boolean> {
-    // Directly use tokenValidity$ for guard or other checks
-    return this.tokenValidity$;
+  public removeToken() {
+    Cookies.delete(this.tokenKey)
+  }
+  public getCountdownObservable(): Observable<number> {
+    return this.countdown$;
+  }
+  public isTokenValid(): boolean {
+    return !!Cookies.get(this.tokenKey)
   }
 }

@@ -4,10 +4,7 @@
         <div class="break">
             <ul class="screenbox" [ngClass]="{'edit-mode': canEditDocument }">
            <!--  [attr.contenteditable]="canEditDocument ? 'true' : 'false'" this line will activate easy edit - -->
-                <div class="selected-line-info" style="color:black">
-                        {{canEditDocument}} {{selectedLine?.text}} : {{selectedLine?.index}}
-                </div>
-
+           
                 <ng-container *ngFor="let line of page; let lineIndex = index">
 
                     <span class="watermark">{{line.watermarkText}}</span>
@@ -87,7 +84,7 @@
                         *ngIf="line.category !== 'page-number' && 
                             line.category !== 'page-number-hidden' && 
                             line.category !== 'injected-break'">
-                      ↓↓↓ {{line.sceneNumberText}} CONTINUED ↓↓↓ {{line.calculatedBarY}}
+                      ↓↓↓ {{line.sceneNumberText}} CONTINUED ↓↓↓ 
                     </span>
 
                     <!-- end span -->
@@ -106,7 +103,7 @@
                         *ngIf="line.category !== 'page-number' && 
                             line.category !== 'page-number-hidden' && 
                             line.category !== 'injected-break'">
-                        <span class="end-span"> END {{line.sceneNumberText}} {{line.barY}} </span>
+                        <span class="end-span"> END {{line.sceneNumberText}}  </span>
                     </span>
 
                     <!-- right scene number span -->

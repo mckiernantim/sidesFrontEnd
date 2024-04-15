@@ -2,10 +2,10 @@
 
   <div class="pagination-controls">
     <span>Page {{ currentPageIndex + 1 }} / {{ pages.length }}</span>
-    <button mat-raised-button color="warn" (click)="nextPage()"
-      [disabled]="currentPageIndex === pages.length - 1">Next</button>
     <button mat-raised-button color="warn" (click)="previousPage()"
       [disabled]="currentPageIndex === 0">Previous</button>
+    <button mat-raised-button color="warn" (click)="nextPage()"
+      [disabled]="currentPageIndex === pages.length - 1">Next</button>
   </div>
 
   <div class="page-container">

@@ -1,59 +1,70 @@
-<div class="">
-  <ng-container *ngIf="error">
-    <h3>Soemthing went wrong</h3>
-    {{ data }}
-  </ng-container>
+@if (error) { 
+  <div class="container mx-auto mt-8 flex flex-col justify-center bg-white items-center p-12 text-center">
+    <ng-container>
+      <h3>Soemthing went wrong</h3>
+      {{ errorDetails }}
+    </ng-container>
+  </div>
+}
+
+@else if (waitingForScript) {
+<div>
+  <app-spinning-bot></app-spinning-bot>
 </div>
- @if (waitingForScript) {
-   <div>
-     <app-spinning-bot></app-spinning-bot>
-   </div>
-  } @else {
-    <div class="container mx-auto mt-8 flex flex-col justify-center bg-white items-center p-12 text-center">
-      <!-- Selected Scenes -->
-      <div>
-        <h3 class="text-xl font-bold mb-4">Selected Scenes:</h3>
+} @else {
+<div class="container mx-auto mt-8 flex flex-col justify-center bg-white items-center p-12 text-center">
+  <!-- Selected Scenes -->
+  <div>
+    <h3 class="text-xl font-bold mb-4">Selected Scenes:</h3>
+    <ul>
+      <li *ngFor="let text of data.selected" class="list-none mb-2 font-bold text-lg">{{ text.sceneNumberText }} {{
+        text.text }}</li>
+    </ul>
+    <h2 class="text-2xl font-bold mt-4">Total: $10 (free for beta)</h2>
+  </div>
+
+  <!-- Checkbox for Terms and Conditions -->
+  <div class="mt-6">
+    <div class="mt-8 p-4">
+      <!-- CLOSES BUTTON TO FIRE GETPDF FROM DASHBOARD RIGHT -->
+      <button (click)="this.dialogRef.close()" [class.bg-gray-200]="!agreeToTerms" [class.bg-blue-500]="agreeToTerms"
+        class="text-white py-2 px-4 rounded hover:bg-blue-600 focus:outline-none" [disabled]="!agreeToTerms">
+        Get My Sides
+      </button>
+    </div>
+    <div class="flex flex-col items-start">
+      <button (click)="showTerms = !showTerms" class="py-2 px-4 text-sm text-blue-500 hover:underline">
+        {{ showTerms ? 'Hide Terms of Service' : 'Show Terms of Service' }}
+      </button>
+      <label>
+        <input type="checkbox" name="terms" [(ngModel)]="agreeToTerms" required>
+        I agree to the Terms of Service.
+      </label>
+      <div *ngIf="showTerms" class="terms-of-service text-sm mt-2">
         <ul>
-          <li *ngFor="let text of data.selected" class="list-none mb-2 font-bold text-lg">{{ text.sceneNumberText }} {{ text.text }}</li>
+          <li>I have reviewed the preview of the document provided and confirm that it meets my expectations and
+            requirements. I understand that once I proceed with the purchase, any changes or corrections to the document
+            will not be possible.
+          </li>
+          <li>I understand that for security and privacy reasons, Sides-Ways will automatically delete all records of my
+            document from their servers 10 minutes after initiating the checkout process. It is my responsibility to
+            ensure that I have saved and backed up my document before this timeframe elapses.
+          </li>
+          <li>Sides-Ways is not responsible for any errors, omissions, or improper formatting in the final document. It is
+            my responsibility to ensure the accuracy and completeness of the document before purchase.
+          </li>
+          <li>Sides-Ways disclaims all liability for any intellectual property (IP) leaks or dissemination issues that may
+            arise from the use or sharing of the document. It is my responsibility to manage and secure the distribution
+            of my document appropriately.
+          </li>
         </ul>
-        <h2 class="text-2xl font-bold mt-4">Total: $5</h2>
-      </div>
-    
-      <!-- Checkbox for Terms and Conditions -->
-      <div class="mt-6">
-        <div class="terms-of-service text-sm">
-          <label>
-              <input type="checkbox" name="terms" [(ngModel)]="agreeToTerms" required>
-              I agree to the Terms of Service.
-          </label>
-          <p>By checking this box, I acknowledge and agree to the following terms:</p>
-          <ul>
-              <li>I have reviewed the preview of the document provided and confirm that it meets my expectations and requirements. I understand that once I proceed with the purchase, any changes or corrections to the document will not be possible.</li>
-              <li>I understand that for security and privacy reasons, Sides-Ways will automatically delete all records of my document from their servers 10 minutes after initiating the checkout process. It is my responsibility to ensure that I have saved and backed up my document before this timeframe elapses.</li>
-              <li>Sides-Ways is not responsible for any errors, omissions, or improper formatting in the final document. It is my responsibility to ensure the accuracy and completeness of the document before purchase.</li>
-              <li>Sides-Ways disclaims all liability for any intellectual property (IP) leaks or dissemination issues that may arise from the use or sharing of the document. It is my responsibility to manage and secure the distribution of my document appropriately.</li>
-          </ul>
-          <p>By agreeing to these terms, I release Sides-Ways from any claims, damages, or liabilities that may arise from my use of their service.</p>
-      </div>
-      
-      </div>
-    
-      <!-- Button Wrapper -->
-      <div class="mt-8 p-4" >
-        <button (click) = "this.dialogRef.close()"
-          [class.bg-gray-200]="!agreeToTerms" 
-          [class.bg-blue-500] = "agreeToTerms" 
-          class="text-white py-2 px-4 rounded hover:bg-blue-600 focus:outline-none"
-          [disabled]="!agreeToTerms"
-          >
-          Get My Sides
-        </button>
+        <p>By agreeing to these terms, I release Sides-Ways from any claims, damages, or liabilities that may arise from
+          my use of their service.</p>
       </div>
     </div>
-  }
+  </div>
+  
 
-
-
- 
-
-
+  <!-- Button Wrapper -->
+</div>
+}
