@@ -28,8 +28,8 @@ export class MainNavComponent implements OnInit {
   ngOnInit(): void {
     this.token.countdown$.subscribe(countdown => {
       if(!countdown) {
-        alert("sessoin expired - rerouting.  Your IP has been deleted");
-        this.router.navigate(["/"])
+        // countdown inits at 0
+        // this.router.navigate(["/"])
       }
       this.countdownClock = this.formatTime(countdown) as string
       console.log("countdown: " + this.countdownClock)

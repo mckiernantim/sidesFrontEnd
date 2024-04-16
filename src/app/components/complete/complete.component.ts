@@ -28,14 +28,14 @@ export class CompleteComponent implements OnInit, OnDestroy {
     public upload: UploadService,
     public token: TokenService,
     public dialog:MatDialog,
-    private router: Router
+    public router: Router
   ) {}
   ngOnInit() {
     // subscription will coninualy change over time until hitting zero
     this.countdownSubscription = this.token.countdown$.subscribe(
       (timeRemaining) => {
         this.downloadTimeRemaining = timeRemaining;
-        if (this.downloadTimeRemaining < 0) {
+        if (this.downloadTimeRemaining <= 0) {
           if (this.name === null) {
             alert(`unable to detect any script session - rerouting to upload`);
           } else {
@@ -120,7 +120,8 @@ export class CompleteComponent implements OnInit, OnDestroy {
           console.error('Download error:', error);
           alert(
            `Ooops - something went wrong: \n ${error.error}`
-          );
+           );
+          //  this.router.navigate(["/"]);
         }
       );
   }
