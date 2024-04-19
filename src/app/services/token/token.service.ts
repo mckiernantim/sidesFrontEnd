@@ -33,7 +33,7 @@ export class TokenService {
   
 
   public initializeCountdown(initialTime: number): void {
-    debugger
+    
     // intial timeSource is a behaviorSubject  meaning it can be an observable
       // but it can also be given a value via .next()
     this.initialTimeSource.next(initialTime);

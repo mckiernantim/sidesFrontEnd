@@ -338,7 +338,8 @@ export class LastLooksComponent implements OnInit {
     return nextPageFirst;
   }
 
- 
+ // DEPRECATED ? LOOOL
+
   getPDF() {
     alert('geting sides');
     const adjustedFinalDoc = this.restorePositionsInDocument(this.doc);
@@ -351,7 +352,7 @@ export class LastLooksComponent implements OnInit {
           this.token.initializeCountdown(downloadTimeRemaining);
 
           // Generate a session token for Stripe checkout
-          this.stripe.startCheckout().subscribe((stripeRes: any) => {
+          this.stripe.startCheckout(downloadTimeRemaining, token, 0).subscribe((stripeRes: any) => {
             window.location.href = stripeRes.url;
           });
         } catch (e) {

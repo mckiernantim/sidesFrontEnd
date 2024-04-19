@@ -14,7 +14,7 @@ export class AuthGuard implements CanActivate {
     const isValid = this.tokenService.isTokenValid()
     if (!isValid) {
       alert("You are attempting to access a protected route without a valid session. Please start a new session.");
-      this.router.navigate(['/']);
+      // this.router.navigate(['/']);
       return of(true); // Returns an observable of false, preventing navigation to the guarded route
     }
     return of(true); // Returns an observable of true, allowing navigation to the guarded route
