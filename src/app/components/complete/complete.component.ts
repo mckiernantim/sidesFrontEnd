@@ -4,7 +4,7 @@ import { AfterViewInit, Component, OnInit, OnDestroy } from '@angular/core';
 import { TokenService } from 'src/app/services/token/token.service';
 import { catchError, subscribeOn } from 'rxjs/operators';
 import { throwError, of, Subscription, Observable, switchMap } from 'rxjs';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
 import { WarningComponent } from '../warning/warning.component';
@@ -21,34 +21,45 @@ export class CompleteComponent implements OnInit, OnDestroy {
   countdownSubscription: Subscription;
   pdfToken: string = '';
   downloadToken: number = 0;
+  expires:number;
   downloadSessionValid: boolean = true;
   documentHasBeenDownloaded: boolean = false;
-
   constructor(
     public upload: UploadService,
     public token: TokenService,
     public dialog:MatDialog,
-    public router: Router
+    public router: Router,
+    public route:ActivatedRoute
   ) {}
   ngOnInit() {
-    // subscription will coninualy change over time until hitting zero
+    this.route.queryParams.subscribe(params => {
+      this.pdfToken = params['pdfToken'];
+      this.expires = +params['expires'];
+      
+      // Initialize the countdown with the expires time from the queryParams
+      this.token.initializeCountdown(this.expires);
+    });
+  
+    // No need to check for token validity or expiration here as the guard handles it
+  }
+  
+  ngAfterViewInit(): void {
+    if (this.token.isTokenValid()) {  // Ensure the isTokenValid method is called as a function
+      this.downloadPDF(this.name, this.callsheet, this.pdfToken);
+    }
     this.countdownSubscription = this.token.countdown$.subscribe(
       (timeRemaining) => {
         this.downloadTimeRemaining = timeRemaining;
         if (this.downloadTimeRemaining <= 0) {
-          if (this.name === null) {
-            alert(`unable to detect any script session - rerouting to upload`);
-          } else {
-            alert(
-              `session expired for: ${this.name} \n You're IP has been deleted.  Thanks for using sides-ways`
-            );
-          }
-          // this.router.navigate(["/"])
+          this.handleExpiredToken();
         }
       }
     );
   }
-
+  handleExpiredToken() {
+    alert('Token has expired. Please initiate a new session.');
+    // this.router.navigate(['/']);
+  }
   ngOnDestroy() {
     // clean up to unsubscribe so we're not counting down to negative infinity
     if (this.countdownSubscription) {
@@ -56,12 +67,6 @@ export class CompleteComponent implements OnInit, OnDestroy {
     }
   }
 
-  // we download as soon as we land
-  ngAfterViewInit(): void {
-    if (this.token.isTokenValid) {
-      this.downloadPDF(this.name, this.callsheet);
-    }
-  }
 
   calculateDownloadTime() {
     try {
@@ -93,15 +98,15 @@ export class CompleteComponent implements OnInit, OnDestroy {
     }
   }
   
-  downloadPDF(name: string, callsheet: string) {
+  downloadPDF(name: string, callsheet: string, pdfToken:string) {
     this.upload
-      .getPDF(name, callsheet)
+      .getPDF(name, callsheet, pdfToken)
       .pipe(
         switchMap((blob) => {
           const url = window.URL.createObjectURL(blob);
           const anchor = document.createElement('a');
           anchor.href = url;
-          anchor.download = `${name}-Sides-Ways.zip`;
+        anchor.download = `${name}-Sides-Ways.zip`;
           anchor.click();
 
           window.URL.revokeObjectURL(url);

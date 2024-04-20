@@ -108,17 +108,18 @@ export class UploadService {
   }
   
   // final step
-  getPDF(name: string, callsheet: string): Observable<any> {
+  getPDF(name: string, callsheet: string, pdfToken:string): Observable<any> {
     const headers = new HttpHeaders().set('Content-Type', 'application/json');
 
     const params = new HttpParams()
       .set('name', name)
-      .set('callsheet', callsheet);
+      .set('callsheet', callsheet)
+      .set('pdfToken', pdfToken)
 
-    return this.httpClient.get(this.url + '/complete', {
+    return this.httpClient.get(this.url + `/complete/${pdfToken}`, {
       responseType: 'blob',
       withCredentials: true,
-      params: { name: name, callsheet: callsheet },
+      params: params
     });
   }
 

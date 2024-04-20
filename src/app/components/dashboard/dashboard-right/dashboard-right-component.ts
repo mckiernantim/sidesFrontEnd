@@ -20,7 +20,9 @@ import { TokenService } from 'src/app/services/token/token.service';
 import { debug } from 'console';
 
 export type pdfServerRes = {
-  expirationTime:number
+  expirationTime:number,
+  jwtToken:string,
+  downloadTimeRemaining:number
 }
 export type stripeRes =  {
   url:string,
@@ -257,10 +259,10 @@ export class DashboardRightComponent implements OnInit {
     this.upload.generatePdf(finalDocument)
       .subscribe(
         (serverRes: pdfServerRes) => {
-        let { expirationTime } = serverRes;
-        expirationTime *= 1000
-        this.token.initializeCountdown(Number(expirationTime));
-        this.stripe.startCheckout().subscribe(
+        let { expirationTime, jwtToken, downloadTimeRemaining } = serverRes;
+        // expirationTime *= 1000
+        // this.token.initializeCountdown(Number(expirationTime));
+        this.stripe.startCheckout(expirationTime, jwtToken, downloadTimeRemaining).subscribe(
           (res:stripeRes) => {
         
             // Handle successful response, if needed
