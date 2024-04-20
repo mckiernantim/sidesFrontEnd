@@ -1,22 +1,25 @@
 import { Injectable } from '@angular/core';
-import { CanActivate, Router } from '@angular/router';
-import { TokenService } from '../services/token/token.service';
-import { Observable, of } from 'rxjs';
+import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot } from '@angular/router';
+import { Observable } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class AuthGuard implements CanActivate {
-  constructor(private tokenService: TokenService, private router: Router) {}
+  constructor(private router: Router) {}
 
-  canActivate(): Observable<boolean> {
-    // Check if the token is valid, which is based on the countdown timer
-    const isValid = this.tokenService.isTokenValid()
-    if (!isValid) {
-      alert("You are attempting to access a protected route without a valid session. Please start a new session.");
-      // this.router.navigate(['/']);
-      return of(true); // Returns an observable of false, preventing navigation to the guarded route
+  canActivate(
+    route: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
+    const token = route.queryParams['pdfToken'];
+    const expires = +route.queryParams['expires'];
+
+    if (token && expires && expires > Date.now()) {
+      return true;
+    } else {
+      alert('No valid session token or expiration time found or token has expired.');
+      this.router.navigate(['/']);
+      return false;
     }
-    return of(true); // Returns an observable of true, allowing navigation to the guarded route
   }
 }

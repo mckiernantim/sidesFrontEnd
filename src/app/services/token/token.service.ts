@@ -12,10 +12,11 @@ export class TokenService {
   public countdown$: Observable<number>;
   
 
-  constructor() {
-    const expirationTimestamp = parseInt(Cookies.get(this.tokenKey) || '0', 10);
-    
-    this.initialTimeSource.next(expirationTimestamp);
+  constructor() {}
+  
+
+  public initializeCountdown(initialTime: number): void {
+    this.initialTimeSource.next(initialTime);
     this.countdown$ = this.initialTimeSource.asObservable().pipe(
       switchMap(endTime => {
         return timer(0, 1000).pipe(
@@ -25,15 +26,10 @@ export class TokenService {
             return Math.max(timeLeft, 0); 
           }),
           takeWhile(timeLeft => timeLeft > 0, true),
-          startWith(Math.max(expirationTimestamp - Date.now(), 0))
+          startWith(Math.max(initialTime - Date.now(), 0))
         );
       })
     );
-  }
-  
-
-  public initializeCountdown(initialTime: number): void {
-    
     // intial timeSource is a behaviorSubject  meaning it can be an observable
       // but it can also be given a value via .next()
     this.initialTimeSource.next(initialTime);

@@ -34,35 +34,31 @@ export class CompleteComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       this.pdfToken = params['pdfToken'];
-      this.expires = +params['expires']; 
-
-      if (!this.pdfToken || !this.expires) {
-        alert('No valid session token or expiration time found.');
-        this.router.navigate(['/']);
-      }
-
-      const currentTime = Date.now();
-      if (currentTime > this.expires) {
-        alert('Token has expired.');
-        this.router.navigate(['/']);
-      }
+      this.expires = +params['expires'];
+      
+      // Initialize the countdown with the expires time from the queryParams
+      this.token.initializeCountdown(this.expires);
     });
   
+    // No need to check for token validity or expiration here as the guard handles it
+  }
   
+  ngAfterViewInit(): void {
+    if (this.token.isTokenValid()) {  // Ensure the isTokenValid method is called as a function
+      this.downloadPDF(this.name, this.callsheet, this.pdfToken);
+    }
     this.countdownSubscription = this.token.countdown$.subscribe(
       (timeRemaining) => {
         this.downloadTimeRemaining = timeRemaining;
         if (this.downloadTimeRemaining <= 0) {
-          alert("session is done!@#!")
-          // this.handleSessionExpired();
+          this.handleExpiredToken();
         }
       }
     );
   }
-  
   handleExpiredToken() {
     alert('Token has expired. Please initiate a new session.');
-    this.router.navigate(['/']);
+    // this.router.navigate(['/']);
   }
   ngOnDestroy() {
     // clean up to unsubscribe so we're not counting down to negative infinity
@@ -71,12 +67,6 @@ export class CompleteComponent implements OnInit, OnDestroy {
     }
   }
 
-  // we download as soon as we land
-  ngAfterViewInit(): void {
-    if (this.token.isTokenValid) {
-      this.downloadPDF(this.name, this.callsheet, this.pdfToken);
-    }
-  }
 
   calculateDownloadTime() {
     try {
@@ -116,7 +106,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
           const url = window.URL.createObjectURL(blob);
           const anchor = document.createElement('a');
           anchor.href = url;
-          anchor.download = `${name}-Sides-Ways.zip`;
+        anchor.download = `${name}-Sides-Ways.zip`;
           anchor.click();
 
           window.URL.revokeObjectURL(url);
