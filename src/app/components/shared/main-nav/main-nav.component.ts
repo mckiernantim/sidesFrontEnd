@@ -12,7 +12,8 @@ import { Router } from '@angular/router';
 })
 export class MainNavComponent implements OnInit {
   countdown:number = 0;
- countdownClock: string | null = null;
+  countdownClock: string | null = null;
+  displayClock: boolean = false;
   isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
     .pipe(
       map(result => result.matches),
@@ -28,7 +29,7 @@ export class MainNavComponent implements OnInit {
   ngOnInit(): void {
     this.token.countdown$.subscribe(countdown => {
       if(!countdown) {
-        // countdown inits at 0
+        this.displayClock = false
         // this.router.navigate(["/"])
       }
       this.countdownClock = this.formatTime(countdown) as string
@@ -36,6 +37,7 @@ export class MainNavComponent implements OnInit {
     })
   } 
   formatTime(milliseconds) {
+    if(!this.displayClock) this.displayClock = true;
     let seconds:string|number = Math.floor(milliseconds / 1000);
     let minutes:string|number = Math.floor(seconds / 60);
     let hours:string|number = Math.floor(minutes / 60);
