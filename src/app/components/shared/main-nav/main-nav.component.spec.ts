@@ -1,9 +1,9 @@
-import { TestBed, waitForAsync, fakeAsync, tick, ComponentFixture} from '@angular/core/testing';
+import { TestBed, fakeAsync, tick, flush, ComponentFixture } from '@angular/core/testing';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Router, ActivatedRoute } from '@angular/router';
-import { of } from 'rxjs';
+import { of, BehaviorSubject } from 'rxjs';
 import { MainNavComponent } from './main-nav.component';
-import  { TokenService } from "../../../services/token/token.service"
+import { TokenService } from "../../../services/token/token.service";
 
 describe('MainNavComponent', () => {
   let component: MainNavComponent;
@@ -20,7 +20,7 @@ describe('MainNavComponent', () => {
 
     mockTokenService = {
       initializeCountdown: jest.fn(),
-      countdown$: of(3000)
+      countdown$: new BehaviorSubject(5000)  // Use BehaviorSubject to manipulate countdown values
     };
 
     mockRouter = {
@@ -43,7 +43,7 @@ describe('MainNavComponent', () => {
 
     fixture = TestBed.createComponent(MainNavComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
+    fixture.detectChanges(); // Initializes component and runs ngOnInit
   });
 
   it('should create', () => {
@@ -65,9 +65,10 @@ describe('MainNavComponent', () => {
   });
 
   it('should navigate to error page when countdown is 0', fakeAsync(() => {
-    mockTokenService.countdown$ = of(0);
-    fixture.detectChanges(); // Apply any bindings and ngOnInit.
-    tick(); // Allow time for the observable to emit and the subscription logic to execute.
+    mockTokenService.countdown$.next(0);  // Emit 0 to simulate countdown hitting zero
+    tick();  // Process the tick
+    fixture.detectChanges();  // Update view with new countdown
     expect(mockRouter.navigate).toHaveBeenCalledWith(["/"]);
-  }))
+    flush();  // Ensure no more microtasks are left
+  }));
 });
