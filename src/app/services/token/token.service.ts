@@ -8,11 +8,11 @@ import  Cookies  from 'js-cookie'
 })
 export class TokenService {
   private readonly tokenKey = 'dltr_sidesWays';
-  private initialTimeSource = new BehaviorSubject<number>(0);
+  private initialTimeSource = new BehaviorSubject<number>(100000);
   public countdown$: Observable<number>;
   
 
-  constructor() {}
+  constructor() { }
   
 
   public initializeCountdown(initialTime: number): void {
@@ -35,7 +35,7 @@ export class TokenService {
     this.initialTimeSource.next(initialTime);
   }
   public removeToken() {
-    Cookies.delete(this.tokenKey)
+    Cookies.remove(this.tokenKey)
   }
   public getCountdownObservable(): Observable<number> {
     return this.countdown$;

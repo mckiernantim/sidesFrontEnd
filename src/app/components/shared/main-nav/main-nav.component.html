@@ -6,11 +6,11 @@
       <span class="logo nav-item text-white">Sides-Ways</span>
       <span class="spacer"></span>
       <!-- Display the countdown value -->
-      @if (countdownClock != "00:00:00") {
+      @if (displayClock ) {
         <ng-container >
-        <div class="right nav-item text-red-500">Deleting your IP in: {{ countdownClock }}</div>
+        <div class="right nav-item text-red-500">Deleting your IP in: {{ countdownClock }} </div>
       </ng-container>
-    }
+    } 
       <button mat-raised-button  class="nav-item text-offWhite " routerLink="/">Home</button>
       <button mat-raised-button  class="nav-item text-offWhite" routerLink="/About">About</button>
       <div class="right nav-item">

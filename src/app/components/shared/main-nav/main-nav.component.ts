@@ -3,7 +3,7 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Observable } from 'rxjs';
 import { map, shareReplay } from 'rxjs/operators';
 import { TokenService } from 'src/app/services/token/token.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-main-nav',
@@ -11,8 +11,9 @@ import { Router } from '@angular/router';
   styleUrls: ['./main-nav.component.css']
 })
 export class MainNavComponent implements OnInit {
-  countdown:number = 0;
- countdownClock: string | null = null;
+  countdown:number = Date.now() + 5000;
+  countdownClock: string | null = null;
+  displayClock: boolean = true;
   isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
     .pipe(
       map(result => result.matches),
@@ -22,20 +23,28 @@ export class MainNavComponent implements OnInit {
   constructor(
     private breakpointObserver: BreakpointObserver, 
     private token: TokenService,
-    private router:Router
+    private router:Router,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
-    this.token.countdown$.subscribe(countdown => {
-      if(!countdown) {
-        // countdown inits at 0
-        // this.router.navigate(["/"])
-      }
-      this.countdownClock = this.formatTime(countdown) as string
-      console.log("countdown: " + this.countdownClock)
+    this.route.queryParams.subscribe(params => {
+      console.log(params)
+      this.countdown = Number(params.expires)
+      this.token.initializeCountdown(this.countdown)
+      this.token.countdown$.subscribe(countdown => {
+        console.log(countdown, " this is the countdown")
+        if(!countdown) {
+          this.displayClock = false
+          this.router.navigate(["/"])
+        }
+        this.countdownClock = this.formatTime(countdown) as string
+        console.log("countdown: " + this.countdownClock)
+      })
     })
   } 
   formatTime(milliseconds) {
+    if(!this.displayClock) this.displayClock = true;
     let seconds:string|number = Math.floor(milliseconds / 1000);
     let minutes:string|number = Math.floor(seconds / 60);
     let hours:string|number = Math.floor(minutes / 60);
