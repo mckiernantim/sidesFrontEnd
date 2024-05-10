@@ -53,6 +53,7 @@ export class PdfService {
     this.initializeData();
   }
   initializeData() {
+    
     this.allLines = this.upload.allLines;
     this.firstAndLastLinesOfScene = this.upload.firstAndLastLinesOfScenes
     this.individualPages = this.upload.individualPages || null;
@@ -90,10 +91,7 @@ export class PdfService {
         this.setLastLines(i);
 
         this.processSceneHeader(sceneRefInTable, sceneInActualScript);
-        // this.removeSceneNumberFromHeaderAndAssignAsData(currentSceneInScript)
-        // this.removeSceneNumberFromHeaderAndAssignAsData(currentScene);
-
-        // POPULATE TABLE
+        
       }
     }
 

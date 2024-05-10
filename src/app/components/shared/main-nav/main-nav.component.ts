@@ -36,7 +36,7 @@ export class MainNavComponent implements OnInit {
         console.log(countdown, " this is the countdown")
         if(!countdown) {
           this.displayClock = false
-          this.router.navigate(["/"])
+          // this.router.navigate(["/"])
         }
         this.countdownClock = this.formatTime(countdown) as string
         console.log("countdown: " + this.countdownClock)
