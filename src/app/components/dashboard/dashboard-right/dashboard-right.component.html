@@ -82,13 +82,16 @@
         <ng-container>
           <ul>
             <ng-container>
-              <li *ngIf="this.watermark">
-                <pre> watermark: {{this.watermark}}</pre>
-              </li>
-              <div *ngIf="callsheet">
-                <li>Callsheet: {{ callsheet }}</li>
-              </div>
-  
+              @if (watermark) {
+                <li>
+                  <pre> watermark: {{this.watermark}}</pre>
+                </li>
+              }
+              @if (callsheetState) {
+                <div>
+                  <li>Calllsheet: {{ callsheet }}</li>
+                </div>
+              }
               <li class="p-2" *ngFor="let scene of selected">
                 <pre>{{scene.sceneNumberText}}     {{scene.text}}     {{scene.sceneNumberText}}</pre>
               </li>
@@ -127,6 +130,9 @@
     </div>
 </div>
 
+
+
+  
 
 
 

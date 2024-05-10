@@ -122,6 +122,9 @@ export class IssueComponent implements OnInit, AfterViewInit {
     this.selected = option;
   }
 
+  proceedToCheckout(proceedToCheckout: boolean): void {
+    this.dialogRef.close(proceedToCheckout);
+  }
   handleClick() {
     this.onClick()
   }

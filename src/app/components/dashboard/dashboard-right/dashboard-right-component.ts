@@ -8,26 +8,26 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { StripeService } from '../../../services/stripe/stripe.service'
+import { StripeService } from '../../../services/stripe/stripe.service';
 import { Subscription } from 'rxjs';
 import { UndoService } from '../../../services/edit/undo.service';
 import { Line } from 'src/app/types/Line';
 import { PdfService } from '../../../services/pdf/pdf.service';
 
-import { fadeInOutAnimation } from '../../../animations/animations'
+import { fadeInOutAnimation } from '../../../animations/animations';
 import { SpinningBotComponent } from '../../shared/spinning-bot/spinning-bot.component';
 import { TokenService } from 'src/app/services/token/token.service';
 import { debug } from 'console';
 
 export type pdfServerRes = {
-  expirationTime:number,
-  jwtToken:string,
-  downloadTimeRemaining:number
-}
-export type stripeRes =  {
-  url:string,
-  id:string
-}
+  expirationTime: number;
+  jwtToken: string;
+  downloadTimeRemaining: number;
+};
+export type stripeRes = {
+  url: string;
+  id: string;
+};
 interface toolTipOption {
   title: string;
   text: string;
@@ -37,7 +37,7 @@ interface toolTipOption {
   selector: 'app-dashboard-right',
   templateUrl: './dashboard-right.component.html',
   styleUrls: ['./dashboard-right.component.css'],
-  animations:[fadeInOutAnimation]
+  animations: [fadeInOutAnimation],
 })
 export class DashboardRightComponent implements OnInit {
   // STATE BOOLEANS
@@ -50,6 +50,7 @@ export class DashboardRightComponent implements OnInit {
   finalPdfData: any = {};
   linesReady: boolean;
   waterMarkState: boolean;
+  callsheetState:boolean
 
   // LAST LOOKS STATE
   editLastLooksState: boolean = false;
@@ -102,7 +103,7 @@ export class DashboardRightComponent implements OnInit {
   fireUndo: boolean = false;
   initialFinalDocState: Line[];
   callsheet: string;
-  
+
   watermark: string;
   script: string = localStorage.getItem('name');
   // DEPCREACEATED WATSON STUFF MAY COME BACK
@@ -123,8 +124,8 @@ export class DashboardRightComponent implements OnInit {
     public dialog: MatDialog,
     public errorDialog: MatDialog,
     public lineOut: LineOutService,
-    public pdf:PdfService,
-    public token:TokenService
+    public pdf: PdfService,
+    public token: TokenService
   ) {
     // DATA ITEMS FOR FUN
 
@@ -133,10 +134,9 @@ export class DashboardRightComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.intizilazeState()
-    this.initializeSceneSelectionTable()
+    this.intizilazeState();
+    this.initializeSceneSelectionTable();
     // this.openFinalSpinner()
-
   }
   ngAfterViewInit(): void {
     this.scriptLength = this.individualPages.length - 1 || 0;
@@ -165,17 +165,17 @@ export class DashboardRightComponent implements OnInit {
   }
 
   initializeSceneSelectionTable() {
-    if(!this.pdf.allLines) {
-      alert("No Script data detected - routing to upload ")
-      this.router.navigate(["/"])
+    if (!this.pdf.allLines) {
+      alert('No Script data detected - routing to upload ');
+      this.router.navigate(['/']);
     }
-    
+
     this.dataSource = new MatTableDataSource(this.pdf.scenes);
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
     this.length = this.pdf.allLines.length;
   }
-  
+
   // lets get lookback tighter  - should be able to refrence lastCharacterIndex
   lookBack(line) {
     let newText = '';
@@ -226,9 +226,11 @@ export class DashboardRightComponent implements OnInit {
   onPageUpdate(updatedPage: Line[]) {
     // Update the PDF service with the changes
     this.pdf.updatePdfState(updatedPage);
-}
+  }
   handleCallSheetUpload(callsheet) {
     this.callsheet = callsheet;
+    this.cdr.detectChanges()
+    this.callsheetState = !this.callsheetState
   }
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
@@ -240,59 +242,52 @@ export class DashboardRightComponent implements OnInit {
 
   // we should find a better way to handle this - should nelong somewhere else
   flagStartLines(doc) {
-    doc.forEach(page => {
-      page.forEach(line => {
-        if(line.category == "scene-header" && line.visible =="true") {
-          line.bar = "startBar"
+    doc.forEach((page) => {
+      page.forEach((line) => {
+        if (line.category == 'scene-header' && line.visible == 'true') {
+          line.bar = 'startBar';
         }
-      })
-    })
+      });
+    });
   }
 
   //  pass the scene to be made and the breaks ponts for the scene to be changed to visible true
 
   sendFinalDocumentToServer(finalDocument) {
-    
-    this.flagStartLines(finalDocument.data)
-   
-   
-    this.upload.generatePdf(finalDocument)
-      .subscribe(
-        (serverRes: pdfServerRes) => {
+    this.flagStartLines(finalDocument.data);
+
+    this.upload.generatePdf(finalDocument).subscribe(
+      (serverRes: pdfServerRes) => {
         let { expirationTime, jwtToken, downloadTimeRemaining } = serverRes;
         // expirationTime *= 1000
         // this.token.initializeCountdown(Number(expirationTime));
-        this.stripe.startCheckout(expirationTime, jwtToken, downloadTimeRemaining).subscribe(
-          (res:stripeRes) => {
-        
-            // Handle successful response, if needed
-            localStorage.setItem("stripeSession", res.id)
-            window.location.href = res.url
-          },
-          (error) => {
-            console.error('Stripe checkout error:', error);
-          }
-        );
-      }, 
+        this.stripe
+          .startCheckout(expirationTime, jwtToken, downloadTimeRemaining)
+          .subscribe(
+            (res: stripeRes) => {
+              // Handle successful response, if needed
+              localStorage.setItem('stripeSession', res.id);
+              window.location.href = res.url;
+            },
+            (error) => {
+              console.error('Stripe checkout error:', error);
+            }
+          );
+      },
       (err) => {
-     
         this.dialog.closeAll();
         const errorRef = this.dialog.open(IssueComponent, {
           width: '500px',
-          height:'600px',
-          data: {error: "Unexpected Server error - please try again alter"}
+          height: '600px',
+          data: { error: 'Unexpected Server error - please try again alter' },
         });
-            errorRef.afterClosed().subscribe((res) => {
-         
-        });
+        errorRef.afterClosed().subscribe((res) => {});
       }
     );
   }
 
-  logUpload() {
-   
-  }
-  
+  logUpload() {}
+
   logSelected(): void {
     // let x = this.scenes.filter(scene => {
     //   return scene.problems
@@ -318,15 +313,15 @@ export class DashboardRightComponent implements OnInit {
       // starts process to navigate
       const dialogRef = this.dialog.open(SpinningBotComponent, {
         width: '75vw',
-        height:'75vw',
+        height: '75vw',
         data: {
           selected: this.selected,
           script: this.script,
           individualPages: this.individualPages.length - 1,
           callsheet: this.callsheet,
           waitingForScript: true,
-          title:this.script,
-          dialogOption: "payment"
+          title: this.script,
+          dialogOption: 'payment',
         },
       });
       dialogRef.afterClosed().subscribe((result) => {
@@ -335,7 +330,6 @@ export class DashboardRightComponent implements OnInit {
     }
   }
   getLastPage = (scene) => {
-    
     return this.allLines[scene.lastLine].page || null;
   };
   toggleLastLooks() {
@@ -353,48 +347,58 @@ export class DashboardRightComponent implements OnInit {
       this.waitingForScript = true;
       // this.openFinalSpinner();
       // WE SHOULD CHANGE THIS TO PARSEINT AND - OR DO WE EVEN NEED TO SORT THEM?
-      this.selected.sort((a,b) => a.index - b.index)
-   
-      this.pdf.processPdf(this.selected, this.script, this.individualPages, this.callsheet);
+      this.selected.sort((a, b) => a.index - b.index);
+
+      this.pdf.processPdf(
+        this.selected,
+        this.script,
+        this.individualPages,
+        this.callsheet
+      );
     }
   }
+  prepFinalDocument(addCallSheet:boolean) {
+    const coverSheet = addCallSheet ? localStorage.getItem("callSheetPath") : ""
+    this.finalDocument = this.pdf.getPdf(
+      this.selected,
+      this.script,
+      this.individualPages,
+      coverSheet
+    );
+    this.finalDocReady = true;
+    this.waitingForScript = true;
+  }
 
-  // this function renders an IssueComponent with 60% width
 
-  //  NEED TO UPDATE SERVIVCE TO NOT FIRE ON DIALOG CLOSE - TOO EASY
   openConfirmPurchaseDialog() {
     if (this.modalData) {
       const dialogRef = this.dialog.open(IssueComponent, {
         width: '750px',
-        height:'750px',
+        height: '750px',
         data: { scenes: this.modalData, selected: this.selected },
       });
-  
+
       // closing of the issueComponent triggers our finalstep
       dialogRef.afterClosed().subscribe((result) => {
-        let coverSheet = localStorage.getItem('callSheetPath');
-        // const { downloadTimeRemaining, token } = result;
-        this.waitingForScript = true;
-        this.callsheet = result?.callsheet.name || null;
-        this.openFinalSpinner();
-        this.finalDocument = this.pdf.getPdf(this.selected, this.script, this.individualPages, coverSheet);
-        // this.token.initializeCountdown(downloadTimeRemaining);
-        this.finalDocReady = true;
-        this.waitingForScript = true;
-        
-        this.sendFinalDocumentToServer(this.finalDocument)
+        console.log(result)
+        if (result) {
+          if(this.callsheet) {
+           this.prepFinalDocument(true)
+           this.openFinalSpinner()
+           this.sendFinalDocumentToServer(this.finalDocument);
+  
+          } else {
+            this.prepFinalDocument(false)         
+            this.openFinalSpinner();
+            this.sendFinalDocumentToServer(this.finalDocument);
+          }
+        }
       });
-    } else {
-      this.finalDocument = this.pdf.getPdf(this.selected, this.script, this.individualPages, '');
-      this.finalDocReady = true;
-      this.waitingForScript = true;
-      this.openFinalSpinner();
-      this.sendFinalDocumentToServer(this.finalDocument)
     }
   }
-    
 
-          
+        
+
   triggerLastLooksAction(str) {
     if (str === 'resetDoc') {
       this.resetFinalDocState = !this.resetFinalDocState;
@@ -411,7 +415,6 @@ export class DashboardRightComponent implements OnInit {
         this.undoService.undo();
         break;
       case str === 'resetDoc':
-
         this.triggerLastLooksAction(str);
 
         break;
@@ -421,7 +424,6 @@ export class DashboardRightComponent implements OnInit {
   }
   toggleEditStateInLastLooks() {
     this.editLastLooksState = !this.editLastLooksState;
-    
   }
 
   setLastLines(i) {
@@ -453,8 +455,7 @@ export class DashboardRightComponent implements OnInit {
       }
     } catch (err) {
       console.log(err);
-      console.error("failed during setLastLines dashboard-right-component")
+      console.error('failed during setLastLines dashboard-right-component');
     }
-
   }
 }
