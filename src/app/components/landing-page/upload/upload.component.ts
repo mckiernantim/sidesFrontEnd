@@ -9,7 +9,7 @@ import { UploadService } from '../../../services/upload/upload.service';
 import { PdfService } from '../../../services/pdf/pdf.service'
 import { Router } from '@angular/router';
 import { fadeInOutAnimation } from '../../../animations/animations';
-import { environment } from '../../../../environments/environment.prod';
+import { environment } from '../../../../environments/environment';
 import {
   MatDialog,
   MAT_DIALOG_DATA,
@@ -17,7 +17,7 @@ import {
 } from '@angular/material/dialog';
 import "./dummyScript.json" 
 const dummyData = require("./dummyScript.json")
-
+console.log(environment)
 
 @Component({
   selector: 'app-upload',
@@ -33,7 +33,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   isButtonDisabled: boolean = true;
 
   logo: string = '../../assets/icons/logoFlat.png';
-  devDataPath: string = "../../../../../../SidesWaysBackEnd/test-data/dummyScript.json";
+  devDataPath: string = "../../../../../../SidesWaysBackEnd/test-data/THE FINAL ROSE-allLines-mock-data";
   fileToUpload: File;
   totalTickets: Subscription;
   totalLines: Subscription;
@@ -60,10 +60,11 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.underConstruction = !environment.production
     this.working = false;
     this.resetLocalData()
-    this.underConstruction = false
   }
+   
 
   ngOnDestroy(): void {
     //Called once, before the instance is destroyed.
@@ -96,15 +97,14 @@ export class UploadComponent implements OnInit, OnDestroy {
     }
   }
   skipUploadForTest() {
- 
-    if (this.underConstruction) {
-      localStorage.setItem('name', this.upload._devPdfPath);
-    } else {
-      this.resetLocalData();
-    }
+    console.log("firing the skip upload")
     this.upload.allLines = dummyData[0];
     this.upload.individualPages = dummyData[1];
     this.upload.lineCount = [];
+    this.pdf.allLines = dummyData[0]
+    this.pdf.individualPages = dummyData[1]
+
+    this.pdf.initializeData()
     this.upload.individualPages.forEach((page) => {
       this.upload.lineCount.push(page.filter((item) => item.totalLines));
       this.router.navigate(['/download']);
@@ -115,7 +115,7 @@ export class UploadComponent implements OnInit, OnDestroy {
     this.fileToUpload = files.item(0);
     this.openDialog(this.fileToUpload.name, "scan");
    
-    // upload our script
+  // upload our scrip
     this.$script_data = this.upload.postFile(this.fileToUpload);
     this.dataSubscription = this.$script_data
       .pipe(

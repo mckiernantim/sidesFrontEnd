@@ -282,8 +282,7 @@ export class DashboardRightComponent implements OnInit {
           height:'600px',
           data: {error: "Unexpected Server error - please try again alter"}
         });
-        debugger
-        errorRef.afterClosed().subscribe((res) => {
+            errorRef.afterClosed().subscribe((res) => {
          
         });
       }
