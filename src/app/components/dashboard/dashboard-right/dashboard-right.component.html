@@ -1,12 +1,6 @@
-<ng-container>
-  <div *ngIf="editLastLooksState">
-    <app-tool-tip (buttonAction)="handleToolTipClicked($event)" [data]="toolTipContent"></app-tool-tip>
-  </div>
-</ng-container>
+
 <div [@fadeInOut] class="text-white">
   <div class="flex flex-col-reverse lg:flex-row justify-around">
-    
-   
     <ng-container *ngIf="!lastLooksReady; else lastLooks">
       <div class="data-feed cell">
         <div class="mat-elevation-z8 table-container">
@@ -58,7 +52,7 @@
 
     </ng-container>
     <!-- Render app-last-looks component with selected value -->
-    <div class="flex flex-col border-black border">
+    <div class="flex flex-col items-center">
       <h1 class=" text-3xl">Generating sides for
         <br>
         <p class="pt-4">{{ script }} - {{ date | date }}</p>
@@ -107,13 +101,23 @@
             </div>
             
           </div>
-          <div>
+          <div class="m-4">
             <h2>Total: $5.00</h2>
             <button mat-raised-button color="warn" (click)="openConfirmPurchaseDialog()">Proceed To Checkout</button>
           </div>
         </ng-template>
       </div>
+      @if (editLastLooksState) {
+        <ng-container>
+          <div class="flex flex-row w-full">
+            <app-tool-tip class="w-full" (buttonAction)="handleToolTipClicked($event)" [data]="toolTipContent"></app-tool-tip>
+          </div>
+        </ng-container>
+      }
     </div>
+
+    
+   
     <ng-template #lastLooks>
       <div *ngIf="this.pdf.finalDocReady">
         <!-- Inputs passed to trigger changes in our lastlooks to handle edit state -->
