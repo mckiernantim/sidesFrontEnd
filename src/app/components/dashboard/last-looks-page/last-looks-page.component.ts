@@ -12,6 +12,7 @@ import { UndoService } from 'src/app/services/edit/undo.service';
 import { Line } from 'src/app/types/Line';
 import * as _ from 'lodash';
 import { DragDropOptions } from 'src/app/types/DragDropOptions';
+import { CdkDragDrop, CdkDragStart} from '@angular/cdk/drag-drop'
 @Component({
   selector: 'app-last-looks-page',
   templateUrl: './last-looks-page.component.html',
@@ -121,6 +122,21 @@ export class LastLooksPageComponent {
     this.pageUpdate.emit(this.page);
   }
 
+
+  
+  calculateDropPosition(event: CdkDragDrop<string[]>): number {
+    const clientRect = event.item.element.nativeElement.getBoundingClientRect();
+    const containerRect = event.container.element.nativeElement.getBoundingClientRect();
+    return clientRect.top - containerRect.top;
+  }
+  
+  
+
+dragStarted(event: CdkDragStart<any>): void {
+  const boundingClientRect = event.source.element.nativeElement.getBoundingClientRect();
+  event.source.data.originalClientY = boundingClientRect.top + window.scrollY; // Absolute position including scroll
+}
+
   updatePositon(num: number, str: string): string {
     const dif = parseInt(str) - num;
     return dif + 'px';
@@ -154,28 +170,7 @@ export class LastLooksPageComponent {
   }
   // Helper function to add actions to the undo queue
 
-  handleLeftClick(
-    event: MouseEvent,
-    line: Line,
-    lineIndex: number,
-    isDragBar?: boolean
-  ) {
-    if (!this.canEditDocument) return;
-    if (event.button !== 0 || this.contextMenuLine) return;
 
-    this.mouseEvent = event;
-    this.toggleSelectedLine(event, line, lineIndex);
-    this.undo.addToUndoQueue({ ...this.selectedLine });
-
-    if (isDragBar) {
-      // add to the queue at start of drag
-      this.dragDrop.startDragBar(event);
-    } else {
-      // add to the queue at start of drag
-  
-      this.dragDrop.startDrag({ event, line, lineIndex });
-    }
-  }
   handleMouseUp(event, line, lineIndex) {
     // this.toggleSelectedLine(event, line, lineIndex);
     this.dragDrop.stopDrag(event);

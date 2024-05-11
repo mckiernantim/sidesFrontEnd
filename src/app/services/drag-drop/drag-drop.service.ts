@@ -3,8 +3,7 @@ import { Line } from '../../types/Line';
 import { Subject } from 'rxjs';
 import { DragDropOptions } from 'src/app/types/DragDropOptions';
 import { PositionChange } from 'src/app/types/PositionChange';
-
-
+import { CdkDragStart, CdkDragEnd } from '@angular/cdk/drag-drop';
       
 
 @Injectable({
@@ -32,9 +31,6 @@ export class DragDropService {
   constructor() {}
   // emits value from observable to stop signal end of update
   updateComponent() {
-    // drag is not firing here for some reason - maybe the stop isnt 
-    
-    // either emits the current selectedLine to the component or a TRUE to signal end of edit
     const valueToEmit = this.selectedLine || this.draggingBar ? this.selectedLine : true
     this.update.next(valueToEmit);
   }
@@ -45,6 +41,7 @@ export class DragDropService {
   setComponentSelectedLine(line: Line | null) {
     this.selectedLine = line;
   }
+
   drag(event: MouseEvent, bar?:boolean) {
     if (this.draggingLine) {
     this.currentXPosDiff = event.clientX - this.initialMouseX;
@@ -77,7 +74,21 @@ export class DragDropService {
     }
   }
 
-    
+  private extractPosition(cdkEvent: CdkDragStart | CdkDragEnd): number {
+    const nativeEvent = cdkEvent.event as MouseEvent | TouchEvent;
+  
+    let clientY: number;
+    if (nativeEvent instanceof MouseEvent) {
+      clientY = nativeEvent.clientY;
+      return clientY
+    } else if (nativeEvent instanceof TouchEvent && nativeEvent.touches.length > 0) {
+      clientY = nativeEvent.touches[0].clientY;
+      return clientY
+    } else {
+      console.error('Unsupported event type');
+      return;
+    }
+  }
 
    
   startDragBar(event: MouseEvent) {
@@ -93,20 +104,6 @@ export class DragDropService {
 
     event.preventDefault();
   }
-  startDrag(options:DragDropOptions) {
-
-    const { event, line } = options
-    this.isLineSelected = true;
-    this.draggingLine = true;
-    // Record the initial positions
-    this.initialMouseY = event.clientY;
-    this.initialMouseX = event.clientX;
-    this.initialLineY = parseFloat(line.calculatedYpos);
-    this.initialLineX = parseFloat(line.calculatedXpos);
-    // add barY? add barX?
-
-    // Select the line
-  }
   allowDrag() {
 
     if (!this.allowDragTimer) {
@@ -119,26 +116,29 @@ export class DragDropService {
     return false;
   } 
     
-  stopDrag(event: MouseEvent) {
-    if (this.draggingLine) {
-      // Calculate the final position of the line
-      
-      this.currentXPosDiff = event.clientX - this.initialMouseX;
-      this.currentYPosDiff = event.clientY - this.initialMouseY;
-      this.processLinePosition();
-      this.selectedLine = null;
-      this.draggingLine = false;
-   
-    } else if (this.draggingBar) {
-      // Calculate the final position of the bar
-      // Update the bar position in the line object
-     const newVal =  this.processBarChange(event.clientY); 
-      this.draggingBar = false;
-    }
-    // Reset the dragging state
-    this.updateComponent();
-
+  startDrag(event: CdkDragStart, line: any): void {
+    debugger
+    this.initialMouseY = this.extractPosition(event)
+    this.initialLineY = parseFloat(line.calculatedYpos);  // Assuming 'calculatedYpos' is a string that needs parsing
+    line.dragging = true;  // You might want to mark the line as being dragged
+    // this.update.next(line);
   }
+
+  onDrag(event: MouseEvent, line: any): void {
+    if (!line.dragging) return;  // Only update if dragging has started
+
+    const newYPos = event.clientY;
+    const positionDifference = newYPos - this.initialMouseY;
+    line.calculatedYpos = this.initialLineY + positionDifference + 'px';
+    
+    this.update.next(line);
+  }
+
+  stopDrag(line: any): void {
+    line.dragging = false;
+    this.update.next(line);
+  }
+
   processLinePosition() {
     // Calculate new X and Y positions based on initial values and differences
     const newXPosition = this.initialLineX + this.currentXPosDiff;
@@ -158,11 +158,5 @@ export class DragDropService {
       this.selectedLine.calculatedYpos = y;
     }
   }
-
-  
-
-
- 
-
-
 }
+  

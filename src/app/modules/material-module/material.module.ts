@@ -10,6 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatListModule } from '@angular/material/list';
 import { MatInputModule } from '@angular/material/input';
 // import { MatCarouselModule } from '@ngbmodule/material-carousel';
+import { DragDropModule } from "@angular/cdk/drag-drop"
 
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
@@ -42,6 +43,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatProgressSpinnerModule,
     MatGridListModule,
     MatIconModule,
+    DragDropModule
     // MatCarouselModule
   ],
   imports: [
