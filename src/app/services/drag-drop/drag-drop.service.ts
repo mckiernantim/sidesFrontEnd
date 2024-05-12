@@ -39,7 +39,7 @@ export class DragDropService {
   }
   onDrop(event: CdkDragEnd, line: Line, lineIndex: number): void {
     const nativeEvent = event.event as MouseEvent | TouchEvent;
-
+    debugger
     let clientY: number = this.getEventClientY(nativeEvent);
     this.getDeltaForYpos(line, clientY);
     this.updateElementStyle(event, line);
@@ -72,7 +72,8 @@ export class DragDropService {
   updateElementStyle(event: CdkDragEnd, line: Line): void {
     const element = event.source.getRootElement();
     element.style.bottom = line.calculatedYpos + 'px';
-    element.style.left = line.calculatedXpos + 'px';
+    // do not change this value
+    element.style.left = line.calculatedXpos;
   }
 
   calculateContainerTopOffset(element: HTMLElement): number {
