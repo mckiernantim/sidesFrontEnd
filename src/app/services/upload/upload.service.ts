@@ -209,7 +209,7 @@ export class UploadService {
   }
 
   skipUploadForTest() {
-    const data = require('../../components/landing-page/upload/dummyScript.json');
+    const data = require('../../components/landing-page/upload/THE FINAL ROSE-allLines-mock-data.json');
     if (this.underConstruction) {
       localStorage.setItem('name', this._devPdfPath);
     }

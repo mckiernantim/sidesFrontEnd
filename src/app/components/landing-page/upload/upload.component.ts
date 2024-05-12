@@ -15,9 +15,13 @@ import {
   MAT_DIALOG_DATA,
   MatDialogRef,
 } from '@angular/material/dialog';
-import "./dummyScript.json" 
-const dummyData = require("./dummyScript.json")
-console.log(environment)
+let dummyData
+let dummyPageData
+if (!environment.production) {
+  dummyPageData = require("./THE FINAL ROSE-individualPages-mock-data.json")
+  dummyData = require("./THE FINAL ROSE-allLines-mock-data.json")
+}
+
 
 @Component({
   selector: 'app-upload',
@@ -33,7 +37,6 @@ export class UploadComponent implements OnInit, OnDestroy {
   isButtonDisabled: boolean = true;
 
   logo: string = '../../assets/icons/logoFlat.png';
-  devDataPath: string = "../../../../../../SidesWaysBackEnd/test-data/THE FINAL ROSE-allLines-mock-data";
   fileToUpload: File;
   totalTickets: Subscription;
   totalLines: Subscription;
@@ -61,6 +64,7 @@ export class UploadComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.underConstruction = !environment.production
+    debugger
     if(this.underConstruction) this.skipUploadForTest()
     this.working = false;
     this.resetLocalData()
@@ -99,11 +103,12 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
   skipUploadForTest() {
     console.log("firing the skip upload")
-    this.upload.allLines = dummyData[0];
-    this.upload.individualPages = dummyData[1];
+    debugger
+    this.upload.allLines = dummyData;
+    this.upload.individualPages = dummyPageData
     this.upload.lineCount = [];
-    this.pdf.allLines = dummyData[0]
-    this.pdf.individualPages = dummyData[1]
+    this.pdf.allLines = dummyData
+    this.pdf.individualPages = dummyPageData
 
     this.pdf.initializeData()
     this.upload.individualPages.forEach((page) => {
