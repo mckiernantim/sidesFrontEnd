@@ -83,21 +83,12 @@ export class LastLooksPageComponent {
   }
 
   ngOnInit() {
-    this.throttledDrag = _.throttle((event: MouseEvent) => {
-      this.dragDrop.drag(event), this.dragRefreshDelay;
-    });
-    this.throttledDragBar = _.throttle((event: MouseEvent) => {
-      this.dragDrop.dragBar(event);
-    }, this.dragRefreshDelay);
-
-    this.dragDrop.update.subscribe((reset: null | true) => {
-      if (reset === true) {
-        //  this.selectedLine = null;
-         
-      }
+    this.dragDrop.update.subscribe((data:any) => {
       this.cdRef.markForCheck();
     });
   }
+
+      
 
   ngOnChanges(changes: SimpleChanges) {
     if (
@@ -151,12 +142,10 @@ dragStarted(event: CdkDragStart<any>): void {
     this.selectedLine.category = category;
     this.onLineChange(line, lineIndex, category, category);
   }
-  updateText(event: MouseEvent | null, line, lineIndex) {
-    const newText = (event.target as HTMLElement).textContent;
-    if (!this.selectedLine) this.toggleSelectedLine(event, line, lineIndex);
-    this.selectedLine.text = newText;
-    this.onLineChange(line, lineIndex, newText);
-    // You can also perform any additional logic here.
+  
+  toggleSelectedLine(event, line, linIndex) {
+    this.selectedLine = this.page[linIndex];
+    
   }
 
   determineIfWeCanDrag(): boolean {
@@ -177,19 +166,6 @@ dragStarted(event: CdkDragStart<any>): void {
   }
   isSelectedLine(line: Line, lineIndex: number) {
     return this.selectedLine === this.page[lineIndex];
-  }
-
-  toggleSelectedLine(event: MouseEvent, line: any, lineIndex: number) {
-    if (this.isSelectedLine(line, lineIndex)) {
-      // Deselect the line if it's already selecte
-      this.selectedLine = null;
-      this.dragDrop.setComponentSelectedLine(null);
-    } else {
-      // Select the line if it's not already selected
-      this.selectedLine = this.page[lineIndex];
-      this.dragDrop.setComponentSelectedLine(this.selectedLine);
-      this.isLineSelected = !!this.selectedLine;
-    }
   }
 
   toggleVisibility(line: Line) {

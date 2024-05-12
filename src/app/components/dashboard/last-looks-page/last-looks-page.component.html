@@ -5,7 +5,6 @@
     <div class="page" (click)="showContextMenu && closeContextMenu()">
         <div class="break">
             <ul cdkDropList 
-
             [cdkDropListData] = "page" class="screenbox" [ngClass]="{'edit-mode': canEditDocument }">
            <!--  [attr.contenteditable]="canEditDocument ? 'true' : 'false'" this line will activate easy edit - -->
            
@@ -15,11 +14,11 @@
                     <span class="draft-text"> {{line.draftText}}</span>
 
                     <!-- page number span -->
-                    <span class="draft-color-text true" (click)="toggleSelectedLine($event, line, lineIndex)">
+                    <span class="draft-color-text true">
                         {{line.draftColorText}}
                     </span>
                     <span class="page-number-text {{line.hidden}}" 
-                        (click)="toggleSelectedLine($event, line, lineIndex)"
+                        
                     
                         (blur)="onLineChange(line, lineIndex, $event.target.textContent, 'pageNumberText')">
                         {{line.pageNumberText}} {{line.hidden}}
@@ -28,8 +27,6 @@
                     <!-- scene number span -->
                     <span *ngIf="line.category === 'scene-header'"
                         [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible"
-                    
-                        (click)="toggleSelectedLine($event, line, lineIndex)"
                         (blur)="onLineChange(line, lineIndex, $event.target.textContent, 'sceneNumberText')"
                         [style.bottom]="line.calculatedYpos" [style.left]="line.calculatedXpos">
                         {{ line.sceneNumberText }} 
@@ -47,24 +44,23 @@
                         <span class="start-span">START {{ line.sceneNumberText }} </span>
                     </span>
 
-                    <li cdkDrag
-                    (cdkDragStarted)="dragDrop.startDrag($event, line)"
-                    (cdkDragEnded)="dragDrop.stopDrag($event)"
-                    [cdkDragData]="{index: lineIndex, line: page[lineIndex] }"
-                     id = {{line.index}}    
-                                        
-                     autofocus tabindex="0" [value]="line.sceneNumber"
-                        [class]="line.category + ' ' + line.visible + ' ' + line.hidden"
-                        [class.selected]="isSelectedLine(line, lineIndex)"
-                        [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex), 'edit-li': canEditDocument && !selectedLine  }"
-                        [style.bottom]="line.calculatedYpos" 
-                        [style.left]="line.calculatedXpos"
-                        [textContent]="line.text + ' ' + line.calculatedYpos"
-                        (input)="canEditDocument && updateText($event, line, lineIndex)" 
-                        (contextmenu)="canEditDocument 
-                            && openContextMenu($event, line)" 
-                      > 
-                    </li>
+                    <li 
+                    cdkDrag
+                    (cdkDragStarted)="dragDrop.startDrag($event, line, lineIndex)"
+                    (cdkDragEnded)="dragDrop.onDrop($event, page[lineIndex], lineIndex)"
+                    [cdkDragData]="{index: lineIndex, line: page[lineIndex]}"
+                    id="{{line.index}}"
+                    autofocus tabindex="0" 
+                    [value]="line.sceneNumber"
+                    [class]="line.category + ' ' + line.visible + ' ' + line.hidden"
+                    [class.selected]="isSelectedLine(line, lineIndex)"
+                    [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex), 'edit-li': canEditDocument && !selectedLine  }"
+                    [style.bottom]="line.calculatedYpos" 
+                    [style.left]="line.calculatedXpos"
+                    [textContent]="line.text + ' ' + line.calculatedXpos" 
+                    (contextmenu)="canEditDocument && openContextMenu($event, line)"> 
+                </li>
+                
 
                     <!-- revision asterisks -->
                     <span [class]="line.isRevision + ' hidden'" [style.bottom]="line.calculatedYpos">
@@ -102,7 +98,7 @@
                     <span *ngIf="line.category === 'scene-header'"
                   
                         class="scene-number-right {{ line.trueScene }} {{ line.visible }}"
-                        (click)="toggleSelectedLine($event, line, lineIndex)" [style.bottom]="line.calculatedYpos"
+                        [style.bottom]="line.calculatedYpos"
                         [style.right]="line.calculatedXPos">
                         {{ line.sceneNumberText }}
                     </span>
