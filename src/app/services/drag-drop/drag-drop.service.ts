@@ -31,24 +31,61 @@ export class DragDropService {
   updateComponent(line: Line) {
     this.update.next({ line, index: this.indexOfLineToUpdate });
   }
-  startDrag(event: CdkDragStart, line: any, index: number): void {
-    this.indexOfLineToUpdate = index;
-    this.initialMouseY = this.getEventYPosition(event.event);
-    this.initialLineY = parseFloat(line.calculatedYpos); // Assuming 'calculatedYpos' is a string that needs parsing
-    line.dragging = true; // You might want to mark the line as being dragged
+  startDrag(event: CdkDragStart, line: any, index: number, isBarDrag: string | null = null): void {
+    if(isBarDrag) {
+      // drag logic
+    } else {
+      this.indexOfLineToUpdate = index;
+      this.initialMouseY = this.getEventYPosition(event.event);
+      this.initialLineY = parseFloat(line.calculatedYpos); // Assuming 'calculatedYpos' is a string that needs parsing
+      line.dragging = true; // You might want to mark the line as being dragged
+    }
   }
-  onDrop(event: CdkDragEnd, line: Line, lineIndex: number): void {
+
+  onDrop(event: CdkDragEnd, line: Line, lineIndex: number, isBarDrag: string | null = null): void {
     const nativeEvent = event.event as MouseEvent | TouchEvent;
-    debugger
     let clientY: number = this.getEventClientY(nativeEvent);
     this.getDeltaForYpos(line, clientY);
-    this.updateElementStyle(event, line);
+    let deltaY = this.initialLineY - this.currentYPosDiff + 'px';
+    debugger
+    if (isBarDrag) {
+        let diff = parseInt(deltaY)
+        this.updateElementStyle(event, line, isBarDrag, diff)
+    } else {
+      line.calculatedYpos = deltaY;
+      this.updateElementStyle(event, line);
+    }
     this.updateComponent(line);
     this.update.next(true);
   }
+      
   stopDrag(line: any): void {
     line.dragging = false;
     this.update.next(line);
+  }
+
+
+ 
+  updateElementStyle(event: CdkDragEnd, line: Line, isBarDrag: string | null = null, deltaY:number | null = null): void {
+    const element = event.source.getRootElement();
+    if(!isBarDrag) {
+      element.style.bottom = line.calculatedYpos + 'px';
+      element.style.left = line.calculatedXpos;
+    } else {
+      switch(isBarDrag) {
+        case "end":
+           line.calculatedEnd = this.initialLineY - deltaY + "px"
+           element.style.bottom = line.calculatedEnd 
+         default :
+          line.calculatedBarY = this.initialLineY - deltaY + "px"
+          element.style.bottom = line.calculatedBarY 
+        }
+    }
+
+    // do not change this value
+  }
+  getDeltaForYpos(line: Line, clientY) {
+    this.currentYPosDiff = clientY - this.initialMouseY;
   }
 
   getEventClientY(nativeEvent) {
@@ -62,20 +99,8 @@ export class DragDropService {
       return nativeEvent.changedTouches[0].clientY;
     } else {
       console.error('No reliable touch or mouse position available.');
-      // Fallback to last known position if available
     }
   }
-  getDeltaForYpos(line: Line, clientY) {
-    this.currentYPosDiff = clientY - this.initialMouseY;
-    line.calculatedYpos = this.initialLineY - this.currentYPosDiff + 'px';
-  }
-  updateElementStyle(event: CdkDragEnd, line: Line): void {
-    const element = event.source.getRootElement();
-    element.style.bottom = line.calculatedYpos + 'px';
-    // do not change this value
-    element.style.left = line.calculatedXpos;
-  }
-
   calculateContainerTopOffset(element: HTMLElement): number {
     // Calculate the top offset of the container to adjust the position accurately
     return element.getBoundingClientRect().top + window.scrollY;

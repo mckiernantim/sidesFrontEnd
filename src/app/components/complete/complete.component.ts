@@ -32,7 +32,9 @@ export class CompleteComponent implements OnInit, OnDestroy {
     public route:ActivatedRoute
   ) {}
   ngOnInit() {
+
     this.route.queryParams.subscribe(params => {
+      debugger 
       this.pdfToken = params['pdfToken'];
       this.expires = +params['expires'];
       
@@ -139,7 +141,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
       if (result) {
         this.upload.deleteFinalDocument("whatever").subscribe(data => {
           if (data) this.token.removeToken();
-          this.router.navigate["/"]
+          // this.router.navigate["/"]
         })
       }
     })

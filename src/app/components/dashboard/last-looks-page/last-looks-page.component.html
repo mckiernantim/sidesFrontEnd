@@ -34,14 +34,17 @@
 
                     <!-- start span -->
                     <span cdkDrag
-                    [attr.data-line-id]="line.id"
+                    (cdkDragStarted)="dragDrop.startDrag($event, line, lineIndex, 'start')"
+                    (cdkDragEnded)="dragDrop.onDrop($event, page[lineIndex], lineIndex, 'start')"
+                    [cdkDragData]="{index: lineIndex, line: page[lineIndex]}"
+                        [attr.data-line-id]="line.id"
                         (mouseup)="dragDrop.stopDrag(line)" 
                         [class]="(line.bar ? line.bar : 'hideBar')"
                         [style.bottom]="line.calculatedYpos" 
                         *ngIf="line.category !== 'page-number' && 
                             line.category !== 'page-number-hidden' && 
                             line.category !== 'injected-break'">
-                        <span class="start-span">START {{ line.sceneNumberText }} </span>
+                        <span class="start-span">START {{ line.sceneNumberText }} {{line.calculatedYpos}}</span>
                     </span>
 
                     <li 
@@ -83,6 +86,10 @@
                     <!-- end span -->
                     <!-- (click)="toggleSelectedLine($event, line, lineIndex)" -->
                     <span 
+                    cdkDrag
+                    (cdkDragStarted)="dragDrop.startDrag($event, line, lineIndex, 'end')"
+                    (cdkDragEnded)="dragDrop.onDrop($event, page[lineIndex], lineIndex, 'end')"
+                    [cdkDragData]="{index: lineIndex, line: page[lineIndex]}"
                     [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex)}"
                     class="bar-span end-span" 
                     [attr.data-line-id]="line.id"

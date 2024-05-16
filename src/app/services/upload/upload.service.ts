@@ -32,6 +32,7 @@ type ClassifyResponse = {
 @Injectable({
   providedIn: 'root',
 })
+
 export class UploadService {
   _devPdfPath: string = 'MARSHMALLOW_PINK';
   // values from script

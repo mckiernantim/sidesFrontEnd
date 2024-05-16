@@ -78,11 +78,14 @@
           </ul>
         </ng-container>
       </div>
-      <div class="controls-container">
+      <div class="controls-container w-[75%]">
         <ng-container *ngIf="!lastLooksReady; else lastLooksControls">
-          <div>
+          <div class="flex flex-row justify-between">
             <button mat-raised-button color="warn" (click)="toggleLastLooks()"
-              [disabled]="selected.length === 0">getPDF</button>
+              [disabled]="selected.length === 0">getPDF
+            </button>
+            <button mat-raised-button color="warn" (click)="this.router.navigate(['/'])">back
+            </button>
           </div>
         </ng-container>
   

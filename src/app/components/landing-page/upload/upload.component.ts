@@ -64,7 +64,6 @@ export class UploadComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.underConstruction = !environment.production
-    debugger
     if(this.underConstruction) this.skipUploadForTest()
     this.working = false;
     this.resetLocalData()
@@ -102,8 +101,6 @@ export class UploadComponent implements OnInit, OnDestroy {
     }
   }
   skipUploadForTest() {
-    console.log("firing the skip upload")
-    debugger
     this.upload.allLines = dummyData;
     this.upload.individualPages = dummyPageData
     this.upload.lineCount = [];

@@ -11,10 +11,11 @@
   <div class="page-container">
 
     <app-last-looks-page 
-    [page]="currentPage" 
-    [canEditDocument]="editState"
-    [resetSelectedLine] = "selectedLine"
-    (pageUpdate) ="handlePageUpdate($event)">
+      [page]="currentPage" 
+      [canEditDocument]="editState"
+      [resetSelectedLine] = "selectedLine"
+      (pageUpdate) ="handlePageUpdate($event)"
+      >
     </app-last-looks-page>
     
   </div>
