@@ -63,7 +63,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.underConstruction = !environment.production
+    this.underConstruction = environment.production
     if(this.underConstruction) this.skipUploadForTest()
     this.working = false;
     this.resetLocalData()
@@ -71,9 +71,6 @@ export class UploadComponent implements OnInit, OnDestroy {
    
 
   ngOnDestroy(): void {
-    //Called once, before the instance is destroyed.
-    //Add 'implements OnDestroy' to the class.
-    // this.dataSubscription.unsubscribe()
   }
 
   // create the page '2.' which is hidden in most scripts

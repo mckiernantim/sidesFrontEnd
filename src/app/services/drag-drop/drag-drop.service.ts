@@ -47,7 +47,6 @@ export class DragDropService {
     let clientY: number = this.getEventClientY(nativeEvent);
     this.getDeltaForYpos(line, clientY);
     let deltaY = this.initialLineY - this.currentYPosDiff + 'px';
-    debugger
     if (isBarDrag) {
         let diff = parseInt(deltaY)
         this.updateElementStyle(event, line, isBarDrag, diff)

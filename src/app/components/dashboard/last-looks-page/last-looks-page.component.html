@@ -1,27 +1,21 @@
-
-
 <main class="last-looks-container">
-    {{this.mouseEvent?.clientY}}
+    {{ this.mouseEvent?.clientY }}
     <div class="page" (click)="showContextMenu && closeContextMenu()">
         <div class="break">
-            <ul cdkDropList 
-            [cdkDropListData] = "page" class="screenbox" [ngClass]="{'edit-mode': canEditDocument }">
-           <!--  [attr.contenteditable]="canEditDocument ? 'true' : 'false'" this line will activate easy edit - -->
-           
-                <ng-container *ngFor="let line of page; let lineIndex = index"  >
+            <ul cdkDropList [cdkDropListData]="page" class="screenbox" [ngClass]="{ 'edit-mode': canEditDocument }">
+                <!-- [attr.contenteditable]="canEditDocument ? 'true' : 'false'" this line will activate easy edit - -->
 
-                    <span class="watermark">{{line.watermarkText}}</span>
-                    <span class="draft-text"> {{line.draftText}}</span>
+                <ng-container *ngFor="let line of page; let lineIndex = index">
+                    <span class="watermark">{{ line.watermarkText }}</span>
+                    <span class="draft-text">{{ line.draftText }}</span>
 
                     <!-- page number span -->
                     <span class="draft-color-text true">
-                        {{line.draftColorText}}
+                        {{ line.draftColorText }}
                     </span>
-                    <span class="page-number-text {{line.hidden}}" 
-                        
-                    
+                    <span class="page-number-text {{ line.hidden }}"
                         (blur)="onLineChange(line, lineIndex, $event.target.textContent, 'pageNumberText')">
-                        {{line.pageNumberText}} {{line.hidden}}
+                        {{ line.pageNumberText }} {{ line.hidden }}
                     </span>
 
                     <!-- scene number span -->
@@ -29,41 +23,49 @@
                         [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible"
                         (blur)="onLineChange(line, lineIndex, $event.target.textContent, 'sceneNumberText')"
                         [style.bottom]="line.calculatedYpos" [style.left]="line.calculatedXpos">
-                        {{ line.sceneNumberText }} 
+                        {{ line.sceneNumberText }}
                     </span>
 
-                    <!-- start span -->
-                    <span cdkDrag
-                    (cdkDragStarted)="dragDrop.startDrag($event, line, lineIndex, 'start')"
-                    (cdkDragEnded)="dragDrop.onDrop($event, page[lineIndex], lineIndex, 'start')"
-                    [cdkDragData]="{index: lineIndex, line: page[lineIndex]}"
-                        [attr.data-line-id]="line.id"
-                        (mouseup)="dragDrop.stopDrag(line)" 
-                        [class]="(line.bar ? line.bar : 'hideBar')"
-                        [style.bottom]="line.calculatedYpos" 
-                        *ngIf="line.category !== 'page-number' && 
-                            line.category !== 'page-number-hidden' && 
-                            line.category !== 'injected-break'">
-                        <span class="start-span">START {{ line.sceneNumberText }} {{line.calculatedYpos}}</span>
+                    <!-- Always rendered span with text and style -->
+                    <span *ngIf="line.category !== 'page-number' && line.category !== 'page-number-hidden' && line.category !== 'injected-break'"
+                        [attr.data-line-id]="line.id" [class]="(line.bar ? line.bar : 'hideBar')"
+                        [style.bottom]="line.calculatedYpos">
+                        <!-- Conditionally add dragging functionality -->
+                        <ng-container *ngIf="canEditDocument; else noDragStart">
+                            <span cdkDrag (cdkDragStarted)="dragDrop.startDrag($event, line, lineIndex, 'start')"
+                                (cdkDragEnded)="dragDrop.onDrop($event, page[lineIndex], lineIndex, 'start')"
+                                [cdkDragData]="{ index: lineIndex, line: page[lineIndex] }"
+                                (mouseup)="dragDrop.stopDrag(line)">
+                                <span class="start-span">START {{ line.sceneNumberText }} {{ line.calculatedYpos }}</span>
+                            </span>
+                        </ng-container>
+                        <ng-template #noDragStart>
+                            <span class="start-span">START {{ line.sceneNumberText }} {{ line.calculatedYpos }}</span>
+                        </ng-template>
                     </span>
 
-                    <li 
-                    cdkDrag
-                    (cdkDragStarted)="dragDrop.startDrag($event, line, lineIndex)"
-                    (cdkDragEnded)="dragDrop.onDrop($event, page[lineIndex], lineIndex)"
-                    [cdkDragData]="{index: lineIndex, line: page[lineIndex]}"
-                    id="{{line.index}}"
-                    autofocus tabindex="0" 
-                    [value]="line.sceneNumber"
-                    [class]="line.category + ' ' + line.visible + ' ' + line.hidden"
-                    [class.selected]="isSelectedLine(line, lineIndex)"
-                    [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex), 'edit-li': canEditDocument && !selectedLine  }"
-                    [style.bottom]="line.calculatedYpos" 
-                    [style.left]="line.calculatedXpos"
-                    [textContent]="line.text" 
-                    (contextmenu)="canEditDocument && openContextMenu($event, line)"> 
-                </li>
-                
+                    <!-- Conditionally render li element -->
+                    <ng-container *ngIf="canEditDocument; else nonEditable">
+                        <li cdkDrag (cdkDragStarted)="dragDrop.startDrag($event, line, lineIndex)"
+                            (cdkDragEnded)="dragDrop.onDrop($event, page[lineIndex], lineIndex)"
+                            [cdkDragData]="{ index: lineIndex, line: page[lineIndex] }" id="{{ line.index }}"
+                            autofocus tabindex="0" [value]="line.sceneNumber"
+                            [class]="line.category + ' ' + line.visible + ' ' + line.hidden"
+                            [class.selected]="isSelectedLine(line, lineIndex)"
+                            [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex), 'edit-li': canEditDocument && !selectedLine }"
+                            [style.bottom]="line.calculatedYpos" [style.left]="line.calculatedXpos"
+                            [textContent]="line.text" (contextmenu)="canEditDocument && openContextMenu($event, line)">
+                        </li>
+                    </ng-container>
+                    <ng-template #nonEditable>
+                        <li id="{{ line.index }}" autofocus tabindex="0" [value]="line.sceneNumber"
+                            [class]="line.category + ' ' + line.visible + ' ' + line.hidden"
+                            [class.selected]="isSelectedLine(line, lineIndex)"
+                            [ngClass]="{ 'edit-li': !selectedLine }" [style.bottom]="line.calculatedYpos"
+                            [style.left]="line.calculatedXpos" [textContent]="line.text"
+                            (contextmenu)="canEditDocument && openContextMenu($event, line)">
+                        </li>
+                    </ng-template>
 
                     <!-- revision asterisks -->
                     <span [class]="line.isRevision + ' hidden'" [style.bottom]="line.calculatedYpos">
@@ -71,44 +73,51 @@
                     </span>
 
                     <!-- continue spans -->
-                    <span cdkDrag
-                        [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex)}"
-                        class="bar-span continue-span"
-                        [attr.data-line-id]="line.id"
-                        [class]="(line.cont ? line.cont : 'hideCont') + ' ' + line.hidden"
-                        [style.bottom]="line.calculatedBarY"
-                        *ngIf="line.category !== 'page-number' && 
-                            line.category !== 'page-number-hidden' && 
-                            line.category !== 'injected-break'">
-                      ↓↓↓ {{line.sceneNumberText}} CONTINUED ↓↓↓ 
-                    </span>
+                    <ng-container *ngIf="canEditDocument; else noDragContinue">
+                        <span cdkDrag [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex) }"
+                            class="bar-span continue-span" [attr.data-line-id]="line.id"
+                            [class]="(line.cont ? line.cont : 'hideCont') + ' ' + line.hidden"
+                            [style.bottom]="line.calculatedBarY">
+                            ↓↓↓ {{ line.sceneNumberText }} CONTINUED ↓↓↓
+                        </span>
+                    </ng-container>
+                    <ng-template #noDragContinue>
+                        <span [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex) }"
+                            class="bar-span continue-span" [attr.data-line-id]="line.id"
+                            [class]="(line.cont ? line.cont : 'hideCont') + ' ' + line.hidden"
+                            [style.bottom]="line.calculatedBarY">
+                            ↓↓↓ {{ line.sceneNumberText }} CONTINUED ↓↓↓
+                        </span>
+                    </ng-template>
 
                     <!-- end span -->
-                    <!-- (click)="toggleSelectedLine($event, line, lineIndex)" -->
-                    <span 
-                    cdkDrag
-                    (cdkDragStarted)="dragDrop.startDrag($event, line, lineIndex, 'end')"
-                    (cdkDragEnded)="dragDrop.onDrop($event, page[lineIndex], lineIndex, 'end')"
-                    [cdkDragData]="{index: lineIndex, line: page[lineIndex]}"
-                    [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex)}"
-                    class="bar-span end-span" 
-                    [attr.data-line-id]="line.id"
-                        [class]="(line.end === 'END' ? 'END' : 'hideEnd') + ' ' + line.hidden"
-                        [style.bottom]="line.calculatedEnd" 
-                        *ngIf="line.category !== 'page-number' && 
-                            line.category !== 'page-number-hidden' && 
-                            line.category !== 'injected-break'">
-                        <span class="end-span"> END {{line.sceneNumberText}}  </span>
-                    </span>
+                    <ng-container *ngIf="canEditDocument; else noDragEnd">
+                        <span cdkDrag (cdkDragStarted)="dragDrop.startDrag($event, line, lineIndex, 'end')"
+                            (cdkDragEnded)="dragDrop.onDrop($event, page[lineIndex], lineIndex, 'end')"
+                            [cdkDragData]="{ index: lineIndex, line: page[lineIndex] }"
+                            [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex) }" class="bar-span end-span"
+                            [attr.data-line-id]="line.id"
+                            [class]="(line.end === 'END' ? 'END' : 'hideEnd') + ' ' + line.hidden"
+                            [style.bottom]="line.calculatedEnd">
+                            <span class="end-span"> END {{ line.sceneNumberText }} </span>
+                        </span>
+                    </ng-container>
+                    <ng-template #noDragEnd>
+                        <span [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex) }" class="bar-span end-span"
+                            [attr.data-line-id]="line.id"
+                            [class]="(line.end === 'END' ? 'END' : 'hideEnd') + ' ' + line.hidden"
+                            [style.bottom]="line.calculatedEnd">
+                            <span class="end-span"> END {{ line.sceneNumberText }} </span>
+                        </span>
+                    </ng-template>
 
                     <!-- right scene number span -->
                     <span *ngIf="line.category === 'scene-header'"
-                  
                         class="scene-number-right {{ line.trueScene }} {{ line.visible }}"
-                        [style.bottom]="line.calculatedYpos"
-                        [style.right]="line.calculatedXPos">
+                        [style.bottom]="line.calculatedYpos" [style.right]="line.calculatedXPos">
                         {{ line.sceneNumberText }}
                     </span>
+
                     <div *ngIf="showContextMenu" class="context-menu" [style.left.px]="mouseEvent.clientX"
                         [style.top.px]="mouseEvent.clientY">
                         <ul>
@@ -122,11 +131,9 @@
                             </li>
                         </ul>
                     </div>
-
                 </ng-container>
             </ul>
-            <li class=footer>made by Sides-Ways</li>
+            <li class="footer">made by Sides-Ways</li>
         </div>
     </div>
-    
 </main>

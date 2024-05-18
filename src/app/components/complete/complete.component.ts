@@ -34,7 +34,6 @@ export class CompleteComponent implements OnInit, OnDestroy {
   ngOnInit() {
 
     this.route.queryParams.subscribe(params => {
-      debugger 
       this.pdfToken = params['pdfToken'];
       this.expires = +params['expires'];
       
@@ -60,7 +59,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
   }
   handleExpiredToken() {
     alert('Token has expired. Please initiate a new session.');
-    // this.router.navigate(['/']);
+    this.router.navigate(['/']);
   }
   ngOnDestroy() {
     // clean up to unsubscribe so we're not counting down to negative infinity
