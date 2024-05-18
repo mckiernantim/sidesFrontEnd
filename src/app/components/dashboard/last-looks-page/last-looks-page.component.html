@@ -47,7 +47,7 @@
                     <!-- Conditionally render li element -->
                     <ng-container *ngIf="canEditDocument; else nonEditable">
                         <li cdkDrag (cdkDragStarted)="dragDrop.startDrag($event, line, lineIndex)"
-                            (cdkDragEnded)="dragDrop.onDrop($event, page[lineIndex], lineIndex)"
+                            (cdkDragEnded)="dragDrop.onDrop($event, page[lineIndex], page)"
                             [cdkDragData]="{ index: lineIndex, line: page[lineIndex] }" id="{{ line.index }}"
                             autofocus tabindex="0" [value]="line.sceneNumber"
                             [class]="line.category + ' ' + line.visible + ' ' + line.hidden"

@@ -81,7 +81,7 @@ export class LastLooksComponent implements OnInit {
     this.initialDocState = this.doc.map((page) => [...page] as Line[]);
     this.establishInitialLineState();
     // set up undo observable to respond to changes and refresh
-    this.undoQueue = this.undoService.undoQueue$.subscribe((change) => {
+    this.undoQueue = this.undoService.undoStack$.subscribe((change) => {
       const { pageIndex, line } = change;
       const indexToUpdate = this.doc[pageIndex].findIndex(
         (l) => l.index === line.index
@@ -98,7 +98,7 @@ export class LastLooksComponent implements OnInit {
 
   ngOnChanges(changes: SimpleChanges) {
     if (this.doc && changes.resetDocState) this.resetDocumentToInitialState();
-    if (this.doc && changes.undoState) this.undoService.undo();
+    if (this.doc && changes.undoState) this.undoService.pop();
     if (!this.canEditDocument) {
       this.selectedLine = null;
     }
@@ -174,7 +174,7 @@ export class LastLooksComponent implements OnInit {
   //
 
   resetDocumentToInitialState() {
-    this.undoService.resetQueue();
+    this.undoService.reset();
     this.doc = this.initialDocState;
     this.processLinesForLastLooks(this.pages);
   }

@@ -83,7 +83,8 @@ export class LastLooksPageComponent {
   }
 
   ngOnInit() {
-    this.dragDrop.update.subscribe((data:any) => {
+    this.dragDrop.update.subscribe((line:any) => {
+
       this.cdRef.markForCheck();
     });
   }
@@ -217,7 +218,7 @@ dragStarted(event: CdkDragStart<any>): void {
   }
 
   recordLineStateToUndoQueueBeforeChange() {
-    this.undo.addToUndoQueue({ ...this.selectedLine });
+    this.undo.push({pageIndex:this.page, line:this.selectedLine });
   }
 
   changeLineCategory(

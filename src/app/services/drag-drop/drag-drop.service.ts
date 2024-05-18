@@ -4,6 +4,7 @@ import { Subject } from 'rxjs';
 import { DragDropOptions } from 'src/app/types/DragDropOptions';
 import { PositionChange } from 'src/app/types/PositionChange';
 import { CdkDragStart, CdkDragEnd, CdkDragDrop } from '@angular/cdk/drag-drop';
+import { UndoService } from '../edit/undo.service';
 
 @Injectable({
   providedIn: 'root',
@@ -26,7 +27,7 @@ export class DragDropService {
 
   allowDragTimer: any;
 
-  constructor() {}
+  constructor(public undo:UndoService) {}
   // emits value from observable to stop signal end of update
   updateComponent(line: Line) {
     this.update.next({ line, index: this.indexOfLineToUpdate });
@@ -42,15 +43,16 @@ export class DragDropService {
     }
   }
 
-  onDrop(event: CdkDragEnd, line: Line, lineIndex: number, isBarDrag: string | null = null): void {
+  onDrop(event: CdkDragEnd, line: Line, page: number, isBarDrag: string | null = null): void {
     const nativeEvent = event.event as MouseEvent | TouchEvent;
     let clientY: number = this.getEventClientY(nativeEvent);
+    this.undo.push({pageIndex: page, line:line });
     this.getDeltaForYpos(line, clientY);
     let deltaY = this.initialLineY - this.currentYPosDiff + 'px';
     if (isBarDrag) {
         let diff = parseInt(deltaY)
         this.updateElementStyle(event, line, isBarDrag, diff)
-    } else {
+    } else { 
       line.calculatedYpos = deltaY;
       this.updateElementStyle(event, line);
     }

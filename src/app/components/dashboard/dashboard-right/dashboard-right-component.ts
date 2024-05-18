@@ -412,7 +412,7 @@ export class DashboardRightComponent implements OnInit {
   handleToolTipClicked(str) {
     switch (true) {
       case str === 'undo':
-        this.undoService.undo();
+        this.undoService.pop();
         break;
       case str === 'resetDoc':
         this.triggerLastLooksAction(str);
