@@ -7,9 +7,11 @@ import { LINE_TYPES} from '../../types/LineTypes'
   PERHAPPS LINE-SERVICE, SCENE-SERVICE, DOCUMENT-SERVICE ETC  
 */
 import { Line } from 'src/app/types/Line';
+
 @Injectable({
   providedIn: 'root',
 })
+
 export class PdfService {
   // remove the first option as we dont want scene headers in our data
   conditions = [, ...LINE_TYPES];

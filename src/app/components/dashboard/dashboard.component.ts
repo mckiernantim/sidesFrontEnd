@@ -11,10 +11,10 @@ import { Component, OnInit } from '@angular/core';
 export class DashboardComponent implements OnInit {
   $download:Observable<any>
   constructor(public upload:UploadService, public router:Router) { }
-  file:string
+  file:string | null
   data:any;
   ngOnInit(): void {
-    this.file = localStorage.getItem("name")
+    this.file = localStorage.getItem("name") || null
 }
   getSheet() {
       this.upload.getFile(this.file).subscribe(data => {

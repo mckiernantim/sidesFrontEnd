@@ -415,7 +415,7 @@ export class DashboardRightComponent implements OnInit {
         this.undoService.pop();
         break;
       case str === 'resetDoc':
-        this.triggerLastLooksAction(str);
+        this.triggerLastLooksAction("resetDoc");
 
         break;
       case str === 'stopEdit':
