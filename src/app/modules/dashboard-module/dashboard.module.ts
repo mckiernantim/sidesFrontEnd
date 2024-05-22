@@ -12,6 +12,7 @@ import { ToolTipComponent } from '../../components/shared/tool-tip/tool-tip.comp
 import { AddWatermarkComponent } from '../../components/add-watermark/add-watermark.component';
 import { SharedModule } from '../shared-module/shared.module';
 import { MaterialModule } from '../material-module/material.module';
+import { CheckoutComponent } from 'src/app/components/checkout/checkout.component';
 
 @NgModule({
   declarations: [
@@ -23,6 +24,7 @@ import { MaterialModule } from '../material-module/material.module';
     AddCallsheetComponent,
     ToolTipComponent,
     AddWatermarkComponent,
+    CheckoutComponent
   ],
   imports: [
     CommonModule,

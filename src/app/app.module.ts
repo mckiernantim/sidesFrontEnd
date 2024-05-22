@@ -16,22 +16,15 @@ import { FirebaseModule } from './modules/firebase-module/firebase.module';
 
 import { UploadModule } from './modules/upload-module/upload.module';
 
-//SERVICES
-import { UploadService } from './services/upload/upload.service';
-// import { AuthGuardService } from './guards/auth-guard/auth-guard.service';
+
 
 // components
 import { AppComponent } from './app.component';
 import { AboutComponent } from './components/about/about.component';
 import { DonateComponent } from './components/donate/donate.component';
 
-import { CompleteComponent } from './components/complete/complete.component';
 import { IssueComponent } from './components/issue/issue.component';
 import { ScriptComponent } from './components/script/script.component';
-
-
-
-import { CheckoutComponent } from './components/checkout/checkout.component';
 
 
 import { WarningComponent } from "./components/warning/warning.component"
@@ -42,11 +35,9 @@ import { DashboardModule } from './modules/dashboard-module/dashboard.module';
     declarations: [
         AppComponent,
         ScriptComponent,
-        CompleteComponent,
         IssueComponent,
         AboutComponent,
         DonateComponent,
-        CheckoutComponent,
         WarningComponent,
     ],
     imports: [
