@@ -27,7 +27,7 @@
   <div class="mt-6">
     <div class="mt-8 p-4">
       <!-- CLOSES BUTTON TO FIRE GETPDF FROM DASHBOARD RIGHT -->
-      <button (click)="this.dialogRef.close()" [class.bg-gray-200]="!agreeToTerms" [class.bg-blue-500]="agreeToTerms"
+      <button (click)="this.proceedToCheckout(true)" [class.bg-gray-200]="!agreeToTerms" [class.bg-blue-500]="agreeToTerms"
         class="text-white py-2 px-4 rounded hover:bg-blue-600 focus:outline-none" [disabled]="!agreeToTerms">
         Get My Sides
       </button>

@@ -12,6 +12,7 @@ import { UndoService } from 'src/app/services/edit/undo.service';
 import { Line } from 'src/app/types/Line';
 import * as _ from 'lodash';
 import { DragDropOptions } from 'src/app/types/DragDropOptions';
+import { CdkDragDrop, CdkDragStart} from '@angular/cdk/drag-drop'
 @Component({
   selector: 'app-last-looks-page',
   templateUrl: './last-looks-page.component.html',
@@ -82,21 +83,13 @@ export class LastLooksPageComponent {
   }
 
   ngOnInit() {
-    this.throttledDrag = _.throttle((event: MouseEvent) => {
-      this.dragDrop.drag(event), this.dragRefreshDelay;
-    });
-    this.throttledDragBar = _.throttle((event: MouseEvent) => {
-      this.dragDrop.dragBar(event);
-    }, this.dragRefreshDelay);
+    this.dragDrop.update.subscribe((line:any) => {
 
-    this.dragDrop.update.subscribe((reset: null | true) => {
-      if (reset === true) {
-        //  this.selectedLine = null;
-         
-      }
       this.cdRef.markForCheck();
     });
   }
+
+      
 
   ngOnChanges(changes: SimpleChanges) {
     if (
@@ -121,6 +114,21 @@ export class LastLooksPageComponent {
     this.pageUpdate.emit(this.page);
   }
 
+
+  
+  calculateDropPosition(event: CdkDragDrop<string[]>): number {
+    const clientRect = event.item.element.nativeElement.getBoundingClientRect();
+    const containerRect = event.container.element.nativeElement.getBoundingClientRect();
+    return clientRect.top - containerRect.top;
+  }
+  
+  
+
+dragStarted(event: CdkDragStart<any>): void {
+  const boundingClientRect = event.source.element.nativeElement.getBoundingClientRect();
+  event.source.data.originalClientY = boundingClientRect.top + window.scrollY; // Absolute position including scroll
+}
+
   updatePositon(num: number, str: string): string {
     const dif = parseInt(str) - num;
     return dif + 'px';
@@ -135,12 +143,10 @@ export class LastLooksPageComponent {
     this.selectedLine.category = category;
     this.onLineChange(line, lineIndex, category, category);
   }
-  updateText(event: MouseEvent | null, line, lineIndex) {
-    const newText = (event.target as HTMLElement).textContent;
-    if (!this.selectedLine) this.toggleSelectedLine(event, line, lineIndex);
-    this.selectedLine.text = newText;
-    this.onLineChange(line, lineIndex, newText);
-    // You can also perform any additional logic here.
+  
+  toggleSelectedLine(event, line, linIndex) {
+    this.selectedLine = this.page[linIndex];
+    
   }
 
   determineIfWeCanDrag(): boolean {
@@ -154,47 +160,13 @@ export class LastLooksPageComponent {
   }
   // Helper function to add actions to the undo queue
 
-  handleLeftClick(
-    event: MouseEvent,
-    line: Line,
-    lineIndex: number,
-    isDragBar?: boolean
-  ) {
-    if (!this.canEditDocument) return;
-    if (event.button !== 0 || this.contextMenuLine) return;
 
-    this.mouseEvent = event;
-    this.toggleSelectedLine(event, line, lineIndex);
-    this.undo.addToUndoQueue({ ...this.selectedLine });
-
-    if (isDragBar) {
-      // add to the queue at start of drag
-      this.dragDrop.startDragBar(event);
-    } else {
-      // add to the queue at start of drag
-  
-      this.dragDrop.startDrag({ event, line, lineIndex });
-    }
-  }
   handleMouseUp(event, line, lineIndex) {
     // this.toggleSelectedLine(event, line, lineIndex);
     this.dragDrop.stopDrag(event);
   }
   isSelectedLine(line: Line, lineIndex: number) {
     return this.selectedLine === this.page[lineIndex];
-  }
-
-  toggleSelectedLine(event: MouseEvent, line: any, lineIndex: number) {
-    if (this.isSelectedLine(line, lineIndex)) {
-      // Deselect the line if it's already selecte
-      this.selectedLine = null;
-      this.dragDrop.setComponentSelectedLine(null);
-    } else {
-      // Select the line if it's not already selected
-      this.selectedLine = this.page[lineIndex];
-      this.dragDrop.setComponentSelectedLine(this.selectedLine);
-      this.isLineSelected = !!this.selectedLine;
-    }
   }
 
   toggleVisibility(line: Line) {
@@ -246,7 +218,7 @@ export class LastLooksPageComponent {
   }
 
   recordLineStateToUndoQueueBeforeChange() {
-    this.undo.addToUndoQueue({ ...this.selectedLine });
+    this.undo.push({pageIndex:this.page, line:this.selectedLine });
   }
 
   changeLineCategory(

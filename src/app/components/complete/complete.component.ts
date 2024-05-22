@@ -8,6 +8,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
 import { WarningComponent } from '../warning/warning.component';
+
 @Component({
   selector: 'app-complete',
   templateUrl: './complete.component.html',
@@ -32,6 +33,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
     public route:ActivatedRoute
   ) {}
   ngOnInit() {
+
     this.route.queryParams.subscribe(params => {
       this.pdfToken = params['pdfToken'];
       this.expires = +params['expires'];
@@ -58,7 +60,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
   }
   handleExpiredToken() {
     alert('Token has expired. Please initiate a new session.');
-    // this.router.navigate(['/']);
+    this.router.navigate(['/']);
   }
   ngOnDestroy() {
     // clean up to unsubscribe so we're not counting down to negative infinity
@@ -139,7 +141,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
       if (result) {
         this.upload.deleteFinalDocument("whatever").subscribe(data => {
           if (data) this.token.removeToken();
-          this.router.navigate["/"]
+          // this.router.navigate["/"]
         })
       }
     })

@@ -32,6 +32,7 @@ type ClassifyResponse = {
 @Injectable({
   providedIn: 'root',
 })
+
 export class UploadService {
   _devPdfPath: string = 'MARSHMALLOW_PINK';
   // values from script
@@ -68,18 +69,9 @@ export class UploadService {
     public httpClient: HttpClient,
     private token: TokenService
   ) {
-    // Updated Firestore queries using the modular API
-    const feedbackRef = collection(this.firestore, 'feedbackTickets');
-    this.feedback = collectionData(
-      query(feedbackRef, where('text', '!=', 'Describe any issues')),
-      { idField: 'id' }
-    ) as Observable<any[]>;
-
-    const funDataRef = collection(this.firestore, 'funData');
-    this.funData = collectionData(funDataRef, { idField: 'id' }) as Observable<
-      any[]
-    >;
+   
   }
+  
   postFeedback(ticket: FeedbackTicket) {
     const { text, title, category, date, handled } = ticket;
     let userEmail = JSON.parse(localStorage.getItem("user") || '{}').email;
@@ -209,7 +201,7 @@ export class UploadService {
   }
 
   skipUploadForTest() {
-    const data = require('../../components/landing-page/upload/dummyScript.json');
+    const data = require('../../components/landing-page/upload/THE FINAL ROSE-allLines-mock-data.json');
     if (this.underConstruction) {
       localStorage.setItem('name', this._devPdfPath);
     }

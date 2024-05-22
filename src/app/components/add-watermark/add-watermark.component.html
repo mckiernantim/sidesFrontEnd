@@ -1,10 +1,12 @@
 <ng-container>
  
-    <div >
+    <div class="flex flex-col align-center">
       <form>
         <h2>Add Watermark</h2>
-        <input type='text' id=watermark [(ngModel)]=this.waterMark [ngModelOptions]="{standalone: true}">
-        <button mat-raised-button color="warn" [disabled] = "!this.waterMark" (click)="emitValue()">update</button>
+        <button mat-raised-button color="warn" class="mb-4" [disabled] = "!this.waterMark" (click)="emitValue()">update</button>
+        <div>
+          <input class= "text-black" type='text' id=watermark [(ngModel)]=this.waterMark [ngModelOptions]="{standalone: true}">
+        </div>
       </form>
     </div>
   </ng-container >

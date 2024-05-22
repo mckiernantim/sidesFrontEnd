@@ -12,7 +12,6 @@ import {
   Input,
 } from '@angular/core';
 import { UploadService } from '../../services/upload/upload.service';
-import { AuthService } from '../../services/auth/auth.service';
 import {
   MatDialogRef,
   MatDialog,
@@ -122,6 +121,9 @@ export class IssueComponent implements OnInit, AfterViewInit {
     this.selected = option;
   }
 
+  proceedToCheckout(proceedToCheckout: boolean): void {
+    this.dialogRef.close(proceedToCheckout);
+  }
   handleClick() {
     this.onClick()
   }

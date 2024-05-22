@@ -44,19 +44,27 @@ export class MainNavComponent implements OnInit {
     })
   } 
   formatTime(milliseconds) {
-    if(!this.displayClock) this.displayClock = true;
-    let seconds:string|number = Math.floor(milliseconds / 1000);
-    let minutes:string|number = Math.floor(seconds / 60);
-    let hours:string|number = Math.floor(minutes / 60);
-  
-    seconds = seconds % 60; // remainder of seconds divided by 60
-    minutes = minutes % 60; // remainder of minutes divided by 60
-  
-    // Padding numbers to make sure there are always two digits
-    hours = String(hours).padStart(2, '0');
-    minutes = String(minutes).padStart(2, '0');
-    seconds = String(seconds).padStart(2, '0');
-  
-    return `${hours}:${minutes}:${seconds}`;
+    try {
+      if(milliseconds) {
+        if(!this.displayClock) this.displayClock = true;
+        let seconds:string|number = Math.floor(milliseconds / 1000);
+        let minutes:string|number = Math.floor(seconds / 60);
+        let hours:string|number = Math.floor(minutes / 60);
+      
+        seconds = seconds % 60; // remainder of seconds divided by 60
+        minutes = minutes % 60; // remainder of minutes divided by 60
+      
+        // Padding numbers to make sure there are always two digits
+        hours = String(hours).padStart(2, '0');
+        minutes = String(minutes).padStart(2, '0');
+        seconds = String(seconds).padStart(2, '0');
+      
+        return `${hours}:${minutes}:${seconds}`;
+      }
+    } catch (err) {
+      console.error(err)
+    }
   }
 }
+
+

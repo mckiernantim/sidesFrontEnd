@@ -1,41 +1,44 @@
-// undo.service.ts
 import { Injectable } from '@angular/core';
-import { Subject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { Line } from 'src/app/types/Line';
-interface QueueItem {
-  pageIndex:number;
-  line:Line
+import { cloneDeep } from 'lodash';
+interface StackItem {
+  pageIndex: number;
+  line: Line;
 }
+
 @Injectable({
   providedIn: 'root',
 })
 export class UndoService {
-  public undoQueue: QueueItem[] = [];
-  private undoQueueSource = new Subject<QueueItem>();
-  // this is set in our last-looks-component
-  public currentPageIndex:number; 
-  undoQueue$ = this.undoQueueSource.asObservable();
+  private undoStack: StackItem[] = [];
+  private undoStackSource = new BehaviorSubject<StackItem | null>(null);
+  // This is set in our last-looks-component
+  public currentPageIndex: number; 
+  undoStack$ = this.undoStackSource.asObservable();
 
-  addToUndoQueue(line:Line) {
-    const changeToAdd: QueueItem = {
-      pageIndex:this.currentPageIndex,
-      line,
+  push(item:StackItem) {
+    const { pageIndex, line} = item
+    let changeToRecord = {
+      pageIndex,
+      line: cloneDeep(line)
     }
-    this.undoQueue.push(changeToAdd);
+    this.undoStack.push(changeToRecord);
   }
 
-  undo() {
-    if (this.undoQueue.length > 0) {
-     const last =  this.undoQueue.pop();
-      this.notifyUndoQueueChange(last);
+  pop() {
+    if (this.undoStack.length > 0) {
+      const last = this.undoStack.pop();
+      this.notifyUndoStackChange(last);
     }
   }
-  resetQueue() {
-    this.undoQueue = [];
-  }
-  private notifyUndoQueueChange(val:QueueItem) {
-    this.undoQueueSource.next(val);
+
+  reset() {
+    this.undoStack = [];
   }
 
+  private notifyUndoStackChange(val: StackItem | null) {
+    this.undoStackSource.next(val);
+  }
 }
 

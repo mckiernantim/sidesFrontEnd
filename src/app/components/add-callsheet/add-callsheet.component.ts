@@ -14,9 +14,10 @@ export class AddCallsheetComponent {
 
     callsheetReady: boolean = false;
     callsheet: string | File | null = null;
+
     handleFileInput(files: any): void {
       const file: File = files.item(0);
-    
+
       if (file) {
         if (file.name === 'no callsheet') {
           localStorage.setItem('callSheetPath', null);
@@ -36,6 +37,7 @@ export class AddCallsheetComponent {
               this.callsheet = filePath.substring(8);
               localStorage.setItem('callSheetPath', filePath);
               this.callsheetReady = true;
+              this.callsheetInfo.emit(this.callsheet || null );
             });
         }
       }
@@ -43,14 +45,8 @@ export class AddCallsheetComponent {
     resetCallsheet() {
       this.callsheet = "";
       this.callsheetReady = false;
+      this.callsheetInfo.emit(null)
       localStorage.removeItem('callSheetPath');
     }
-    submitForm(): void {
-      // Logic for handling the form submission without a callsheet goes here
-      // For example, you can update a variable or perform other actions
-      // Once you have the necessary information, emit it to the parent component
-      this.callsheetInfo.emit(this.callsheet || 'no callsheet');
-    }
-  
 
 }
