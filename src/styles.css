@@ -45,28 +45,7 @@ body {
     
     background-color: #f0f0f0e3
 }
-/* .modal-wrapper {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 100vw;
-  height: auto;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  flex-direction: row;
-  justify-content: space-around;
-} */
-/* override angular material modal */
-/* .mat-mdc-dialog-container .mdc-dialog__surface {
-  background-color: transparent !important;
-  box-shadow: none !important;
-}
-.mat-mdc-dialog-surface mdc-dialog__surface {
-  display:flex;
-  flex-direction: row;
-  max-width: 100% !important;
-} */
+
 .mat-table {
     background-color: var(--grey)
   }
@@ -100,10 +79,7 @@ body {
     box-shadow: none; 
   }
 @import 'https://fonts.googleapis.com/icon?family=Material+Icons';
-* {
-    font-family: 'Courier New', Courier, monospace
-   
-}
+
 .material-icons{
     font-family: 'Material Icons' 
 }

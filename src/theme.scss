@@ -1,29 +1,32 @@
 // Define the colors as variables
-$my-off-white: #f9f9f9; // Off-white color
-$my-light-gray: #d3d3d3; // Light gray color
+$primary-color: #007bff; // Soft Blue
+$accent-color: #20c997; // Vibrant Teal
+$warn-color: #dc3545; // Moderate Red
+$background-color: #f8f9fa; // Light Gray
+$text-color: #343a40; // Dark Gray
+$off-white: #f9f9f9; // Off-White
+$light-gray: #d3d3d3; // Light Gray for tables
 
 @use '@angular/material' as mat;
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 @include mat.core();
 
-$my-primary-blue: mat.define-palette(mat.$blue-palette, 500);
-$my-accent-color: mat.define-palette(mat.$orange-palette, 700);
-
-$my-custom-orange: (
-  50: #fff3e0,
-  100: #ffe0b2,
-  200: #ffcc80,
-  300: #ffb74d,
-  400: #ffa726,
-  500: #ff9800,
-  600: #fb8c00,
-  700: #f57c00,
-  800: #ef6c00,
-  900: #e65100,
-  A100: #ffd180,
-  A200: #ffab40,
-  A400: #ff9100,
-  A700: #ff6d00,
+// Define custom palette for accent color
+$custom-teal: (
+  50: #e0f2f1,
+  100: #b2dfdb,
+  200: #80cbc4,
+  300: #4db6ac,
+  400: #26a69a,
+  500: #20c997,
+  600: #00897b,
+  700: #00796b,
+  800: #00695c,
+  900: #004d40,
+  A100: #a7ffeb,
+  A200: #64ffda,
+  A400: #1de9b6,
+  A700: #00bfa5,
   contrast: (
     50: black,
     100: black,
@@ -38,17 +41,50 @@ $my-custom-orange: (
     A100: black,
     A200: black,
     A400: black,
-    A700: black,
+    A700: white,
   )
 );
 
-$my-orange: mat.define-palette($my-custom-orange);
+$my-primary-color: mat.define-palette(mat.$blue-palette, 500);
+$my-accent-color: mat.define-palette($custom-teal, 500);
+$my-warn-color: mat.define-palette(mat.$red-palette, 600);
 
 $my-custom-theme: mat.define-light-theme((
   color: (
-    primary: $my-primary-blue,
+    primary: $my-primary-color,
     accent: $my-accent-color,
-    warn: $my-orange,
+    warn: $my-warn-color,
+  ),
+  typography: (
+    fontFamily: 'Roboto, sans-serif',
+    allVariants: (
+      color: $text-color,
+    ),
+    h1: (
+      fontSize: 3rem,
+    ),
+    h2: (
+      fontSize: 2.25rem,
+    ),
+    h3: (
+      fontSize: 1.875rem,
+    ),
+    h4: (
+      fontSize: 1.5rem,
+    ),
+    body1: (
+      fontSize: 1rem,
+    ),
+    body2: (
+      fontSize: 0.875rem,
+    ),
+  ),
+  background: (
+    default: $background-color,
+    appBar: mat.get-color-from-palette($my-primary-color, 700),
+    card: mat.get-color-from-palette(mat.$grey-palette, 50),
+    dialog: mat.get-color-from-palette(mat.$grey-palette, 50),
+    hover: mat.get-color-from-palette($my-primary-color, 100),
   ),
   density: 0,
 ));
@@ -58,10 +94,12 @@ $my-custom-theme: mat.define-light-theme((
 @include mat.button-theme($my-custom-theme);
 
 body {
-  background-color: $my-off-white; // Set background color to off-white
+  background-color: $background-color; // Set background color to light gray
+  color: $text-color; // Set text color to dark gray
+  font-family: 'Roboto', sans-serif; // Set font family
 }
 
-// Apply gray color to table
+// Apply light gray color to table
 .mat-table {
-  background-color: $my-light-gray;
+  background-color: $light-gray;
 }

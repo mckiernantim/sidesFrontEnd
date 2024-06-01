@@ -1,77 +1,44 @@
-<main [@fadeInOut]>
-  <header class="w-full">
-    <!-- Container -->
-    <div
-      class="w-full p-0 pt-8 md:px-10 md:h-45 lg:h-55 flex items-center min-h-[75vh] justify-center centered bg-white">
-      <!-- Component -->
-      <div class="hero grid items-center gap-2 sm:gap-12 lg:grid-cols-2">
-        <!-- Use responsive class to shrink image on smaller screens -->
-        <img src="../../../../assets/icons/logoFlat.png" alt=""
-          class="inline-block h-full w-full sm:w-25rem sm:h-25rem" />
-        <div>
-          <div class="blob absolute z-1 left-[30rem]" id="blob-1">
-
-          </div>
-          <!-- Title -->
-          <div class="relative z-5">
-            <h1 class="mb-4 text-8xl font-bold md:text-6xl">Sides-Ways</h1>
-            <!-- <h2 class="mb-6 text-3xl font-bold italic">5$ Beta</h2> -->
-            <h2 class="mb-6 text-2xl font-bold py-4">
-              Secure, Set-Ready Sides in Seconds
-              <br>
-              No subscriptions to worry about
-              <br>
-              Nothing to sign up with
-              <br>
-
-            </h2>
-
-          </div>
-          <!--    
-          <p class="mb-6 text-lg font-bold">Whether you're an independent filmmaker working on your first feature, or a veteran AD back the lot for another season, Sides-ways will save you time and money on your next project. </p>
-          <p class="mb-6 text-lg font-semibold">
-            No subscriptions to manage, no bloated software packages costing your project thousands. 
-          </p> -->
-          <div class="mb-6 text-2xl font-semibold text-accent">
-            <h2>
-              We make sides
-              <br>
-              That's it
-            </h2>
-            <h2 class="italic">
-              Closed beta 2.0
-            </h2>
-          </div>
-
-          <div class="blob absolute z-1 left-[30rem]" id="blob-2">
-          </div>
-          
-          
-    
-          <div class="mb-6 flex items-stretch md:mb-4 lg:mb-12">
-            <button mat-raised-button color="accent" (click)="fileInput.click()"
-              class="mr-5 rounded-md px-20 text-center font-semibold md:mr-6 lg:mr-8">
-              Upload Script PDF
-            </button>
-            @if (this.underConstruction) {
-            <button mat-raised-button class="mr-5 rounded-md px-20 text-center font-semibold md:mr-6 lg:mr-8"
-              (click)="skipUploadForTest()">skipUploadForTest</button>
-            }
-            <input hidden (change)="handleFileInput($event.target.files)" #fileInput type="file" id="file"
-              accept="application/pdf">
-          </div>
-          <!-- App -->
+<main [@fadeInOut] class="max-w-[80rem] mx-auto">
+  <header class="bg-white py-8 max-w-[80rem] mx-auto">
+    <div class="container mx-auto flex flex-col lg:flex-row items-center justify-between px-4 lg:px-8">
+      <!-- Hero Text Section -->
+      <div class="text-center lg:text-left lg:w-1/2">
+        <h1 class="text-4xl lg:text-5xl font-bold mb-4 text-dark-gray">Sides-Ways</h1>
+        <h2 class="text-2xl font-bold py-4 text-dark-gray mb-6">
+          Secure, Set-Ready Sides in Seconds
+          <br>
+          No subscriptions to worry about
+          <br>
+          Nothing to sign up with
+        </h2>
+        <div class="mb-6 text-2xl font-semibold text-dark-gray">
+          <h2>We make sides<br>That's it</h2>
+          <h2 class="italic">Closed beta 2.0</h2>
         </div>
+        <div class="flex flex-col lg:flex-row lg:space-x-4 justify-center lg:justify-start">
+          <button mat-raised-button color="accent" (click)="fileInput.click()" class="bg-bright-blue text-white py-3 px-8 rounded-md mb-4 lg:mb-0">
+            Upload Script PDF
+          </button>
+          @if (this.underConstruction) {
+            <button mat-raised-button class="bg-soft-red text-white py-3 px-8 rounded-md mb-4 lg:mb-0" (click)="skipUploadForTest()">skipUploadForTest</button>
+          }
+          <input hidden (change)="handleFileInput($event.target.files)" #fileInput type="file" id="file" accept="application/pdf">
+        </div>
+      </div>
+      <!-- Hero Image Section -->
+      <div class="lg:w-1/2 mt-8 lg:mt-0">
+        <img src="path/to/your/uploaded/image.png" alt="Hero Image" class="w-full rounded-lg shadow-lg">
       </div>
     </div>
   </header>
-  <section class="about-product-section">
+
+  <section class="about-product-section max-w-[80rem] mx-auto">
     <app-about-item-grid></app-about-item-grid>
   </section>
-  <section class="customers-section">
+  <section class="customers-section max-w-[80rem] mx-auto">
     <app-carousel></app-carousel>
   </section>
-  <section class="feature-section">
+  <section class="feature-section max-w-[80rem] mx-auto">
     <app-spinning-bot [title]="'fake name'"></app-spinning-bot>
   </section>
 </main>
