@@ -1,32 +1,67 @@
+// Define the colors as variables
+$my-off-white: #f9f9f9; // Off-white color
+$my-light-gray: #d3d3d3; // Light gray color
+
 @use '@angular/material' as mat;
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 @include mat.core();
 
 $my-primary-blue: mat.define-palette(mat.$blue-palette, 500);
 $my-accent-color: mat.define-palette(mat.$orange-palette, 700);
-$my-warn-red: mat.define-palette(mat.$red-palette, 500);
-$my-off-white: #f8f8f8; // Adjust to your off-white preference
-$my-light-gray: #d6d6d6; 
-$my-orange:#fc1c18;
+
+$my-custom-orange: (
+  50: #fff3e0,
+  100: #ffe0b2,
+  200: #ffcc80,
+  300: #ffb74d,
+  400: #ffa726,
+  500: #ff9800,
+  600: #fb8c00,
+  700: #f57c00,
+  800: #ef6c00,
+  900: #e65100,
+  A100: #ffd180,
+  A200: #ffab40,
+  A400: #ff9100,
+  A700: #ff6d00,
+  contrast: (
+    50: black,
+    100: black,
+    200: black,
+    300: black,
+    400: black,
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+    A100: black,
+    A200: black,
+    A400: black,
+    A700: black,
+  )
+);
+
+$my-orange: mat.define-palette($my-custom-orange);
 
 $my-custom-theme: mat.define-light-theme((
   color: (
     primary: $my-primary-blue,
     accent: $my-accent-color,
-    warning: $my-orange,
+    warn: $my-orange,
   ),
   density: 0,
 ));
 
+@include mat.all-component-themes($my-custom-theme);
+@include mat.core-theme($my-custom-theme);
+@include mat.button-theme($my-custom-theme);
 
 body {
-    @include mat.all-component-themes($my-custom-theme);
-    @include mat.core-theme($my-custom-theme);
-    @include mat.button-theme($my-custom-theme);
-    background-color: $my-off-white; // Set background color to off-white
-  }
-  
-  // Apply gray color to table
-  .mat-table {
-    background-color: $my-light-gray;
-  }
+  background-color: $my-off-white; // Set background color to off-white
+}
+
+// Apply gray color to table
+.mat-table {
+  background-color: $my-light-gray;
+}
