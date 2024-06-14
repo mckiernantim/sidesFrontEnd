@@ -255,7 +255,6 @@ export class DashboardRightComponent implements OnInit {
 
   sendFinalDocumentToServer(finalDocument) {
     this.flagStartLines(finalDocument.data);
-
     this.upload.generatePdf(finalDocument).subscribe(
       (serverRes: pdfServerRes) => {
         let { expirationTime, jwtToken, downloadTimeRemaining } = serverRes;
@@ -357,8 +356,9 @@ export class DashboardRightComponent implements OnInit {
       );
     }
   }
+
   prepFinalDocument(addCallSheet:boolean) {
-    const coverSheet = addCallSheet ? localStorage.getItem("callSheetPath") : ""
+    const coverSheet = addCallSheet ? localStorage.getItem("callSheetPath") : "";
     this.finalDocument = this.pdf.getPdf(
       this.selected,
       this.script,
