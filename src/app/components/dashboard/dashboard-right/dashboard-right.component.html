@@ -1,5 +1,5 @@
 
-<div [@fadeInOut] class="text-white">
+<div [@fadeInOut]>
   <div class="flex flex-col-reverse lg:flex-row justify-around">
     <ng-container *ngIf="!lastLooksReady; else lastLooks">
       <div class="data-feed cell">
@@ -39,7 +39,6 @@
             <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
             <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 
-            <!-- Row shown when there is no matching data. -->
             <tr class="mat-row" *matNoDataRow>
               <td class="mat-cell" colspan="4">No data matching the filter "{{input.value}}"</td>
             </tr>
@@ -51,8 +50,8 @@
       </div>
 
     </ng-container>
-    <!-- Render app-last-looks component with selected value -->
-    <div class="flex flex-col items-center">
+
+    <div class="flex flex-col justify-start items-center min-w-[40%] py-20">
       <h1 class=" text-3xl">Generating sides for
         <br>
         <p class="pt-4">{{ script }} - {{ date | date }}</p>
@@ -72,13 +71,13 @@
                 </div>
               }
               <li class="p-2" *ngFor="let scene of selected">
-                <pre>{{scene.sceneNumberText}}     {{scene.text}}     {{scene.sceneNumberText}}</pre>
+                <pre> {{scene.sceneNumberText}}     {{scene.text}}     {{scene.sceneNumberText}}</pre>
               </li>
             </ng-container>
           </ul>
         </ng-container>
       </div>
-      <div class="controls-container w-[75%]">
+      <div class="controls-container p-20 w-[75%]">
         <ng-container *ngIf="!lastLooksReady; else lastLooksControls">
           <div class="flex flex-row justify-between">
             <button mat-raised-button color="warn" (click)="toggleLastLooks()"
