@@ -354,6 +354,7 @@ export class PdfService {
   }
   makeVisible(sceneArr, breaks) {
     debugger;
+    
     this.finalDocument.breaks = breaks;
     breaks = this.sortBreaks(breaks);
     let merged = this.flattenScenes(sceneArr);

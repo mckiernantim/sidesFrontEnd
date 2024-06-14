@@ -358,13 +358,13 @@ export class DashboardRightComponent implements OnInit {
   }
 
   prepFinalDocument(addCallSheet:boolean) {
-    const coverSheet = addCallSheet ? localStorage.getItem("callSheetPath") : "";
-    this.finalDocument = this.pdf.getPdf(
-      this.selected,
-      this.script,
-      this.individualPages,
-      coverSheet
-    );
+    this.pdf.finalDocument.callSheet = addCallSheet ? localStorage.getItem("callSheetPath") : "";
+    // this.finalDocument = this.pdf.getPdf(
+    //   this.selected,
+    //   this.script,
+    //   this.individualPages,
+    //   coverSheet
+    // );
     this.finalDocReady = true;
     this.waitingForScript = true;
   }
@@ -385,12 +385,12 @@ export class DashboardRightComponent implements OnInit {
           if(this.callsheet) {
            this.prepFinalDocument(true)
            this.openFinalSpinner()
-           this.sendFinalDocumentToServer(this.finalDocument);
+           this.sendFinalDocumentToServer(this.pdf.finalDocument);
   
           } else {
             this.prepFinalDocument(false)         
             this.openFinalSpinner();
-            this.sendFinalDocumentToServer(this.finalDocument);
+            this.sendFinalDocumentToServer(this.pdf.finalDocument);
           }
         }
       });
