@@ -1,16 +1,22 @@
-<div class="flex items-center justify-center relative p-20">
-  <button (click)="prev()" class="p-2 bg-gray-300 rounded-full absolute left-0 ml-4 z-10">
+<div class="p-8">
+  <h2 class="font-bold text-6xl flex flex-row justify-center">Trusted By The Best</h2>
+</div>
+<div class="flex items-center justify-center relative p-8">
+  <button (click)="prev()" class="p-2 bg-gray-300 rounded-full absolute left-[15vw] ml-4 z-10">
     <span class="material-icons">chevron_left</span>
   </button>
-  <div class="w-full flex items-center justify-center overflow-hidden relative">
-    {{ currentIndex }}
+  <div class="w-full flex flex-col items-center justify-center overflow-hidden relative">
+    <div class="w-[40vw]">
+      <p class="font-semi-bold italic">Lorem ipsum dolor sit amet consectetur adipisicing elit. Libero distinctio sunt laboriosam, veniam provident, numquam commodi enim fugit et reiciendis ut repellendus nemo consectetur aliquid atque, perferendis cumque maxime qui.</p>
+      <p class="font-bold p-8"> - Some AD</p>
+    </div>
     <img 
       [src]="visibleImage" 
       alt="Poster Image" 
-      class="max-w-full h-50vh transition-opacity duration-500"
+      class="max-w-full h-75vh transition-opacity duration-500"
       [ngClass]="{ 'opacity-0': isTransitioning, 'opacity-100': !isTransitioning }">
   </div>
-  <button (click)="next()" class="p-2 bg-gray-300 rounded-full absolute right-0 mr-4 z-10">
+  <button (click)="next()" class="p-2 bg-gray-300 rounded-full absolute right-[15vw] mr-4 z-10">
     <span class="material-icons">chevron_right</span>
   </button>
 </div>

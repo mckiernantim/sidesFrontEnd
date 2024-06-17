@@ -188,8 +188,7 @@ export class DashboardRightComponent implements OnInit {
         this.allLines[i].category === 'page-number' ||
         this.allLines[i].category === 'page-number-hidden' ||
         this.allLines[i].subCategory === 'parenthetical'
-      ) {
-      }
+      ) {}
     }
     return newText;
   }
@@ -331,6 +330,7 @@ export class DashboardRightComponent implements OnInit {
   getLastPage = (scene) => {
     return this.allLines[scene.lastLine].page || null;
   };
+
   toggleLastLooks() {
     this.lastLooksReady = !this.lastLooksReady;
     // deprecated
@@ -359,12 +359,6 @@ export class DashboardRightComponent implements OnInit {
 
   prepFinalDocument(addCallSheet:boolean) {
     this.pdf.finalDocument.callSheet = addCallSheet ? localStorage.getItem("callSheetPath") : "";
-    // this.finalDocument = this.pdf.getPdf(
-    //   this.selected,
-    //   this.script,
-    //   this.individualPages,
-    //   coverSheet
-    // );
     this.finalDocReady = true;
     this.waitingForScript = true;
   }

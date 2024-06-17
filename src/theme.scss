@@ -94,7 +94,7 @@ $my-custom-theme: mat.define-light-theme((
 @include mat.button-theme($my-custom-theme);
 
 body {
-  background-color: $background-color; // Set background color to light gray
+  background-color: white; 
   color: $text-color; // Set text color to dark gray
   font-family: 'Roboto', sans-serif; // Set font family
 }
