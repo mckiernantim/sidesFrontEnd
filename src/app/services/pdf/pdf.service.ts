@@ -353,7 +353,7 @@ export class PdfService {
     return null;
   }
   makeVisible(sceneArr, breaks) {
-    debugger;
+    ;
     
     this.finalDocument.breaks = breaks;
     breaks = this.sortBreaks(breaks);
@@ -458,7 +458,7 @@ export class PdfService {
     return pages;
   }
   processPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
-    debugger
+    
     this.initializePdfDocument(name, numPages, callSheetPath);
    
     let pages = this.collectPageNumbers(sceneArr);
@@ -756,7 +756,7 @@ export class PdfService {
 
     let page = [];
     //FINAL IS OUR ASSEMBLED SIDES DOCUMENT WITH TRUE AND FALSE VALUES
-    debugger
+    
     for (let i = 0; i < final.length; i++) {
       //  if the target has NO text and isnt to be skipped
       // lines are insterted to deliniate page breaks and satisfy below conditional;
@@ -782,7 +782,6 @@ export class PdfService {
       for (let j = 0; j < 5; j++) {
         if (finalDocument.data[i + 1]) {
           let lineToCheck = finalDocument.data[i + 1][j];
-          debugger
           if (this.conditions.includes(lineToCheck?.category)) {
             nextPageFirst = finalDocument.data[i + 1][j];
             break;

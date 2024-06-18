@@ -1,27 +1,37 @@
-<main [@fadeInOut] class="max-w-[80rem] mx-auto">
-  <header class="bg-white py-8 max-w-[80rem] mx-auto">
+<main [@fadeInOut] class="max-w-[80rem] mx-auto relative-position  blob-1">
+  <header class="bg-white py-8 max-w-[80rem] mx-auto relative-position  blob-2">
     <div class="container mx-auto flex flex-col lg:flex-row items-center justify-between px-4 lg:px-8">
       <!-- Hero Text Section -->
-      <div class="text-center lg:text-left lg:w-1/2">
+      <div class="text-center lg:text-left lg:w-1/2 relative-position ">
         <h1 class="text-4xl lg:text-8xl font-bold mb-4 text-black">Sides-Ways</h1>
-        <h2 class="text-3xl font-light py-4 text-dark-gray mb-8">
-          Secure, Set-Ready Sides in Seconds
-          <br>
-          No subscriptions to worry about
-          <br>
-          Nothing to sign up with
-        </h2>
-        <div class="mb-6 text-2xl font-semi-bold text-dark-gray">
-          <h2>We make sides<br>That's it</h2>
+        <div class="py-8 relative-position ">
+          <h2 class="text-4xl font-semi-bold leading-normal text-dark-gray">
+            Secure, Set-Ready Sides in Seconds
+          </h2>
+          <h2 class="text-4xl font-semi-bold leading-normal  text-dark-gray">
+            No subscriptions to worry about
+          </h2>
+
+          <h2 class="text-4xl font-semi-bold leading-normal  text-dark-gray">
+            Nothing to sign up with
+          </h2>
         </div>
-        <div class="flex flex-col lg:flex-row lg:space-x-4 justify-center">
-          <button mat-raised-button color="accent" (click)="fileInput.click()" class="bg-bright-blue text-white py-3 px-8 rounded-md mb-4 lg:mb-0">
+
+        <div class="mb-6 text-3xl font-semi-bold leading-normal leading-loose  text-dark-gray relative-position ">
+          <h2>We make sides</h2>
+          <h2 class="italic">That's it.</h2>
+        </div>
+        <div class="flex flex-col lg:flex-row lg:space-x-4 justify-center relative-position ">
+          <button mat-raised-button color="warn" (click)="fileInput.click()"
+          class="text-white py-8 px-12 rounded-md mb-4 lg:mb-0 custom-button">
             Upload Script PDF
           </button>
           @if (this.underConstruction) {
-            <button mat-raised-button class="bg-soft-red text-white py-3 px-8 rounded-md mb-4 lg:mb-0" (click)="skipUploadForTest()">skipUploadForTest</button>
+          <button mat-raised-button class="bg-soft-red text-white py-3 px-8 rounded-md mb-4 lg:mb-0"
+            (click)="skipUploadForTest()">skipUploadForTest</button>
           }
-          <input hidden (change)="handleFileInput($event.target.files)" #fileInput type="file" id="file" accept="application/pdf">
+          <input hidden (change)="handleFileInput($event.target.files)" #fileInput type="file" id="file"
+            accept="application/pdf">
         </div>
       </div>
       <!-- Hero Image Section -->
@@ -31,13 +41,13 @@
     </div>
   </header>
 
-  <section class="about-product-section max-w-[80rem] mx-auto">
+  <section class="about-product-section max-w-[80rem] mx-auto relative-position ">
     <app-about-item-grid></app-about-item-grid>
   </section>
-  <section class="customers-section max-w-[80rem] mx-auto">
+  <section class="customers-section max-w-[80rem] mx-auto relative-position ">
     <app-carousel></app-carousel>
   </section>
-  <section class="feature-section max-w-[80rem] mx-auto">
+  <section class="feature-section max-w-[80rem] mx-auto relative-position ">
     <app-spinning-bot [title]="'fake name'"></app-spinning-bot>
   </section>
 </main>

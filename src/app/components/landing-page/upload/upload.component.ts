@@ -1,8 +1,5 @@
 import { SpinningBotComponent } from '../../shared/spinning-bot/spinning-bot.component';
-import { FeatureGridComponent } from "../feature/feature-grid/feature-grid.component"
-import { AboutItemGridComponent } from "../about/about-item-grid/about-item-grid.component"
-import { TestimonialGridComponent} from "../testimonial/testimonial-grid/testimonial-grid.component"
-import { Observable, Subscription, throwError, pipe } from 'rxjs';
+import { Observable, Subscription, throwError, pipe, EMPTY } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { UploadService } from '../../../services/upload/upload.service';
@@ -74,7 +71,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   // create the page '2.' which is hidden in most scripts
-  addTwo(arr) {
+  findActualPage2(arr) {
     let missingTwo =
       arr.findIndex(
         (ind) => ind.text.match('2.') && ind.category == 'page-number-hidden'
@@ -84,12 +81,13 @@ export class UploadComponent implements OnInit, OnDestroy {
   toggleWorking() {
     this.working = !this.working
   }
-  openDialog(title, dialogOption) {
+  openDialog(title, dialogOption, error=null) {
+  
     if (this.working) {
       const dialogRef = this.dialog.open(SpinningBotComponent, {
         height:'750px',
         width:'750px',
-        data:{ title, dialogOption },
+        data:{ title, dialogOption, error },
         disableClose:false,
       });
       dialogRef.afterClosed().subscribe((result) => {
@@ -97,6 +95,7 @@ export class UploadComponent implements OnInit, OnDestroy {
       });
     }
   }
+
   skipUploadForTest() {
     this.upload.allLines = dummyData;
     this.upload.individualPages = dummyPageData
@@ -110,40 +109,48 @@ export class UploadComponent implements OnInit, OnDestroy {
       this.router.navigate(['/download']);
     });
   }
-  handleFileInput(files: FileList ) {
+
+  handleFileInput(files: FileList) {
     this.working = true;
     this.fileToUpload = files.item(0);
     this.openDialog(this.fileToUpload.name, "scan");
-   
-  // upload our scrip
+  
+    // Upload our script
     this.$script_data = this.upload.postFile(this.fileToUpload);
     this.dataSubscription = this.$script_data
       .pipe(
         catchError((err) => {
-          console.log('caught mapping error and rethrowing', err);
-          return throwError(err);
+          this.dialog.closeAll();
+          this.openDialog('An error occurred', "error", err);
+          // Return EMPTY observable to complete the stream
+          return EMPTY;
         })
       )
       .subscribe((data) => {
-        // grab the pages and insert 'page 2.'  so we know where it is
-        const { allLines, title } = data
-        this.allLines = allLines;
-        if (this.addTwo(allLines).category) {
-          let indexOfTwo = this.addTwo(allLines);
-          allLines[indexOfTwo].category = 'page-number';
-        }
+        const { allLines, title } = data;
+        // Grab the pages and insert 'page 2.' so we know where it is
+        this.allLines = this.processSeverResponseAndCheckForPage2(allLines)
         alert(
           'your IP is safe. ' + title + ' was just deleted from our servers.'
         );
         this.dialog.closeAll();
-        this.pdf.initializeData()
+        this.pdf.initializeData();
         this.router.navigate(['download']);
       });
-  }
+  } 
 
   resetLocalData() {
     if (localStorage.getItem('name')) localStorage.setItem('name', null);
     if (localStorage.getItem('callSheetPath'))
       localStorage.setItem('callSheetPath', null);
   }
+
+  processSeverResponseAndCheckForPage2(allLines) {
+      if (this.findActualPage2(allLines).category) {
+        let indexOfTwo = this.findActualPage2(allLines);
+        allLines[indexOfTwo].category = 'page-number';
+      }
+      return allLines
+  }
+  
 }

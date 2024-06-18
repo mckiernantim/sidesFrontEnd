@@ -1,6 +1,6 @@
 <main class="last-looks-container">
     {{ this.mouseEvent?.clientY }}
-    <div class="page" (click)="showContextMenu && closeContextMenu()">
+    <div class="page shadow-lg border" (click)="showContextMenu && closeContextMenu()">
         <div class="break">
             <ul cdkDropList [cdkDropListData]="page" class="screenbox" [ngClass]="{ 'edit-mode': canEditDocument }">
                 <!-- [attr.contenteditable]="canEditDocument ? 'true' : 'false'" this line will activate easy edit - -->

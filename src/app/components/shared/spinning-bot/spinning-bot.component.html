@@ -1,38 +1,52 @@
+<ng-container *ngIf="dialogOption == 'scan'">
+  <div class="modal-container">
+    <div class="content">
+      <h3 class="title">Processing: <em> {{this.title}}</em></h3>
+      <div class="animation-container">
+        <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" />
+        <div class="message">
+          <p>Sit Tight.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-container>
 
-  
-  <ng-container *ngIf="dialogOption == 'scan'">
-    <div class="modal-container">
-      <div class="content">
-        <h3 class="title">Processing: <em> {{this.title}}</em></h3>
-        <div class="animation-container">
-          <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" />
-          <div class="message">
-            <p>Sit Tight.</p>
-          </div>
+<ng-container *ngIf="dialogOption == 'payment'">
+  <div class="modal-container">
+    <div class="content">
+      <h3 class="title">Processing PDF <em> {{this.title}}</em></h3>
+      <div *ngFor="let scene of data.selected">
+        <p class="text-lg font-boldp">
+          {{ scene.text }}
+        </p>
+      </div>
+      <div class="animation-container">
+        <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" />
+        <div class="message">
+          <p>Routing to Payment</p>
         </div>
       </div>
     </div>
-  </ng-container>
-  
-  <ng-container *ngIf="dialogOption == 'payment' ">
-    <div class="modal-container">
-      <div class="content">
-        <h3 class="title">Processing PDF <em> {{this.title}}</em></h3>
-        <div *ngFor="let scene of data.selected">
-          <p class="text-lg font-boldp">
-            {{ scene.text }}
-          </p>
-        </div>
-        <div class="animation-container">
-          <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" />
-          <div class="message">
-            <p>Routing to Payment</p>
-          </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="dialogOption == 'error'">
+  <div class="modal-container">
+    <div class="content">
+      <h3 class="title">Error Occurred:</h3>
+      <div class="message">
+        <p>{{this.error.message}}</p>
+      </div>
+      <div class="animation-container">
+        <!-- <img src="../../assets/animations/ErrorBot_Animation.gif" alt="Error Animation" /> -->
+        <div class="message">
+          <p>Please try again.</p>
         </div>
       </div>
     </div>
-  </ng-container>
-  
+  </div>
+</ng-container>
 
 
 

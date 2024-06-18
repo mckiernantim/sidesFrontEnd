@@ -1,6 +1,6 @@
-<main [@fadeInOut] class="last-looks-container">
+<main [@fadeInOut] class="last-looks-container shadow-lg my-8">
 
-  <div class="pagination-controls flex flex-row justify-start">
+  <div class="pagination-controls flex flex-row justify-around">
     <span>Page {{ currentPageIndex + 1 }} / {{ pages.length }}</span>
     <button mat-raised-button color="warn" (click)="previousPage()"
       [disabled]="currentPageIndex === 0">Previous</button>

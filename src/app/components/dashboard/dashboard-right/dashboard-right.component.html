@@ -1,10 +1,10 @@
 
-<div [@fadeInOut]>
-  <div class="flex flex-col-reverse lg:flex-row justify-around">
+<div [@fadeInOut] class="min-h-100 h-auto" >
+  <div class="flex flex-col-reverse lg:flex-row justify-around min-h-100 h-auto">
     <ng-container *ngIf="!lastLooksReady; else lastLooks">
-      <div class="data-feed cell">
+      <div class="data-feed cell h-full flex flex-col justify-around">
+        <h2 class="font-semibold text-2xl"> {{ script }} scenes</h2>
         <div class="mat-elevation-z8 table-container">
-          <h2> {{ script }} scenes</h2>
           <mat-form-field style="width:100%">
             <mat-label>Search </mat-label>
             <input matInput (keyup)="applyFilter($event)" placeholder="Search your scenes here" #input color="accent">
