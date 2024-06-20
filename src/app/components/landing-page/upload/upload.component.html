@@ -1,10 +1,11 @@
-<main [@fadeInOut] class="max-w-[80rem] mx-auto relative-position  blob-1">
-  <header class="bg-white py-8 max-w-[80rem] mx-auto relative-position  blob-2">
+<main [@fadeInOut] class="max-w-[80rem] mx-auto blob-1">
+  <header class="bg-white py-8 max-w-[80rem] mx-auto blob-2 overflow-hidden">
     <div class="container mx-auto flex flex-col lg:flex-row items-center justify-between px-4 lg:px-8">
+    
       <!-- Hero Text Section -->
-      <div class="text-center lg:text-left lg:w-1/2 relative-position ">
+      <div class="text-center lg:text-left xl:w-1/2 lg:w-3/4">
         <h1 class="text-4xl lg:text-8xl font-bold mb-4 text-black">Sides-Ways</h1>
-        <div class="py-8 relative-position ">
+        <div class="py-8">
           <h2 class="text-4xl font-semi-bold leading-normal text-dark-gray">
             Secure, Set-Ready Sides in Seconds
           </h2>
@@ -17,13 +18,13 @@
           </h2>
         </div>
 
-        <div class="mb-6 text-3xl font-semi-bold leading-normal leading-loose  text-dark-gray relative-position ">
+        <div class="mb-6 text-3xl font-semi-bold leading-normal leading-loose  text-dark-gray">
           <h2>We make sides</h2>
           <h2 class="italic">That's it.</h2>
         </div>
-        <div class="flex flex-col lg:flex-row lg:space-x-4 justify-center relative-position ">
+        <div class="flex flex-col lg:flex-row lg:space-x-4 justify-center">
           <button mat-raised-button color="warn" (click)="fileInput.click()"
-          class="text-white py-8 px-12 rounded-md mb-4 lg:mb-0 custom-button">
+            class="text-white py-8 px-12 rounded-md mb-4 lg:mb-0 custom-button">
             Upload Script PDF
           </button>
           @if (this.underConstruction) {
@@ -34,20 +35,22 @@
             accept="application/pdf">
         </div>
       </div>
-      <!-- Hero Image Section -->
-      <div class="lg:w-1/2 mt-8 lg:mt-0">
-        <img src="assets/icons/logoFlat.png" alt="Hero Image" class="w-full rounded-lg">
-      </div>
+
+        <!-- Hero Image Section -->
+        <div class="lg:w-1/2 mt-8 lg:mt-0">
+          <img src="assets/icons/logoFlat.png" alt="Hero Image" class="w-full rounded-lg">
+        </div>
+
     </div>
   </header>
 
-  <section class="about-product-section max-w-[80rem] mx-auto relative-position ">
+  <section class="about-product-section max-w-[80rem] mx-auto">
     <app-about-item-grid></app-about-item-grid>
   </section>
-  <section class="customers-section max-w-[80rem] mx-auto relative-position ">
+  <section class="customers-section max-w-[80rem] mx-auto">
     <app-carousel></app-carousel>
   </section>
-  <section class="feature-section max-w-[80rem] mx-auto relative-position ">
+  <section class="feature-section max-w-[80rem] mx-auto">
     <app-spinning-bot [title]="'fake name'"></app-spinning-bot>
   </section>
 </main>

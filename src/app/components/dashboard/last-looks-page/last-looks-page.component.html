@@ -36,11 +36,11 @@
                                 (cdkDragEnded)="dragDrop.onDrop($event, page[lineIndex], lineIndex, 'start')"
                                 [cdkDragData]="{ index: lineIndex, line: page[lineIndex] }"
                                 (mouseup)="dragDrop.stopDrag(line)">
-                                <span class="start-span">START {{ line.sceneNumberText }} {{ line.calculatedYpos }}</span>
+                                <span class="start-span">START {{ line.sceneNumberText }} </span>
                             </span>
                         </ng-container>
                         <ng-template #noDragStart>
-                            <span class="start-span">START {{ line.sceneNumberText }} {{ line.calculatedYpos }}</span>
+                            <span class="start-span">START {{ line.sceneNumberText }} `</span>
                         </ng-template>
                     </span>
 

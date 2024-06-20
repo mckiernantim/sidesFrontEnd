@@ -1,7 +1,8 @@
+@import 'tailwindcss/utilities';
 @import "https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css";
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+
 
 
 :root {
@@ -136,7 +137,7 @@ body {
   bottom: -750px;
   right: -250px;
   transform: rotate(75deg);
-  z-index: 100;
+  z-index: 10;
 }
 
 .blob-4::before {
@@ -146,10 +147,43 @@ body {
   top: 200px;
   left: -250px;
   transform: rotate(45deg);
-  z-index: 100;
+  z-index: 10;
 }
 
-/* Breakpoint at 1200px */
+
+@media (max-width: 1500px) {
+  .blob-1::before {
+    top: -1vw;
+    right: -10vw;
+    width: 20vw;
+    height: 20vw;
+    border:2px solid orange;
+    overflow:  hidden;
+
+  }
+  .blob-2::before {
+    top: 20vw;
+    left: -20vw;
+    width: 30vw;
+    height: 30vw;
+  }
+
+  .blob-3::before {
+    bottom: -50vw;
+    right: -5vw;
+    width: 20vw;
+    height: 20vw;
+  }
+
+  .blob-4::before {
+    top: 10vw;
+    left: -5vw;
+    width: 20vw;
+    height: 20vw;
+  }
+}
+
+/* tablet  */
 @media (max-width: 1200px) {
   .blob-1::before {
     top: 70px;
@@ -181,94 +215,29 @@ body {
 }
 
 /* Breakpoint at 1000px */
-@media (max-width: 1000px) {
-  .blob-1::before {
-    top: 60px;
-    right: 0px;
-    width: 18vw;
-    height: 18vw;
-  }
-
-  .blob-2::before {
-    top: 450px;
-    left: -150px;
-    width: 28vw;
-    height: 28vw;
-  }
-
-  .blob-3::before {
-    bottom: -650px;
-    right: -150px;
-    width: 18vw;
-    height: 18vw;
-  }
-
-  .blob-4::before {
-    top: 160px;
-    left: -150px;
-    width: 18vw;
-    height: 18vw;
+/*  small ipad */
+@media (max-width: 1199px) {
+  .blob-1::before, .blob-2::before, .blob-3::before, .blob-4::before {
+    display:none;
   }
 }
+  
 
-/* Breakpoint at 750px */
-@media (max-width: 750px) {
-  .blob-1::before {
-    top: 50px;
-    right: -10px;
-    width: 16vw;
-    height: 16vw;
-  }
 
-  .blob-2::before {
-    top: 400px;
-    left: -100px;
-    width: 26vw;
-    height: 26vw;
-  }
 
-  .blob-3::before {
-    bottom: -600px;
-    right: -100px;
-    width: 16vw;
-    height: 16vw;
-  }
+@media (max-width: 640px) {
+  .container {
+      flex-direction: column-reverse;
+      align-items: center;
+    }
 
-  .blob-4::before {
-    top: 140px;
-    left: -100px;
-    width: 16vw;
-    height: 16vw;
-  }
-}
-
-/* Breakpoint at 500px */
-@media (max-width: 500px) {
-  .blob-1::before {
-    top: 40px;
-    right: -20px;
-    width: 14vw;
-    height: 14vw;
-  }
-
-  .blob-2::before {
-    top: 350px;
-    left: -50px;
-    width: 24vw;
-    height: 24vw;
-  }
-
-  .blob-3::before {
-    bottom: -550px;
-    right: -50px;
-    width: 14vw;
-    height: 14vw;
-  }
-
-  .blob-4::before {
-    top: 120px;
-    left: -50px;
-    width: 14vw;
-    height: 14vw;
-  }
+    body h1 {
+      font-size: 3.75rem; /* More specific selector */
+    }
+    body h2 {
+      font-size: 1.2rem; /* More specific selector */
+    }
+    
+    
+    
 }

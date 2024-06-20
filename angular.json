@@ -20,7 +20,11 @@
             "tsConfig": "tsconfig.app.json",
             "aot": true,
             "assets": ["src/favicon.ico", "src/assets"],
-            "styles": [  "node_modules/bootstrap/dist/css/bootstrap.min.css", "src/styles.css", "src/theme.scss"],
+            "styles": [  
+              "node_modules/bootstrap/dist/css/bootstrap.min.css", 
+              "src/styles.css" ,
+              "src/theme.scss"
+            ],
             "scripts": [],
             "allowedCommonJsDependencies": ["angular-slickgrid"]
           },
