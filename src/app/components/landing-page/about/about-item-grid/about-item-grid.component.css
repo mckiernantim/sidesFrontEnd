@@ -15,13 +15,19 @@
     background-color: var(--orange);
     transform: translate(-45%, -45%) rotate(-5deg);
     z-index: -1;
-    padding-left: 125px;
-    padding-right: 125px;
+    padding-left: 150px;
+    padding-right: 150px;
     padding-top: 50px;
     padding-bottom: 35px;
 }
 
+@media (max-width:1024px) and (min-width:641px) {
+  .highlight::after {
+    padding-left: 110px;
+    padding-right: 110px;
+  }
 
+}
 @media (max-width: 640px) {
   .about-container {
       flex-direction: column;

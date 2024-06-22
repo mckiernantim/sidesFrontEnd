@@ -1,3 +1,11 @@
+/* OVERRIDE FOR ANGULAR MATERIAL BUTTON  */
+.font-semibold {
+    font-weight: 600 !important
+}
+
+.py-8 {
+    padding:0 2.25rem !important
+}
 @media (min-width: 1000px) and (max-width: 1200px) {
     .container {
       flex-direction: column-reverse;
@@ -14,6 +22,16 @@
     }
   }
 
+  @media (min-width: 481px) and (max-width:999px) {
+    .container {
+        flex-direction: column-reverse;
+        align-items: center;
+    }
+    h1 {
+        font-size:3.75rem;
+    }
+  }
+
 
   @media (max-width: 480px) {
     .container {
@@ -22,7 +40,7 @@
       }
 
     h1 {
-        font-size: 3.75rem;
+        font-size: 2.75rem;
     }
     h2 {
         font-size:1.2rem;

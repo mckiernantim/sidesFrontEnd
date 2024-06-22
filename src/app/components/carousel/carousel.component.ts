@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
 import { posters } from './posters';
 import { Poster } from 'src/app/types/Poster';
+import { Testimonial, testimonials } from './testimonials';
 
 @Component({
   selector: 'app-carousel',
@@ -8,8 +9,12 @@ import { Poster } from 'src/app/types/Poster';
   styleUrls: ['./carousel.component.css']
 })
 export class CarouselComponent implements OnInit, OnDestroy {
+
   posters: Poster[] = [];
+  testimonials: Testimonial[] = [];
   currentIndex = 0;
+  testimonialIndex = 0;
+  currentTestimonial: Testimonial;
   visibleImage: string = '';
   isTransitioning = false;
   autoScrollInterval: any;
@@ -18,7 +23,9 @@ export class CarouselComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.posters = posters;
-    this.updateVisibleImage();
+    this.testimonials = testimonials;
+    this.currentTestimonial = this.testimonials[this.testimonialIndex]; // Initialize currentTestimonial
+    this.updateVisibleImageAndTestimonial();
     this.startAutoScroll();
   }
 
@@ -28,22 +35,25 @@ export class CarouselComponent implements OnInit, OnDestroy {
 
   next(): void {
     this.currentIndex = (this.currentIndex + 1) % this.posters.length;
-    this.updateVisibleImage();
+    this.testimonialIndex = (this.testimonialIndex + 1) % this.testimonials.length;
+    this.updateVisibleImageAndTestimonial();
     this.restartAutoScroll();
   }
 
   prev(): void {
     this.currentIndex = (this.currentIndex - 1 + this.posters.length) % this.posters.length;
-    this.updateVisibleImage();
+    this.testimonialIndex = (this.testimonialIndex - 1 + this.testimonials.length) % this.testimonials.length;
+    this.updateVisibleImageAndTestimonial();
     this.restartAutoScroll();
   }
 
-  updateVisibleImage(): void {
+  updateVisibleImageAndTestimonial(): void {
     this.isTransitioning = true;
     this.cd.detectChanges(); 
 
     setTimeout(() => {
       this.visibleImage = this.posters[this.currentIndex].imageUrl;
+      this.currentTestimonial = this.testimonials[this.testimonialIndex];
       this.isTransitioning = false;
       this.cd.detectChanges(); 
     }, 1000); 
