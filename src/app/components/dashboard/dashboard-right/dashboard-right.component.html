@@ -1,14 +1,15 @@
-
-<div [@fadeInOut] class="min-h-100 h-auto" >
+<div [@fadeInOut] class="min-h-100 h-auto">
   <div class="flex flex-col-reverse lg:flex-row justify-around min-h-100 h-auto">
     <ng-container *ngIf="!lastLooksReady; else lastLooks">
-      <div class="data-feed cell h-full flex flex-col justify-around">
-        <h2 class="font-semibold text-2xl"> {{ script }} scenes</h2>
-        <div class="mat-elevation-z8 table-container">
+
+      <div class="data-feed cell max-h-[45vh] lg:max-h-full flex flex-col justify-around">
+        <h2 class="font-semibold text-2xl m-4"> {{ script }} scenes</h2>
+        <div class="mat-elevation-z8 table-container max-h-[15vh]">
           <mat-form-field style="width:100%">
             <mat-label>Search </mat-label>
             <input matInput (keyup)="applyFilter($event)" placeholder="Search your scenes here" #input color="accent">
           </mat-form-field>
+
           <table mat-table [dataSource]="dataSource" matSort>
             <ng-container matColumnDef="number">
               <th class="table-scene-num" mat-header-cell *matHeaderCellDef mat-sort-header sticky> Scene Number </th>
@@ -35,40 +36,41 @@
               </td>
             </ng-container>
 
-
             <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
             <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 
             <tr class="mat-row" *matNoDataRow>
               <td class="mat-cell" colspan="4">No data matching the filter "{{input.value}}"</td>
             </tr>
+
           </table>
-
-          <mat-paginator [pageSize]="25" [pageSizeOptions]="[25, 100]"></mat-paginator>
-
         </div>
       </div>
-
     </ng-container>
+
+
+
 
     <div class="flex flex-col justify-start items-center min-w-[40%] py-20">
       <h1 class=" text-3xl">Generating sides for
         <br>
         <p class="pt-4">{{ script }} - {{ date | date }}</p>
       </h1>
-      <div class="selected-container">
+      <div class="selected-container p-8">
         <ng-container>
-          <ul>
+          <ul class="p-12">
             <ng-container>
               @if (watermark) {
-                <li>
-                  <pre> watermark: {{this.watermark}}</pre>
-                </li>
+              <li class="text-xl">
+                <pre> Watermark: {{this.watermark}}</pre>
+              </li>
               }
               @if (callsheetState) {
-                <div>
-                  <li>Calllsheet: {{ callsheet }}</li>
-                </div>
+              <div class="text-xl">
+                <li>
+                  <pre>Calllsheet: {{ callsheet }}</pre>
+                </li>
+              </div>
               }
               <li class="p-2" *ngFor="let scene of selected">
                 <pre> {{scene.sceneNumberText}}     {{scene.text}}     {{scene.sceneNumberText}}</pre>
@@ -77,70 +79,63 @@
           </ul>
         </ng-container>
       </div>
-      <div class="controls-container p-20 w-[75%]">
+      <div class="controls-container p-8 min-w-[85%] flex flex-col items-center shadow-lg">
+
         <ng-container *ngIf="!lastLooksReady; else lastLooksControls">
-          <div class="flex flex-row justify-between">
-            <button mat-raised-button color="warn" (click)="toggleLastLooks()"
-              [disabled]="selected.length === 0">getPDF
+          <div class="flex flex-row justify-between w-50">
+            <button mat-raised-button color="warn" (click)="toggleLastLooks()" [disabled]="selected.length === 0">getPDF
             </button>
             <button mat-raised-button color="warn" (click)="this.router.navigate(['/'])">back
             </button>
           </div>
         </ng-container>
-  
+
         <ng-template #lastLooksControls>
-          <div class="flex flex-row justify-around border border-blue">
-            <div class="p-4">
-            <h2> Edit sides </h2>
-              <button mat-raised-button  color="warn" (click)="toggleEditStateInLastLooks()" class="bg-accent p-4">Edit
-                Pdf</button>
+
+
+          <div
+            class="flex flex-col lg:flex-row justify-around bg-gray-100 p-6 rounded-lg  space-y-4 lg:space-y-0 lg:space-x-4">
+            <div class="flex flex-col lg:flex-row">
+              <div class="flex flex-col items-center justify-center p-4 bg-white">
+                <h2 class="text-lg font-semibold mb-2">Edit Sides</h2>
+                <button mat-raised-button color="warn" (click)="toggleEditStateInLastLooks()"
+                  class="w-full bg-red-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                  Edit PDF
+                </button>
+              </div>
+
+              <div class="flex flex-col items-center justify-center p-4 bg-white">
+                <h2 class="text-lg font-semibold mb-2">Add Callsheet</h2>
+                <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
+              </div>
             </div>
-            <div class="p-4">
+            <div class="flex flex-col items-center justify-center p-4 bg-white">
+              <h2 class="text-lg font-semibold mb-2">Add Watermark</h2>
               <app-add-watermark (waterMarkUpdate)="addWaterMark($event)"></app-add-watermark>
             </div>
-            <div class="p-4">
-              <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
-            </div>
-            
           </div>
-          <div class="m-4">
-            <h2>Total: $5.00</h2>
-            <button mat-raised-button color="warn" (click)="openConfirmPurchaseDialog()">Proceed To Checkout</button>
+          <div class="m-4 flex flex-col items-center">
+            <button class="px-12" mat-raised-button color="warn" (click)="openConfirmPurchaseDialog()">Proceed To
+              Checkout</button>
+            <h2 class="p-8 text-xl">Total: $5.00</h2>
           </div>
         </ng-template>
       </div>
       @if (editLastLooksState) {
-        <ng-container>
-          <div class="flex flex-row w-full">
-            <app-tool-tip class="w-full" (buttonAction)="handleToolTipClicked($event)" [data]="toolTipContent"></app-tool-tip>
-          </div>
-        </ng-container>
+      <ng-container>
+        <div class="flex flex-row w-full">
+          <app-tool-tip class="w-full" (buttonAction)="handleToolTipClicked($event)"
+            [data]="toolTipContent"></app-tool-tip>
+        </div>
+      </ng-container>
       }
     </div>
-
-    
-   
     <ng-template #lastLooks>
       <div *ngIf="this.pdf.finalDocReady">
         <!-- Inputs passed to trigger changes in our lastlooks to handle edit state -->
-        <app-last-looks 
-        [resetDocState]="resetFinalDocState" 
-        [editState]="editLastLooksState" 
-        [undoState]="fireUndo"
-        [selectedLineState]="false"
-        (onPageUpdate) = "onPageUpdate($event)"
-        ></app-last-looks>
+        <app-last-looks [resetDocState]="resetFinalDocState" [editState]="editLastLooksState" [undoState]="fireUndo"
+          [selectedLineState]="false" (onPageUpdate)="onPageUpdate($event)"></app-last-looks>
       </div>
     </ng-template>
   </div>
-  
-   
 </div>
-
-
-
-  
-
-
-
-

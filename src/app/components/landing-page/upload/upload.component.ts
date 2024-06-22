@@ -30,7 +30,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   // simple beta password
 
   enteredPassword = '';
-  password = environment.password
+  password = environment.password;
   isButtonDisabled: boolean = true;
 
   logo: string = '../../assets/icons/logoFlat.png';
@@ -60,7 +60,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.underConstruction = environment.production
+    this.underConstruction = !environment.production
     if(this.underConstruction) this.skipUploadForTest()
     this.working = false;
     this.resetLocalData()

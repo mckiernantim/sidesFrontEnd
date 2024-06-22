@@ -99,217 +99,217 @@ const testCases:TestCase[] = [
   // Include other test cases if needed
 ];
 
-// describe('DashboardRightComponent - THE FINAL ROSE Scene Selection and PDF Generation', () => {
-//   let component: DashboardRightComponent;
-//   let fixture: ComponentFixture<DashboardRightComponent>;
-//   let pdfService: PdfService;
-//   let finalDocExpected;
-//   let finalDocActual;
+describe('DashboardRightComponent - THE FINAL ROSE Scene Selection and PDF Generation', () => {
+  let component: DashboardRightComponent;
+  let fixture: ComponentFixture<DashboardRightComponent>;
+  let pdfService: PdfService;
+  let finalDocExpected;
+  let finalDocActual;
 
-//   beforeEach(async () => {
-//     const scenes = testCases[0].scenes;
-//     const uploadServiceMock = {
-//       lineArr: lineDataTheFinalRose,
-//       pagesArr: pageDataTheFinalRose,
-//       lineCount: [],
-//     };
+  beforeEach(async () => {
+    const scenes = testCases[0].scenes;
+    const uploadServiceMock = {
+      lineArr: lineDataTheFinalRose,
+      pagesArr: pageDataTheFinalRose,
+      lineCount: [],
+    };
 
-//     await TestBed.configureTestingModule({
-//       imports: [MatDialogModule, HttpClientTestingModule, NoopAnimationsModule],
-//       declarations: [DashboardRightComponent],
-//       providers: [
-//         { provide: UploadService, useValue: uploadServiceMock },
-//         // PdfService will use the mock UploadService
-//         PdfService,
-//       ],
-//       schemas: [NO_ERRORS_SCHEMA],
-//     }).compileComponents();
-//     // remove injected breaks as this step occurs later in the pipeline
-//     finalDocExpected = finalDocDataTheFinalRose.map(page => page.filter(el => el.category != "injected-break"))
-//     fixture = TestBed.createComponent(DashboardRightComponent);
-//     component = fixture.componentInstance;
-//     fixture.detectChanges();
-//     // Simulate the component receiving the script data and selected scenes
-//     component.scriptData = lineDataTheFinalRose;
-//     component.script = testCases[0].name
-//     component.selected = component.scriptData.filter(line => 
-//       scenes.includes(line.sceneNumberText) && line.category === "scene-header");
-//     component.toggleLastLooks()
-//     // finalDocActual = component.pdf.finalDocument.data.map(page => page.filter(el => el.category != "injected-break"))
-//     finalDocActual = component.pdf.getPdf(component.selected, component.script, component.totalPages, null).data.map(page => page.filter(el => el.category != "injected-break"))
+    await TestBed.configureTestingModule({
+      imports: [MatDialogModule, HttpClientTestingModule, NoopAnimationsModule],
+      declarations: [DashboardRightComponent],
+      providers: [
+        { provide: UploadService, useValue: uploadServiceMock },
+        // PdfService will use the mock UploadService
+        PdfService,
+      ],
+      schemas: [NO_ERRORS_SCHEMA],
+    }).compileComponents();
+    // remove injected breaks as this step occurs later in the pipeline
+    finalDocExpected = finalDocDataTheFinalRose.map(page => page.filter(el => el.category != "injected-break"))
+    fixture = TestBed.createComponent(DashboardRightComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    // Simulate the component receiving the script data and selected scenes
+    component.scriptData = lineDataTheFinalRose;
+    component.script = testCases[0].name
+    component.selected = component.scriptData.filter(line => 
+      scenes.includes(line.sceneNumberText) && line.category === "scene-header");
+    component.toggleLastLooks()
+    // finalDocActual = component.pdf.finalDocument.data.map(page => page.filter(el => el.category != "injected-break"))
+    finalDocActual = component.pdf.getPdf(component.selected, component.script, component.totalPages, null).data.map(page => page.filter(el => el.category != "injected-break"))
   
-//   });
+  });
 
-//   it('should have a defined component', () => {
-//     expect(component).toBeDefined();
-//   });
+  it('should have a defined component', () => {
+    expect(component).toBeDefined();
+  });
 
-//   it('finalDocument should be the same number of pages', () => {
-//     expect(finalDocActual.length).toBe(finalDocExpected.length)
-//   })
+  it('finalDocument should be the same number of pages', () => {
+    expect(finalDocActual.length).toBe(finalDocExpected.length)
+  })
 
-//   it('finalDocument should have same visible: "true" lines as expected document for  THE FINAL ROSE', () => {
-//     // We need to sanitize the lines to only remove and addd keys /vals used in previewing the display
-//     const expectedTrueLines = finalDocExpected.flat().filter(line => line.visible === "true").map(line => ({
-//       text:line.text,
-//       index:line.index
-//     }))
-//     const actualTrueLines = finalDocActual.flat().filter(line => line.visible === "true").map(line => ({
-//       text:line.text,
-//       index:line.index
-//     }))
-//     const differenceLimit = 5;
-//     const [uniqueToExpected, uniqueToActual] = deepDiff(expectedTrueLines,  actualTrueLines)
-//     expect(uniqueToActual.length + differenceLimit).toBeLessThanOrEqual(uniqueToExpected.length)
-//     expect(uniqueToActual.length - differenceLimit).toBeGreaterThanOrEqual(uniqueToExpected.length);
+  it('finalDocument should have same visible: "true" lines as expected document for  THE FINAL ROSE', () => {
+    // We need to sanitize the lines to only remove and addd keys /vals used in previewing the display
+    const expectedTrueLines = finalDocExpected.flat().filter(line => line.visible === "true").map(line => ({
+      text:line.text,
+      index:line.index
+    }))
+    const actualTrueLines = finalDocActual.flat().filter(line => line.visible === "true").map(line => ({
+      text:line.text,
+      index:line.index
+    }))
+    const differenceLimit = 5;
+    const [uniqueToExpected, uniqueToActual] = deepDiff(expectedTrueLines,  actualTrueLines)
+    expect(uniqueToActual.length + differenceLimit).toBeLessThanOrEqual(uniqueToExpected.length)
+    expect(uniqueToActual.length - differenceLimit).toBeGreaterThanOrEqual(uniqueToExpected.length);
 
-//   });
+  });
 
-//   it('finalDocument should have same visible: "false" lines as expected document for  THE FINAL ROSE', () => {
-//     const expectedFalseLines = sanitizeLinesForCompare(finalDocActual, 'visible', "false");
-//     const actualFalseLines = sanitizeLinesForCompare(finalDocExpected ,'visible', "false");
-//     const [uniqueToExpected, uniqueToActual] = deepDiff(expectedFalseLines,  actualFalseLines)
-//     expect(actualFalseLines).toEqual(expectedFalseLines);
-//   });
+  it('finalDocument should have same visible: "false" lines as expected document for  THE FINAL ROSE', () => {
+    const expectedFalseLines = sanitizeLinesForCompare(finalDocActual, 'visible', "false");
+    const actualFalseLines = sanitizeLinesForCompare(finalDocExpected ,'visible', "false");
+    const [uniqueToExpected, uniqueToActual] = deepDiff(expectedFalseLines,  actualFalseLines)
+    expect(actualFalseLines).toEqual(expectedFalseLines);
+  });
 
-//   it('should have the same "cont" lines values', () => {
-//     const expectedContLines = sanitizeLinesForCompare(finalDocActual, 'cont', "CON'T");
-//     const actualContLines = sanitizeLinesForCompare(finalDocExpected, 'cont', "CON'T");
+  it('should have the same "cont" lines values', () => {
+    const expectedContLines = sanitizeLinesForCompare(finalDocActual, 'cont', "CON'T");
+    const actualContLines = sanitizeLinesForCompare(finalDocExpected, 'cont', "CON'T");
 
-//     expect(actualContLines).toEqual(expectedContLines)
-//   });
+    expect(actualContLines).toEqual(expectedContLines)
+  });
 
-//   it('should have an equal number of end lines as scenes', () => {
-//     const expectedEndLines = sanitizeLinesForCompare(finalDocActual, "end", "END")
-//     const actualEndLines = sanitizeLinesForCompare(finalDocExpected, "end", "END")
+  it('should have an equal number of end lines as scenes', () => {
+    const expectedEndLines = sanitizeLinesForCompare(finalDocActual, "end", "END")
+    const actualEndLines = sanitizeLinesForCompare(finalDocExpected, "end", "END")
 
-//     expect( actualEndLines.length ).toEqual(expectedEndLines.length)
+    expect( actualEndLines.length ).toEqual(expectedEndLines.length)
 
-//   })
+  })
   
-//   it('should have the same "end" lines values', () => {
-//     const expectedEndLines = sanitizeLinesForCompare(finalDocActual, "end", "END")
-//     const actualEndLines = sanitizeLinesForCompare(finalDocExpected, "end", "END")
+  it('should have the same "end" lines values', () => {
+    const expectedEndLines = sanitizeLinesForCompare(finalDocActual, "end", "END")
+    const actualEndLines = sanitizeLinesForCompare(finalDocExpected, "end", "END")
 
-//     expect(actualEndLines).toEqual(expectedEndLines)
-//   })
+    expect(actualEndLines).toEqual(expectedEndLines)
+  })
 
 
-//   it('should have one page number visible per page', () => {
-//     const actualNumbersVisible = finalDocActual.flat()
-//       .filter(line => line.category === "scene-number" && line.visible ==="true")
-//     const expectedNumbersVisible = finalDocExpected.flat()
-//       .filter(line => line.category === "scene-number" && line.visible ==="true")
+  it('should have one page number visible per page', () => {
+    const actualNumbersVisible = finalDocActual.flat()
+      .filter(line => line.category === "scene-number" && line.visible ==="true")
+    const expectedNumbersVisible = finalDocExpected.flat()
+      .filter(line => line.category === "scene-number" && line.visible ==="true")
 
-//     expect(actualNumbersVisible).toEqual(expectedNumbersVisible)
-//   })
-// });
+    expect(actualNumbersVisible).toEqual(expectedNumbersVisible)
+  })
+});
 
-// describe('DashboardRightComponent - KIDNAPPED Scene Selection and PDF Generation', () => {
-//   let component: DashboardRightComponent;
-//   let fixture: ComponentFixture<DashboardRightComponent>;
-//   let pdfService: PdfService;
-//   let finalDocExpected;
-//   let finalDocActual;
+describe('DashboardRightComponent - KIDNAPPED Scene Selection and PDF Generation', () => {
+  let component: DashboardRightComponent;
+  let fixture: ComponentFixture<DashboardRightComponent>;
+  let pdfService: PdfService;
+  let finalDocExpected;
+  let finalDocActual;
 
-//   beforeEach(async () => {
-//     const scenes = testCases[1].scenes;
-//     const uploadServiceMock = {
-//       lineArr: lineDataKidnapped,
-//       pagesArr: pageDataKidnapped,
-//       lineCount: [],
-//     };
+  beforeEach(async () => {
+    const scenes = testCases[1].scenes;
+    const uploadServiceMock = {
+      lineArr: lineDataKidnapped,
+      pagesArr: pageDataKidnapped,
+      lineCount: [],
+    };
 
-//     await TestBed.configureTestingModule({
-//       imports: [MatDialogModule, HttpClientTestingModule, NoopAnimationsModule],
-//       declarations: [DashboardRightComponent],
-//       providers: [
-//         { provide: UploadService, useValue: uploadServiceMock },
-//         // PdfService will use the mock UploadService
-//         PdfService,
-//       ],
-//       schemas: [NO_ERRORS_SCHEMA],
-//     }).compileComponents();
-//     // remove injected breaks as this step occurs later in the pipeline
-//     finalDocExpected = finalDocDataKidnapped.map(page => page.filter(el => el.category != "injected-break"))
-//     fixture = TestBed.createComponent(DashboardRightComponent);
-//     component = fixture.componentInstance;
-//     fixture.detectChanges();
-//     // Simulate the component receiving the script data and selected scenes
-//     component.scriptData = lineDataKidnapped;
-//     component.script = testCases[1].name
-//     component.selected = component.scriptData.filter(line => 
-//       scenes.includes(line.sceneNumberText) && line.category === "scene-header");
-//     component.toggleLastLooks()
-//     finalDocActual = component.pdf.finalDocument.data.map(page => page.filter(el => el.category != "injected-break"))
-//     component.finalDocument = component.pdf.getPdf(component.selected, component.script, component.totalPages, null)
+    await TestBed.configureTestingModule({
+      imports: [MatDialogModule, HttpClientTestingModule, NoopAnimationsModule],
+      declarations: [DashboardRightComponent],
+      providers: [
+        { provide: UploadService, useValue: uploadServiceMock },
+        // PdfService will use the mock UploadService
+        PdfService,
+      ],
+      schemas: [NO_ERRORS_SCHEMA],
+    }).compileComponents();
+    // remove injected breaks as this step occurs later in the pipeline
+    finalDocExpected = finalDocDataKidnapped.map(page => page.filter(el => el.category != "injected-break"))
+    fixture = TestBed.createComponent(DashboardRightComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    // Simulate the component receiving the script data and selected scenes
+    component.scriptData = lineDataKidnapped;
+    component.script = testCases[1].name
+    component.selected = component.scriptData.filter(line => 
+      scenes.includes(line.sceneNumberText) && line.category === "scene-header");
+    component.toggleLastLooks()
+    finalDocActual = component.pdf.finalDocument.data.map(page => page.filter(el => el.category != "injected-break"))
+    component.finalDocument = component.pdf.getPdf(component.selected, component.script, component.totalPages, null)
   
-//   });
+  });
 
-//   it('should have a defined component', () => {
-//     expect(component).toBeDefined();
-//   });
+  it('should have a defined component', () => {
+    expect(component).toBeDefined();
+  });
 
-//   it('finalDocument should be the same number of pages', () => {
-//     expect(finalDocActual.length).toBe(finalDocExpected.length)
-//   })
+  it('finalDocument should be the same number of pages', () => {
+    expect(finalDocActual.length).toBe(finalDocExpected.length)
+  })
 
-//   it('finalDocument should have same visible: "true" lines as expected document for  NOTEWORTHY', () => {
-//     // We need to sanitize the lines to only remove and addd keys /vals used in previewing the display
-//     const expectedTrueLines = finalDocExpected.flat().filter(line => line.visible === "true").map(line => ({
-//       text:line.text,
-//       index:line.index
-//     }))
-//     const actualTrueLines = finalDocActual.flat().filter(line => line.visible === "true").map(line => ({
-//       text:line.text,
-//       index:line.index
-//     }))
-//     const differenceLimit = 5;
-//     const [uniqueToExpected, uniqueToActual] = deepDiff(expectedTrueLines,  actualTrueLines)
-//     expect(uniqueToExpected.length).toBeLessThanOrEqual(uniqueToActual.length + differenceLimit);
-//     expect(uniqueToExpected.length).toBeGreaterThanOrEqual(uniqueToActual.length - differenceLimit);
+  it('finalDocument should have same visible: "true" lines as expected document for  NOTEWORTHY', () => {
+    // We need to sanitize the lines to only remove and addd keys /vals used in previewing the display
+    const expectedTrueLines = finalDocExpected.flat().filter(line => line.visible === "true").map(line => ({
+      text:line.text,
+      index:line.index
+    }))
+    const actualTrueLines = finalDocActual.flat().filter(line => line.visible === "true").map(line => ({
+      text:line.text,
+      index:line.index
+    }))
+    const differenceLimit = 5;
+    const [uniqueToExpected, uniqueToActual] = deepDiff(expectedTrueLines,  actualTrueLines)
+    expect(uniqueToExpected.length).toBeLessThanOrEqual(uniqueToActual.length + differenceLimit);
+    expect(uniqueToExpected.length).toBeGreaterThanOrEqual(uniqueToActual.length - differenceLimit);
 
-//   });
+  });
 
-//   it('finalDocument should have same visible: "false" lines as expected document for  NOTEWORTHY', () => {
-//     const expectedFalseLines = sanitizeLinesForCompare(finalDocActual, 'visible', "false");
-//     const actualFalseLines = sanitizeLinesForCompare(finalDocExpected ,'visible', "false");
+  it('finalDocument should have same visible: "false" lines as expected document for  NOTEWORTHY', () => {
+    const expectedFalseLines = sanitizeLinesForCompare(finalDocActual, 'visible', "false");
+    const actualFalseLines = sanitizeLinesForCompare(finalDocExpected ,'visible', "false");
 
-//     expect(expectedFalseLines).toEqual(actualFalseLines);
-//   });
+    expect(expectedFalseLines).toEqual(actualFalseLines);
+  });
 
-//   it('should have the same "cont" lines values', () => {
-//     const expectedContLines = sanitizeLinesForCompare(finalDocActual, 'cont', "CON'T");
-//     const actualContLines = sanitizeLinesForCompare(finalDocExpected, 'cont', "CON'T");
+  it('should have the same "cont" lines values', () => {
+    const expectedContLines = sanitizeLinesForCompare(finalDocActual, 'cont', "CON'T");
+    const actualContLines = sanitizeLinesForCompare(finalDocExpected, 'cont', "CON'T");
 
-//     expect(expectedContLines).toEqual(actualContLines)
-//   });
+    expect(expectedContLines).toEqual(actualContLines)
+  });
 
-//   it('should have an equal number of end lines as scenes', () => {
-//     const expectedEndLines = sanitizeLinesForCompare(finalDocActual, "end", "END")
-//     const actualEndLines = sanitizeLinesForCompare(finalDocExpected, "end", "END")
+  it('should have an equal number of end lines as scenes', () => {
+    const expectedEndLines = sanitizeLinesForCompare(finalDocActual, "end", "END")
+    const actualEndLines = sanitizeLinesForCompare(finalDocExpected, "end", "END")
 
-//     expect(expectedEndLines.length).toEqual(actualEndLines.length)
+    expect(expectedEndLines.length).toEqual(actualEndLines.length)
 
-//   })
+  })
   
-//   it('should have the same "end" lines values', () => {
-//     const expectedEndLines = sanitizeLinesForCompare(finalDocActual, "end", "END")
-//     const actualEndLines = sanitizeLinesForCompare(finalDocExpected, "end", "END")
+  it('should have the same "end" lines values', () => {
+    const expectedEndLines = sanitizeLinesForCompare(finalDocActual, "end", "END")
+    const actualEndLines = sanitizeLinesForCompare(finalDocExpected, "end", "END")
 
-//     expect(expectedEndLines).toEqual(actualEndLines)
-//   })
+    expect(expectedEndLines).toEqual(actualEndLines)
+  })
 
 
-//   it('should have one page number visible per page', () => {
-//     const actualNumbersVisible = finalDocActual.flat()
-//       .filter(line => line.category === "scene-number" && line.visible ==="true")
-//     const expectedNumbersVisible = finalDocExpected.flat()
-//       .filter(line => line.category === "scene-number" && line.visible ==="true")
+  it('should have one page number visible per page', () => {
+    const actualNumbersVisible = finalDocActual.flat()
+      .filter(line => line.category === "scene-number" && line.visible ==="true")
+    const expectedNumbersVisible = finalDocExpected.flat()
+      .filter(line => line.category === "scene-number" && line.visible ==="true")
 
-//     expect(actualNumbersVisible).toEqual(expectedNumbersVisible)
-//   })
-// });
+    expect(actualNumbersVisible).toEqual(expectedNumbersVisible)
+  })
+});
 
 describe('DashboardRightComponent - NOTEWORTHY Scene Selection and PDF Generation', () => {
   let component: DashboardRightComponent;
