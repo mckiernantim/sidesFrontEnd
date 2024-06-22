@@ -1,50 +1,57 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { UploadService } from './upload.service';
+import Cookies from 'js-cookie';
+import { TokenService } from '../token/token.service';
 
 describe('UploadService', () => {
   let service: UploadService;
-  let httpTestingController: HttpTestingController;
+  let httpMock: HttpTestingController;
+  let httpClient: HttpClient;
+
+  const dummyPdfData = {
+    allLines: [],
+    allChars: [],
+    individualPages: [],
+    title: 'Test Title',
+    firstAndLastLinesOfScenes: []
+  };
 
   beforeEach(() => {
+    const tokenServiceStub = {};
+
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [UploadService]
+      providers: [
+        UploadService,
+        { provide: TokenService, useValue: tokenServiceStub }
+      ]
     });
+
     service = TestBed.inject(UploadService);
-    httpTestingController = TestBed.inject(HttpTestingController);
+    httpMock = TestBed.inject(HttpTestingController);
+    httpClient = TestBed.inject(HttpClient);
   });
 
   afterEach(() => {
-    // Ensure that there are no outstanding requests after each test
-    httpTestingController.verify();
+    httpMock.verify();
   });
 
-  it('should be created', () => {
-    expect(service).toBeTruthy();
+  it('should delete final document', () => {
+    const tokenId = 'testTokenId';
+    const sessionToken = 'testSessionToken';
+    jest.spyOn(Cookies, 'get').mockReturnValue({ 'session_token': sessionToken });
+
+    service.deleteFinalDocument(tokenId).subscribe((response) => {
+      expect(response).toEqual({});
+    });
+
+    const req = httpMock.expectOne(`${environment.url}/delete`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Authorization')).toBe(`Bearer ${sessionToken}`);
+    req.flush({});
   });
-  // we don't need to actually test the HTTP function
-
-  // it('should upload file successfully', () => {
-  //   const mockFile = new File([''], 'test.pdf');
-  //   // Mock the response expected from the server
-  //   const mockResponse = {/* expected response object */};
-  
-  //   service.postFile(mockFile).subscribe(response => {
-  //     expect(response).toBeTruthy();
-  //   });
-  
-  //   // Expect a POST request to the specific URL
-  //   const req = httpTestingController.expectOne('url/to/post/file');
-  //   expect(req.request.method).toEqual('POST');
-  //   req.flush(mockResponse);
-  // });
-  
-  afterEach(() => {
-    httpTestingController.verify();
-  });
-
-  
-
-  // Additional tests go here
 });
+
