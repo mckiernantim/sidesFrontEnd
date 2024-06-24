@@ -30,7 +30,7 @@ export class SpinningBotComponent implements OnInit {
       console.log(error)
       this.title = title;
       this.dialogOption = dialogOption;
-      this.error = error || {message:"error", code :500}
+      this.error = error || {message:"error", code : 500}
     }
   }
 

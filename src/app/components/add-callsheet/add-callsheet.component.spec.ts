@@ -1,68 +1,108 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HttpClientModule } from '@angular/common/http';
-import { UploadService } from 'src/app/services/upload/upload.service';
 import { AddCallsheetComponent } from './add-callsheet.component';
+import { UploadService } from '../../services/upload/upload.service';
+import { of, throwError } from 'rxjs';
+import { EventEmitter } from '@angular/core';
 
 describe('AddCallsheetComponent', () => {
   let component: AddCallsheetComponent;
   let fixture: ComponentFixture<AddCallsheetComponent>;
-  let uploadService: UploadService;
+  let uploadServiceMock: any;
 
   beforeEach(async () => {
+    uploadServiceMock = {
+      postCallSheet: jest.fn()
+    };
+
     await TestBed.configureTestingModule({
       declarations: [AddCallsheetComponent],
-      imports: [HttpClientModule],
-      providers: [UploadService]
+      providers: [
+        { provide: UploadService, useValue: uploadServiceMock }
+      ]
     }).compileComponents();
+  });
 
+  beforeEach(() => {
     fixture = TestBed.createComponent(AddCallsheetComponent);
     component = fixture.componentInstance;
-    uploadService = TestBed.inject(UploadService);
-
+    component.callsheetInfo = new EventEmitter<string | File>();
     fixture.detectChanges();
+    localStorage.removeItem("callSheetPath")
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should emit callsheet info when file is selected', () => {
-    const callsheetInfoSpy = spyOn(component.callsheetInfo, 'emit');
-    const file = new File([''], 'test.pdf');
+  it('should handle file input and upload successfully', () => {
+    const file = new File([''], 'callsheet.pdf');
+    const event = { item: (index: number) => file };
+    const filePath = '/uploads/path/to/callsheet.pdf';
 
-    component.handleFileInput([file]);
+    uploadServiceMock.postCallSheet.mockReturnValue(of({ filePath }));
 
-    expect(callsheetInfoSpy).toHaveBeenCalledWith('test.pdf');
+    component.handleFileInput(event);
+
+    expect(uploadServiceMock.postCallSheet).toHaveBeenCalledWith(file);
+    expect(localStorage.getItem('callSheetPath')).toEqual(filePath);
+    expect(component.callsheet).toEqual('/path/to/callsheet.pdf');
+    expect(component.callsheetReady).toBeTruthy();
   });
 
-  it('should emit "no callsheet" when "no callsheet" file is selected', () => {
-    const callsheetInfoSpy = spyOn(component.callsheetInfo, 'emit');
+  it('should handle file input and upload failure', () => {
+    const file = new File([''], 'callsheet.pdf');
+    const event = { item: (index: number) => file };
+
+    uploadServiceMock.postCallSheet.mockReturnValue(throwError('Error uploading call sheet'));
+
+    component.handleFileInput(event);
+
+    expect(uploadServiceMock.postCallSheet).toHaveBeenCalledWith(file);
+    expect(localStorage.getItem('callSheetPath')).toBeFalsy();
+    expect(component.callsheetReady).toBeFalsy();
+  });
+
+  it('should handle file input with "no callsheet" name', () => {
     const file = new File([''], 'no callsheet');
+    const event = { item: (index: number) => file };
 
-    component.handleFileInput([file]);
+    component.handleFileInput(event);
 
-    expect(callsheetInfoSpy).toHaveBeenCalledWith('no callsheet');
+    expect(localStorage.getItem('callSheetPath')).toEqual("null");
+    expect(component.callsheetReady).toBeFalsy();
   });
 
-  it('should reset callsheet when resetCallsheet() is called', () => {
-    component.callsheet = 'example.pdf';
+  it('should reset callsheet', () => {
+    localStorage.setItem('callSheetPath', 'path/to/callsheet.pdf');
+    component.callsheet = 'path/to/callsheet.pdf';
     component.callsheetReady = true;
 
     component.resetCallsheet();
 
+    expect(localStorage.getItem('callSheetPath')).toBeNull();
     expect(component.callsheet).toBe('');
-    expect(component.callsheetReady).toBe(false);
+    expect(component.callsheetReady).toBeFalsy();
   });
 
-  it('should emit callsheet info when submitForm() is called', () => {
-    const callsheetInfoSpy = spyOn(component.callsheetInfo, 'emit');
-    component.callsheet = 'example.pdf';
+  it('should emit callsheetInfo on successful upload', () => {
+    const file = new File([''], 'callsheet.pdf');
+    const event = { item: (index: number) => file };
+    const filePath = '/uploads/path/to/callsheet.pdf';
 
-    component.submitForm();
+    uploadServiceMock.postCallSheet.mockReturnValue(of({ filePath }));
 
-    expect(callsheetInfoSpy).toHaveBeenCalledWith('example.pdf');
+    const emitSpy = jest.spyOn(component.callsheetInfo, 'emit');
+
+    component.handleFileInput(event);
+
+    expect(emitSpy).toHaveBeenCalledWith('/path/to/callsheet.pdf');
   });
 
-  // Add more test cases as needed
+  it('should emit null on reset', () => {
+    const emitSpy = jest.spyOn(component.callsheetInfo, 'emit');
 
+    component.resetCallsheet();
+
+    expect(emitSpy).toHaveBeenCalledWith(null);
+  });
 });
