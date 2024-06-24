@@ -1,5 +1,4 @@
 <main class="last-looks-container">
-    {{ this.mouseEvent?.clientY }}
     <div class="page shadow-lg border" (click)="showContextMenu && closeContextMenu()">
         <div class="break">
             <ul cdkDropList [cdkDropListData]="page" class="screenbox" [ngClass]="{ 'edit-mode': canEditDocument }">
@@ -61,7 +60,7 @@
                         <li id="{{ line.index }}" autofocus tabindex="0" [value]="line.sceneNumber"
                             [class]="line.category + ' ' + line.visible + ' ' + line.hidden"
                             [class.selected]="isSelectedLine(line, lineIndex)"
-                            [ngClass]="{ 'edit-li': !selectedLine }" [style.bottom]="line.calculatedYpos"
+                            [style.bottom]="line.calculatedYpos"
                             [style.left]="line.calculatedXpos" [textContent]="line.text"
                             (contextmenu)="canEditDocument && openContextMenu($event, line)">
                         </li>

@@ -1,5 +1,5 @@
 <div [@fadeInOut] class="min-h-100 h-auto">
-  <div class="flex flex-col-reverse lg:flex-row justify-around min-h-100 h-auto">
+  <div class="flex flex-col-reverse xl:flex-row justify-around min-h-100 h-auto">
     <ng-container *ngIf="!lastLooksReady; else lastLooks">
 
       <div class="data-feed cell max-h-[45vh] lg:max-h-full flex flex-col justify-around">
@@ -79,13 +79,13 @@
           </ul>
         </ng-container>
       </div>
-      <div class="controls-container p-8 min-w-[85%] flex flex-col items-center shadow-lg">
+      <div class="controls-container p-8 min-w-[55%] items-a flex flex-col items-center bg-white shadow-lg">
 
         <ng-container *ngIf="!lastLooksReady; else lastLooksControls">
-          <div class="flex flex-row justify-between w-50">
+          <div class="flex flex-row justify-between w-75">
             <button mat-raised-button color="warn" (click)="toggleLastLooks()" [disabled]="selected.length === 0">getPDF
             </button>
-            <button mat-raised-button color="warn" (click)="this.router.navigate(['/'])">back
+            <button mat-raised-button color="warn" (click)="this.router.navigate(['/'])">Back To Upload
             </button>
           </div>
         </ng-container>
@@ -94,10 +94,10 @@
 
 
           <div
-            class="flex flex-col lg:flex-row justify-around bg-gray-100 p-6 rounded-lg  space-y-4 lg:space-y-0 lg:space-x-4">
-            <div class="flex flex-col lg:flex-row">
+            class="flex flex-col lg:flex-row justify-around items-center lg:items-start rounded-lg  space-y-4 lg:space-y-0 lg:space-x-4">
+            <div class="flex flex-col md:flex-row">
               <div class="flex flex-col items-center justify-center p-4 bg-white">
-                <h2 class="text-lg font-semibold mb-2">Edit Sides</h2>
+                <!-- <h2 class="text-lg font-semibold mb-2">Edit Sides</h2> -->
                 <button mat-raised-button color="warn" (click)="toggleEditStateInLastLooks()"
                   class="w-full bg-red-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                   Edit PDF
@@ -105,19 +105,19 @@
               </div>
 
               <div class="flex flex-col items-center justify-center p-4 bg-white">
-                <h2 class="text-lg font-semibold mb-2">Add Callsheet</h2>
+                <!-- <h2 class="text-lg font-semibold mb-2">Add Callsheet</h2> -->
                 <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
               </div>
             </div>
             <div class="flex flex-col items-center justify-center p-4 bg-white">
-              <h2 class="text-lg font-semibold mb-2">Add Watermark</h2>
+              <!-- <h2 class="text-lg font-semibold mb-2">Add Watermark</h2> -->
               <app-add-watermark (waterMarkUpdate)="addWaterMark($event)"></app-add-watermark>
             </div>
           </div>
-          <div class="m-4 flex flex-col items-center">
+          <div class="flex flex-col items-center">
+            <h2 class="p-8 text-xl">Total: $5.00</h2>
             <button class="px-12" mat-raised-button color="warn" (click)="openConfirmPurchaseDialog()">Proceed To
               Checkout</button>
-            <h2 class="p-8 text-xl">Total: $5.00</h2>
           </div>
         </ng-template>
       </div>

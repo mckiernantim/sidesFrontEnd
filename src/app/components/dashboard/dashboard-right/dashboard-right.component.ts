@@ -13,11 +13,10 @@ import { Subscription } from 'rxjs';
 import { UndoService } from '../../../services/edit/undo.service';
 import { Line } from 'src/app/types/Line';
 import { PdfService } from '../../../services/pdf/pdf.service';
-
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { fadeInOutAnimation } from '../../../animations/animations';
 import { SpinningBotComponent } from '../../shared/spinning-bot/spinning-bot.component';
 import { TokenService } from 'src/app/services/token/token.service';
-import { debug } from 'console';
 
 export type pdfServerRes = {
   expirationTime: number;
@@ -43,14 +42,14 @@ export class DashboardRightComponent implements OnInit {
   // STATE BOOLEANS
   dataReady: boolean = false;
   active: boolean = true;
-  waitingForScript: boolean = false;
+  waitingForScript: boolean = true;
   finalDocReady: boolean = false;
   lastLooksReady: boolean = false;
   callsheetReady: boolean = false;
   finalPdfData: any = {};
   linesReady: boolean;
   waterMarkState: boolean;
-  callsheetState:boolean
+  callsheetState: boolean;
 
   // LAST LOOKS STATE
   editLastLooksState: boolean = false;
@@ -76,6 +75,7 @@ export class DashboardRightComponent implements OnInit {
       ind: 3,
     },
   ];
+
   // DATA FOR SCRIPT
   allLines;
   displayedColumns: string[] = ['number', 'text', 'select'];
@@ -84,6 +84,7 @@ export class DashboardRightComponent implements OnInit {
   initialSelection: any[] = [];
   selected: any[];
   pages: any[];
+
   // DOCUMENT OPTIONS
   characters: any;
   charactersCount: number;
@@ -103,7 +104,6 @@ export class DashboardRightComponent implements OnInit {
   fireUndo: boolean = false;
   initialFinalDocState: Line[];
   callsheet: string;
-
   watermark: string;
   script: string = localStorage.getItem('name');
   // DEPCREACEATED WATSON STUFF MAY COME BACK
@@ -112,9 +112,11 @@ export class DashboardRightComponent implements OnInit {
   linesCrawled: Observable<any>;
   problemsData: Observable<any>;
   scriptProblems: any[];
+
   // DATA TABLE HELPERS FROM ANGULAR
   @ViewChild(MatPaginator, { static: true }) paginator: MatPaginator;
   @ViewChild(MatSort, { static: true }) sort: MatSort;
+
   constructor(
     public cdr: ChangeDetectorRef,
     public stripe: StripeService,
@@ -125,7 +127,8 @@ export class DashboardRightComponent implements OnInit {
     public errorDialog: MatDialog,
     public lineOut: LineOutService,
     public pdf: PdfService,
-    public token: TokenService
+    public token: TokenService,
+    private breaks: BreakpointObserver
   ) {
     // DATA ITEMS FOR FUN
 
@@ -136,7 +139,7 @@ export class DashboardRightComponent implements OnInit {
   ngOnInit(): void {
     this.intizilazeState();
     this.initializeSceneSelectionTable();
-    // this.openFinalSpinner()
+    this.openFinalSpinner();
   }
   ngAfterViewInit(): void {
     this.scriptLength = this.individualPages.length - 1 || 0;
@@ -188,7 +191,8 @@ export class DashboardRightComponent implements OnInit {
         this.allLines[i].category === 'page-number' ||
         this.allLines[i].category === 'page-number-hidden' ||
         this.allLines[i].subCategory === 'parenthetical'
-      ) {}
+      ) {
+      }
     }
     return newText;
   }
@@ -212,6 +216,7 @@ export class DashboardRightComponent implements OnInit {
       ? this.allLines[this.scenes[ind].index + 2].text
       : ' ';
   }
+
   getPages(data) {
     let num = data[data.length - 1].page;
     for (let i = 2; i < num + 1; i++) {
@@ -222,15 +227,18 @@ export class DashboardRightComponent implements OnInit {
       }
     }
   }
+
   onPageUpdate(updatedPage: Line[]) {
     // Update the PDF service with the changes
     this.pdf.updatePdfState(updatedPage);
   }
+
   handleCallSheetUpload(callsheet) {
     this.callsheet = callsheet;
-    this.cdr.detectChanges()
-    this.callsheetState = !this.callsheetState
+    this.cdr.detectChanges();
+    this.callsheetState = !this.callsheetState;
   }
+
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     this.dataSource.filter = filterValue.trim().toLowerCase();
@@ -307,11 +315,17 @@ export class DashboardRightComponent implements OnInit {
   }
   openFinalSpinner() {
     this.waitingForScript = true;
-    if (this.waitingForScript) {
-      // starts process to navigate
+    // observe the size of screen
+    this.breaks.observe([Breakpoints.Handset]).subscribe((result) => {
+      const isHandset = result.matches;
+
+      // Define modal size based on screen size
       const dialogRef = this.dialog.open(SpinningBotComponent, {
-        width: '75vw',
-        height: '75vw',
+        width: isHandset ? '100vw' : '75vw',
+        height: isHandset ? '100vh' : '75vw',
+        maxWidth: '100vw',
+        maxHeight: '100vh',
+        panelClass: 'full-screen-dialog',
         data: {
           selected: this.selected,
           script: this.script,
@@ -319,13 +333,13 @@ export class DashboardRightComponent implements OnInit {
           callsheet: this.callsheet,
           waitingForScript: true,
           title: this.script,
-          dialogOption: 'payment',
+          dialogOption: 'error',
         },
       });
       dialogRef.afterClosed().subscribe((result) => {
         result;
       });
-    }
+    });
   }
   getLastPage = (scene) => {
     return this.allLines[scene.lastLine].page || null;
@@ -357,12 +371,13 @@ export class DashboardRightComponent implements OnInit {
     }
   }
 
-  prepFinalDocument(addCallSheet:boolean) {
-    this.pdf.finalDocument.callSheet = addCallSheet ? localStorage.getItem("callSheetPath") : "";
+  prepFinalDocument(addCallSheet: boolean) {
+    this.pdf.finalDocument.callSheet = addCallSheet
+      ? localStorage.getItem('callSheetPath')
+      : '';
     this.finalDocReady = true;
     this.waitingForScript = true;
   }
-
 
   openConfirmPurchaseDialog() {
     if (this.modalData) {
@@ -374,15 +389,14 @@ export class DashboardRightComponent implements OnInit {
 
       // closing of the issueComponent triggers our finalstep
       dialogRef.afterClosed().subscribe((result) => {
-        console.log(result)
+        console.log(result);
         if (result) {
-          if(this.callsheet) {
-           this.prepFinalDocument(true)
-           this.openFinalSpinner()
-           this.sendFinalDocumentToServer(this.pdf.finalDocument);
-  
+          if (this.callsheet) {
+            this.prepFinalDocument(true);
+            this.openFinalSpinner();
+            this.sendFinalDocumentToServer(this.pdf.finalDocument);
           } else {
-            this.prepFinalDocument(false)         
+            this.prepFinalDocument(false);
             this.openFinalSpinner();
             this.sendFinalDocumentToServer(this.pdf.finalDocument);
           }
@@ -390,8 +404,6 @@ export class DashboardRightComponent implements OnInit {
       });
     }
   }
-
-        
 
   triggerLastLooksAction(str) {
     if (str === 'resetDoc') {
@@ -409,13 +421,14 @@ export class DashboardRightComponent implements OnInit {
         this.undoService.pop();
         break;
       case str === 'resetDoc':
-        this.triggerLastLooksAction("resetDoc");
+        this.triggerLastLooksAction('resetDoc');
 
         break;
       case str === 'stopEdit':
         this.toggleEditStateInLastLooks();
     }
   }
+
   toggleEditStateInLastLooks() {
     this.editLastLooksState = !this.editLastLooksState;
   }

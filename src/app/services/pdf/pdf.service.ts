@@ -427,33 +427,6 @@ export class PdfService {
 
     pages.forEach((page) => {
       const pageNumbers = page.filter((el) => options.includes(el.category));
-
-      pageNumbers.forEach((line) => {
-        // line.pageNumberText = line.page
-        //   if (line.pageNumberText && line.pageNumberText.length > line.pageNumber.toString().length) {
-        //     const dateMatch = line.pageNumberText.match(dateRegex);
-        //     if (dateMatch) {
-        //       line.draftText = dateMatch[0]; // Save the matched date as draftText
-        //       line.pageNumberText = line.pageNumberText.replace(dateRegex, '');
-        //     }
-        //     const cleanedPageNumberText = line.pageNumberText.replace(/[^\d.]/g, '');
-        //     if (line.draftText && cleanedPageNumberText !== line.pageNumberText) {
-        //       line.draftText += ' ' + line.pageNumberText.replace(/[\d.]/g, '');
-        //       line.text = line.pageNumberText
-        //     }
-        //     for(let i = line.text.length-1; i > 0; i--) {
-        //       if(line.text[i]===".") {
-        //         let pattern = line.text.slice(i+1)
-        //         let match = new RegExp(pattern, "g");
-        //         line.text = line.text.replace(match, "")
-        //         break
-        //       }
-        //     }
-        //     line.pageNumberText = cleanedPageNumberText;
-        //   }
-        // })
-
-      });
     });
     return pages;
   }
