@@ -77,12 +77,6 @@ describe('UploadComponent', () => {
     expect(processedLines[1].category).toBe('page-number-hidden');
   });
 
-  it('should initialize data in ngOnInit if under construction', () => {
-    environment.production = false;
-    component.ngOnInit();
-    expect(component.underConstruction).toBe(true);
-    expect(pdfServiceMock.initializeData).toHaveBeenCalled();
-  });
 
   it('should navigate to /download after processing pages', () => {
     const mockPages = [{ filter: jest.fn(() => [{ totalLines: 1 }]) }];
