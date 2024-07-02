@@ -61,7 +61,7 @@ export class UploadComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.underConstruction = !environment.production
-    if(this.underConstruction) this.skipUploadForTest()
+    // if(this.underConstruction) this.skipUploadForTest()
     this.working = false;
     this.resetLocalData()
   }

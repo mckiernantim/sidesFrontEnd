@@ -316,30 +316,30 @@ export class DashboardRightComponent implements OnInit {
   openFinalSpinner() {
     this.waitingForScript = true;
     // observe the size of screen
-    this.breaks.observe([Breakpoints.Handset]).subscribe((result) => {
-      const isHandset = result.matches;
+    // this.breaks.observe([Breakpoints.Handset]).subscribe((result) => {
+    //   const isHandset = result.matches;
 
-      // Define modal size based on screen size
-      const dialogRef = this.dialog.open(SpinningBotComponent, {
-        width: isHandset ? '100vw' : '75vw',
-        height: isHandset ? '100vh' : '75vw',
-        maxWidth: '100vw',
-        maxHeight: '100vh',
-        panelClass: 'full-screen-dialog',
-        data: {
-          selected: this.selected,
-          script: this.script,
-          individualPages: this.individualPages.length - 1,
-          callsheet: this.callsheet,
-          waitingForScript: true,
-          title: this.script,
-          dialogOption: 'error',
-        },
-      });
-      dialogRef.afterClosed().subscribe((result) => {
-        result;
-      });
-    });
+  
+    //   const dialogRef = this.dialog.open(SpinningBotComponent, {
+    //     width: isHandset ? '100vw' : '75vw',
+    //     height: isHandset ? '100vh' : '75vw',
+    //     maxWidth: '100vw',
+    //     maxHeight: '100vh',
+    //     panelClass: 'full-screen-dialog',
+    //     data: {
+    //       selected: this.selected,
+    //       script: this.script,
+    //       individualPages: this.individualPages.length - 1,
+    //       callsheet: this.callsheet,
+    //       waitingForScript: true,
+    //       title: this.script,
+    //       dialogOption: 'error',
+    //     },
+    //   });
+    //   dialogRef.afterClosed().subscribe((result) => {
+    //     result;
+    //   });
+    // });
   }
   getLastPage = (scene) => {
     return this.allLines[scene.lastLine].page || null;

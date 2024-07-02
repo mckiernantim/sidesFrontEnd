@@ -29,7 +29,7 @@ export class SpinningBotComponent implements OnInit {
       const { title, dialogOption, error } = data;
       console.log(error)
       this.title = title;
-      this.dialogOption = dialogOption;
+      this.dialogOption = dialogOption; 
       this.error = error || {message:"error", code : 500}
     }
   }

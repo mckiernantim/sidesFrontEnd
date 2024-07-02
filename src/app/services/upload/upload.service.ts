@@ -49,9 +49,9 @@ export class UploadService {
   issues: any;
   coverSheet: any;
   // db and return values
-  Firestore: Firestore;
-  funData: Observable<any>;
-  feedback: Observable<any>;
+  // Firestore: Firestore;
+  // funData: Observable<any>;
+  // feedback: Observable<any>;
 
   httpOptions = {
     headers: null,
@@ -65,39 +65,39 @@ export class UploadService {
   // Firestore will manage all of our fundata and our tickets for feedback
 
   constructor(
-    private firestore: Firestore,
+    // private firestore: Firestore,
     public httpClient: HttpClient,
     private token: TokenService
   ) {
    
   }
   
-  postFeedback(ticket: FeedbackTicket) {
-    const { text, title, category, date, handled } = ticket;
-    let userEmail = JSON.parse(localStorage.getItem("user") || '{}').email;
+  // postFeedback(ticket: FeedbackTicket) {
+  //   const { text, title, category, date, handled } = ticket;
+  //   let userEmail = JSON.parse(localStorage.getItem("user") || '{}').email;
   
-    const feedbackCollection = collection(this.firestore, "feedbackTickets");
+  //   const feedbackCollection = collection(this.firestore, "feedbackTickets");
   
-    addDoc(feedbackCollection, {
-      text: text,
-      title: title,
-      category: category,
-      date: date,
-      email: userEmail,
-      handled: handled
-    })
-    .then(docRef => {
-      console.log("Document written with ID: ", docRef.id);
-      alert(`
-        We've recorded your issues with: ${title}
-        Thanks for helping make SideWays better.
-      `);
-    })
-    .catch(error => {
-      console.error("Error adding document: ", error);
-      alert(error);
-    });
-  }
+  //   addDoc(feedbackCollection, {
+  //     text: text,
+  //     title: title,
+  //     category: category,
+  //     date: date,
+  //     email: userEmail,
+  //     handled: handled
+  //   })
+  //   .then(docRef => {
+  //     console.log("Document written with ID: ", docRef.id);
+  //     alert(`
+  //       We've recorded your issues with: ${title}
+  //       Thanks for helping make SideWays better.
+  //     `);
+  //   })
+  //   .catch(error => {
+  //     console.error("Error adding document: ", error);
+  //     alert(error);
+  //   });
+  // }
   
   // final step
   getPDF(name: string, callsheet: string, pdfToken:string): Observable<any> {
