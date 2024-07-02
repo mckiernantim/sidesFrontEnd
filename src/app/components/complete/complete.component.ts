@@ -7,7 +7,8 @@ import { throwError, of, Subscription, Observable, switchMap } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
-import { WarningComponent } from '../warning/warning.component';
+import { IssueComponent } from '../issue/issue.component';
+
 
 @Component({
   selector: 'app-complete',
@@ -133,7 +134,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
       );
   }
   handleDeleteClick() {
-    const dialogRef = this.dialog.open(WarningComponent, {
+    const dialogRef = this.dialog.open(IssueComponent, {
       width: '500px'
     })
 

@@ -27,10 +27,9 @@ export class SpinningBotComponent implements OnInit {
   @Inject(MAT_DIALOG_DATA) public data: ModalData) {
     if (data) {
       const { title, dialogOption, error } = data;
-      console.log(error)
       this.title = title;
       this.dialogOption = dialogOption; 
-      this.error = error || {message:"error", code : 500}
+      this.error = error || { message:"Unknown server error", code : 500 }
     }
   }
 

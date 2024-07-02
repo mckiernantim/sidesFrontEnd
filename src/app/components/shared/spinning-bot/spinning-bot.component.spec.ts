@@ -51,14 +51,25 @@ describe('SpinningBotComponent', () => {
   });
 
   it('should handle missing error object', () => {
+    // Configure a separate test module for this specific scenario
     const noErrorData = {
       title: 'No Error Title',
       dialogOption: 'error'
     };
+
+    TestBed.resetTestingModule(); // Reset the test module to avoid conflicts
+    TestBed.configureTestingModule({
+      declarations: [SpinningBotComponent],
+      providers: [
+        { provide: MAT_DIALOG_DATA, useValue: noErrorData }
+      ]
+    }).compileComponents();
+
     const noErrorFixture = TestBed.createComponent(SpinningBotComponent);
     const noErrorComponent = noErrorFixture.componentInstance;
-    noErrorComponent.data = noErrorData;
+
     noErrorFixture.detectChanges();
-    expect(noErrorComponent.error).toEqual({ message: 'error', code: 500 });
+
+    expect(noErrorComponent.error).toEqual({ message: 'Unknown server error', code: 500 });
   });
 });
