@@ -5,9 +5,9 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { PdfService } from '../../../services/pdf/pdf.service';
 import { Line } from "../../../types/Line";
-import * as kidnappedData from './last-looks-test-data/kidnapped-scenes-actual.json';
-import * as roseData from './last-looks-test-data/Rose-scenes-actual.json';
-import * as nextData from './last-looks-test-data/next-scenes-actual.json';
+import * as kidnappedData from '../last-looks-test-data/kidnapped-scenes-actual.json';
+import * as roseData from '../last-looks-test-data/Rose-scenes-actual.json';
+import * as nextData from '../last-looks-test-data/next-scenes-actual.json';
 // import * as sqData from './last-looks-test-data/SQ-scenes.json';
 
 type Page = Line[];
