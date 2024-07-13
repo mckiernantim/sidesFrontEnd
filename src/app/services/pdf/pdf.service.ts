@@ -126,8 +126,7 @@ export class PdfService {
     // For example:
     // this.pdfState.pages[this.currentPage] = updatedPage;
     // Or replace the entire page if needed
-    console.log(this.finalDocument);
-    console.log(updatedPage);
+
   }
   private flattenScenes(sceneArr) {
     return sceneArr.reduce((acc, scene) => acc.concat(scene), []);

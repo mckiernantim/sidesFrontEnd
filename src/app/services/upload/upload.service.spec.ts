@@ -6,6 +6,7 @@ import { UploadService } from './upload.service';
 import Cookies from 'js-cookie';
 import { TokenService } from '../token/token.service';
 
+
 describe('UploadService', () => {
   let service: UploadService;
   let httpMock: HttpTestingController;
