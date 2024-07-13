@@ -74,7 +74,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
   calculateDownloadTime() {
     try {
     } catch (e) {
-      console.error('no cookie detected');
+      // console.error('no cookie detected');
     }
   }
   // needed method to turn BLOB response into readable ERROR MESSAGE observable
@@ -125,11 +125,8 @@ export class CompleteComponent implements OnInit, OnDestroy {
         },
         (error) => {
           // Error path
-          console.error('Download error:', error);
-          alert(
-           `Ooops - something went wrong: \n ${error.error}`
-           );
-          //  this.router.navigate(["/"]);
+          const errorMessage = error.error ? error.error : 'An unknown error occurred';
+          // alert(`Ooops - something went wrong: \n ${errorMessage}`);
         }
       );
   }
@@ -140,7 +137,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.upload.deleteFinalDocument("whatever").subscribe(data => {
+        this.upload.deleteFinalDocument(this.pdfToken).subscribe(data => {
           if (data) this.token.removeToken();
           // this.router.navigate["/"]
         })
