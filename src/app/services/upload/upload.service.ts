@@ -1,23 +1,12 @@
 import { Injectable } from '@angular/core';
-import {
-Firestore,
-collection,
-query,
-where,
-collectionData,
-addDoc,
-} from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import {  map } from 'rxjs/operators';
 import {
-HttpClientModule,
 HttpClient,
 HttpHeaders,
 HttpParams,
 } from '@angular/common/http';
-import { FeedbackTicket } from '../../types/feedbackTicket';
 import { environment } from '../../../environments/environment';
-import { idToken } from '@angular/fire/auth';
 import { Line } from '../../types/Line';
 import { TokenService } from '../token/token.service';
 import  Cookies from "js-cookie";
@@ -59,7 +48,7 @@ httpOptions = {
   responseType: null,
 };
 msg: any;
-private url: string = environment.url;
+public url: string = environment.url;
 
 
 // Firestore will manage all of our fundata and our tickets for feedback
@@ -67,7 +56,7 @@ private url: string = environment.url;
 constructor(
   // private firestore: Firestore,
   public httpClient: HttpClient,
-  private token: TokenService
+  public token: TokenService
 ) {
   
 }
