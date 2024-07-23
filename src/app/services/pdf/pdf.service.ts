@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { UploadService } from '../upload/upload.service';
 import { skip } from 'rxjs/operators';
 import { LINE_TYPES} from '../../types/LineTypes'
+import * as scriptData from '../../testingData/pdfServiceData/mockScriptData.json';
+
 /*  
   THIS SHOULD BE ITS OWN 4 OR 5 SERVICES ALL IMPORTED INTO THE PARENT SERVICE OF PDF 
   PERHAPPS LINE-SERVICE, SCENE-SERVICE, DOCUMENT-SERVICE ETC  
@@ -53,12 +55,16 @@ export class PdfService {
     this.initializeData();
   }
   initializeData() {
-    
-    this.allLines = this.upload.allLines;
-    this.firstAndLastLinesOfScene = this.upload.firstAndLastLinesOfScenes
-    this.individualPages = this.upload.individualPages || null;
-    if (this.allLines) {
-      this.initializeCharactersAndScenes();
+    if(this.upload.allLines.length > 0) {
+      this.allLines = this.upload.allLines;
+      this.firstAndLastLinesOfScene = this.upload.firstAndLastLinesOfScenes
+      this.individualPages = this.upload.individualPages || null;
+      if (this.allLines) {
+        this.initializeCharactersAndScenes();
+      }
+    } else {
+      this.allLines = scriptData;
+      console.log(this.allLines[0])
     }
   }
 
