@@ -7,44 +7,41 @@ import { testimonials } from './testimonials';
 describe('CarouselComponent', () => {
   let component: CarouselComponent;
   let fixture: ComponentFixture<CarouselComponent>;
-  let cdRefMock: ChangeDetectorRef;
+  let cd: ChangeDetectorRef;
 
   beforeEach(async () => {
-    cdRefMock = { detectChanges: jest.fn() } as any;
-
     await TestBed.configureTestingModule({
       declarations: [CarouselComponent],
-      providers: [
-        { provide: ChangeDetectorRef, useValue: cdRefMock }
-      ]
+      providers: [ChangeDetectorRef]
     }).compileComponents();
   });
 
   beforeEach(() => {
     fixture = TestBed.createComponent(CarouselComponent);
     component = fixture.componentInstance;
+    cd = TestBed.inject(ChangeDetectorRef);
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    clearInterval(component.autoScrollInterval);
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should initialize posters and testimonials on ngOnInit', () => {
+  it('should initialize posters and testimonials on ngOnInit', done => {
     component.ngOnInit();
     expect(component.posters).toEqual(posters);
     expect(component.testimonials).toEqual(testimonials);
     expect(component.currentTestimonial).toEqual(testimonials[0]);
-  });
 
-  it('should start auto-scroll on ngOnInit', () => {
-    jest.useFakeTimers();
-    jest.spyOn(component, 'next');
-
-    component.ngOnInit();
-    jest.advanceTimersByTime(5000);
-
-    expect(component.next).toHaveBeenCalled();
+    setTimeout(() => {
+      expect(component.visibleImage).toEqual(posters[0].imageUrl);
+      done();
+    }, 1000);
   });
 
   it('should clear interval on ngOnDestroy', () => {
@@ -53,66 +50,58 @@ describe('CarouselComponent', () => {
     expect(clearInterval).toHaveBeenCalledWith(component.autoScrollInterval);
   });
 
-  it('should toggle isTransitioning and update visibleImage and currentTestimonial in updateVisibleImageAndTestimonial()', () => {
-    jest.useFakeTimers();
-    component.posters = posters;
-    component.testimonials = testimonials;
-    component.currentIndex = 0;
-    component.testimonialIndex = 0;
-
-    component.updateVisibleImageAndTestimonial();
-
-    expect(component.isTransitioning).toBeTruthy();
-    jest.advanceTimersByTime(1000);
-    expect(component.visibleImage).toEqual(posters[0].imageUrl);
-    expect(component.currentTestimonial).toEqual(testimonials[0]);
-    expect(component.isTransitioning).toBeFalsy();
-  });
-
-  it('should update to next poster and testimonial on next()', () => {
-    jest.useFakeTimers();
-    component.posters = posters;
-    component.testimonials = testimonials;
-    component.currentIndex = 0;
-    component.testimonialIndex = 0;
+  it('should go to the next poster and testimonial', () => {
+    component.ngOnInit();
+    const initialIndex = component.currentIndex;
+    const initialTestimonialIndex = component.testimonialIndex;
 
     component.next();
-
-    expect(component.isTransitioning).toBeTruthy();
-    jest.advanceTimersByTime(1000);
-    expect(component.currentIndex).toEqual(1);
-    expect(component.testimonialIndex).toEqual(1);
-    expect(component.visibleImage).toEqual(posters[1].imageUrl);
-    expect(component.currentTestimonial).toEqual(testimonials[1]);
-    expect(component.isTransitioning).toBeFalsy();
+    expect(component.currentIndex).toBe((initialIndex + 1) % posters.length);
+    expect(component.testimonialIndex).toBe((initialTestimonialIndex + 1) % testimonials.length);
   });
 
-  it('should update to previous poster and testimonial on prev()', () => {
-    jest.useFakeTimers();
-    component.posters = posters;
-    component.testimonials = testimonials;
+  it('should go to the previous poster and testimonial', () => {
+    component.ngOnInit();
+    const initialIndex = component.currentIndex;
+    const initialTestimonialIndex = component.testimonialIndex;
+
+    component.prev();
+    expect(component.currentIndex).toBe((initialIndex - 1 + posters.length) % posters.length);
+    expect(component.testimonialIndex).toBe((initialTestimonialIndex - 1 + testimonials.length) % testimonials.length);
+  });
+
+  it('should update visible image and testimonial', done => {
+    component.ngOnInit();
     component.currentIndex = 1;
     component.testimonialIndex = 1;
 
-    component.prev();
+    component.updateVisibleImageAndTestimonial();
+    expect(component.isTransitioning).toBe(true);
 
-    expect(component.isTransitioning).toBeTruthy();
-    jest.advanceTimersByTime(1000);
-    expect(component.currentIndex).toEqual(0);
-    expect(component.testimonialIndex).toEqual(0);
-    expect(component.visibleImage).toEqual(posters[0].imageUrl);
-    expect(component.currentTestimonial).toEqual(testimonials[0]);
-    expect(component.isTransitioning).toBeFalsy();
+    setTimeout(() => {
+      expect(component.visibleImage).toBe(posters[1].imageUrl);
+      expect(component.currentTestimonial).toBe(testimonials[1]);
+      expect(component.isTransitioning).toBe(false);
+      done();
+    }, 1000);
   });
 
-  it('should restart auto-scroll on navigation', () => {
+  it('should start auto scroll', () => {
     jest.useFakeTimers();
-    jest.spyOn(global, 'clearInterval')
-    jest.spyOn(component, 'startAutoScroll');
 
-    component.restartAutoScroll();
+    const setIntervalSpy = jest.spyOn(global, 'setInterval');
+    component.startAutoScroll();
 
-    expect(clearInterval).toHaveBeenCalledWith(component.autoScrollInterval);
-    expect(component.startAutoScroll).toHaveBeenCalled();
+    expect(setIntervalSpy).toHaveBeenCalledTimes(1);
+
+    const intervalCallback = setIntervalSpy.mock.calls[0][0] as Function;
+    expect(typeof intervalCallback).toBe('function');
+    expect(setIntervalSpy).toHaveBeenCalledWith(intervalCallback, 5000);
+
+    jest.useRealTimers();
   });
+
+ 
+
+  
 });

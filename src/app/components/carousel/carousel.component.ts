@@ -41,6 +41,7 @@ export class CarouselComponent implements OnInit, OnDestroy {
   }
 
   prev(): void {
+    
     this.currentIndex = (this.currentIndex - 1 + this.posters.length) % this.posters.length;
     this.testimonialIndex = (this.testimonialIndex - 1 + this.testimonials.length) % this.testimonials.length;
     this.updateVisibleImageAndTestimonial();
