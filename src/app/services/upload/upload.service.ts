@@ -18,6 +18,7 @@ title:string,
 firstAndLastLinesOfScenes:string 
 }
 
+console.log(environment.url, " #$%#$$#%$##$ url")
 @Injectable({
 providedIn: 'root',
 })
@@ -34,14 +35,8 @@ allChars: any[];
 firstAndLastLinesOfScenes:any[];
 title: string;
 underConstruction: boolean = false;
-// old DB valies
 issues: any;
 coverSheet: any;
-// db and return values
-// Firestore: Firestore;
-// funData: Observable<any>;
-// feedback: Observable<any>;
-
 httpOptions = {
   headers: null,
   params: null,
@@ -50,9 +45,6 @@ httpOptions = {
 msg: any;
 public url: string = environment.url;
 
-
-// Firestore will manage all of our fundata and our tickets for feedback
-
 constructor(
   // private firestore: Firestore,
   public httpClient: HttpClient,
@@ -60,34 +52,6 @@ constructor(
 ) {
   
 }
-
-// postFeedback(ticket: FeedbackTicket) {
-//   const { text, title, category, date, handled } = ticket;
-//   let userEmail = JSON.parse(localStorage.getItem("user") || '{}').email;
-
-//   const feedbackCollection = collection(this.firestore, "feedbackTickets");
-
-//   addDoc(feedbackCollection, {
-//     text: text,
-//     title: title,
-//     category: category,
-//     date: date,
-//     email: userEmail,
-//     handled: handled
-//   })
-//   .then(docRef => {
-//     console.log("Document written with ID: ", docRef.id);
-//     alert(`
-//       We've recorded your issues with: ${title}
-//       Thanks for helping make SideWays better.
-//     `);
-//   })
-//   .catch(error => {
-//     console.error("Error adding document: ", error);
-//     alert(error);
-//   });
-// }
-
 // final step
 getPDF(name: string, callsheet: string, pdfToken:string): Observable<any> {
   const headers = new HttpHeaders().set('Content-Type', 'application/json');

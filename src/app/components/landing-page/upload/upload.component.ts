@@ -28,9 +28,6 @@ if (!environment.production) {
 })
 export class UploadComponent implements OnInit, OnDestroy {
   // simple beta password
-
-  enteredPassword = '';
-  password = environment.password;
   isButtonDisabled: boolean = true;
 
   logo: string = '../../assets/icons/logoFlat.png';
