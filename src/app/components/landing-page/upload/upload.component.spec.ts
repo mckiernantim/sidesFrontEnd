@@ -2,28 +2,52 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { MatDialogModule } from '@angular/material/dialog';
 import { RouterTestingModule } from '@angular/router/testing';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
+import { Router } from '@angular/router';
 
 import { UploadComponent } from './upload.component';
 import { UploadService } from '../../../services/upload/upload.service';
 import { PdfService } from '../../../services/pdf/pdf.service';
+import { environment } from '../../../../environments/environment';
 
 describe('UploadComponent', () => {
   let component: UploadComponent;
   let fixture: ComponentFixture<UploadComponent>;
-  let uploadServiceSpy: jasmine.SpyObj<UploadService>;
-  let pdfServiceSpy: jasmine.SpyObj<PdfService>;
+  let uploadServiceMock: jest.Mocked<UploadService>;
+  let pdfServiceMock: jest.Mocked<PdfService>;
+  let routerMock: any;
 
   beforeEach(async () => {
-    uploadServiceSpy = jasmine.createSpyObj('UploadService', ['postFile']);
-    pdfServiceSpy = jasmine.createSpyObj('PdfService', ['initializeData']);
+    uploadServiceMock = {
+      postFile: jest.fn(),
+      allLines: [],
+      individualPages: [],
+      lineCount: []
+    } as unknown as jest.Mocked<UploadService>;
+
+    pdfServiceMock = {
+      initializeData: jest.fn(),
+      allLines: [],
+      individualPages: []
+    } as unknown as jest.Mocked<PdfService>;
+
+    routerMock = {
+      navigate: jest.fn()
+    };
 
     await TestBed.configureTestingModule({
       declarations: [UploadComponent],
-      imports: [HttpClientTestingModule, MatDialogModule, RouterTestingModule],
+      imports: [
+        HttpClientTestingModule,
+        MatDialogModule,
+        RouterTestingModule,
+        NoopAnimationsModule // Add NoopAnimationsModule here
+      ],
       providers: [
-        { provide: UploadService, useValue: uploadServiceSpy },
-        { provide: PdfService, useValue: pdfServiceSpy }
+        { provide: UploadService, useValue: uploadServiceMock },
+        { provide: PdfService, useValue: pdfServiceMock },
+        { provide: Router, useValue: routerMock }
       ]
     }).compileComponents();
   });
@@ -36,12 +60,29 @@ describe('UploadComponent', () => {
 
   it('should call upload service to post file on handleFileInput', () => {
     const mockFile = new File([''], 'dummy.pdf');
-    const mockResponse = { /* Mocked data */ };
-    uploadServiceSpy.postFile.and.returnValue(of(mockResponse));
+    const mockResponse = { allLines: [], title: 'Dummy Title' };
+    uploadServiceMock.postFile.mockReturnValue(of(mockResponse));
 
     component.handleFileInput({ item: (index: number) => mockFile } as FileList);
-    expect(uploadServiceSpy.postFile).toHaveBeenCalledWith(mockFile);
-    // Additional expectations and verifications can be added here
+    expect(uploadServiceMock.postFile).toHaveBeenCalledWith(mockFile);
+    expect(component.allLines).toEqual(mockResponse.allLines);
+  });
+
+  it('should process server response and check for page 2', () => {
+    const allLines = [
+      { text: '1.', category: 'page-number' },
+      { text: '2.', category: 'page-number-hidden' }
+    ];
+    const processedLines = component.processSeverResponseAndCheckForPage2(allLines);
+    expect(processedLines[1].category).toBe('page-number-hidden');
+  });
+
+
+  it('should navigate to /download after processing pages', () => {
+    const mockPages = [{ filter: jest.fn(() => [{ totalLines: 1 }]) }];
+    component.upload.individualPages = mockPages as any;
+    component.skipUploadForTest();
+    expect(routerMock.navigate).toHaveBeenCalledWith(['/download']);
   });
 
   // Additional tests for other component functionalities

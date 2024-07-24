@@ -3,8 +3,7 @@ import { CommonModule } from '@angular/common';
 
 
 import { DashboardComponent } from '../../components/dashboard/dashboard.component';
-import { DashboardLeftComponent } from '../../components/dashboard/dashboard-left/dashboard-left.component';
-import { DashboardRightComponent } from '../../components/dashboard/dashboard-right/dashboard-right-component';
+import { DashboardRightComponent } from '../../components/dashboard/dashboard-right/dashboard-right.component';
 import { LastLooksComponent } from '../../components/dashboard/last-looks/last-looks.component';
 import { LastLooksPageComponent } from '../../components/dashboard/last-looks-page/last-looks-page.component';
 import { AddCallsheetComponent } from '../../components/add-callsheet/add-callsheet.component';
@@ -17,7 +16,6 @@ import { CheckoutComponent } from 'src/app/components/checkout/checkout.componen
 @NgModule({
   declarations: [
     DashboardComponent,
-    DashboardLeftComponent,
     DashboardRightComponent,
     LastLooksComponent,
     LastLooksPageComponent,

@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { AboutItemComponent } from '../about-item/about-item.component';
 
 @Component({
   selector: 'app-about-item-grid',

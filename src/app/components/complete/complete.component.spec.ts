@@ -1,31 +1,61 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { RouterTestingModule } from '@angular/router/testing';
+import { MatDialogModule } from '@angular/material/dialog';
+import { ActivatedRoute, Router } from '@angular/router';
+import { of, throwError } from 'rxjs';
 import { CompleteComponent } from './complete.component';
 import { UploadService } from '../../services/upload/upload.service';
-import { of } from 'rxjs';
-import * as fileSaver from 'file-saver';
+import { TokenService } from '../..//services/token/token.service';
 
 describe('CompleteComponent', () => {
   let component: CompleteComponent;
   let fixture: ComponentFixture<CompleteComponent>;
-  let uploadServiceMock: jasmine.SpyObj<UploadService>;
+  let mockUploadService: jest.Mocked<UploadService>;
+  let mockTokenService: jest.Mocked<TokenService>;
+  let mockRouter: jest.Mocked<Router>;
+  let mockConsole: jest.Mocked<any>
 
-  beforeEach(waitForAsync(() => {
-    uploadServiceMock = jasmine.createSpyObj('UploadService', ['getPDF']);
-    TestBed.configureTestingModule({
+  beforeEach(async () => {
+    mockUploadService = {
+      getPDF: jest.fn().mockReturnValue(of(new Blob())),
+      deleteFinalDocument: jest.fn(),
+    } as unknown as jest.Mocked<UploadService>;
+
+    mockTokenService = {
+      initializeCountdown: jest.fn(),
+      isTokenValid: jest.fn().mockReturnValue(true),
+      countdown$: of(100),
+      removeToken: jest.fn(),
+    } as unknown as jest.Mocked<TokenService>;
+
+    mockRouter = {
+      navigate: jest.fn(),
+    } as unknown as jest.Mocked<Router>;
+
+    mockConsole = {
+      alert:jest.spyOn(window, 'alert').mockImplementation(() => {})
+    }
+
+    await TestBed.configureTestingModule({
       declarations: [CompleteComponent],
-      providers: [{ provide: UploadService, useValue: uploadServiceMock }]
+      imports: [
+        HttpClientTestingModule,
+        RouterTestingModule,
+        MatDialogModule,
+      ],
+      providers: [
+        { provide: UploadService, useValue: mockUploadService },
+        { provide: TokenService, useValue: mockTokenService },
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: { queryParams: of({ pdfToken: 'testToken', expires: 12345 }) } },
+      ],
     }).compileComponents();
-  }));
+  });
 
   beforeEach(() => {
     fixture = TestBed.createComponent(CompleteComponent);
     component = fixture.componentInstance;
-    spyOn(localStorage, 'getItem').and.callFake((key: string) => {
-      if (key === 'name') return 'John Doe';
-      if (key === 'layout') return 'Layout 1';
-      if (key === 'callsheet') return 'callsheet123';
-      return null;
-    });
     fixture.detectChanges();
   });
 
@@ -33,28 +63,46 @@ describe('CompleteComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should set name, layout, and callsheet from local storage', () => {
-    expect(component.name).toEqual('John Doe');
-    expect(component.layout).toEqual('Layout 1');
-    expect(component.callsheet).toEqual('callsheet123');
+  it('should initialize countdown on init', () => {
+    expect(mockTokenService.initializeCountdown).toHaveBeenCalledWith(12345);
   });
 
-  it('should call downloadPDF on initialization', () => {
-    spyOn(component, 'downloadPDF');
-    component.ngOnInit();
-    expect(component.downloadPDF).toHaveBeenCalled();
+  it('should call downloadPDF if token is valid after view init', () => {
+    mockTokenService.isTokenValid.mockReturnValue(true);
+    component.pdfToken = 'testToken';
+    component.name = 'testName';
+    component.callsheet = 'testCallsheet';
+    component.ngAfterViewInit();
+    expect(mockUploadService.getPDF).toHaveBeenCalledWith('testName', 'testCallsheet', 'testToken');
   });
 
-  it('should call getPDF from the UploadService and trigger file download', () => {
-    const mockBlob = new Blob(['test'], { type: 'application/zip' });
-    uploadServiceMock.getPDF.and.returnValue(of(mockBlob));
-    spyOn(fileSaver, 'saveAs');
-
-    component.downloadPDF();
-
-    expect(uploadServiceMock.getPDF).toHaveBeenCalledWith('John Doe', 'whatever');
-    expect(fileSaver.saveAs).toHaveBeenCalledWith(mockBlob, jasmine.any(String), { type: 'application/zip' });
+  it('should handle expired token correctly', () => {
+    jest.spyOn(window, 'alert').mockImplementation(() => {});
+    component.handleExpiredToken();
+    expect(window.alert).toHaveBeenCalledWith('Token has expired. Please initiate a new session.');
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
   });
 
-  // Additional tests can be added here
+  it('should unsubscribe on destroy', () => {
+    const unsubscribeSpy = jest.spyOn(component.countdownSubscription, 'unsubscribe');
+    component.ngOnDestroy();
+    expect(unsubscribeSpy).toHaveBeenCalled();
+  });
+
+  it('should open dialog on handleDeleteClick', () => {
+    const dialogRefSpy = { afterClosed: jest.fn().mockReturnValue(of(true)) };
+    const dialogSpy = jest.spyOn(component.dialog, 'open').mockReturnValue(dialogRefSpy as any);
+    component.handleDeleteClick();
+    expect(dialogSpy).toHaveBeenCalled();
+    expect(dialogRefSpy.afterClosed).toHaveBeenCalled();
+  });
+
+  it('should handle error in downloadPDF', () => {
+    const errorResponse = new Error('Download error');
+    mockUploadService.getPDF.mockReturnValueOnce(throwError(() => errorResponse));
+    component.downloadPDF('name', 'callsheet', 'pdfToken');
+    expect(mockUploadService.getPDF).toHaveBeenCalledWith('name', 'callsheet', 'pdfToken');
+  });
 });
+    
+

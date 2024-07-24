@@ -7,7 +7,8 @@ import { throwError, of, Subscription, Observable, switchMap } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
-import { WarningComponent } from '../warning/warning.component';
+import { IssueComponent } from '../issue/issue.component';
+
 
 @Component({
   selector: 'app-complete',
@@ -73,7 +74,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
   calculateDownloadTime() {
     try {
     } catch (e) {
-      console.error('no cookie detected');
+      // console.error('no cookie detected');
     }
   }
   // needed method to turn BLOB response into readable ERROR MESSAGE observable
@@ -124,22 +125,19 @@ export class CompleteComponent implements OnInit, OnDestroy {
         },
         (error) => {
           // Error path
-          console.error('Download error:', error);
-          alert(
-           `Ooops - something went wrong: \n ${error.error}`
-           );
-          //  this.router.navigate(["/"]);
+          const errorMessage = error.error ? error.error : 'An unknown error occurred';
+          // alert(`Ooops - something went wrong: \n ${errorMessage}`);
         }
       );
   }
   handleDeleteClick() {
-    const dialogRef = this.dialog.open(WarningComponent, {
+    const dialogRef = this.dialog.open(IssueComponent, {
       width: '500px'
     })
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.upload.deleteFinalDocument("whatever").subscribe(data => {
+        this.upload.deleteFinalDocument(this.pdfToken).subscribe(data => {
           if (data) this.token.removeToken();
           // this.router.navigate["/"]
         })

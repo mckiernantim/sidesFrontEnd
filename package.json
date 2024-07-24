@@ -6,6 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
+    "bash": "heroku run bash -a sides3",
+    "logs": "heroku logs --tail -a",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
@@ -28,6 +30,7 @@
     "@ionic/angular": "^5.6.3",
     "@stripe/stripe-js": "^1.54.1",
     "angular": "^1.8.3",
+    "bootstrap": "^5.3.3",
     "file-saver": "^2.0.5",
     "font-awesome": "^4.7.0",
     "js-cookie": "^3.0.5",

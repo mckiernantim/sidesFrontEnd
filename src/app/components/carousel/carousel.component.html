@@ -1,0 +1,25 @@
+<div class="p-8 relative">
+  <div class="blob-3"></div>
+  <div class="blob-4"></div>
+  <h2 class="font-bold text-6xl flex flex-row justify-center">Trusted By The Best</h2>
+</div>
+<div class="flex items-center justify-center relative p-8">
+  <button (click)="prev()" class="p-2 bg-gray-300 rounded-full absolute left-[15vw] ml-4 z-10">
+    <span class="material-icons">chevron_left</span>
+  </button>
+  <div class="w-full flex flex-col items-center justify-center overflow-hidden relative"
+       [ngClass]="{ 'fade-out': isTransitioning, 'fade-in': !isTransitioning }">
+    <div class="md:w-[40vw] w-[75vw] text-center">
+      <p class="font-semi-bold text-xl italic">"{{currentTestimonial.text}}"</p>
+      <p class="font-bold text-xl p-8"> {{currentTestimonial.user}} - {{currentTestimonial.jobTitle}}</p>
+    </div>
+    <img 
+      [ngClass]="{ 'fade-out': isTransitioning, 'fade-in': !isTransitioning }"
+      [src]="visibleImage" 
+      alt="Poster Image" 
+      class="max-w-full h-75vh transition-opacity duration-500">
+  </div>
+  <button (click)="next()" class="p-2 bg-gray-300 rounded-full absolute right-[15vw] mr-4 z-10">
+    <span class="material-icons">chevron_right</span>
+  </button>
+</div>

@@ -107,7 +107,7 @@ export class LastLooksComponent implements OnInit {
     
     this.processLinesForLastLooks(this.doc);
     this.updateDisplayedPage();
-    this.selectedLine = this.doc[0][0]; 
+    this.selectedLine = this.doc[0] && this.doc[0][0] ? this.doc[0][0]: {} as Line;
     // this.adjustLinesForDisplay(this.pages); 
   }
   findLastLinesOfScenes(pages) {

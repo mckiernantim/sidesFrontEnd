@@ -1,6 +1,5 @@
 <main class="last-looks-container">
-    {{ this.mouseEvent?.clientY }}
-    <div class="page" (click)="showContextMenu && closeContextMenu()">
+    <div class="page shadow-lg border" (click)="showContextMenu && closeContextMenu()">
         <div class="break">
             <ul cdkDropList [cdkDropListData]="page" class="screenbox" [ngClass]="{ 'edit-mode': canEditDocument }">
                 <!-- [attr.contenteditable]="canEditDocument ? 'true' : 'false'" this line will activate easy edit - -->
@@ -36,11 +35,11 @@
                                 (cdkDragEnded)="dragDrop.onDrop($event, page[lineIndex], lineIndex, 'start')"
                                 [cdkDragData]="{ index: lineIndex, line: page[lineIndex] }"
                                 (mouseup)="dragDrop.stopDrag(line)">
-                                <span class="start-span">START {{ line.sceneNumberText }} {{ line.calculatedYpos }}</span>
+                                <span class="start-span">START {{ line.sceneNumberText }} </span>
                             </span>
                         </ng-container>
                         <ng-template #noDragStart>
-                            <span class="start-span">START {{ line.sceneNumberText }} {{ line.calculatedYpos }}</span>
+                            <span class="start-span">START {{ line.sceneNumberText }}</span>
                         </ng-template>
                     </span>
 
@@ -61,7 +60,7 @@
                         <li id="{{ line.index }}" autofocus tabindex="0" [value]="line.sceneNumber"
                             [class]="line.category + ' ' + line.visible + ' ' + line.hidden"
                             [class.selected]="isSelectedLine(line, lineIndex)"
-                            [ngClass]="{ 'edit-li': !selectedLine }" [style.bottom]="line.calculatedYpos"
+                            [style.bottom]="line.calculatedYpos"
                             [style.left]="line.calculatedXpos" [textContent]="line.text"
                             (contextmenu)="canEditDocument && openContextMenu($event, line)">
                         </li>

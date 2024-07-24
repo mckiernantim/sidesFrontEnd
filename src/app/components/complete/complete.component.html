@@ -1,15 +1,14 @@
-<div class="complete-container m mx-5 flex flex-col justify-around bg-primary shadow-lg p-10 rounded-lg">
-  <div class ="mx-[15vw]">
-    <h1 class="text-white txt-bold text-4xl mb-4 font-bold">Processing complete on: <em>{{ name }}</em></h1>
-    <div class="bg-secondary flex flex-col justify-around border border-gray-200 p-16 rounded-lg">
-      <div class="p-4 border-b border-gray-200 flex flex-col justify-between">
-        <h2 class="text-white text-2xl font-bold">Thanks for helping us with Sides-Ways!</h2>
+<div class="complete-container h-full min-h-[85vh] mx-5 flex flex-col justify-around shadow-lg p-10 rounded-lg">
+  <div class="flex justify-center items-center">
+    <div class="max-w-[70rem] w-full flex flex-col justify-center items-center border border-gray-200 px-6 md:px-20 py-8 rounded-lg mx-4 md:mx-auto">
+      <h1 class="text-2xl md:text-6xl mb-4 font-bold">Processing complete on: <em>{{ name }}</em></h1>
+      <div class="p-4 border-b flex flex-col justify-between">
+        <h2 class="text-xl md:text-2xl font-bold">Thanks for using Sides-Ways!</h2>
         <div class="mt-4">
           <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" (click)="downloadPDF(name, callsheet, pdfToken)">Download {{ name }}</button>
         </div>
-        <h2 class="text-white text-2xl font-bold">Please let us know if you had any issues.</h2>
+        <h2 class="text-xl md:text-2xl font-bold mt-4">Please let us know if you had any issues.</h2>
       </div>
     </div>
   </div>
 </div>
-    

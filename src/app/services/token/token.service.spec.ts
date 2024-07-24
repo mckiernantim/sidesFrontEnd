@@ -1,49 +1,69 @@
 import { TestBed } from '@angular/core/testing';
 import { TokenService } from './token.service';
-import * as Cookies from 'js-cookie';
+import Cookies from 'js-cookie';
+import { of } from 'rxjs';
 
-jest.mock('js-cookie', () => ({
-  get: jest.fn(),
-  delete: jest.fn()
-}));
+jest.mock('js-cookie');
 
 describe('TokenService', () => {
   let service: TokenService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [TokenService],
+    });
     service = TestBed.inject(TokenService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should initialize countdown and update countdown$', (done) => {
-    const initialTime = Date.now() + 5000; // 5 seconds from now
+  it('should initialize countdown', () => {
+    jest.useFakeTimers();
+    const initialTime = Date.now() + 100000;
     service.initializeCountdown(initialTime);
-    const subscription = service.countdown$.subscribe(timeLeft => {
-      expect(timeLeft).toBeGreaterThanOrEqual(0);
-      if (timeLeft === 0) {
-        subscription.unsubscribe();
-        done();
-      }
-    });
-  }, 10000);
 
-  it('should delete token', () => {
+    service.getCountdownObservable().subscribe(timeLeft => {
+      expect(timeLeft).toBeLessThanOrEqual(100000);
+      expect(timeLeft).toBeGreaterThanOrEqual(0);
+    });
+
+    jest.advanceTimersByTime(1000);
+
+    service.getCountdownObservable().subscribe(timeLeft => {
+      expect(timeLeft).toBeLessThanOrEqual(99000);
+      expect(timeLeft).toBeGreaterThanOrEqual(0);
+    });
+
+    jest.useRealTimers();
+  });
+
+  it('should remove token', () => {
     service.removeToken();
     expect(Cookies.remove).toHaveBeenCalledWith(service['tokenKey']);
   });
 
-  it('should check token validity', () => {
-    Cookies.get.mockReturnValue('some-token');
-    expect(service.isTokenValid()).toBeTruthy();
-    Cookies.get.mockReturnValue(undefined);
-    expect(service.isTokenValid()).toBeFalsy();
+  it('should check if token is valid', () => {
+    (Cookies.get as jest.Mock).mockReturnValueOnce('some-token');
+    expect(service.isTokenValid()).toBe(true);
+
+    (Cookies.get as jest.Mock).mockReturnValueOnce(undefined);
+    expect(service.isTokenValid()).toBe(false);
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
+  it('should get countdown observable', () => {
+    const initialTime = Date.now() + 100000;
+    service.initializeCountdown(initialTime);
+
+    const countdown$ = service.getCountdownObservable();
+    expect(countdown$).toBeDefined();
+    countdown$.subscribe(timeLeft => {
+      expect(timeLeft).toBeGreaterThanOrEqual(0);
+    });
   });
 });

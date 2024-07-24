@@ -1,119 +1,50 @@
-.centered {
-  width: 100vw;
-  margin: 0 auto;
-
+/* OVERRIDE FOR ANGULAR MATERIAL BUTTON  */
+.font-semibold {
+    font-weight: 600 !important
 }
 
-section {
-  position: relative;
-  z-index: 5;
+.py-8 {
+    padding:0 2.25rem !important
 }
-
-.blob {
-  position: relative;
-  bottom: 1vw;
-  height: 1vw;
-  width: 5vw;
-  filter: opacity(.5);
-
-}
-
-.hero {
-  padding: 0 5rem;
-}
-
-.warning-button {
-  background-color: var(--orange);
-  /* This is $my-orange  from theme - may inject at bootstrap*/
-  color: white;
-  font-weight: bolder;
-  padding: 1.5rem;
-}
-
-.warning-button:hover {
-  background-color: darken(#fc1c18, 5%);
-  /* Slightly darker on hover */
-}
-
-.warning-button:focus {
-  background-color: darken(#fc1c18, 5%);
-}
-
-.warning-button:active {
-  background-color: darken(#fc1c18, 10%);
-}
-
-
-#blob-1::before {
-
-  content: '';
-  width: 27vw;
-  height: 27vw;
-  background-image: url('src/assets/blob-svgs/blob-oj-large-rounded.svg');
-  display: block;
-  position: relative;
-  left: -95vw;
-  top: -5vw;
-}
-
-#blob-2::before {
-  background-image: url('src/assets/blob-svgs/blob-oj-fish.svg');
-  content: "";
-  width: 50vw;
-  height: 70vw;
-  display: block;
-  position: relative;
-  right: 27vw;
-  bottom: 16vw;
-}
-
-@media screen and (min-width:1025px) {
-  img {
-    width: 45vw;
-    height: auto;
-    justify-self: center;
+@media (min-width: 1000px) and (max-width: 1200px) {
+    .container {
+      flex-direction: column-reverse;
+      align-items: center;
+    }
+  
+    .hero-image {
+      order: -1;
+    }
+  
+    .text-center,
+    .lg\:text-left {
+      text-align: center;
+    }
   }
 
-  .hero {
-    gap: 1rem;
+  @media (min-width: 481px) and (max-width:999px) {
+    .container {
+        flex-direction: column-reverse;
+        align-items: center;
+    }
+    h1 {
+        font-size:3.75rem;
+    }
   }
 
-  #blob-2::before {
-    bottom: 18vw;
-    right: 17vw;
-    width: 55vw
-  }
 
-  #blob-1::before {
-    top: -17vw;
-    left: -97vw;
-    height: 34vw;
-    width: 34vw;
-  }
-}
+  @media (max-width: 480px) {
+    .container {
+        flex-direction: column-reverse;
+        align-items: center;
+      }
 
-@media screen and (min-width: 1500px) {
-  img {
-    width: 30rem;
-    justify-self: center;
+    h1 {
+        font-size: 2.75rem;
+    }
+    h2 {
+        font-size:1.2rem;
+    }
+      
   }
-
-  .hero {
-    padding: 0rem 12rem;
-    gap: 5rem;
-  }
-
-  #blob-2::before {
-    bottom: 16vw;
-    right: 18vw;
-    width: 50vw
-  }
-
-  #blob-1::before {
-    top: -12vw;
-    left: -90vw;
-    height: 33vw;
-    width: 33vw;
-  }
-
-}
+  
