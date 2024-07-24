@@ -160,7 +160,7 @@ body {
 
 /* Spinning bot */
 .spinning-bot {
-  width: 50%; /* Adjust the size as needed */
+ 
   height: auto;
   animation: spin 1.5s linear infinite;
 }

@@ -1,6 +1,6 @@
 <ng-container *ngIf="dialogOption == 'scan'">
   <div class="dialog-content flex flex-col justify-center items-center h-full text-center">
-    <div class="bg-white h-[50vh] w-[50vh] shadow-lg rounded-lg flex flex-col justify-center items-center">
+    <div class="bg-white h-[50vh] w-[35vw] shadow-lg rounded-lg flex flex-col justify-center items-center">
       <h3 class="title text-base md:text-lg lg:text-xl font-bold mb-4">Processing: <em>{{ this.title }}</em></h3>
       <div class="animation-container flex flex-col items-center">
         <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" class="w-1/2" />
@@ -15,7 +15,7 @@
 
 <ng-container *ngIf="dialogOption == 'payment'">
   <div class="dialog-content  h-full flex flex-col justify-center items-center text-center">
-    <div class="bg-white h-[50vh] w-[50vh] shadow-lg rounded-lg flex flex-col justify-center items-center">
+    <div class="bg-white h-[50vh] w-[35vw] shadow-lg rounded-lg flex flex-col justify-center items-center">
       <h3 class="title text-base md:text-lg lg:text-xl font-bold mb-4">Processing PDF <em>{{ this.title }}</em></h3>
       <div *ngFor="let scene of data.selected">
         <p class="text-sm md:text-base lg:text-lg font-bold mb-2">
@@ -34,20 +34,20 @@
 
 
 <ng-container *ngIf="dialogOption == 'error'">
-  <div class="dialog-content flex flex-col justify-center items-center h-full text-center">
-    <div class="w-[50vh] h-[75vh] bg-white rounded-lg shadow-lg">
-      <h3 class="title text-base md:text-lg lg:text-xl font-bold mb-4">Error Occurred:</h3>
-      <div class="message mb-4">
-        <p class="text-sm md:text-base lg:text-lg">{{ this.error.message || "please try again" }} </p>
+  <div class="dialog-content flex flex-col justify-center items-center h-full text-center p-4">
+    <div class="w-[80vw] md:w-[70vw] lg:w-[60vw] h-[120vw] lg:h-[40vw]  bg-white rounded-lg shadow-lg">
+      <h3 class="title text-base md:text-lg lg:text-xl pt-8 font-bold mb-2">Error Occurred:</h3>
+      <div class="message p-4">
+        <p class="text-sm md:text-lg lg:text-xl">{{ this.error.message || "please try again" }}</p>
       </div>
       <div class="animation-container flex flex-col items-center">
-        <img src="assets/icons/vectors/full-body-bot.png" height=100 alt="Spinning Bot" class="spinning-bot">
-        
-        <div class="message mt-4">
+        <img src="assets/icons/vectors/full-body-bot.png" alt="Spinning Bot" class="spinning-bot w-[35vw] md:w-[30vw] lg:w-[15vw] h-auto">
+        <div class="message p-2">
           <p class="text-sm md:text-base lg:text-lg">Please try again.</p>
         </div>
       </div>
     </div>
   </div>
+  
 </ng-container>
 

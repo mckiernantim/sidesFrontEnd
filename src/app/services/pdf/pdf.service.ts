@@ -55,7 +55,7 @@ export class PdfService {
     this.initializeData();
   }
   initializeData() {
-    if(this.upload.allLines.length > 0) {
+    if (this.upload.allLines) {
       this.allLines = this.upload.allLines;
       this.firstAndLastLinesOfScene = this.upload.firstAndLastLinesOfScenes
       this.individualPages = this.upload.individualPages || null;
