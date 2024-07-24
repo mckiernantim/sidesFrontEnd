@@ -9,7 +9,6 @@
     "downlevelIteration": true,
     "experimentalDecorators": true,
     "resolveJsonModule": true,
-   
     "module": "esnext",
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
@@ -24,7 +23,7 @@
       "lodash",
       "express",
       "zone.js",
-      "jest",
+      "jest"
     ],
     "paths": {
       "stream": [
@@ -38,12 +37,12 @@
     "fullTemplateTypeCheck": true,
     "strictInjectionParameters": true,
     "types": [ "node" ],
-    "enableIvy":false,
+    "enableIvy": false
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.d.ts",
-    // "src/**/*.json" // Include JSON files in your TypeScript project
+    "src/**/*.json" // Include JSON files in your TypeScript project
   ],
   "exclude": [
     "**/*.spec.ts", 
