@@ -18,9 +18,8 @@ title:string,
 firstAndLastLinesOfScenes:string 
 }
 
-console.log(environment.url, " #$%#$$#%$##$ url")
 @Injectable({
-providedIn: 'root',
+  providedIn: 'root',
 })
 
 export class UploadService {
