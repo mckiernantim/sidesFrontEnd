@@ -1,42 +1,36 @@
-<main [@fadeInOut] class="max-w-[90rem] mx-auto blob-1 mt-8">
-  <header class="bg-white py-8 max-w-[90rem] mx-auto blob-2 overflow-hidden">
+<main class="max-w-[90rem] mx-auto mt-8 fadeInOut">
+  <header class="bg-white py-8 max-w-[90rem] mx-auto overflow-hidden blob-2">
     <div class="container mx-auto flex flex-col lg:flex-row items-center justify-between px-4 lg:px-8">
-    
+      
       <!-- Hero Text Section -->
-      <div class="text-center lg:text-left xl:w-1/2 lg:w-3/4">
-        <h1 class="text-4xl lg:text-8xl md:text-6xl font-bold mb-4 text-black">Sides-Ways</h1>
+      <div class="text-center lg:text-left xl:w-1/2 lg:w-3/4 mx-auto">
         <div class="py-8 text-left">
-          <h2 class="text-4xl font-semibold leading-normal text-dark-gray">
+          <h1 class="text-4xl lg:text-8xl md:text-6xl font-bold text-black">Sides-Ways</h1>
+          <h2 class="text-4xl font-semibold leading-normal text-dark-gray mb-4">Free Open Beta</h2>
+        </div>
+
+        <div class="py-8 text-left">
+          <h2 class="text-3xl font-semibold leading-normal text-dark-gray">
             Secure, Set-Ready Sides in Seconds
           </h2>
-          <h2 class="text-4xl font-semibold leading-normal  text-dark-gray">
+          <h2 class="text-3xl font-semibold leading-normal text-dark-gray">
             No subscriptions to worry about
           </h2>
-
-          <h2 class="text-4xl font-semibold leading-normal  text-dark-gray">
+          <h2 class="text-3xl font-semibold leading-normal text-dark-gray">
             Nothing to sign up with
           </h2>
         </div>
 
-        <div class="mb-6 mt-8 py-8 text-3xl font-semibold leading-normal text-left leading-loose  text-dark-gray">
-          <h2>We make sides</h2>
+        <div class="mb-6 mt-8 py-8 text-3xl font-semibold leading-normal text-left leading-loose text-dark-gray">
+          <h2>We Make Sides</h2>
           <h2 class="italic">That's it.</h2>
         </div>
         <div class="flex flex-col lg:flex-row lg:space-x-4 justify-center">
-
-
-
-
-          <!--  THE FONT WEIGHT OF THIS BUTTON IS OVERWRITTEN WITH AN IMPORTANT TO BEAT ANGULAR MATERIAL STYLES -->
+          <!-- Button -->
           <button mat-raised-button color="warn" (click)="fileInput.click()"
-            class="text-white py-8 font-semibold  px-8 rounded-md mb-4 lg:mb-0 custom-button">
+            class="text-white py-8 font-semibold px-8 rounded-md mb-4 lg:mb-0 custom-button">
             Upload Script PDF
           </button>
-
-
-
-
-
           @if (this.underConstruction) {
           <button mat-raised-button class="bg-soft-red text-xl text-black py-3 px-8 rounded-md mb-4 lg:mb-0"
             (click)="skipUploadForTest()">skipUploadForTest</button>
@@ -46,10 +40,10 @@
         </div>
       </div>
 
-        <!-- Hero Image Section -->
-        <div class="md:w-1/2 lg:mt-0">
-          <img src="assets/icons/logoFlat.png" alt="Hero Image" class="w-full rounded-lg">
-        </div>
+      <!-- Hero Image Section -->
+      <div class="md:w-1/2 lg:mt-0">
+        <img src="assets/icons/logoFlat.png" alt="Hero Image" class="w-full rounded-lg">
+      </div>
 
     </div>
   </header>

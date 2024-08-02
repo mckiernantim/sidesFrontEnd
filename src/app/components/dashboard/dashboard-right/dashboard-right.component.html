@@ -1,7 +1,6 @@
 <div [@fadeInOut] class="min-h-100 h-auto">
   <div class="flex flex-col-reverse xl:flex-row justify-around min-h-100 h-auto">
     <ng-container *ngIf="!lastLooksReady; else lastLooks">
-
       <div class="data-feed cell max-h-[45vh] lg:max-h-full flex flex-col justify-around">
         <h2 class="font-semibold text-2xl m-4"> {{ script }} scenes</h2>
         <div class="mat-elevation-z8 table-container max-h-[15vh]">
@@ -47,79 +46,69 @@
         </div>
       </div>
     </ng-container>
-
-
-
-
-    <div class="flex flex-col justify-start items-center min-w-[40%] py-20">
-      <h1 class=" text-3xl">Generating sides for
+    <div class="border border-red flex flex-col justify-start items-center min-w-[40%] py-20">
+      <h1 class="text-3xl">Generating sides for
         <br>
         <p class="pt-4">{{ script }} - {{ date | date }}</p>
       </h1>
-      <div class="selected-container p-8">
-        <ng-container>
-          <ul class="p-12">
-            <ng-container>
-              @if (watermark) {
-              <li class="text-xl">
-                <pre> Watermark: {{this.watermark}}</pre>
-              </li>
-              }
-              @if (callsheetState) {
-              <div class="text-xl">
-                <li>
-                  <pre>Calllsheet: {{ callsheet }}</pre>
+      <div class="flex flex-col h-full w-full">
+        <!-- Top Panel (Selected Container) -->
+        <div class="flex-1 overflow-auto p-8">
+          <ng-container>
+            <ul class="p-12">
+              <ng-container>
+                @if (watermark) {
+                <li class="text-xl">
+                  <pre> Watermark: {{this.watermark}}</pre>
                 </li>
+                }
+                @if (callsheetState) {
+                <div class="text-xl">
+                  <li>
+                    <pre>Calllsheet: {{ callsheet }}</pre>
+                  </li>
+                </div>
+                }
+                <li class="p-2" *ngFor="let scene of selected">
+                  <pre> {{scene.sceneNumberText}}     {{scene.text}}     {{scene.sceneNumberText}}</pre>
+                </li>
+              </ng-container>
+            </ul>
+          </ng-container>
+        </div>
+        <!-- Bottom Panel (Controls Container) -->
+        <div class="flex-1 overflow-auto p-8 bg-white shadow-lg">
+          <ng-container *ngIf="!lastLooksReady; else lastLooksControls">
+            <div class="flex flex-row justify-between w-75">
+              <button mat-raised-button color="warn" (click)="toggleLastLooks()" [disabled]="selected.length === 0">getPDF
+              </button>
+              <button mat-raised-button color="warn" (click)="this.router.navigate(['/'])">Back To Upload
+              </button>
+            </div>
+          </ng-container>
+          <ng-template #lastLooksControls>
+            <div class="flex flex-col lg:flex-row justify-around items-center lg:items-start rounded-lg space-y-4 lg:space-y-0 lg:space-x-4">
+              <div class="flex flex-col md:flex-row">
+                <div class="flex flex-col items-center justify-center p-4 bg-white">
+                  <button mat-raised-button disabled="true" color="warn" (click)="toggleEditStateInLastLooks()"
+                    class="w-full bg-red-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    Edit PDF - coming soon
+                  </button>
+                </div>
+                <div class="flex flex-col items-center justify-center p-4 bg-white">
+                  <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
+                </div>
               </div>
-              }
-              <li class="p-2" *ngFor="let scene of selected">
-                <pre> {{scene.sceneNumberText}}     {{scene.text}}     {{scene.sceneNumberText}}</pre>
-              </li>
-            </ng-container>
-          </ul>
-        </ng-container>
-      </div>
-      <div class="controls-container p-8 min-w-[55%] items-a flex flex-col items-center bg-white shadow-lg">
-
-        <ng-container *ngIf="!lastLooksReady; else lastLooksControls">
-          <div class="flex flex-row justify-between w-75">
-            <button mat-raised-button color="warn" (click)="toggleLastLooks()" [disabled]="selected.length === 0">getPDF
-            </button>
-            <button mat-raised-button color="warn" (click)="this.router.navigate(['/'])">Back To Upload
-            </button>
-          </div>
-        </ng-container>
-
-        <ng-template #lastLooksControls>
-
-
-          <div
-            class="flex flex-col lg:flex-row justify-around items-center lg:items-start rounded-lg  space-y-4 lg:space-y-0 lg:space-x-4">
-            <div class="flex flex-col md:flex-row">
               <div class="flex flex-col items-center justify-center p-4 bg-white">
-                <!-- <h2 class="text-lg font-semibold mb-2">Edit Sides</h2> -->
-                <button mat-raised-button disabled="true" color="warn" (click)="toggleEditStateInLastLooks()"
-                  class="w-full bg-red-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                  Edit PDF - coming soon
-                </button>
-              </div>
-
-              <div class="flex flex-col items-center justify-center p-4 bg-white">
-                <!-- <h2 class="text-lg font-semibold mb-2">Add Callsheet</h2> -->
-                <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
+                <app-add-watermark (waterMarkUpdate)="addWaterMark($event)"></app-add-watermark>
               </div>
             </div>
-            <div class="flex flex-col items-center justify-center p-4 bg-white">
-              <!-- <h2 class="text-lg font-semibold mb-2">Add Watermark</h2> -->
-              <app-add-watermark (waterMarkUpdate)="addWaterMark($event)"></app-add-watermark>
+            <div class="flex flex-col items-center">
+              <h2 class="p-8 text-xl">Total: $5.00</h2>
+              <button class="px-12" mat-raised-button color="warn" (click)="openConfirmPurchaseDialog()">Proceed To Checkout</button>
             </div>
-          </div>
-          <div class="flex flex-col items-center">
-            <h2 class="p-8 text-xl">Total: $5.00</h2>
-            <button class="px-12" mat-raised-button color="warn" (click)="openConfirmPurchaseDialog()">Proceed To
-              Checkout</button>
-          </div>
-        </ng-template>
+          </ng-template>
+        </div>
       </div>
       @if (editLastLooksState) {
       <ng-container>
@@ -139,3 +128,6 @@
     </ng-template>
   </div>
 </div>
+
+
+
