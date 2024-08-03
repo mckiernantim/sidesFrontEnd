@@ -1,6 +1,8 @@
-<div [@fadeInOut] class="min-h-100 h-auto">
-  <div class="flex flex-col-reverse xl:flex-row justify-around min-h-100 h-auto">
+<div [@fadeInOut] class="min-h-100 h-auto px-12">
+  <!-- entire page left and right -->
+  <div class="flex flex-col-reverse xl:flex-row justify-center min-h-50 h-auto space-y-8 xl:space-y-0 xl:space-x-8">
     <ng-container *ngIf="!lastLooksReady; else lastLooks">
+      <!-- LEFT PANEL -->
       <div class="data-feed cell max-h-[45vh] lg:max-h-full flex flex-col justify-around">
         <h2 class="font-semibold text-2xl m-4"> {{ script }} scenes</h2>
         <div class="mat-elevation-z8 table-container max-h-[15vh]">
@@ -46,29 +48,41 @@
         </div>
       </div>
     </ng-container>
-    <div class="border border-red flex flex-col justify-start items-center min-w-[40%] py-20">
-      <h1 class="text-3xl">Generating sides for
+    <!-- RIGHT PANEL -->
+    <div class="border border-red flex flex-col justify-center items-center [min-width:40%] py-12 overflow-auto">
+      <h1 class="text-3xl text-center">Generating sides for
         <br>
         <p class="pt-4">{{ script }} - {{ date | date }}</p>
       </h1>
-      <div class="flex flex-col h-full w-full">
+      <div class="flex flex-row justify-between items-center">
+        <p class="text-xl">
+          @if (callsheetState) {
+            Callsheet: {{ callsheet }}
+          }
+        </p>
+        <p class="text-xl">
+          @if (watermark) {
+            Watermark: {{ watermark}}
+          }
+      </div>
+      @if (lastLooksReady) {
+        <div class="flex flex-col items-center">
+          <h2 class="p-8 text-xl">Total: FREE</h2>
+          <div class="flex flex-row items-center space-x-4">
+            <button class="px-12" mat-raised-button color="warn" (click)="openConfirmPurchaseDialog()">Proceed To
+              Checkout</button>
+            <button mat-raised-button color="warn" (click)="toggleLastLooks()" [disabled]="selected.length === 0">Back To Scene Select</button>
+          </div>
+        </div>
+      }
+
+      <div class="flex flex-col h-auto w-full justify-center items-center">
         <!-- Top Panel (Selected Container) -->
-        <div class="flex-1 overflow-auto p-8">
+        <div class="flex-1 flex justify-center py-8">
           <ng-container>
             <ul class="p-12">
               <ng-container>
-                @if (watermark) {
-                <li class="text-xl">
-                  <pre> Watermark: {{this.watermark}}</pre>
-                </li>
-                }
-                @if (callsheetState) {
-                <div class="text-xl">
-                  <li>
-                    <pre>Calllsheet: {{ callsheet }}</pre>
-                  </li>
-                </div>
-                }
+             
                 <li class="p-2" *ngFor="let scene of selected">
                   <pre> {{scene.sceneNumberText}}     {{scene.text}}     {{scene.sceneNumberText}}</pre>
                 </li>
@@ -76,18 +90,16 @@
             </ul>
           </ng-container>
         </div>
-        <!-- Bottom Panel (Controls Container) -->
-        <div class="flex-1 overflow-auto p-8 bg-white shadow-lg">
+
+        <div class="flex-1 overflow-auto flex flex-col content-center items-center justify-center p-8 [min-width:60%]">
           <ng-container *ngIf="!lastLooksReady; else lastLooksControls">
-            <div class="flex flex-row justify-between w-75">
-              <button mat-raised-button color="warn" (click)="toggleLastLooks()" [disabled]="selected.length === 0">getPDF
-              </button>
-              <button mat-raised-button color="warn" (click)="this.router.navigate(['/'])">Back To Upload
-              </button>
+            <div class="flex flex-row items-center w-full justify-around ">
+              <button mat-raised-button color="warn" (click)="toggleLastLooks()" [disabled]="selected.length === 0">getPDF</button>
+              <button mat-raised-button color="warn" (click)="this.router.navigate(['/'])">Back To Upload</button>
             </div>
           </ng-container>
           <ng-template #lastLooksControls>
-            <div class="flex flex-col lg:flex-row justify-around items-center lg:items-start rounded-lg space-y-4 lg:space-y-0 lg:space-x-4">
+            <div class="flex flex-col lg:flex-row justify-center items-center lg:items-start rounded-lg space-y-4 lg:space-y-0 lg:space-x-4">
               <div class="flex flex-col md:flex-row">
                 <div class="flex flex-col items-center justify-center p-4 bg-white">
                   <button mat-raised-button disabled="true" color="warn" (click)="toggleEditStateInLastLooks()"
@@ -103,10 +115,7 @@
                 <app-add-watermark (waterMarkUpdate)="addWaterMark($event)"></app-add-watermark>
               </div>
             </div>
-            <div class="flex flex-col items-center">
-              <h2 class="p-8 text-xl">Total: $5.00</h2>
-              <button class="px-12" mat-raised-button color="warn" (click)="openConfirmPurchaseDialog()">Proceed To Checkout</button>
-            </div>
+       
           </ng-template>
         </div>
       </div>
@@ -128,6 +137,3 @@
     </ng-template>
   </div>
 </div>
-
-
-
