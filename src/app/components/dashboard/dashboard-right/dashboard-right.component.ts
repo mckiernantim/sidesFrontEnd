@@ -262,9 +262,15 @@ export class DashboardRightComponent implements OnInit {
 
   sendFinalDocumentToServer(finalDocument) {
     this.flagStartLines(finalDocument.data);
+    this.dialog.open(SpinningBotComponent, {
+      width: '500px',
+      height: '600px',
+      data: { title: this.script, dialogOption: 'payment', selected: this.selected },
+    });
     this.upload.generatePdf(finalDocument).subscribe(
       (serverRes: pdfServerRes) => {
         console.log(serverRes);
+
         debugger
         let { expirationTime, jwtToken, downloadTimeRemaining } = serverRes;
         // expirationTime *= 1000
@@ -287,8 +293,10 @@ export class DashboardRightComponent implements OnInit {
         const errorRef = this.dialog.open(IssueComponent, {
           width: '500px',
           height: '600px',
-          data: { error: 'Unexpected Server error - please try again alter' },
+          data: { error: 'Unexpected Server error - please try again later' },
         });
+
+        console.log(err);
         errorRef.afterClosed().subscribe((res) => {});
       }
     );

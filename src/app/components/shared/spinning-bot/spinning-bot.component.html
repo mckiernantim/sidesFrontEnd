@@ -16,16 +16,11 @@
 <ng-container *ngIf="dialogOption == 'payment'">
   <div class="dialog-content  h-full flex flex-col justify-center items-center text-center">
     <div class="bg-white h-[50vh] w-[35vw] shadow-lg rounded-lg flex flex-col justify-center items-center">
-      <h3 class="title text-base md:text-lg lg:text-xl font-bold mb-4">Processing PDF <em>{{ this.title }}</em></h3>
-      <div *ngFor="let scene of data.selected">
-        <p class="text-sm md:text-base lg:text-lg font-bold mb-2">
-          {{ scene.text }}
-        </p>
-      </div>
+      <h3 class="title text-base md:text-lg lg:text-xl font-bold mb-4">{{this.paymentMsg}}</h3>
       <div class="animation-container flex flex-col items-center mt-4">
         <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" class="w-1/2" />
         <div class="message mt-4">
-          <p class="text-sm md:text-base lg:text-lg">Routing to Payment</p>
+          <p class="text-sm md:text-base lg:text-lg"></p>
         </div>
       </div>
     </div>
