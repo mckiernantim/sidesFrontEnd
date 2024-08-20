@@ -264,6 +264,8 @@ export class DashboardRightComponent implements OnInit {
     this.flagStartLines(finalDocument.data);
     this.upload.generatePdf(finalDocument).subscribe(
       (serverRes: pdfServerRes) => {
+        console.log(serverRes);
+        debugger
         let { expirationTime, jwtToken, downloadTimeRemaining } = serverRes;
         // expirationTime *= 1000
         // this.token.initializeCountdown(Number(expirationTime));

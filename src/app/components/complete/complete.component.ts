@@ -109,7 +109,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
           const url = window.URL.createObjectURL(blob);
           const anchor = document.createElement('a');
           anchor.href = url;
-        anchor.download = `${name}-Sides-Ways.zip`;
+          anchor.download = `${name}-Sides-Ways.zip`;
           anchor.click();
 
           window.URL.revokeObjectURL(url);
@@ -126,6 +126,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
         (error) => {
           // Error path
           const errorMessage = error.error ? error.error : 'An unknown error occurred';
+          console.log(error)
           // alert(`Ooops - something went wrong: \n ${errorMessage}`);
         }
       );

@@ -4,8 +4,9 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
+    
     "bash": "heroku run bash -a sides3",
     "logs": "heroku logs --tail -a",
     "test": "jest",
