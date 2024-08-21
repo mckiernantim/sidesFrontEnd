@@ -124,11 +124,12 @@ postFile(fileToUpload: File): Observable<any> {
 }
 
 generatePdf(sceneArr) {
+  
   let params = new HttpParams().append('name', sceneArr.name);
   this.httpOptions.headers = new Headers();
   this.httpOptions.params = params;
   this.httpOptions.responseType = 'blob';
-  debugger
+  
   return this.httpClient.post(this.url + '/pdf', sceneArr, {
     params: params,
     withCredentials: true,

@@ -271,8 +271,7 @@ export class DashboardRightComponent implements OnInit {
       (serverRes: pdfServerRes) => {
         console.log(serverRes);
 
-        debugger
-        let { expirationTime, jwtToken, downloadTimeRemaining } = serverRes;
+            let { expirationTime, jwtToken, downloadTimeRemaining } = serverRes;
         // expirationTime *= 1000
         // this.token.initializeCountdown(Number(expirationTime));
         this.stripe
@@ -385,16 +384,20 @@ export class DashboardRightComponent implements OnInit {
     this.pdf.finalDocument.callSheet = addCallSheet
       ? localStorage.getItem('callSheetPath')
       : '';
+    this.pdf.finalDocument.callSheetPath = addCallSheet
+      ? localStorage.getItem('callSheetPath')
+      : '';
     this.finalDocReady = true;
     this.waitingForScript = true;
   }
 
   openConfirmPurchaseDialog() {
     if (this.modalData) {
+      const callsheetRef = this.callsheet ? this.callsheet : null;
       const dialogRef = this.dialog.open(IssueComponent, {
         width: '750px',
         height: '750px',
-        data: { scenes: this.modalData, selected: this.selected },
+        data: { scenes: this.modalData, selected: this.selected, callsheet:callsheetRef },
       });
 
       // closing of the issueComponent triggers our finalstep
@@ -402,6 +405,7 @@ export class DashboardRightComponent implements OnInit {
         console.log(result);
         if (result) {
           if (this.callsheet) {
+            
             this.prepFinalDocument(true);
             this.openFinalSpinner();
             this.sendFinalDocumentToServer(this.pdf.finalDocument);
