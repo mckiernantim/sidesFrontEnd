@@ -8,6 +8,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
 import { IssueComponent } from '../issue/issue.component';
+import { Analytics, logEvent } from '@angular/fire/analytics';
+
 
 
 @Component({
@@ -31,7 +33,8 @@ export class CompleteComponent implements OnInit, OnDestroy {
     public token: TokenService,
     public dialog:MatDialog,
     public router: Router,
-    public route:ActivatedRoute
+    public route:ActivatedRoute,
+    private analytics: Analytics // Inject analytics here
   ) {}
   ngOnInit() {
 
@@ -80,10 +83,14 @@ export class CompleteComponent implements OnInit, OnDestroy {
   // needed method to turn BLOB response into readable ERROR MESSAGE observable
   // could be exported and used as a util TBH
   private handleError(error: HttpErrorResponse): Observable<never> {
-    if (
-      error.error instanceof Blob &&
-      error.error.type === 'application/json'
-    ) {
+    // Log error event to Firebase Analytics
+    logEvent(this.analytics, 'http_error', {
+      error_type: error.name,
+      message: error.message,
+      status: error.status
+    });
+  
+    if (error.error instanceof Blob && error.error.type === 'application/json') {
       return new Observable((observer) => {
         const reader = new FileReader();
         reader.onload = (e: ProgressEvent<FileReader>) => {
@@ -101,7 +108,8 @@ export class CompleteComponent implements OnInit, OnDestroy {
     }
   }
   
-  downloadPDF(name: string, callsheet: string, pdfToken:string) {
+  
+  downloadPDF(name: string, callsheet: string, pdfToken: string) {
     this.upload
       .getPDF(name, callsheet, pdfToken)
       .pipe(
@@ -111,9 +119,15 @@ export class CompleteComponent implements OnInit, OnDestroy {
           anchor.href = url;
           anchor.download = `${name}-Sides-Ways.zip`;
           anchor.click();
-
+  
           window.URL.revokeObjectURL(url);
-
+  
+          // Log successful download event
+          logEvent(this.analytics, 'pdf_download', {
+            pdf_name: `${name}-Sides-Ways.zip`,
+            status: 'success'
+          });
+  
           return of(null); // Indicates success, no further action required
         }),
         catchError(this.handleError.bind(this))
@@ -124,13 +138,16 @@ export class CompleteComponent implements OnInit, OnDestroy {
           this.documentHasBeenDownloaded = true;
         },
         (error) => {
-          // Error path
-          const errorMessage = error.error ? error.error : 'An unknown error occurred';
-          console.log(error)
-          // alert(`Ooops - something went wrong: \n ${errorMessage}`);
+          // Error path: Log error event
+          logEvent(this.analytics, 'pdf_download_error', {
+            error_message: error.message || 'An unknown error occurred'
+          });
+  
+          console.error('Download failed:', error);
         }
       );
   }
+  
   handleDeleteClick() {
     const dialogRef = this.dialog.open(IssueComponent, {
       width: '500px'
