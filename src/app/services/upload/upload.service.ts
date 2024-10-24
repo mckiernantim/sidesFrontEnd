@@ -1,28 +1,39 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable , throwError, tap, catchError} from 'rxjs';
 import {  map } from 'rxjs/operators';
 import {
 HttpClient,
 HttpHeaders,
 HttpParams,
+HttpErrorResponse
 } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Line } from '../../types/Line';
 import { TokenService } from '../token/token.service';
 import  Cookies from "js-cookie";
 type ClassifyResponse = {
-allLines:string, 
-allChars:string, 
-individualPages:string, 
-title:string, 
-firstAndLastLinesOfScenes:string 
+  allLines:string, 
+  allChars:string, 
+  individualPages:string, 
+  title:string, 
+  firstAndLastLinesOfScenes:string 
+}
+
+interface DeleteResponse {
+  success: boolean;
+  message: string;
+  timestamp: number;
+  pdfToken: string;
+  stripeTransaction?: {
+    id: string;
+  } | null;
 }
 
 @Injectable({
   providedIn: 'root',
-})
-
+}) 
 export class UploadService {
+private readonly tokenKey = '';
 _devPdfPath: string = 'MARSHMALLOW_PINK';
 // values from script
 script: string;
@@ -167,16 +178,64 @@ skipUploadForTest() {
   });
 }
 
-deleteFinalDocument(tokenId: string) {
-  const sessionToken = Cookies.get("") 
+deleteFinalDocument(tokenId: string): Observable<DeleteResponse> {
+  debugger
+  // const sessionToken = Cookies.get(this.tokenKey);
+  
+  // if (!sessionToken) {
+  //   return throwError(() => new Error('No session token found'));
+  // }
+
   const httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${sessionToken}` 
+      'Authorization': `Bearer`
     })
   };
 
-  return this.httpClient.post(`${this.url}/delete`, { tokenId }, httpOptions);
+  return this.httpClient.post<DeleteResponse>(
+    `${this.url}/delete`, 
+    { pdfToken: tokenId }, // Changed to match backend expectation of 'pdfToken'
+    httpOptions
+  ).pipe(
+    tap(response => {
+      if (response.success) {
+        console.log('Document deleted successfully:', response.pdfToken);
+      }
+    }),
+    catchError(this.handleError)
+  );
+}
+
+private handleError(error: HttpErrorResponse) {
+  let errorMessage = 'An error occurred while processing your request.';
+
+  if (error.status === 0) {
+    errorMessage = 'Unable to connect to the server. Please check your internet connection.';
+  } else if (error.status === 401) {
+    errorMessage = 'Your session has expired. Please log in again.';
+  } else if (error.status === 403) {
+    errorMessage = 'You do not have permission to perform this action.';
+  } else if (error.error instanceof ErrorEvent) {
+    // Client-side error
+    errorMessage = error.error.message;
+  } else if (error.error?.message) {
+    // Server-side error with message
+    errorMessage = error.error.message;
+  }
+
+  console.error('Error:', {
+    status: error.status,
+    message: errorMessage,
+    error: error.error
+  });
+
+  return throwError(() => new Error(errorMessage));
+}
+
+// If you need to refresh or get a new token
+private getAuthToken(): string | null {
+  return Cookies.get(this.tokenKey);
 }
 }
 

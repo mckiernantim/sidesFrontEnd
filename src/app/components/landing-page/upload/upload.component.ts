@@ -1,35 +1,24 @@
-import { SpinningBotComponent } from '../../shared/spinning-bot/spinning-bot.component';
-import { Observable, Subscription, throwError, pipe, EMPTY } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { UploadService } from '../../../services/upload/upload.service';
-import { PdfService } from '../../../services/pdf/pdf.service'
 import { Router } from '@angular/router';
+import { Observable, Subscription, EMPTY } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { MatDialog } from '@angular/material/dialog';
+import { UploadService } from '../../../services/upload/upload.service';
+import { PdfService } from '../../../services/pdf/pdf.service';
+import { SpinningBotComponent } from '../../shared/spinning-bot/spinning-bot.component';
 import { fadeInOutAnimation } from '../../../animations/animations';
 import { environment } from '../../../../environments/environment';
-import {
-  MatDialog,
-  MAT_DIALOG_DATA,
-  MatDialogRef,
-} from '@angular/material/dialog';
-let dummyData
-let dummyPageData
-if (!environment.production) {
-  dummyPageData = require("./THE FINAL ROSE-individualPages-mock-data.json")
-  dummyData = require("./THE FINAL ROSE-allLines-mock-data.json")
-}
-
+import { Auth, User } from '@angular/fire/auth';
+import { AuthService } from '../../../services/auth/auth.service';
 
 @Component({
   selector: 'app-upload',
   templateUrl: './upload.component.html',
   styleUrls: ['./upload.component.css'],
-  animations:[fadeInOutAnimation]
+  animations: [fadeInOutAnimation]
 })
 export class UploadComponent implements OnInit, OnDestroy {
-  // simple beta password
   isButtonDisabled: boolean = true;
-
   logo: string = '../../assets/icons/logoFlat.png';
   fileToUpload: File;
   totalTickets: Subscription;
@@ -44,70 +33,51 @@ export class UploadComponent implements OnInit, OnDestroy {
     characters: number;
     scenes: number;
   };
-  // we should change this to a line array at some point
   allLines: any[];
   $script_data: Observable<any>;
+  user$: Observable<User | null>;
+
   constructor(
     public upload: UploadService,
     public router: Router,
     public dialog: MatDialog,
-    public pdf: PdfService
-  ) {
-    this.totalLines;
-  }
+    public pdf: PdfService,
+    private auth: Auth,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
-    this.underConstruction = !environment.production
-    // if(this.underConstruction) this.skipUploadForTest()
+    this.underConstruction = !environment.production;
     this.working = false;
-    this.resetLocalData()
+    this.resetLocalData();
+    this.user$ = this.authService.user$;
   }
-   
 
   ngOnDestroy(): void {
-  }
-
-  // create the page '2.' which is hidden in most scripts
-  findActualPage2(arr) {
-    let missingTwo =
-      arr.findIndex(
-        (ind) => ind.text.match('2.') && ind.category == 'page-number-hidden'
-      ) || '2.';
-    return missingTwo;
-  }
-  toggleWorking() {
-    this.working = !this.working
-  }
-  openDialog(title, dialogOption, error=null) {
-  
-    if (this.working) {
-      const dialogRef = this.dialog.open(SpinningBotComponent, {
-        height:'750px',
-        width:'750px',
-        data:{ title, dialogOption, error },
-        disableClose:false,
-      });
-      dialogRef.afterClosed().subscribe((result) => {
-        this.toggleWorking()
-      });
+    if (this.dataSubscription) {
+      this.dataSubscription.unsubscribe();
     }
+    // Unsubscribe from other subscriptions if they exist
+    if (this.totalTickets) this.totalTickets.unsubscribe();
+    if (this.totalLines) this.totalLines.unsubscribe();
+    if (this.totalScenes) this.totalScenes.unsubscribe();
+    if (this.totalCharacters) this.totalCharacters.unsubscribe();
   }
 
-  skipUploadForTest() {
-    this.upload.allLines = dummyData;
-    this.upload.individualPages = dummyPageData
-    this.upload.lineCount = [];
-    this.pdf.allLines = dummyData
-    this.pdf.individualPages = dummyPageData
+  signIn() {
+    this.authService.signIn();
+  }
 
-    this.pdf.initializeData()
-    this.upload.individualPages.forEach((page) => {
-      this.upload.lineCount.push(page.filter((item) => item.totalLines));
-      this.router.navigate(['/download']);
-    });
+  signOut() {
+    this.authService.signOut();
   }
 
   handleFileInput(files: FileList) {
+    if (!this.auth.currentUser) {
+      this.openDialog('Authentication Required', 'error', 'Please sign in to upload files.');
+      return;
+    }
+
     this.working = true;
     this.fileToUpload = files.item(0);
     this.openDialog(this.fileToUpload.name, "scan");
@@ -119,14 +89,12 @@ export class UploadComponent implements OnInit, OnDestroy {
         catchError((err) => {
           this.dialog.closeAll();
           this.openDialog('An error occurred', "error", err);
-          // Return EMPTY observable to complete the stream
           return EMPTY;
         })
       )
       .subscribe((data) => {
         const { allLines, title } = data;
-        // Grab the pages and insert 'page 2.' so we know where it is
-        this.allLines = this.processSeverResponseAndCheckForPage2(allLines)
+        this.allLines = this.processSeverResponseAndCheckForPage2(allLines);
         alert(
           'your IP is safe. ' + title + ' was just deleted from our servers.'
         );
@@ -134,7 +102,25 @@ export class UploadComponent implements OnInit, OnDestroy {
         this.pdf.initializeData();
         this.router.navigate(['download']);
       });
-  } 
+  }
+
+  openDialog(title, dialogOption, error = null) {
+    if (this.working) {
+      const dialogRef = this.dialog.open(SpinningBotComponent, {
+        height: '750px',
+        width: '750px',
+        data: { title, dialogOption, error },
+        disableClose: false,
+      });
+      dialogRef.afterClosed().subscribe((result) => {
+        this.toggleWorking();
+      });
+    }
+  }
+
+  toggleWorking() {
+    this.working = !this.working;
+  }
 
   resetLocalData() {
     if (localStorage.getItem('name')) localStorage.setItem('name', null);
@@ -143,11 +129,25 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   processSeverResponseAndCheckForPage2(allLines) {
-      if (this.findActualPage2(allLines).category) {
-        let indexOfTwo = this.findActualPage2(allLines);
-        allLines[indexOfTwo].category = 'page-number';
-      }
-      return allLines
+    if (this.findActualPage2(allLines).category) {
+      let indexOfTwo = this.findActualPage2(allLines);
+      allLines[indexOfTwo].category = 'page-number';
+    }
+    return allLines;
+  }
+
+  findActualPage2(arr) {
+    let missingTwo =
+      arr.findIndex(
+        (ind) => ind.text.match('2.') && ind.category == 'page-number-hidden'
+      ) || '2.';
+    return missingTwo;
+  }
+  skipUploadForTest() {
+    this.$script_data = this.upload.getTestJSON('test');
+    this.dialog.closeAll();
+    this.pdf.initializeData();
+    this.router.navigate(['download']);
   }
   
 }

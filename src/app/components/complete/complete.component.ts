@@ -10,8 +10,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { IssueComponent } from '../issue/issue.component';
 import { Analytics, logEvent } from '@angular/fire/analytics';
 
-
-
 @Component({
   selector: 'app-complete',
   templateUrl: './complete.component.html',
@@ -25,19 +23,20 @@ export class CompleteComponent implements OnInit, OnDestroy {
   countdownSubscription: Subscription;
   pdfToken: string = '';
   downloadToken: number = 0;
-  expires:number;
+  expires: number;
   downloadSessionValid: boolean = true;
   documentHasBeenDownloaded: boolean = false;
+
   constructor(
     public upload: UploadService,
     public token: TokenService,
-    public dialog:MatDialog,
+    public dialog: MatDialog,
     public router: Router,
-    public route:ActivatedRoute,
-    private analytics: Analytics // Inject analytics here
+    public route: ActivatedRoute,
+    private analytics: Analytics
   ) {}
-  ngOnInit() {
 
+  ngOnInit() {
     this.route.queryParams.subscribe(params => {
       this.pdfToken = params['pdfToken'];
       this.expires = +params['expires'];
@@ -45,12 +44,10 @@ export class CompleteComponent implements OnInit, OnDestroy {
       // Initialize the countdown with the expires time from the queryParams
       this.token.initializeCountdown(this.expires);
     });
-  
-    // No need to check for token validity or expiration here as the guard handles it
   }
   
   ngAfterViewInit(): void {
-    if (this.token.isTokenValid()) {  // Ensure the isTokenValid method is called as a function
+    if (this.token.isTokenValid()) {
       this.downloadPDF(this.name, this.callsheet, this.pdfToken);
     }
     this.countdownSubscription = this.token.countdown$.subscribe(
@@ -62,28 +59,19 @@ export class CompleteComponent implements OnInit, OnDestroy {
       }
     );
   }
+
   handleExpiredToken() {
     alert('Token has expired. Please initiate a new session.');
     this.router.navigate(['/']);
   }
+
   ngOnDestroy() {
-    // clean up to unsubscribe so we're not counting down to negative infinity
     if (this.countdownSubscription) {
       this.countdownSubscription.unsubscribe();
     }
   }
 
-
-  calculateDownloadTime() {
-    try {
-    } catch (e) {
-      // console.error('no cookie detected');
-    }
-  }
-  // needed method to turn BLOB response into readable ERROR MESSAGE observable
-  // could be exported and used as a util TBH
   private handleError(error: HttpErrorResponse): Observable<never> {
-    // Log error event to Firebase Analytics
     logEvent(this.analytics, 'http_error', {
       error_type: error.name,
       message: error.message,
@@ -94,7 +82,7 @@ export class CompleteComponent implements OnInit, OnDestroy {
       return new Observable((observer) => {
         const reader = new FileReader();
         reader.onload = (e: ProgressEvent<FileReader>) => {
-          observer.error(JSON.parse(e.target.result as string));
+          observer.error(JSON.parse(e.target?.result as string));
           observer.complete();
         };
         reader.onerror = (e) => {
@@ -103,17 +91,20 @@ export class CompleteComponent implements OnInit, OnDestroy {
         };
         reader.readAsText(error.error);
       });
-    } else {
-      return throwError(() => error);
     }
+    return throwError(() => error);
   }
-  
-  
+
   downloadPDF(name: string, callsheet: string, pdfToken: string) {
+    const startTime = Date.now();
+    
     this.upload
       .getPDF(name, callsheet, pdfToken)
       .pipe(
         switchMap((blob) => {
+          const endTime = Date.now();
+          const downloadDuration = endTime - startTime;
+
           const url = window.URL.createObjectURL(blob);
           const anchor = document.createElement('a');
           anchor.href = url;
@@ -122,27 +113,32 @@ export class CompleteComponent implements OnInit, OnDestroy {
   
           window.URL.revokeObjectURL(url);
   
-          // Log successful download event
           logEvent(this.analytics, 'pdf_download', {
             pdf_name: `${name}-Sides-Ways.zip`,
-            status: 'success'
+            status: 'success',
+            duration_ms: downloadDuration,
+            file_size_bytes: blob.size
           });
   
-          return of(null); // Indicates success, no further action required
+          return of(null);
         }),
-        catchError(this.handleError.bind(this))
+        catchError((error) => {
+          logEvent(this.analytics, 'pdf_download_error', {
+            error_message: error.message || 'An unknown error occurred',
+            pdf_name: `${name}-Sides-Ways.zip`,
+            error_type: error.name || 'Unknown',
+            status: error.status || 'N/A',
+            duration_ms: Date.now() - startTime
+          });
+  
+          return this.handleError(error);
+        })
       )
       .subscribe(
         () => {
-          // Success path
           this.documentHasBeenDownloaded = true;
         },
         (error) => {
-          // Error path: Log error event
-          logEvent(this.analytics, 'pdf_download_error', {
-            error_message: error.message || 'An unknown error occurred'
-          });
-  
           console.error('Download failed:', error);
         }
       );
@@ -150,16 +146,40 @@ export class CompleteComponent implements OnInit, OnDestroy {
   
   handleDeleteClick() {
     const dialogRef = this.dialog.open(IssueComponent, {
-      width: '500px'
-    })
+      width: '500px',
+        data: {isDelete: true}
+    });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.upload.deleteFinalDocument(this.pdfToken).subscribe(data => {
-          if (data) this.token.removeToken();
-          // this.router.navigate["/"]
-        })
+        this.upload.deleteFinalDocument(this.pdfToken).subscribe(
+          (data) => {
+            if (data) {
+              debugger
+              this.token.removeToken();
+              logEvent(this.analytics, 'document_deleted', {
+                pdf_token: this.pdfToken,
+                success: true
+              });
+              
+              // Clear local storage
+              localStorage.removeItem('name');
+              localStorage.removeItem('layout');
+              localStorage.removeItem('callsheet');
+              
+              this.router.navigate(['/']);
+            }
+          },
+          (error) => {
+            logEvent(this.analytics, 'document_deletion_error', {
+              pdf_token: this.pdfToken,
+              error_message: error.message || 'Unknown error'
+            });
+          }
+        );
+      } else {
+        logEvent(this.analytics, 'delete_dialog_cancelled');
       }
-    })
+    });
   }
 }

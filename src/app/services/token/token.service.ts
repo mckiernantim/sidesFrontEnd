@@ -1,46 +1,51 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, timer } from 'rxjs';
 import { map, startWith, switchMap, takeWhile } from 'rxjs/operators';
-import  Cookies  from 'js-cookie'
+import Cookies from 'js-cookie';
 
 @Injectable({
   providedIn: 'root',
 })
 export class TokenService {
   private readonly tokenKey = 'dltr_sidesWays';
-  private initialTimeSource = new BehaviorSubject<number>(100000);
+  private initialTimeSource = new BehaviorSubject<number>(0);
   public countdown$: Observable<number>;
-  
 
-  constructor() { }
-  
-
-  public initializeCountdown(initialTime: number): void {
-    this.initialTimeSource.next(initialTime);
-    this.countdown$ = this.initialTimeSource.asObservable().pipe(
-      switchMap(endTime => {
+  constructor() {
+    // Initialize countdown$ in constructor
+    this.countdown$ = this.initialTimeSource.pipe(
+      switchMap(initialTime => {
+        if (initialTime <= 0) return new BehaviorSubject(0);
+        
         return timer(0, 1000).pipe(
           map(() => {
-            const now = Date.now();
-            const timeLeft = endTime - now;
-            return Math.max(timeLeft, 0); 
+            const timeLeft = Math.max(initialTime - Date.now(), 0);
+            return timeLeft;
           }),
-          takeWhile(timeLeft => timeLeft > 0, true),
-          startWith(Math.max(initialTime - Date.now(), 0))
+          takeWhile(timeLeft => timeLeft > 0, true)
         );
       })
     );
-    // intial timeSource is a behaviorSubject  meaning it can be an observable
-      // but it can also be given a value via .next()
-    this.initialTimeSource.next(initialTime);
   }
-  public removeToken() {
-    Cookies.remove(this.tokenKey)
+
+  public initializeCountdown(initialTime: number): void {
+    if (initialTime > Date.now()) {
+      this.initialTimeSource.next(initialTime);
+    } else {
+      this.initialTimeSource.next(0);
+    }
   }
+
+  public removeToken(): void {
+    Cookies.remove(this.tokenKey);
+    this.initialTimeSource.next(0);
+  }
+
   public getCountdownObservable(): Observable<number> {
     return this.countdown$;
   }
+
   public isTokenValid(): boolean {
-    return !!Cookies.get(this.tokenKey)
+    return !!Cookies.get(this.tokenKey);
   }
 }

@@ -5,7 +5,10 @@
       <div class="p-4 border-b flex flex-col justify-between">
         <h2 class="text-xl md:text-2xl font-bold">Thanks for using Sides-Ways!</h2>
         <div class="mt-4">
-          <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" (click)="downloadPDF(name, callsheet, pdfToken)">Download {{ name }}</button>
+           <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" (click)="downloadPDF(name, callsheet, pdfToken)">Download {{ name }}</button>
+        </div>
+        <div class="mt-4">
+           <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" (click)="handleDeleteClick()">DELETE MY SIDES</button>
         </div>
         <h2 class="text-xl md:text-2xl font-bold mt-4">Please let us know if you had any issues.</h2>
       </div>

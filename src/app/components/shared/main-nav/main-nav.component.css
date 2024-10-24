@@ -39,8 +39,9 @@ mat-sidenav-content {
   font-weight: bold;
 }
 img {
-  width:50px;
-  border-radius:50px
+  height:3.5rem;
+  border-radius:50px;
+  width:auto
 }
 span {
   font-size:10px;
@@ -70,6 +71,37 @@ span {
   .sidenav-container {
     height: 95%;
     width: auto;
+}
+
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.nav-item {
+  margin: 0 8px;
+}
+
+.mat-toolbar {
+  display: flex;
+  align-items: center;
+}
+
+/* Add some hover effects for buttons */
+button.nav-item:hover {
+  opacity: 0.9;
+}
+
+/* Style for user profile section */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Ensure profile image is properly sized */
+.user-profile img {
+  object-fit: cover;
 }
 
 }

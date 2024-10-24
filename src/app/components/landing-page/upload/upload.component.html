@@ -11,13 +11,13 @@
 
         <div class="py-8 text-left">
           <h2 class="text-3xl font-semibold leading-normal text-dark-gray">
-            Secure, Set-Ready Sides in Seconds
+            Secure
           </h2>
           <h2 class="text-3xl font-semibold leading-normal text-dark-gray">
-            No subscriptions to worry about
+            Set-Ready 
           </h2>
           <h2 class="text-3xl font-semibold leading-normal text-dark-gray">
-            Nothing to sign up with
+            Sides in Seconds
           </h2>
         </div>
 
@@ -25,12 +25,17 @@
           <h2>We Make Sides</h2>
           <h2 class="italic">That's it.</h2>
         </div>
+
         <div class="flex flex-col lg:flex-row lg:space-x-4 justify-center">
-          <!-- Button -->
-          <button mat-raised-button color="warn" (click)="fileInput.click()"
-            class="text-white py-8 font-semibold px-8 rounded-md mb-4 lg:mb-0 custom-button">
-            Upload Script PDF
-          </button>
+          <!-- Authentication Section -->
+  
+            <!-- File Upload Button (Only visible when authenticated) -->
+            <button mat-raised-button color="warn" (click)="fileInput.click()"
+              class="text-white py-8 font-semibold px-8 rounded-md mb-4 lg:mb-0 custom-button">
+              Upload Script PDF
+            </button>
+  
+
           @if (this.underConstruction) {
           <button mat-raised-button class="bg-soft-red text-xl text-black py-3 px-8 rounded-md mb-4 lg:mb-0"
             (click)="skipUploadForTest()">skipUploadForTest</button>

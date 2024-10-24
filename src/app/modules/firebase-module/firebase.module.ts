@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideAnalytics, getAnalytics, setUserId } from '@angular/fire/analytics';
 import { provideFirestore, getFirestore } from '@angular/fire/firestore';
+import { provideAuth, getAuth } from '@angular/fire/auth';
 import { environment } from '../../../environments/environment';
 
 const { firebaseConfig } = environment;
@@ -15,11 +16,11 @@ const { firebaseConfig } = environment;
     provideFirebaseApp(() => initializeApp(firebaseConfig)),
     provideAnalytics(() => {
       const analytics = getAnalytics();
-      // Ensure no user ID is set
-      setUserId(analytics, null); 
+      // We're not setting a user ID initially
       return analytics;
     }),
     provideFirestore(() => getFirestore()),
+    provideAuth(() => getAuth()), // Add this line to enable authentication
   ],
   exports: [],
 })

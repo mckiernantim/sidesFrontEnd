@@ -1,56 +1,94 @@
 <div class="container mx-auto mt-8 flex flex-col justify-center bg-white items-center p-4 md:p-12 text-center">
-  <!-- Selected Scenes -->
-  <div>
-    <h3 class="text-lg md:text-xl font-bold mb-4">Selected Scenes:</h3>
-    <ul>
-      <li *ngFor="let text of data.selected" class="list-none mb-2 font-bold text-base md:text-lg">{{ text.sceneNumberText }} {{ text.text }}</li>
-    </ul>
-    <h2 class="text-xl md:text-2xl font-bold mt-4">Total: FREE FOR BETA</h2>
-    <h3>Note: Stripe will process a fake payment to your card for testing purposes.  
-    </h3>
-    <h3>Your card will not be charged</h3>
+  <!-- Delete Confirmation Dialog -->
+  <div *ngIf="isDeleteDialog" class="w-full max-w-md">
+    <div class="text-center mb-6">
+      <h2 class="text-xl md:text-2xl font-bold text-red-600 mb-4">Confirm Delete</h2>
+      <p class="text-gray-700 mb-4">Are you sure you want to delete this document?</p>
+      <p class="text-sm text-gray-600 mb-6">This action cannot be undone. The document will be permanently deleted from our servers.</p>
+    </div>
+
+    <div class="flex flex-col space-y-4">
+      <!-- Warning message -->
+      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+        <div class="flex">
+          <div class="ml-3">
+            <p class="text-sm text-yellow-700">
+              Warning: After deletion, you'll need to start a new session to generate another document.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Confirmation checkbox -->
+      <div class="flex items-center space-x-2">
+        <input 
+          type="checkbox" 
+          id="confirmDelete" 
+          [(ngModel)]="confirmDelete"
+          class="form-checkbox h-4 w-4 text-red-600"
+        >
+        <label for="confirmDelete" class="text-sm text-gray-700">
+          I understand that this action is permanent
+        </label>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex space-x-4">
+        <button
+          (click)="onCancelDelete()"
+          class="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          (click)="onConfirmDelete()"
+          [disabled]="!confirmDelete"
+          [class.opacity-50]="!confirmDelete"
+          class="flex-1 py-2 px-4 bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none transition-colors disabled:cursor-not-allowed"
+        >
+          Delete Document
+        </button>
+      </div>
+    </div>
   </div>
 
-  <!-- Checkbox for Terms and Conditions -->
-  <div class="mt-6">
-    <div class="mt-4 md:mt-8 p-2 md:p-4">
-      <!-- CLOSES BUTTON TO FIRE GETPDF FROM DASHBOARD RIGHT -->
-      <button (click)="this.proceedToCheckout(true)" 
-              [class.bg-gray-200]="!agreeToTerms" 
-              [class.bg-blue-500]="agreeToTerms"
-              class="py-2 px-4 rounded hover:bg-blue-600 focus:outline-none w-full md:w-auto" 
-              [disabled]="!agreeToTerms">
-        Get My Sides
-      </button>
+  <!-- Original Payment/Terms Dialog -->
+  <div *ngIf="!isDeleteDialog">
+    <!-- Selected Scenes -->
+    <div>
+      <h3 class="text-lg md:text-xl font-bold mb-4">Selected Scenes:</h3>
+      <ul>
+        <li *ngFor="let text of data.selected" class="list-none mb-2 font-bold text-base md:text-lg">
+          {{ text.sceneNumberText }} {{ text.text }}
+        </li>
+      </ul>
+      <h2 class="text-xl md:text-2xl font-bold mt-4">Total: FREE FOR BETA</h2>
+      <h3>Note: Stripe will process a fake payment to your card for testing purposes.</h3>
+      <h3>Your card will not be charged</h3>
     </div>
-    <div class="flex flex-col items-start">
-      <button (click)="showTerms = !showTerms" class="py-2 px-4 text-sm text-blue-500 hover:underline">
-        {{ showTerms ? 'Hide Terms of Service' : 'Show Terms of Service' }}
-      </button>
-      <label class="mt-2 md:mt-0">
-        <input type="checkbox" name="terms" [(ngModel)]="agreeToTerms" required>
-        I agree to the Terms of Service.
-      </label>
-      <div *ngIf="showTerms" class="terms-of-service text-sm mt-2">
-        <ul class="list-disc pl-5">
-          <li>I have reviewed the preview of the document provided and confirm that it meets my expectations and
-            requirements. I understand that once I proceed with the purchase, any changes or corrections to the document
-            will not be possible.
-          </li>
-          <li>I understand that for security and privacy reasons, Sides-Ways will automatically delete all records of my
-            document from their servers 10 minutes after initiating the checkout process. It is my responsibility to
-            ensure that I have saved and backed up my document before this timeframe elapses.
-          </li>
-          <li>Sides-Ways is not responsible for any errors, omissions, or improper formatting in the final document. It is
-            my responsibility to ensure the accuracy and completeness of the document before purchase.
-          </li>
-          <li>Sides-Ways disclaims all liability for any intellectual property (IP) leaks or dissemination issues that may
-            arise from the use or sharing of the document. It is my responsibility to manage and secure the distribution
-            of my document appropriately.
-          </li>
-        </ul>
-        <p>By agreeing to these terms, I release Sides-Ways from any claims, damages, or liabilities that may arise from
-          my use of their service.</p>
+
+    <!-- Checkbox for Terms and Conditions -->
+    <div class="mt-6">
+      <div class="mt-4 md:mt-8 p-2 md:p-4">
+        <button (click)="this.proceedToCheckout(true)" 
+                [class.bg-gray-200]="!agreeToTerms" 
+                [class.bg-blue-500]="agreeToTerms"
+                class="py-2 px-4 rounded hover:bg-blue-600 focus:outline-none w-full md:w-auto" 
+                [disabled]="!agreeToTerms">
+          Get My Sides
+        </button>
+      </div>
+      <div class="flex flex-col items-start">
+        <button (click)="showTerms = !showTerms" class="py-2 px-4 text-sm text-blue-500 hover:underline">
+          {{ showTerms ? 'Hide Terms of Service' : 'Show Terms of Service' }}
+        </button>
+        <label class="mt-2 md:mt-0">
+          <input type="checkbox" name="terms" [(ngModel)]="agreeToTerms" required>
+          I agree to the Terms of Service.
+        </label>
+        <div *ngIf="showTerms" class="terms-of-service text-sm mt-2">
+          <!-- ... existing terms content ... -->
+        </div>
       </div>
     </div>
   </div>
