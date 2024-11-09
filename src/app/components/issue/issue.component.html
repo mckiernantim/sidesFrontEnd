@@ -53,7 +53,7 @@
   </div>
 
   <!-- Original Payment/Terms Dialog -->
-  <div *ngIf="!isDeleteDialog">
+  <div *ngIf="!data.loginRequired && data.isAuthenticated">
     <!-- Selected Scenes -->
     <div>
       <h3 class="text-lg md:text-xl font-bold mb-4">Selected Scenes:</h3>
@@ -63,12 +63,12 @@
         </li>
       </ul>
       <h2 class="text-xl md:text-2xl font-bold mt-4">Total: FREE FOR BETA</h2>
-      <h3>Note: Stripe will process a fake payment to your card for testing purposes.</h3>
-      <h3>Your card will not be charged</h3>
+      <h3>user: {{userDisplayEmail}}</h3>
     </div>
 
     <!-- Checkbox for Terms and Conditions -->
     <div class="mt-6">
+    
       <div class="mt-4 md:mt-8 p-2 md:p-4">
         <button (click)="this.proceedToCheckout(true)" 
                 [class.bg-gray-200]="!agreeToTerms" 
@@ -90,6 +90,33 @@
           <!-- ... existing terms content ... -->
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="dialog-container">
+    <!-- Login Required View -->
+    <div *ngIf="data.loginRequired" class="login-container">
+      <h2>Sign In Required</h2>
+      <p>{{ data.message }}</p>
+      <button mat-raised-button color="primary" (click)="login()">
+        <img src="assets/google-icon.png" alt="Google" class="google-icon">
+        Sign in with Google
+      </button>
+    </div>
+
+    <div *ngIf="data.loginRequired" class="login-container">
+      <h2>Sign In Required</h2>
+      <p>{{ data.message }}</p>
+      <button mat-raised-button color="primary" (click)="login()">
+        <img src="assets/google-icon.png" alt="Google" class="google-icon">
+        Sign in with Google
+      </button>
+    </div>
+    <!-- Error View -->
+    <div *ngIf="error" class="error-container">
+      <h2>Error</h2>
+      <p>{{ errorDetails }}</p>
+      <button mat-raised-button color="warn" (click)="dialogRef.close()">Close</button>
     </div>
   </div>
 </div>

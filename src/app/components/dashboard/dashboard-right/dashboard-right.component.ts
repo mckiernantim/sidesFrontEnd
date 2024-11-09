@@ -9,7 +9,7 @@ import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { StripeService } from '../../../services/stripe/stripe.service';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { UndoService } from '../../../services/edit/undo.service';
 import { Line } from 'src/app/types/Line';
 import { PdfService } from '../../../services/pdf/pdf.service';
@@ -17,12 +17,18 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { fadeInOutAnimation } from '../../../animations/animations';
 import { SpinningBotComponent } from '../../shared/spinning-bot/spinning-bot.component';
 import { TokenService } from 'src/app/services/token/token.service';
+import { AuthService } from 'src/app/services/auth/auth.service';
+import { privateDecrypt } from 'crypto';
+import { logEvent, getAnalytics, Analytics } from '@angular/fire/analytics';
 
 export type pdfServerRes = {
-  expirationTime: number;
-  jwtToken: string;
-  downloadTimeRemaining: number;
+  downloadUrl:string,
+  pdfToken:string
+  expires:number
 };
+
+  
+
 export type stripeRes = {
   url: string;
   id: string;
@@ -50,7 +56,6 @@ export class DashboardRightComponent implements OnInit {
   linesReady: boolean;
   waterMarkState: boolean;
   callsheetState: boolean;
-
   // LAST LOOKS STATE
   editLastLooksState: boolean = false;
   toolTipContent: toolTipOption[] = [
@@ -128,10 +133,12 @@ export class DashboardRightComponent implements OnInit {
     public lineOut: LineOutService,
     public pdf: PdfService,
     public token: TokenService,
-    private breaks: BreakpointObserver
+    private breaks: BreakpointObserver,
+    private auth: AuthService,
+    private analytics: Analytics
   ) {
     // DATA ITEMS FOR FUN
-
+    this.analytics = getAnalytics();
     this.totalLines;
     this.scriptLength;
   }
@@ -260,47 +267,87 @@ export class DashboardRightComponent implements OnInit {
 
   //  pass the scene to be made and the breaks ponts for the scene to be changed to visible true
 
-  sendFinalDocumentToServer(finalDocument) {
+  async sendFinalDocumentToServer(finalDocument) {
     this.flagStartLines(finalDocument.data);
-    this.dialog.open(SpinningBotComponent, {
+
+    // Open loading spinner
+    const loadingDialog = this.dialog.open(SpinningBotComponent, {
       width: '500px',
       height: '600px',
-      data: { title: this.script, dialogOption: 'payment', selected: this.selected },
-    });
-    this.upload.generatePdf(finalDocument).subscribe(
-      (serverRes: pdfServerRes) => {
-        console.log(serverRes);
-
-            let { expirationTime, jwtToken, downloadTimeRemaining } = serverRes;
-        // expirationTime *= 1000
-        // this.token.initializeCountdown(Number(expirationTime));
-        this.stripe
-          .startCheckout(expirationTime, jwtToken, downloadTimeRemaining)
-          .subscribe(
-            (res: stripeRes) => {
-              // Handle successful response, if needed
-              localStorage.setItem('stripeSession', res.id);
-              window.location.href = res.url;
-            },
-            (error) => {
-              console.error('Stripe checkout error:', error);
-            }
-          );
+      data: {
+        title: this.script,
+        dialogOption: 'loading',
+        selected: this.selected,
       },
-      (err) => {
-        this.dialog.closeAll();
-        const errorRef = this.dialog.open(IssueComponent, {
+    });
+
+    // Check if user is logged in
+    try {
+      // Get current user state
+      const user = await firstValueFrom(this.auth.user$);
+
+      if (!user) {
+        // Close loading spinner
+        loadingDialog.close();
+
+        // Show login dialog
+        const loginDialog = this.dialog.open(IssueComponent, {
           width: '500px',
           height: '600px',
-          data: { error: 'Unexpected Server error - please try again later' },
+          data: {
+            error: 'Please sign in to continue',
+            showLoginButton: true,
+          },
         });
 
-        console.log(err);
-        errorRef.afterClosed().subscribe((res) => {});
+        // Handle login dialog close
+        loginDialog.afterClosed().subscribe(async (result) => {
+          if (result === 'login') {
+            try {
+              await this.auth.signIn();
+              // After successful login, retry sending document
+              this.sendFinalDocumentToServer(finalDocument);
+            } catch (error) {
+              console.error('Login failed:', error);
+              this.handleError('Login failed. Please try again.');
+            }
+          }
+        });
+        return;
       }
-    );
+
+
+      // User is logged in, proceed with document generation
+      this.upload.generatePdf(finalDocument).subscribe(
+        (response: pdfServerRes) => {
+          loadingDialog.close();
+          
+          const pdfToken = response.pdfToken;
+          const expiresAt = response.expires;
+          // Simple navigation with required params
+          this.router.navigate(['complete'], {
+            queryParams: { pdfToken:pdfToken, expires: Number(expiresAt) }
+          });
+        },
+        (error) => {
+          loadingDialog.close();
+          this.handleError('Failed to generate PDF. Please try again.');
+        }
+      );
+    } catch (error) {
+      loadingDialog.close();
+      this.handleError('An unexpected error occurred. Please try again.');
+    }
   }
 
+  // Helper method for error handling
+  private handleError(message: string) {
+    this.dialog.open(IssueComponent, {
+      width: '500px',
+      height: '600px',
+      data: { error: message },
+    });
+  }
   logUpload() {}
 
   logSelected(): void {
@@ -328,7 +375,6 @@ export class DashboardRightComponent implements OnInit {
     // this.breaks.observe([Breakpoints.Handset]).subscribe((result) => {
     //   const isHandset = result.matches;
 
-  
     //   const dialogRef = this.dialog.open(SpinningBotComponent, {
     //     width: isHandset ? '100vw' : '75vw',
     //     height: isHandset ? '100vh' : '75vw',
@@ -355,8 +401,13 @@ export class DashboardRightComponent implements OnInit {
   };
 
   toggleLastLooks() {
+    console.log('Before toggle:', {
+      lastLooksReady: this.lastLooksReady,
+      pdfFinalDocReady: this.pdf.finalDocReady,
+    });
+
     this.lastLooksReady = !this.lastLooksReady;
-    // deprecated
+
     if (this.lastLooksReady) {
       this.finalPdfData = {
         selected: this.selected,
@@ -367,8 +418,7 @@ export class DashboardRightComponent implements OnInit {
       };
       this.callsheet = localStorage.getItem('callSheetPath');
       this.waitingForScript = true;
-      // this.openFinalSpinner();
-      // WE SHOULD CHANGE THIS TO PARSEINT AND - OR DO WE EVEN NEED TO SORT THEM?
+
       this.selected.sort((a, b) => a.index - b.index);
 
       this.pdf.processPdf(
@@ -377,6 +427,14 @@ export class DashboardRightComponent implements OnInit {
         this.individualPages,
         this.callsheet
       );
+
+      // Ensure both flags are set
+      this.pdf.finalDocReady = true;
+
+      console.log('After toggle:', {
+        lastLooksReady: this.lastLooksReady,
+        pdfFinalDocReady: this.pdf.finalDocReady,
+      });
     }
   }
 
@@ -391,21 +449,29 @@ export class DashboardRightComponent implements OnInit {
     this.waitingForScript = true;
   }
 
-  openConfirmPurchaseDialog() {
+  async openConfirmPurchaseDialog() {
     if (this.modalData) {
       const callsheetRef = this.callsheet ? this.callsheet : null;
+  
+      // First check auth state using the Observable
+      const user = await firstValueFrom(this.auth.user$);
+      
       const dialogRef = this.dialog.open(IssueComponent, {
         width: '750px',
         height: '750px',
-        data: { scenes: this.modalData, selected: this.selected, callsheet:callsheetRef },
+        data: {
+          scenes: this.modalData,
+          selected: this.selected,
+          callsheet: callsheetRef,
+          loginRequired: !user,
+          isAuthenticated: !!user,
+          user: user
+        },
       });
-
-      // closing of the issueComponent triggers our finalstep
+  
       dialogRef.afterClosed().subscribe((result) => {
-        console.log(result);
         if (result) {
           if (this.callsheet) {
-            
             this.prepFinalDocument(true);
             this.openFinalSpinner();
             this.sendFinalDocumentToServer(this.pdf.finalDocument);
@@ -418,7 +484,6 @@ export class DashboardRightComponent implements OnInit {
       });
     }
   }
-
   triggerLastLooksAction(str) {
     if (str === 'resetDoc') {
       this.resetFinalDocState = !this.resetFinalDocState;

@@ -16,6 +16,11 @@ import { UndoService } from 'src/app/services/edit/undo.service';
 import { Observable, Subscription } from 'rxjs';
 import { DragDropService } from 'src/app/services/drag-drop/drag-drop.service';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
+
+interface CallsheetPage {
+  type: 'callsheet';
+  imagePath: string;
+}
 interface QueueItem {
   pageIndex: number;
   line: Line;
@@ -38,7 +43,10 @@ export class LastLooksComponent implements OnInit {
     private router: Router,
     private cdRef: ChangeDetectorRef,
     public pdf: PdfService
-  ) {}
+  ) {
+
+    console.log('LastLooks Component Constructed');
+  }
   // doc is given to our component
   doc: any;
   @Input() editState: boolean;
@@ -46,17 +54,20 @@ export class LastLooksComponent implements OnInit {
   @Input() selectedLineState: string;
   @Input() undoState: string;
   @Input() triggerLastLooksAction: Function;
+  @Input() callsheetPath: string | null = null;
   @Output() selectedEditFunctionChange: EventEmitter<string> =
     new EventEmitter<string>();
   @Output() pageUpdate = new EventEmitter<Line[]>();
   pages: any[];
+  hasCallsheet: boolean = false;
   initialDocState: any[];
   currentPageIndex: number = 0;
-  currentPage: number = 0;
+  currentPage: any = 0;
   startingLinesOfDoc = [];
   canEditDocument: boolean = false;
   docChangesQueue: QueueItem[];
   selectedEditFunction: string = 'toggleSelected';
+
   selectedLine: Line | null = null;
   undoQueue: Subscription;
   sceneBreaks: any[];
@@ -71,38 +82,49 @@ export class LastLooksComponent implements OnInit {
     'more',
     'shot',
   ];
-
   ngOnInit(): void {
+    console.log('LastLooks Component Initializing');
+    if (this.pdf.finalDocument?.data) {
+        this.doc = this.pdf.finalDocument.data;
+        this.pages = this.doc;
+        this.currentPage = this.pages[this.currentPageIndex] || [];
+        console.log('Last Looks initialized with:', {
+            pagesLength: this.pages?.length,
+            currentPage: this.currentPage,
+            currentPageIndex: this.currentPageIndex
+        });
+    } else {
+        console.error('No document data available');
+    }
+
     this.sceneBreaks = [];
-    this.doc = this.pdf.finalDocument.data;
-
-    this.pages = this.doc;
+    if (this.callsheetPath) {
+        this.insertCallsheetPage(this.callsheetPath);
+    }
     
-    this.initialDocState = this.doc.map((page) => [...page] as Line[]);
+    this.initialDocState = this.doc?.map((page) => [...page]);
     this.establishInitialLineState();
-    // set up undo observable to respond to changes and refresh
-    this.undoQueue = this.undoService.undoStack$.subscribe((change) => {
-      const { pageIndex, line } = change;
-      const indexToUpdate = this.doc[pageIndex].findIndex(
-        (l) => l.index === line.index
-      );
-
-      if (indexToUpdate !== -1) {
-        // Replace the entire object in the array
-        this.doc[pageIndex][indexToUpdate] = line;
-        // Trigger change detection
-        this.cdRef.markForCheck();
-      }
-    });
-  }
-
+}
   ngOnChanges(changes: SimpleChanges) {
     if (this.doc && changes.resetDocState) this.resetDocumentToInitialState();
     if (this.doc && changes.undoState) this.undoService.pop();
     if (!this.canEditDocument) {
       this.selectedLine = null;
     }
+    
+    // Handle callsheet path changes
+    if (changes.callsheetPath && !changes.callsheetPath.firstChange) {
+      const newPath = changes.callsheetPath.currentValue;
+      if (newPath && newPath !== changes.callsheetPath.previousValue) {
+        this.insertCallsheetPage(newPath);
+      }
+    }
   }
+
+  isCallsheetPage(page: any): boolean {
+    return page && page.type === 'callsheet';
+  }
+
   establishInitialLineState() {
     
     this.processLinesForLastLooks(this.doc);
@@ -121,12 +143,32 @@ export class LastLooksComponent implements OnInit {
     });
     return lastLinesOfScenes;
   }
-  // updates the entire page 
-  handlePageUpdate(updatedPage: any) {
-    console.log("UPDATING PAGE! ", updatedPage)
-    this.pages[this.currentPage] = updatedPage;
-    this.pageUpdate.emit(this.pages[this.currentPage]);
+  private insertCallsheetPage(imagePath: string) {
+    const callsheetPage: CallsheetPage = {
+      type: 'callsheet',
+      imagePath: imagePath
+    };
+    
+    // Remove existing callsheet if any
+    this.pages = this.pages.filter(page => !(page as any).type || (page as any).type !== 'callsheet');
+    
+    // Add new callsheet at start
+    this.pages.unshift(callsheetPage);
+    this.hasCallsheet = true;
+    
+    if (this.currentPageIndex === 0) {
+      this.currentPage = callsheetPage;
+    }
+    
+    this.cdRef.markForCheck();
   }
+  // updates the entire page 
+   handlePageUpdate(updatedPage: any) {
+      if (!this.isCallsheetPage(this.pages[this.currentPageIndex])) {
+        this.pages[this.currentPageIndex] = updatedPage;
+        this.pageUpdate.emit(updatedPage);
+      }
+    }
   handleWaterMarkUpdate(newWatermark:string) {
   }
     
@@ -443,4 +485,8 @@ export class LastLooksComponent implements OnInit {
       }
     }
   }
+  
+
+
+  
 }

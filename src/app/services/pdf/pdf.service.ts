@@ -460,7 +460,8 @@ export class PdfService {
     this.finalDocument.data = sanitizedPages;
 
     this.finalDocReady = true;
-    return;
+  
+    return true
   }
 
   collectPageNumbers(sceneArr) {

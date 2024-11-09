@@ -16,6 +16,7 @@ import {
   MAT_DIALOG_DATA,
 } from '@angular/material/dialog';
 import { SpinningBotComponent } from '../shared/spinning-bot/spinning-bot.component';
+import { AuthService } from 'src/app/services/auth/auth.service';
 
 @Component({
   selector: 'app-issue',
@@ -44,7 +45,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
   errorDetails: string = "";
   agreeToTerms: boolean = false;
   showTerms: boolean = false;
-
+  userDisplayEmail:string;
   // New properties for delete confirmation
   isDeleteDialog: boolean = false;
   confirmDelete: boolean = false;
@@ -54,11 +55,29 @@ export class IssueComponent implements OnInit, AfterViewInit {
     public dialogRef: MatDialogRef<IssueComponent>,
     public errorDialogRef: MatDialogRef<IssueComponent>,
     public cdr: ChangeDetectorRef,
+    private auth:AuthService,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {}
 
   ngOnInit(): void {
     // Check if this is a delete confirmation dialog
+    this.auth.user$.subscribe(user => {
+      if (user) {
+        console.log('User logged in:', user);
+        this.userDisplayEmail = user.email;
+        this.loggedIn = true;
+        if (this.data.loginRequired) {
+          this.data.loginRequired = false;
+          this.data.isAuthenticated = true;
+          this.data.user = user;
+        }
+      } else {
+        console.log('No user logged in');
+        this.loggedIn = false;
+      }
+      this.cdr.detectChanges();
+    });
+
     this.isDeleteDialog = this.data?.isDelete || false;
 
     if (this.isDeleteDialog) {
@@ -96,7 +115,17 @@ export class IssueComponent implements OnInit, AfterViewInit {
       callsheet: this.file,
     });
   }
-
+  async login() {
+    try {
+      await this.auth.signIn();
+      this.dialogRef.close('login');
+    } catch (error) {
+      console.error('Login failed:', error);
+      // Handle login error
+      this.errorDetails = 'Login failed. Please try again.';
+      this.error = true;
+    }
+  }
   handleFileInput(file) {
     // Existing file input logic
     file === 'no callsheet'

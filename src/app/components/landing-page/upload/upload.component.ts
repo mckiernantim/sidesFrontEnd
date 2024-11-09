@@ -73,10 +73,10 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   handleFileInput(files: FileList) {
-    if (!this.auth.currentUser) {
-      this.openDialog('Authentication Required', 'error', 'Please sign in to upload files.');
-      return;
-    }
+    // if (!this.auth.currentUser) {
+    //   this.openDialog('Authentication Required', 'error', 'Please sign in to upload files.');
+    //   return;
+    // }
 
     this.working = true;
     this.fileToUpload = files.item(0);
