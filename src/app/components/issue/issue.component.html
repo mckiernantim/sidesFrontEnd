@@ -63,12 +63,12 @@
         </li>
       </ul>
       <h2 class="text-xl md:text-2xl font-bold mt-4">Total: FREE FOR BETA</h2>
-      <h3>user: {{userDisplayEmail}}</h3>
+      <h3>Note: Stripe will process a fake payment to your card for testing purposes.</h3>
+      <h3>Your card will not be charged</h3>
     </div>
 
     <!-- Checkbox for Terms and Conditions -->
     <div class="mt-6">
-    
       <div class="mt-4 md:mt-8 p-2 md:p-4">
         <button (click)="this.proceedToCheckout(true)" 
                 [class.bg-gray-200]="!agreeToTerms" 
@@ -112,6 +112,8 @@
         Sign in with Google
       </button>
     </div>
+
+
     <!-- Error View -->
     <div *ngIf="error" class="error-container">
       <h2>Error</h2>

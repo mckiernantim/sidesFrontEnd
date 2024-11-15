@@ -46,6 +46,7 @@ interface toolTipOption {
 })
 export class DashboardRightComponent implements OnInit {
   // STATE BOOLEANS
+  userData: any;
   dataReady: boolean = false;
   active: boolean = true;
   waitingForScript: boolean = true;
@@ -134,7 +135,7 @@ export class DashboardRightComponent implements OnInit {
     public pdf: PdfService,
     public token: TokenService,
     private breaks: BreakpointObserver,
-    private auth: AuthService,
+    public auth: AuthService,
     private analytics: Analytics
   ) {
     // DATA ITEMS FOR FUN
@@ -147,11 +148,27 @@ export class DashboardRightComponent implements OnInit {
     this.intizilazeState();
     this.initializeSceneSelectionTable();
     this.openFinalSpinner();
+    this.auth.user$.subscribe(data => {
+      console.log('Auth state changed:', data);
+        this.userData = data
+        this.cdr.detectChanges()
+    });
   }
+        
   ngAfterViewInit(): void {
     this.scriptLength = this.individualPages.length - 1 || 0;
     this.dataReady = true;
     this.cdr.detectChanges();
+  }
+
+  async handleSignOut () {
+    try {
+      await this.auth.signOut();
+      console.log('Sign out completed, userData:', this.userData);
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   }
   intizilazeState() {
     this.finalDocument = {
@@ -185,7 +202,18 @@ export class DashboardRightComponent implements OnInit {
     this.dataSource.sort = this.sort;
     this.length = this.pdf.allLines.length;
   }
-
+  async handleAuthAction() {
+    try {
+      if (!this.userData) {
+        await this.auth.signIn();
+      } else {
+        await this.openConfirmPurchaseDialog();
+      }
+    } catch (error) {
+      console.error('Authentication error:', error);
+      this.handleError('Authentication failed. Please try again.');
+    }
+  }
   // lets get lookback tighter  - should be able to refrence lastCharacterIndex
   lookBack(line) {
     let newText = '';
