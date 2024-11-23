@@ -1,7 +1,7 @@
 import { LineOutService } from '../../../services/line-out/line-out.service';
 import { Observable } from 'rxjs';
 import { IssueComponent } from '../../issue/issue.component';
-import { Router } from '@angular/router';
+import { Router,  NavigationEnd } from '@angular/router';
 import { UploadService } from '../../../services/upload/upload.service';
 import { Component, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { MatPaginator } from '@angular/material/paginator';
@@ -9,7 +9,7 @@ import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { StripeService } from '../../../services/stripe/stripe.service';
-import { Subscription, firstValueFrom } from 'rxjs';
+import { Subscription, firstValueFrom, filter } from 'rxjs';
 import { UndoService } from '../../../services/edit/undo.service';
 import { Line } from 'src/app/types/Line';
 import { PdfService } from '../../../services/pdf/pdf.service';
@@ -20,19 +20,10 @@ import { TokenService } from 'src/app/services/token/token.service';
 import { AuthService } from 'src/app/services/auth/auth.service';
 import { privateDecrypt } from 'crypto';
 import { logEvent, getAnalytics, Analytics } from '@angular/fire/analytics';
+import { User, PdfResponse, SubscriptionResponse, isPdfResponse, PdfGenerationResponse, DeleteResponse, isErrorResponse, isSubscriptionResponse } from 'src/app/types/user';
 
-export type pdfServerRes = {
-  downloadUrl:string,
-  pdfToken:string
-  expires:number
-};
 
-  
 
-export type stripeRes = {
-  url: string;
-  id: string;
-};
 interface toolTipOption {
   title: string;
   text: string;
@@ -153,6 +144,14 @@ export class DashboardRightComponent implements OnInit {
         this.userData = data
         this.cdr.detectChanges()
     });
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: NavigationEnd) => {
+      // Check if we're returning from Stripe (check URL pattern)
+      if (event.url.includes('stripe-return')) {
+        this.handleStripeReturn();
+      }
+    });
   }
         
   ngAfterViewInit(): void {
@@ -170,6 +169,7 @@ export class DashboardRightComponent implements OnInit {
       console.error('Sign out error:', error);
     }
   }
+ 
   intizilazeState() {
     this.finalDocument = {
       doc: {},
@@ -293,90 +293,124 @@ export class DashboardRightComponent implements OnInit {
     });
   }
 
-  //  pass the scene to be made and the breaks ponts for the scene to be changed to visible true
+  
 
+
+  private handleLoginRequired(finalDocument: any): Promise<void> {
+    return new Promise((resolve) => {
+      const loginDialog = this.dialog.open(IssueComponent, {
+        width: '500px',
+        height: '600px',
+        data: {
+          error: 'Please sign in to continue',
+          showLoginButton: true,
+        },
+      });
+
+      loginDialog.afterClosed().subscribe(async (result) => {
+        if (result === 'login') {
+          try {
+            await this.auth.signIn();
+    
+            this.sendFinalDocumentToServer(finalDocument);
+          } catch (error) {
+            console.error('Login failed:', error);
+            this.handleError('Login failed. Please try again.');
+          }
+        }
+        resolve();
+      });
+    });
+  }
   async sendFinalDocumentToServer(finalDocument) {
-    this.flagStartLines(finalDocument.data);
-
-    // Open loading spinner
     const loadingDialog = this.dialog.open(SpinningBotComponent, {
       width: '500px',
       height: '600px',
-      data: {
-        title: this.script,
-        dialogOption: 'loading',
-        selected: this.selected,
-      },
+      data: { title: this.script, dialogOption: 'payment' }
     });
-
-    // Check if user is logged in
+  
     try {
-      // Get current user state
+      // Check auth first
       const user = await firstValueFrom(this.auth.user$);
-
+ 
       if (!user) {
-        // Close loading spinner
         loadingDialog.close();
-
-        // Show login dialog
-        const loginDialog = this.dialog.open(IssueComponent, {
-          width: '500px',
-          height: '600px',
-          data: {
-            error: 'Please sign in to continue',
-            showLoginButton: true,
-          },
-        });
-
-        // Handle login dialog close
-        loginDialog.afterClosed().subscribe(async (result) => {
-          if (result === 'login') {
-            try {
-              await this.auth.signIn();
-              // After successful login, retry sending document
-              this.sendFinalDocumentToServer(finalDocument);
-            } catch (error) {
-              console.error('Login failed:', error);
-              this.handleError('Login failed. Please try again.');
-            }
-          }
-        });
+        await this.handleLoginRequired(finalDocument);
         return;
       }
-
-
-      // User is logged in, proceed with document generation
-      this.upload.generatePdf(finalDocument).subscribe(
-        (response: pdfServerRes) => {
-          loadingDialog.close();
-          
-          const pdfToken = response.pdfToken;
-          const expiresAt = response.expires;
-          // Simple navigation with required params
-          this.router.navigate(['complete'], {
-            queryParams: { pdfToken:pdfToken, expires: Number(expiresAt) }
-          });
-        },
-        (error) => {
-          loadingDialog.close();
-          this.handleError('Failed to generate PDF. Please try again.');
-        }
-      );
+ 
+      
+      const response = await firstValueFrom(this.upload.generatePdf({
+        ...finalDocument,
+        email: user.email
+      }));
+      debugger
+      loadingDialog.close();
+ 
+      if (isPdfResponse(response)) {
+        // Successful PDF generation
+        this.router.navigate(['complete'], {
+          queryParams: { 
+            pdfToken: response.pdfToken,
+          }
+        });
+      } else if (isSubscriptionResponse(response)) {
+        console.log('Subscription flow in progress...');
+      } else if (isErrorResponse(response)) {
+        throw new Error(response.error);
+      }
+  
     } catch (error) {
       loadingDialog.close();
-      this.handleError('An unexpected error occurred. Please try again.');
+      this.handleError(error instanceof Error ? 
+        error.message : 'Failed to process document. Please try again.');
+    }
+ }
+
+  private handleStripeReturn() {
+
+    const pendingDocument = sessionStorage.getItem('pendingDocument');
+    
+    if (pendingDocument) {
+      sessionStorage.removeItem('pendingDocument');
+      this.sendFinalDocumentToServer(JSON.parse(pendingDocument));
     }
   }
 
-  // Helper method for error handling
   private handleError(message: string) {
     this.dialog.open(IssueComponent, {
       width: '500px',
       height: '600px',
-      data: { error: message },
+      data: { error: message }
     });
   }
-  logUpload() {}
+
+
+private handleSubscriptionRequired(finalDocument: any, response: SubscriptionResponse) {
+  // Save current document state
+  sessionStorage.setItem('pendingDocument', JSON.stringify(finalDocument));
+  sessionStorage.setItem('returnPath', this.router.url);
+  
+  // Show subscription dialog
+  const subDialog = this.dialog.open(IssueComponent, {
+    width: '500px',
+    height: '600px',
+    data: {
+      error: 'Subscription Required',
+      message: 'A subscription is required to generate PDFs. Would you like to subscribe now?',
+      showSubscribeButton: true,
+    },
+  });
+
+  subDialog.afterClosed().subscribe((result) => {
+    if (result === 'subscribe') {
+      // Redirect to Stripe
+      window.location.href = response.checkoutUrl;
+    }
+  });
+}
+
+
 
   logSelected(): void {
     // let x = this.scenes.filter(scene => {

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Observable, throwError, tap, catchError } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, throwError, tap, catchError, of, from, switchMap } from 'rxjs';
+import { map, } from 'rxjs/operators';
 import {
   HttpClient,
   HttpHeaders,
@@ -10,24 +10,12 @@ import {
 import { environment } from '../../../environments/environment';
 import { Line } from '../../types/Line';
 import { TokenService } from '../token/token.service';
+import { AuthService } from '../auth/auth.service';
+import { getAuth, Auth } from 'firebase/auth';
 import Cookies from "js-cookie";
-type ClassifyResponse = {
-  allLines: string,
-  allChars: string,
-  individualPages: string,
-  title: string,
-  firstAndLastLinesOfScenes: string
-}
+import { User, PdfResponse, SubscriptionResponse, isPdfResponse, PdfGenerationResponse, DeleteResponse } from 'src/app/types/user';
 
-interface DeleteResponse {
-  success: boolean;
-  message: string;
-  timestamp: number;
-  pdfToken: string;
-  stripeTransaction?: {
-    id: string;
-  } | null;
-}
+
 
 @Injectable({
   providedIn: 'root',
@@ -58,22 +46,120 @@ export class UploadService {
   constructor(
     // private firestore: Firestore,
     public httpClient: HttpClient,
-    public token: TokenService
+    public token: TokenService,
+    public auth: AuthService
   ) {
 
   }
-  // final step
-  getPDF(name: string, callsheet: string, pdfToken: string): Observable<any> {
-    const headers = new HttpHeaders().set('Content-Type', 'application/json');
+c
+  // Helper type guard for checking response type
+  isSubscriptionResponse(response: PdfGenerationResponse): response is SubscriptionResponse {
+    return !response.success && 'needsSubscription' in response;
+  }
 
-    const params = new HttpParams()
-      .set('name', name)
-      .set('callsheet', callsheet)
-      .set('pdfToken', pdfToken)
-    return this.httpClient.get(this.url + `/complete/${pdfToken}`, {
-      responseType: 'blob',
-      withCredentials: true,
-      params: params
+  isPdfResponse(response: PdfGenerationResponse): response is PdfResponse {
+    return response.success && 'pdfToken' in response;
+  }
+  private handleSubscriptionFlow(finalDocument: any, checkoutUrl: string): Observable<PdfGenerationResponse> {
+    debugger
+    const popupWidth = 500;
+    const popupHeight = 700;
+    const left = (window.screen.width / 2) - (popupWidth / 2);
+    const top = (window.screen.height / 2) - (popupHeight / 2);
+ 
+    const popup = window.open(
+      checkoutUrl,
+      'StripeCheckout',
+      `width=${popupWidth},height=${popupHeight},left=${left},top=${top}`
+    );
+ 
+    return new Observable<PdfGenerationResponse>(observer => {
+      const checkInterval = setInterval(async () => {
+        try {
+          const status = await this.auth.checkSubscriptionStatus();
+          if (status) {
+            clearInterval(checkInterval);
+            if (popup) popup.close();
+            
+            // Retry the PDF generation
+            this.generatePdf(finalDocument).subscribe({
+              next: (response) => {
+                observer.next(response);
+                observer.complete();
+              },
+              error: (err) => observer.error(err)
+            });
+          }
+        } catch (error) {
+          clearInterval(checkInterval);
+          observer.error(error);
+        }
+      }, 1000);
+ 
+      const popupCheck = setInterval(() => {
+        if (popup?.closed) {
+          clearInterval(popupCheck);
+          clearInterval(checkInterval);
+          observer.next({
+            success: false,
+            needsSubscription: true,
+            message: 'Subscription process cancelled'
+          });
+          observer.complete();
+        }
+      }, 500);
+ 
+      return () => {
+        clearInterval(checkInterval);
+        clearInterval(popupCheck);
+        if (popup && !popup.closed) popup.close();
+      };
+    });
+  }
+  generatePdf(finalDocument: any): Observable<PdfGenerationResponse> {
+    // Get the current user's token
+    return from(getAuth().currentUser?.getIdToken() || Promise.reject('No user')).pipe(
+      switchMap(token => {
+        return this.httpClient.post<PdfResponse>(
+          this.url + '/pdf', 
+          {
+            data: finalDocument.data,
+            name: finalDocument.name,
+            email: finalDocument.email,
+            callSheet: finalDocument.callSheet
+          }, 
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            },
+            withCredentials: true
+          }
+        );
+      }),
+      catchError(error => {
+        if (error.status === 403 && error.error.needsSubscription) {
+          console.log("Error- subscription needed", error);
+          return this.handleSubscriptionFlow(finalDocument, error.error.checkoutUrl);
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  downloadPdf(name: string, callsheet: string, pdfToken: string): Observable<Blob> {
+    
+    return this.httpClient.get(`${this.url}/complete/${pdfToken}`, {
+      params: {
+        name: name,
+        callsheet: callsheet || ''
+      },
+      responseType: 'blob'
+    });
+  }
+  // Add method to verify subscription status
+  verifySubscriptionStatus(sessionId: string): Observable<any> {
+    return this.httpClient.get(`/subscription-status?session_id=${sessionId}`, {
+      withCredentials: true
     });
   }
 
@@ -133,18 +219,6 @@ export class UploadService {
       );
   }
 
-  generatePdf(sceneArr) {
-
-    let params = new HttpParams().append('name', sceneArr.name);
-    this.httpOptions.headers = new Headers();
-    this.httpOptions.params = params;
-    this.httpOptions.responseType = 'blob';
-
-    return this.httpClient.post(this.url + '/pdf', sceneArr, {
-      params: params,
-      withCredentials: true,
-    });
-  }
 
   postCallSheet(fileToUpload: File): Observable<any> {
     this.resetHttpOptions();
@@ -181,7 +255,7 @@ export class UploadService {
 
     // const sessionToken = Cookies.get(this.tokenKey);
 
-    // if (!sessionToken) {
+    // if (!sessionToken) 
     //   return throwError(() => new Error('No session token found'));
     // }
 

@@ -17,7 +17,7 @@ export class AuthGuard implements CanActivate {
       return true;
     } else {
       alert('No valid session token or expiration time found or token has expired.');
-      this.router.navigate(['/']);
+      // this.router.navigate(['/']);
       return false;
     }
   }

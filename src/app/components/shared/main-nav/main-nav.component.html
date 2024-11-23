@@ -11,9 +11,13 @@
         <div class="right nav-item text-red-500">Deleting your IP in: {{ countdownClock }} </div>
       </ng-container>
     } 
+
       <button mat-raised-button  class="nav-item text-offWhite " routerLink="/">Home</button>
       <button mat-raised-button  class="nav-item text-offWhite" routerLink="/About">About</button>
       <div class="right nav-item">
+        @if (user) {
+          {{user.uid}}
+        }
       </div>
 
     </mat-toolbar>

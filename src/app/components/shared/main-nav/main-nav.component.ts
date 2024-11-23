@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import { map, shareReplay } from 'rxjs/operators';
 import { TokenService } from 'src/app/services/token/token.service';
 import { Router, ActivatedRoute } from '@angular/router';
+import { AuthService } from 'src/app/services/auth/auth.service';
+import { User } from '@angular/fire/auth';
 
 @Component({
   selector: 'app-main-nav',
@@ -13,7 +15,8 @@ import { Router, ActivatedRoute } from '@angular/router';
 export class MainNavComponent implements OnInit {
   countdown:number = Date.now() + 5000;
   countdownClock: string | null = null;
-  displayClock: boolean = true;
+  displayClock: boolean = true;  
+  user:User;
   isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
     .pipe(
       map(result => result.matches),
@@ -25,6 +28,7 @@ export class MainNavComponent implements OnInit {
     private token: TokenService,
     private router:Router,
     private route: ActivatedRoute,
+    private auth:AuthService,
   ) {}
 
   ngOnInit(): void {
@@ -41,7 +45,13 @@ export class MainNavComponent implements OnInit {
         console.log("countdown: " + this.countdownClock)
       })
     })
-  } 
+    this.auth.user$.subscribe(user => {
+      if(user) {
+        console.log(user)
+        this.user = user 
+    }
+  })
+} 
   formatTime(milliseconds) {
     try {
       if(milliseconds) {

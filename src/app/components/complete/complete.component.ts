@@ -164,7 +164,7 @@ export class CompleteComponent implements OnInit, OnDestroy, AfterViewInit {
 
     
     this.upload
-      .getPDF(name, callsheet, pdfToken)
+      .downloadPdf(name, callsheet, pdfToken)
       .pipe(
         switchMap((blob) => {
           const endTime = Date.now();
