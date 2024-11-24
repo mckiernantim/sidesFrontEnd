@@ -62,8 +62,8 @@ c
   }
   private handleSubscriptionFlow(finalDocument: any, checkoutUrl: string): Observable<PdfGenerationResponse> {
     debugger
-    const popupWidth = 500;
-    const popupHeight = 700;
+    const popupWidth = 700;
+    const popupHeight = 1000;
     const left = (window.screen.width / 2) - (popupWidth / 2);
     const top = (window.screen.height / 2) - (popupHeight / 2);
  
