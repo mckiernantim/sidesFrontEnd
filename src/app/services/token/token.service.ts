@@ -7,7 +7,9 @@ import Cookies from 'js-cookie';
   providedIn: 'root',
 })
 export class TokenService {
-  private readonly tokenKey = 'dltr_sidesWays';
+  public readonly tokenKey = 'dltr_sidesWays';
+  public readonly pdfKey = "pdf_sidesWays";
+  public pdfToken: string;
   private initialTimeSource = new BehaviorSubject<number>(0);
   public countdown$: Observable<number>;
 
@@ -64,5 +66,13 @@ export class TokenService {
       currentTime,
       timeRemaining: expirationTime - currentTime
     };
+  }
+
+  public setToken(token, key) {
+    Cookies.set(key, token);
+  }
+
+  public getToken(key) {
+    return Cookies.get(key) || null;
   }
 }

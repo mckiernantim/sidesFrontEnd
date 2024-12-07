@@ -124,8 +124,8 @@ export class DashboardRightComponent implements OnInit {
     public errorDialog: MatDialog,
     public lineOut: LineOutService,
     public pdf: PdfService,
-    public token: TokenService,
     private breaks: BreakpointObserver,
+    public token: TokenService,
     public auth: AuthService,
     private analytics: Analytics
   ) {
@@ -324,40 +324,63 @@ export class DashboardRightComponent implements OnInit {
   }
   async sendFinalDocumentToServer(finalDocument) {
     const loadingDialog = this.dialog.open(SpinningBotComponent, {
-      width: '500px',
+      width: '550px',
       height: '600px',
       data: { title: this.script, dialogOption: 'payment' }
     });
   
     try {
-      // Check auth first
       const user = await firstValueFrom(this.auth.user$);
- 
       if (!user) {
         loadingDialog.close();
         await this.handleLoginRequired(finalDocument);
         return;
       }
- 
+      
+      // Get existing token if available
+      const existingToken = this.token.getToken(this.token.pdfKey);
       
       const response = await firstValueFrom(this.upload.generatePdf({
         ...finalDocument,
-        email: user.email
+        email: user.email,
+        userId: user.uid,
+        pdfToken: existingToken
       }));
-      debugger
+      
       loadingDialog.close();
- 
-      if (isPdfResponse(response)) {
-        // Successful PDF generation
+  
+      // Always store token and expiration
+      this.token.setToken(this.token.pdfKey, response.pdfToken);
+      this.token.setToken(this.token.tokenKey, response.expires);
+  
+      if (response.success) {
         this.router.navigate(['complete'], {
           queryParams: { 
             pdfToken: response.pdfToken,
+            expires: response.expires
           }
         });
-      } else if (isSubscriptionResponse(response)) {
-        console.log('Subscription flow in progress...');
-      } else if (isErrorResponse(response)) {
-        throw new Error(response.error);
+      } else if (response.needsSubscription) {
+        const auth = this.auth;
+        const component = this;
+        
+        const stripeWindow = window.open(
+          response.checkoutUrl, 
+          'stripe', 
+          'width=700,height=1000'
+        );
+        
+        const windowCheck = setInterval(() => {
+          if (stripeWindow?.closed) {
+            clearInterval(windowCheck);
+            auth.checkSubscriptionStatus().then(status => {
+              if (status) {
+                // Retry with existing token
+                component.sendFinalDocumentToServer(finalDocument);
+              }
+            });
+          }
+        }, 500);
       }
   
     } catch (error) {
@@ -365,7 +388,7 @@ export class DashboardRightComponent implements OnInit {
       this.handleError(error instanceof Error ? 
         error.message : 'Failed to process document. Please try again.');
     }
- }
+  }
 
   private handleStripeReturn() {
 

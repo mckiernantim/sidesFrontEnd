@@ -32,12 +32,12 @@ import { DashboardModule } from './modules/dashboard-module/dashboard.module';
         HttpClientModule,
         BrowserAnimationsModule,
         LayoutModule,
+        SharedModule,
         MaterialModule,
         FirebaseModule,
         FormsModule,
         UploadModule,
         DashboardModule,
-        SharedModule,
     ],
     providers: [
         DatePipe,

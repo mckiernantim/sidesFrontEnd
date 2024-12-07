@@ -7,21 +7,24 @@ import { MatDialogModule } from '@angular/material/dialog'; // If you use Angula
 import { MainNavComponent } from 'src/app/components/shared/main-nav/main-nav.component';
 import { NavComponent } from 'src/app/components/shared/nav/nav.component';
 import { FooterComponent } from 'src/app/components/shared/footer/footer.component';
+import { ProfileComponent } from 'src/app/components/profile/profile.component';
 import { SpinningBotComponent } from 'src/app/components/shared/spinning-bot/spinning-bot.component';
 import { MaterialModule } from '../material-module/material.module';
-
+import { MatMenuModule } from '@angular/material/menu';
 @NgModule({
   declarations: [
     MainNavComponent,
     NavComponent,
     FooterComponent,
-    SpinningBotComponent
+    SpinningBotComponent,
+    ProfileComponent
   ],
   imports: [
     CommonModule,
     RouterModule,
     MatDialogModule, // If needed for SpinningBotComponent
-    MaterialModule
+    MaterialModule,
+    MatMenuModule
   ],
   exports: [
     MainNavComponent,
@@ -30,7 +33,8 @@ import { MaterialModule } from '../material-module/material.module';
     SpinningBotComponent,
     CommonModule,
     RouterModule,
-    MatDialogModule // Export if needed by other modules
+    MatDialogModule,
+    MatMenuModule,
   ]
 })
 export class SharedModule { }

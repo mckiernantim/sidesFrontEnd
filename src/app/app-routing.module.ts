@@ -7,9 +7,10 @@ import { CheckoutComponent } from './components/checkout/checkout.component';
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { UploadComponent } from './components/landing-page/upload/upload.component'
-import { AuthGuard } from './guards/auth.guard';
-
-
+import { TokenGuard } from './guards/token/token.guard';
+import { PaymentSuccessComponent } from './components/payment-success/payment-success.component';
+import { ProfileComponent } from './components/profile/profile.component';
+import { UserGuard } from './guards/user/user.guard';
 const routes: Routes = [
   {
     path: 'download',
@@ -17,13 +18,15 @@ const routes: Routes = [
   },
   { path: 'complete',
     component: CompleteComponent,
-    canActivate : [AuthGuard],
+    canActivate : [TokenGuard],
   },
   { path: 'About', component: AboutComponent },
   { path: 'Donate', component: DonateComponent },
   { path: '', component: UploadComponent },
   { path: 'Home', component: UploadComponent },
+  { path: 'payment-success', component: PaymentSuccessComponent },
   { path: 'Checkout', component: CheckoutComponent },
+  { path: 'profile', component: ProfileComponent, canActivate: [UserGuard] },
   { path: "**", component:FourOfourComponent}
  ];
 

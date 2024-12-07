@@ -60,62 +60,63 @@ c
   isPdfResponse(response: PdfGenerationResponse): response is PdfResponse {
     return response.success && 'pdfToken' in response;
   }
-  private handleSubscriptionFlow(finalDocument: any, checkoutUrl: string): Observable<PdfGenerationResponse> {
-    debugger
+ 
+  handleSubscriptionFlow(finalDocument: any, checkoutUrl: string): Observable<PdfGenerationResponse> {
     const popupWidth = 700;
     const popupHeight = 1000;
     const left = (window.screen.width / 2) - (popupWidth / 2);
     const top = (window.screen.height / 2) - (popupHeight / 2);
- 
+  
     const popup = window.open(
       checkoutUrl,
       'StripeCheckout',
       `width=${popupWidth},height=${popupHeight},left=${left},top=${top}`
     );
- 
+  
     return new Observable<PdfGenerationResponse>(observer => {
-      const checkInterval = setInterval(async () => {
-        try {
-          const status = await this.auth.checkSubscriptionStatus();
-          if (status) {
-            clearInterval(checkInterval);
-            if (popup) popup.close();
-            
-            // Retry the PDF generation
-            this.generatePdf(finalDocument).subscribe({
-              next: (response) => {
-                observer.next(response);
-                observer.complete();
-              },
-              error: (err) => observer.error(err)
-            });
-          }
-        } catch (error) {
-          clearInterval(checkInterval);
-          observer.error(error);
-        }
-      }, 1000);
- 
-      const popupCheck = setInterval(() => {
+      const popupCheck = setInterval(async () => {
         if (popup?.closed) {
           clearInterval(popupCheck);
-          clearInterval(checkInterval);
-          observer.next({
-            success: false,
-            needsSubscription: true,
-            message: 'Subscription process cancelled'
-          });
-          observer.complete();
+          
+          try {
+            // Check subscription status after popup closes
+            const subscriptionStatus = await this.auth.checkSubscriptionStatus();
+            
+            if (subscriptionStatus) {
+              // Just return the response, let component handle navigation
+              this.generatePdf(finalDocument).subscribe({
+                next: (response) => {
+                  observer.next({
+                    ...response,
+                    success: true,
+                    needsSubscription: false
+                  });
+                  observer.complete();
+                },
+                error: (err) => observer.error(err)
+              });
+            } else {
+              observer.next({
+                success: false,
+                needsSubscription: true,
+                message: 'Subscription process incomplete'
+              });
+              observer.complete();
+            }
+          } catch (error) {
+            observer.error(error);
+          }
         }
       }, 500);
- 
+  
+      // Cleanup
       return () => {
-        clearInterval(checkInterval);
         clearInterval(popupCheck);
         if (popup && !popup.closed) popup.close();
       };
     });
   }
+
   generatePdf(finalDocument: any): Observable<PdfGenerationResponse> {
     // Get the current user's token
     return from(getAuth().currentUser?.getIdToken() || Promise.reject('No user')).pipe(
@@ -126,7 +127,9 @@ c
             data: finalDocument.data,
             name: finalDocument.name,
             email: finalDocument.email,
-            callSheet: finalDocument.callSheet
+            callSheet: finalDocument.callSheet,
+            pdfToken: finalDocument.pdfToken,
+            userId: finalDocument.userId
           }, 
           {
             headers: {

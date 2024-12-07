@@ -40,5 +40,6 @@ export class UndoService {
   private notifyUndoStackChange(val: StackItem | null) {
     this.undoStackSource.next(val);
   }
+  
 }
 

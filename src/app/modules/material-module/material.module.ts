@@ -6,9 +6,11 @@ import { MatGridListModule } from '@angular/material/grid-list';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule } from '@angular/material/select';
 import { MatListModule } from '@angular/material/list';
 import { MatInputModule } from '@angular/material/input';
+
 // import { MatCarouselModule } from '@ngbmodule/material-carousel';
 import { DragDropModule } from "@angular/cdk/drag-drop"
 
@@ -32,6 +34,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatIconModule,
     MatInputModule,
     MatSelectModule,
+    MatMenuModule,
     MatListModule,     
     MatFormFieldModule,
     MatTableModule,
@@ -46,6 +49,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     DragDropModule
     // MatCarouselModule
   ],
+  declarations: [],
   imports: [
     CommonModule,
   ]

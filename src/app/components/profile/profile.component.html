@@ -1,0 +1,100 @@
+<div class="profile-container p-6 max-w-4xl mx-auto">
+    <!-- Profile Header -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <div class="flex items-center gap-4">
+        @if (user$ | async; as user) {
+            <img 
+                src={{user.photoURL}} 
+                [alt]="user?.displayName || 'Profile'"
+                class="w-20 h-20 rounded-full"
+            >
+            <div>
+                <h1 class="text-2xl font-bold">{{ user.displayName }}</h1>
+                <p class="text-gray-600">{{ user.email }}</p>
+            </div>
+            } @else {
+            <img 
+                src={{user$ async; as user}} 
+                class="w-20 h-20 rounded-full"
+            >
+            <div>
+                <h1 class="text-2xl font-bold">{{ userData?.displayName || 'User Profile' }}</h1>
+                <p class="text-gray-600">{{ userData?.email }}</p>
+            </div>
+        }
+       
+      </div>
+    </div>
+
+    <!-- Subscription Status -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Subscription Details</h2>
+      <div *ngIf="subscriptionStatus$ | async as status">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <p class="font-medium">Status:</p>
+            <p [class.text-green-600]="status.isActive" 
+               [class.text-red-600]="!status.isActive">
+              {{ status.isActive ? 'Active' : 'Inactive' }}
+            </p>
+          </div>
+          <div>
+            <p class="font-medium">Plan:</p>
+            <p>{{ status.planName || 'No active plan' }}</p>
+          </div>
+          <div>
+            <p class="font-medium">Next billing date:</p>
+            <p>{{ status.nextBillingDate  }}</p>
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <button 
+            *ngIf="!status.isActive"
+            (click)="handleSubscription()" 
+            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            Subscribe Now
+          </button>
+          <button 
+            *ngIf="status.isActive"
+            (click)="manageSubscription()" 
+            class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+            Manage Subscription
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Usage Statistics -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+      <h2 class="text-xl font-semibold mb-4">Usage Statistics</h2>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div class="p-4 bg-gray-50 rounded">
+          <p class="text-gray-600">PDFs Generated</p>
+          <p class="text-2xl font-bold">{{ usageStats.pdfsGenerated || 0 }}</p>
+        </div>
+        <div class="p-4 bg-gray-50 rounded">
+          <p class="text-gray-600">Scripts Processed</p>
+          <p class="text-2xl font-bold">{{ usageStats.scriptsProcessed || 0 }}</p>
+        </div>
+        <div class="p-4 bg-gray-50 rounded">
+          <p class="text-gray-600">Storage Used</p>
+          <p class="text-2xl font-bold">{{ usageStats.storageUsed || '0 MB' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="mt-6 flex gap-4">
+      <button 
+        (click)="handleSignOut()" 
+        class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+        Sign Out
+      </button>
+      <button 
+        (click)="deleteAccount()" 
+        class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+        Delete Account
+      </button>
+    </div>
+  </div>

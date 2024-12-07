@@ -38,6 +38,18 @@ export class StripeService {
   handlePaymentSuccess(): void {
     this.router.navigate(['/complete']);
   }
+
+  getSubscriptionStatus(uid:string): Observable<any> {
+    return this.http.get(`${this._URL}/subscriptions/subscription-status/${uid}`, {
+      withCredentials: true
+    });
+  }
+  
+  createPortalSession(): Observable<any> {
+    return this.http.post(`${this._URL}/subscripions/create-portal-session`, {}, {
+      withCredentials: true
+    });
+  }
 }
 
 

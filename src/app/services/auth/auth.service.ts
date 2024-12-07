@@ -61,6 +61,7 @@ export class AuthService {
   ) {
     onAuthStateChanged(auth, async (user) => {
       if (user) {
+        console.log(user)
         // Start listening to subscription changes
         this.listenToSubscription(user.uid);
       }

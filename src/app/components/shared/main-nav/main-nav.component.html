@@ -1,31 +1,47 @@
-
-
+<mat-toolbar class="bg-my-blue text-offWhite top-0 relative z-10000 w-full">
+  <span class="logo nav-item text-white">Sides-Ways</span>
+  <span class="spacer"></span>
   
-    <mat-toolbar class="!bg-my-blue text-offWhite top-0  realtive z-10000 w-full">
+  @if (displayClock) {
+    <ng-container>
+      <div class="right nav-item text-red-500">Deleting your IP in: {{ countdownClock }}</div>
+    </ng-container>
+  }
 
-      <span class="logo nav-item text-white">Sides-Ways</span>
-      <span class="spacer"></span>
-      <!-- Display the countdown value -->
-      @if (displayClock ) {
-        <ng-container >
-        <div class="right nav-item text-red-500">Deleting your IP in: {{ countdownClock }} </div>
-      </ng-container>
-    } 
-
-      <button mat-raised-button  class="nav-item text-offWhite " routerLink="/">Home</button>
-      <button mat-raised-button  class="nav-item text-offWhite" routerLink="/About">About</button>
-      <div class="right nav-item">
-        @if (user) {
-          {{user.uid}}
-        }
-      </div>
-
-    </mat-toolbar>
-    <div class="app-container">
-      <router-outlet></router-outlet>
+  <button mat-raised-button class="nav-item text-offWhite" routerLink="/">Home</button>
+  <button mat-raised-button class="nav-item text-offWhite" routerLink="/About">About</button>
+  
+  @if (user$ | async; as user) {
+    <div class="flex items-center gap-3 ml-4">
+      <div class="text-sm text-white">{{ user.email }}</div>
+      <button 
+        [matMenuTriggerFor]="profileMenu" 
+        class="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center">
+          <img 
+            src={{user.photoURL}} 
+            [alt]="user?.displayName || 'Profile'"
+            class="w-full h-full object-cover"
+            >
+      </button>
+      
+      <mat-menu #profileMenu="matMenu">
+        <button mat-menu-item routerLink="/profile">
+          <mat-icon>account_circle</mat-icon>
+          <span>Profile</span>
+        </button>
+        <button mat-menu-item (click)="signOut()">
+          <mat-icon>exit_to_app</mat-icon>
+          <span>Sign Out</span>
+        </button>
+      </mat-menu>
     </div>
+  } @else {
+    <button mat-raised-button class="nav-item text-offWhite" (click)="signIn()">
+      Sign In
+    </button>
+  }
+</mat-toolbar>
 
-    
-        
-
-
+<div class="app-container">
+  <router-outlet></router-outlet>
+</div>

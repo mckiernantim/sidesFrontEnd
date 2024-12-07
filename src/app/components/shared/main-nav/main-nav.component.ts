@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Observable } from 'rxjs';
 import { map, shareReplay } from 'rxjs/operators';
@@ -16,7 +16,9 @@ export class MainNavComponent implements OnInit {
   countdown:number = Date.now() + 5000;
   countdownClock: string | null = null;
   displayClock: boolean = true;  
-  user:User;
+  user$: Observable<User>;
+  cd:ChangeDetectorRef
+  
   isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
     .pipe(
       map(result => result.matches),
@@ -28,12 +30,11 @@ export class MainNavComponent implements OnInit {
     private token: TokenService,
     private router:Router,
     private route: ActivatedRoute,
-    private auth:AuthService,
+    private auth: AuthService,
   ) {}
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
-      console.log(params)
       this.countdown = Number(params.expires)
       this.token.initializeCountdown(this.countdown)
       this.token.countdown$.subscribe(countdown => {
@@ -45,13 +46,17 @@ export class MainNavComponent implements OnInit {
         console.log("countdown: " + this.countdownClock)
       })
     })
-    this.auth.user$.subscribe(user => {
-      if(user) {
-        console.log(user)
-        this.user = user 
-    }
-  })
+    this.user$ = this.auth.user$;
 } 
+handleImageError(event: any) {
+  // Fallback to material icon if image fails to load
+  debugger
+  event.target.style.display = 'none';
+  const iconElement = document.createElement('mat-icon');
+  iconElement.textContent = 'err';
+  event.target.parentNode.appendChild(iconElement);
+}
+
   formatTime(milliseconds) {
     try {
       if(milliseconds) {
@@ -73,6 +78,16 @@ export class MainNavComponent implements OnInit {
     } catch (err) {
       console.error(err)
     }
+  }
+
+  signOut() {
+    this.auth.signOut();
+    this.cd.detectChanges();
+  }
+  
+  signIn() {
+    this.auth.signIn();
+    this.cd.detectChanges();
   }
 }
 
