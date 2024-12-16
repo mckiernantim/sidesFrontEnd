@@ -66,19 +66,36 @@ export class StripeService {
           }
         );
       }),
-      map(response => ({
-        status: response.subscription?.status || 'inactive',
-        usage: response.usage || {
-          pdfsGenerated: 0,
-          scriptsProcessed: 0,
-          storageUsed: 0
-        },
-        subscription: response.subscription
-      })),
-      catchError(error => this.handleError(error))
+      map(response => {
+        // Transform dates from strings to Date objects
+        return {
+          ...response,
+          subscription: {
+            ...response.subscription,
+            currentPeriodStart: new Date(response.subscription.currentPeriodStart),
+            currentPeriodEnd: new Date(response.subscription.currentPeriodEnd),
+            canceledAt: response.subscription.canceledAt ? new Date(response.subscription.canceledAt) : null
+          },
+          billing: {
+            ...response.billing,
+            nextPayment: response.billing.nextPayment ? {
+              ...response.billing.nextPayment,
+              date: new Date(response.billing.nextPayment.date)
+            } : null,
+            lastPayment: response.billing.lastPayment ? {
+              ...response.billing.lastPayment,
+              date: new Date(response.billing.lastPayment.date)
+            } : null
+          },
+          usage: {
+            ...response.usage,
+            lastUpdated: response.usage.lastUpdated ? new Date(response.usage.lastUpdated) : null
+          }
+        };
+      }),
+      catchError(this.handleError)
     );
   }
-
 
   cancelSubscription(subscriptionId: string): Observable<any> {
     return from(this.getAuthHeaders()).pipe(
