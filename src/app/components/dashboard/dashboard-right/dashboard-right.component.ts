@@ -18,6 +18,7 @@ import { fadeInOutAnimation } from '../../../animations/animations';
 import { SpinningBotComponent } from '../../shared/spinning-bot/spinning-bot.component';
 import { TokenService } from 'src/app/services/token/token.service';
 import { AuthService } from 'src/app/services/auth/auth.service';
+import { SubscriptionDialogComponent } from '../../subscription-dialog/subscription-dialog.component';
 import { privateDecrypt } from 'crypto';
 import { logEvent, getAnalytics, Analytics } from '@angular/fire/analytics';
 import { User, PdfResponse, SubscriptionResponse, isPdfResponse, PdfGenerationResponse, DeleteResponse, isErrorResponse, isSubscriptionResponse } from 'src/app/types/user';
@@ -297,6 +298,7 @@ export class DashboardRightComponent implements OnInit {
 
 
   private handleLoginRequired(finalDocument: any): Promise<void> {
+    
     return new Promise((resolve) => {
       const loginDialog = this.dialog.open(IssueComponent, {
         width: '500px',
@@ -350,8 +352,10 @@ export class DashboardRightComponent implements OnInit {
       loadingDialog.close();
   
       // Always store token and expiration
-      this.token.setToken(this.token.pdfKey, response.pdfToken);
-      this.token.setToken(this.token.tokenKey, response.expires);
+      if (response.pdfToken) {
+        this.token.setToken(this.token.pdfKey, response.pdfToken);
+        this.token.setToken(this.token.tokenKey, response.expires);
+      }
   
       if (response.success) {
         this.router.navigate(['complete'], {
@@ -361,26 +365,37 @@ export class DashboardRightComponent implements OnInit {
           }
         });
       } else if (response.needsSubscription) {
-        const auth = this.auth;
-        const component = this;
-        
-        const stripeWindow = window.open(
-          response.checkoutUrl, 
-          'stripe', 
-          'width=700,height=1000'
-        );
-        
-        const windowCheck = setInterval(() => {
-          if (stripeWindow?.closed) {
-            clearInterval(windowCheck);
-            auth.checkSubscriptionStatus().then(status => {
-              if (status) {
-                // Retry with existing token
-                component.sendFinalDocumentToServer(finalDocument);
-              }
-            });
+        const dialogRef = this.dialog.open(SubscriptionDialogComponent, {
+          width: '500px',
+          data: {
+            title: 'Subscription Required',
+            message: 'A subscription is required to generate PDFs. Would you like to subscribe now?',
+            pricing: true,
+            checkoutUrl: response.checkoutUrl
           }
-        }, 500);
+        });
+  
+        dialogRef.afterClosed().subscribe(async result => {
+          if (result === 'subscribe') {
+            const stripeWindow = window.open(
+              response.checkoutUrl,
+              'stripe',
+              'width=700,height=1000'
+            );
+            
+            const windowCheck = setInterval(() => {
+              if (stripeWindow?.closed) {
+                clearInterval(windowCheck);
+                this.auth.checkSubscriptionStatus().then(status => {
+                  if (status) {
+                    // Retry with existing token
+                    this.sendFinalDocumentToServer(finalDocument);
+                  }
+                });
+              }
+            }, 500);
+          }
+        });
       }
   
     } catch (error) {

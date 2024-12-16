@@ -11,6 +11,8 @@ import { TokenGuard } from './guards/token/token.guard';
 import { PaymentSuccessComponent } from './components/payment-success/payment-success.component';
 import { ProfileComponent } from './components/profile/profile.component';
 import { UserGuard } from './guards/user/user.guard';
+import { SubscriptionComponent } from './components/subscription/subscription.component';
+
 const routes: Routes = [
   {
     path: 'download',
@@ -21,6 +23,7 @@ const routes: Routes = [
     canActivate : [TokenGuard],
   },
   { path: 'About', component: AboutComponent },
+  { path: 'subscription', component: SubscriptionComponent },
   { path: 'Donate', component: DonateComponent },
   { path: '', component: UploadComponent },
   { path: 'Home', component: UploadComponent },

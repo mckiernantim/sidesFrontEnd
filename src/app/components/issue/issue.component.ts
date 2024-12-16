@@ -48,6 +48,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
   userDisplayEmail:string;
   // New properties for delete confirmation
   isDeleteDialog: boolean = false;
+  deleteConfirmation: string = '';
   confirmDelete: boolean = false;
 
   constructor(
@@ -160,12 +161,18 @@ export class IssueComponent implements OnInit, AfterViewInit {
   handleClick() {
     this.onClick()
   }
-
+  get isDeleteConfirmed(): boolean {
+    return this.deleteConfirmation === 'DELETE' && this.confirmDelete;
+  }
   // New methods for delete confirmation
   onConfirmDelete(): void {
-    this.dialogRef.close(this.confirmDelete);
+    if (this.isDeleteConfirmed) {
+      this.dialogRef.close('confirm');
+    }
   }
-
+  onClose(): void {
+    this.dialogRef.close();
+  }
   onCancelDelete(): void {
     this.dialogRef.close(false);
   }

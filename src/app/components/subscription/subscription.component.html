@@ -1,0 +1,43 @@
+<div class="subscription-container p-4">
+    <mat-card *ngIf="subscriptionData$ | async as data">
+      <mat-card-header>
+        <mat-card-title>Subscription Status</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="status-badge" [ngClass]="data.status">
+          {{ data.status | titlecase }}
+        </div>
+        
+        <div class="usage-stats mt-4">
+          <h3>Current Usage</h3>
+          <div class="grid grid-cols-3 gap-4">
+            <div class="stat-card">
+              <span class="stat-value">{{ data.usage.pdfsGenerated }}</span>
+              <span class="stat-label">PDFs Generated</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value">{{ data.usage.scriptsProcessed }}</span>
+              <span class="stat-label">Scripts Processed</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value">{{ formatBytes(data.usage.storageUsed) }}</span>
+              <span class="stat-label">Storage Used</span>
+            </div>
+          </div>
+        </div>
+  
+        <div class="subscription-actions mt-4">
+          <button mat-raised-button color="primary" 
+                  *ngIf="!data.subscription"
+                  (click)="startSubscription()">
+            Subscribe Now
+          </button>
+          <button mat-raised-button color="accent"
+                  *ngIf="data.subscription?.status === 'active'"
+                  (click)="manageSubscription()">
+            Manage Subscription
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>

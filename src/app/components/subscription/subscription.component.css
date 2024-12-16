@@ -1,0 +1,40 @@
+.subscription-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .status-badge {
+    padding: 4px 12px;
+    border-radius: 16px;
+    display: inline-block;
+    font-weight: 500;
+  
+    &.active {
+      background-color: #4CAF50;
+      color: white;
+    }
+  
+    &.inactive {
+      background-color: #F44336;
+      color: white;
+    }
+  }
+  
+  .stat-card {
+    padding: 16px;
+    border-radius: 8px;
+    background-color: #f5f5f5;
+    text-align: center;
+  }
+  
+    .stat-value {
+      font-size: 24px;
+      font-weight: 500;
+      display: block;
+    }
+  
+    .stat-label {
+      font-size: 14px;
+      color: #666;
+    }
+  

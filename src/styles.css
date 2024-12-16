@@ -46,7 +46,9 @@ body {
     
     background-color: white;
 }
-
+.bg-my-blue {
+  background: linear-gradient(45deg, #0c69d7 20%, #3500ff) !important;
+}
 .mat-table {
     background-color: var(--grey)
   }

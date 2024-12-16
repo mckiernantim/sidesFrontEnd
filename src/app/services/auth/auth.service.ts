@@ -5,14 +5,17 @@ import {
   GoogleAuthProvider,
   User,
   onAuthStateChanged,
+  getIdToken,
 } from '@angular/fire/auth';
 import {
   Firestore,
   doc,
   getDoc,
   setDoc,
+  deleteDoc,
   onSnapshot,
 } from '@angular/fire/firestore';
+
 import {
   BehaviorSubject,
   Observable,
@@ -120,7 +123,13 @@ export class AuthService {
       throw error;
     }
   }
-
+  async getIdToken(): Promise<string> {
+    const user = this.auth.currentUser;
+    if (!user) {
+      throw new Error('No user logged in');
+    }
+    return await getIdToken(user);
+  }
   private getAuthErrorMessage(code: string): string {
     const errorMessages = {
       'auth/popup-closed-by-user':
@@ -170,6 +179,25 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     return !!this.auth.currentUser;
+  }
+  async deleteAccount(): Promise<void> {
+    const user = await this.auth.currentUser;
+    if (!user) throw new Error('No user found');
+
+    try {
+      // Delete user data collections
+      await deleteDoc(doc(this.firestore, 'users', user.uid));
+      await deleteDoc(doc(this.firestore, 'subscriptions', user.uid));
+      
+      // Finally delete the auth user
+      await user.delete();
+      
+      // Clear local auth state
+      this.authState.next(null);
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      throw error;
+    }
   }
   async initiateSubscription(email: string): Promise<{ success: boolean; checkoutUrl?: string }> {
     const user = await firstValueFrom(this.user$);

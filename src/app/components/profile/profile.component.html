@@ -12,9 +12,10 @@
                 <h1 class="text-2xl font-bold">{{ user.displayName }}</h1>
                 <p class="text-gray-600">{{ user.email }}</p>
             </div>
-            } @else {
+        } @else {
             <img 
-                src={{user$ async; as user}} 
+                src="/assets/default-avatar.png"
+                alt="Profile"
                 class="w-20 h-20 rounded-full"
             >
             <div>
@@ -22,7 +23,6 @@
                 <p class="text-gray-600">{{ userData?.email }}</p>
             </div>
         }
-       
       </div>
     </div>
 
@@ -44,7 +44,7 @@
           </div>
           <div>
             <p class="font-medium">Next billing date:</p>
-            <p>{{ status.nextBillingDate  }}</p>
+            <p>{{ formatDate(status.currentPeriodEnd) }}</p>
           </div>
         </div>
 
@@ -79,7 +79,7 @@
         </div>
         <div class="p-4 bg-gray-50 rounded">
           <p class="text-gray-600">Storage Used</p>
-          <p class="text-2xl font-bold">{{ usageStats.storageUsed || '0 MB' }}</p>
+          <p class="text-2xl font-bold">{{ usageStats.storageUsed }}</p>
         </div>
       </div>
     </div>
@@ -92,9 +92,48 @@
         Sign Out
       </button>
       <button 
-        (click)="deleteAccount()" 
+        (click)="cancelSubscription()" 
         class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
-        Delete Account
+        Cancel Subscription
       </button>
     </div>
+    <!-- Add this to your profile.component.html -->
+<div class="subscription-controls">
+  <!-- Show when no active subscription -->
+  <button 
+    *ngIf="!(subscriptionStatus$ | async)?.subscription?.status || (subscriptionStatus$ | async)?.subscription?.status === 'inactive'"
+    mat-raised-button 
+    color="primary"
+    (click)="handleSubscription()">
+    Subscribe Now
+  </button>
+
+  <!-- Show when subscription is active -->
+  <ng-container *ngIf="(subscriptionStatus$ | async)?.subscription?.status === 'active'">
+    <button 
+      mat-raised-button
+      (click)="manageSubscription()">
+      Manage Subscription
+    </button>
+    <button 
+      mat-button
+      color="warn"
+      (click)="cancelSubscription()">
+      Cancel Subscription
+    </button>
+  </ng-container>
+</div>
+
+<!-- Subscription Status Display -->
+<div class="subscription-status" *ngIf="subscriptionStatus$ | async as status">
+  <div *ngIf="status.subscription?.status === 'active'">
+    <h3>Current Subscription</h3>
+    <p>Plan: {{ status.subscription.planType }}</p>
+    <p>Status: {{ status.subscription.status | titlecase }}</p>
+    <p>Current Period Ends: {{ formatDate(status.subscription.currentPeriodEnd) }}</p>
+    <p *ngIf="status.subscription.cancelAtPeriodEnd">
+      Your subscription will end on {{ formatDate(status.subscription.currentPeriodEnd) }}
+    </p>
   </div>
+</div>
+</div>

@@ -118,6 +118,7 @@ c
   }
 
   generatePdf(finalDocument: any): Observable<PdfGenerationResponse> {
+    
     // Get the current user's token
     return from(getAuth().currentUser?.getIdToken() || Promise.reject('No user')).pipe(
       switchMap(token => {
@@ -142,6 +143,7 @@ c
       catchError(error => {
         if (error.status === 403 && error.error.needsSubscription) {
           console.log("Error- subscription needed", error);
+          debugger
           return this.handleSubscriptionFlow(finalDocument, error.error.checkoutUrl);
         }
         return throwError(() => error);

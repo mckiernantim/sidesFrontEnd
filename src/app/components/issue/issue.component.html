@@ -121,4 +121,74 @@
       <button mat-raised-button color="warn" (click)="dialogRef.close()">Close</button>
     </div>
   </div>
+  <div class="container mx-auto flex flex-col justify-center items-center p-4 md:p-8">
+    <!-- Delete Account Dialog -->
+    <div class="w-full max-w-md">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-red-600 mb-4">Delete Account</h2>
+        <p class="text-gray-700 mb-4">Are you sure you want to delete your account?</p>
+        <p class="text-sm text-gray-600 mb-6">This action cannot be undone. All your data will be permanently deleted.</p>
+      </div>
+  
+      <!-- Subscription Warning -->
+      <div *ngIf="data.subscriptionActive" class="mb-6">
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+          <div class="flex">
+            <div class="ml-3">
+              <p class="text-sm text-yellow-700">
+                <strong>Warning:</strong> You have an active subscription. Deleting your account will:
+              </p>
+              <ul class="list-disc list-inside mt-2 text-sm text-yellow-700">
+                <li>Cancel your subscription immediately</li>
+                <li>Not provide any refund for the current billing period</li>
+                <li>Remove access to all premium features</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Confirmation Input -->
+      <div class="mb-6">
+        <p class="text-sm text-gray-700 mb-2">Please type "DELETE" to confirm:</p>
+        <input 
+          type="text"
+          [(ngModel)]="deleteConfirmation"
+          class="w-full p-2 border border-gray-300 rounded focus:border-red-500 focus:ring-1 focus:ring-red-500"
+          placeholder="Type DELETE"
+        />
+      </div>
+  
+      <!-- Confirmation Checkbox -->
+      <div class="flex items-center space-x-2 mb-6">
+        <input 
+          type="checkbox" 
+          id="confirmDelete" 
+          [(ngModel)]="confirmDelete"
+          class="form-checkbox h-4 w-4 text-red-600"
+        />
+        <label for="confirmDelete" class="text-sm text-gray-700">
+          I understand that this action is permanent and cannot be reversed
+        </label>
+      </div>
+  
+      <!-- Action Buttons -->
+      <div class="flex space-x-4">
+        <button
+          (click)="onClose()"
+          class="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          (click)="onConfirmDelete()"
+          [disabled]="!isDeleteConfirmed"
+          [class.opacity-50]="!isDeleteConfirmed"
+          class="flex-1 py-2 px-4 bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none transition-colors disabled:cursor-not-allowed"
+        >
+          Delete Account
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
