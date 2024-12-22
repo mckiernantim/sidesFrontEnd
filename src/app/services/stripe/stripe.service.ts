@@ -2,20 +2,17 @@ import { Injectable } from '@angular/core';
 import { loadStripe } from '@stripe/stripe-js';
 import { environment } from '../../../environments/environment';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { from, Observable, Subscription, throwError } from 'rxjs';
+import { from, Observable, throwError } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { SubscriptionStatus, FirestoreSubscription, SubscriptionResponse } from 'src/app/types/SubscriptionTypes';
-import { user } from '@angular/fire/auth';
 
 @Injectable({
   providedIn: 'root'
 })
 export class StripeService {
   private stripePromise = loadStripe(environment.stripe);
-  private priceId = 'price_1NRjH8BojwZRnVT43UC6rDPf';
-  private paymentComplete = false;
   public API_URL: string = environment.url;
 
   constructor(
@@ -32,124 +29,22 @@ export class StripeService {
     });
   }
 
-  // For new subscriptions
-  createSubscription(userId: string, userEmail:string): Observable<any> {
-    debugger
-    const data = { userId, userEmail };
-    return this.http.post(
-      `${this.API_URL}/stripe/create-subscription`,
-      {data},
-      { withCredentials: true }
-    ).pipe(
-      catchError(this.handleError)
-    );
-  }
-
-  // For managing existing subscriptions
-  createPortalSession(userId: string): Observable<{ url: string }> {
-    return this.http.post<{ url: string }>(
-      `${this.API_URL}/stripe/create-portal-session`,
-      { userId },
-      { withCredentials: true }
-    ).pipe(
-      catchError(this.handleError)
-    );
-  }
-  getSubscriptionStatus(userId: string): Observable<SubscriptionStatus> {
+  createSubscription(userId: string, userEmail: string): Observable<SubscriptionResponse> {
     return from(this.getAuthHeaders()).pipe(
       switchMap(headers => {
-        return this.http.get<SubscriptionStatus>(
-          `${this.API_URL}/subscriptions/status/${userId}`,
+        return this.http.post<SubscriptionResponse>(
+          `${this.API_URL}/stripe/create-subscription`,
+          { userId, userEmail },
           { 
             headers,
             withCredentials: true 
           }
         );
       }),
-      map(response => {
-        // Transform dates from strings to Date objects
-        return {
-          ...response,
-          subscription: {
-            ...response.subscription,
-            currentPeriodStart: new Date(response.subscription.currentPeriodStart),
-            currentPeriodEnd: new Date(response.subscription.currentPeriodEnd),
-            canceledAt: response.subscription.canceledAt ? new Date(response.subscription.canceledAt) : null
-          },
-          billing: {
-            ...response.billing,
-            nextPayment: response.billing.nextPayment ? {
-              ...response.billing.nextPayment,
-              date: new Date(response.billing.nextPayment.date)
-            } : null,
-            lastPayment: response.billing.lastPayment ? {
-              ...response.billing.lastPayment,
-              date: new Date(response.billing.lastPayment.date)
-            } : null
-          },
-          usage: {
-            ...response.usage,
-            lastUpdated: response.usage.lastUpdated ? new Date(response.usage.lastUpdated) : null
-          }
-        };
-      }),
       catchError(this.handleError)
     );
   }
 
-  cancelSubscription(subscriptionId: string): Observable<any> {
-    return from(this.getAuthHeaders()).pipe(
-      switchMap(headers => {
-        return this.http.post(
-          `${this.API_URL}/subscriptions/cancel`,
-          { subscriptionId },
-          { 
-            headers,
-            withCredentials: true 
-          }
-        );
-      }),
-      catchError(error => this.handleError(error))
-    );
-  }
-
-  updateSubscription(subscriptionId: string, newPriceId: string): Observable<any> {
-    return from(this.getAuthHeaders()).pipe(
-      switchMap(headers => {
-        return this.http.post(
-          `${this.API_URL}/subscriptions/update`,
-          { subscriptionId, newPriceId },
-          { 
-            headers,
-            withCredentials: true 
-          }
-        );
-      }),
-      catchError(error => this.handleError(error))
-    );
-  }
-
-  async handlePaymentRedirect(sessionId: string): Promise<boolean> {
-    try {
-      const headers = await this.getAuthHeaders();
-      const response = await this.http.get(
-        `${this.API_URL}/subscriptions/session-status/${sessionId}`,
-        { 
-          headers,
-          withCredentials: true 
-        }
-      ).toPromise();
-      
-      if (response && response['status'] === 'complete') {
-        this.router.navigate(['/dashboard']);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Payment verification failed:', error);
-      return false;
-    }
-  }
 
   startCheckout(expirationTime: number, jwtToken: string, downloadTimeRemaining: number): Observable<any> {
     return from(this.getAuthHeaders()).pipe(
@@ -171,6 +66,76 @@ export class StripeService {
       }),
       catchError(this.handleError)
     );
+  }
+
+
+  createPortalSession(userId: string): Observable<{ url: string }> {
+    return from(this.getAuthHeaders()).pipe(
+      switchMap(headers => {
+        return this.http.post<{ url: string }>(
+          `${this.API_URL}/stripe/create-portal-session`,
+          { userId },
+          { 
+            headers,
+            withCredentials: true 
+          }
+        );
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  getSubscriptionStatus(userId: string): Observable<SubscriptionStatus> {
+    return from(this.getAuthHeaders()).pipe(
+      switchMap(headers => {
+        return this.http.get<SubscriptionStatus>(
+          `${this.API_URL}/subscriptions/status/${userId}`,
+          { 
+            headers,
+            withCredentials: true 
+          }
+        );
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  cancelSubscription(subscriptionId: string): Observable<any> {
+    return from(this.getAuthHeaders()).pipe(
+      switchMap(headers => {
+        return this.http.post(
+          `${this.API_URL}/subscriptions/cancel`,
+          { subscriptionId },
+          { 
+            headers,
+            withCredentials: true 
+          }
+        );
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  async handlePaymentRedirect(sessionId: string): Promise<boolean> {
+    try {
+      const headers = await this.getAuthHeaders();
+      const response = await this.http.get<{ status: string }>(
+        `${this.API_URL}/subscriptions/session-status/${sessionId}`,
+        { 
+          headers,
+          withCredentials: true 
+        }
+      ).toPromise();
+      
+      if (response?.status === 'complete') {
+        this.router.navigate(['/dashboard']);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Payment verification failed:', error);
+      return false;
+    }
   }
 
   private handleError(error: any): Observable<never> {

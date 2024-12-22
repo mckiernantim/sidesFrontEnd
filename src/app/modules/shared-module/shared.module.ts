@@ -12,6 +12,8 @@ import { SpinningBotComponent } from 'src/app/components/shared/spinning-bot/spi
 
 import { MaterialModule } from '../material-module/material.module';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { SubscriptionComponent } from 'src/app/components/subscription/subscription.component';
@@ -41,6 +43,8 @@ import { SubscriptionComponent } from 'src/app/components/subscription/subscript
     RouterModule,
     MatDialogModule,
     MatMenuModule,
+    MatButtonModule,
+    MatIconModule,
     SubscriptionComponent
   ],
   providers: [DatePipe],

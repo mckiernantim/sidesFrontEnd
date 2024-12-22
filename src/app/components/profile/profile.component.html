@@ -1,78 +1,73 @@
 <div class="container mx-auto p-4">
   <ng-container *ngIf="subscriptionStatus$ | async as status">
-    <!-- Subscription Status -->
+    <!-- Subscription Status Card -->
     <div class="mb-8 p-6 bg-white rounded-lg shadow-md">
       <h2 class="text-2xl font-bold mb-4">Subscription Status</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <p class="font-semibold">Status: 
+      
+      <!-- Status Overview -->
+      <div class="grid gap-6">
+        <div class="border-b pb-4">
+          <p class="font-semibold text-lg mb-2">Status: 
             <span [class.text-green-600]="status.active" 
-                  [class.text-red-600]="!status.active">
+                  [class.text-red-600]="!status.active"
+                  class="ml-2">
               {{ status.active ? 'Active' : 'Inactive' }}
             </span>
           </p>
-          <p class="mt-2">Plan: {{ status.subscription.planType }}</p>
-          <p>Current Period Ends: {{ formatDate(status.subscription.currentPeriodEnd) }}</p>
-          <p *ngIf="status.subscription.cancelAtPeriodEnd" class="text-amber-600">
-            Cancels at period end
+        </div>
+
+        <!-- Usage Statistics -->
+        <div class="border-b pb-4">
+          <h3 class="font-medium text-gray-700 mb-4">Usage Statistics</h3>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <p class="text-sm text-gray-500">PDFs Generated</p>
+            <p class="text-2xl font-semibold">{{ usageStats.pdfsGenerated }}</p>
+          </div>
+        </div>
+
+        <!-- Period Information -->
+        <div class="border-b pb-4">
+          <h3 class="font-medium text-gray-700 mb-2">Subscription Period</h3>
+          <p class="text-gray-600">
+            Renews: {{ formatDate(status.subscription.currentPeriodEnd) }}
           </p>
         </div>
-        
-        <!-- Billing Information -->
-        <div *ngIf="status.billing">
-          <h3 class="font-semibold mb-2">Billing</h3>
-          <div *ngIf="status.billing.nextPayment" class="mb-2">
-            <p>Next Payment: {{ formatCurrency(status.billing.nextPayment.amount) }}</p>
-            <p>Due Date: {{ formatDate(status.billing.nextPayment.date) }}</p>
-          </div>
-          <div *ngIf="status.billing.lastPayment">
-            <p>Last Payment: {{ formatCurrency(status.billing.lastPayment.amount) }}</p>
-            <p>Date: {{ formatDate(status.billing.lastPayment.date) }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Usage Statistics -->
-    <div class="mb-8 p-6 bg-white rounded-lg shadow-md">
-      <h2 class="text-2xl font-bold mb-4">Usage Statistics</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <p>PDFs Generated: {{ status.usage.pdfsGenerated }}</p>
-          <p>PDFs Remaining: {{ status.usage.limits.remaining.pdfs }}</p>
-          <p>Scripts Processed: {{ status.usage.scriptsProcessed }}</p>
-          <p>Scripts Remaining: {{ status.usage.limits.remaining.scripts }}</p>
-        </div>
-        <div>
-          <p>Monthly Limits:</p>
-          <p>Max PDFs: {{ status.usage.limits.maxPDFsPerMonth }}</p>
-          <p>Max Scripts: {{ status.usage.limits.maxScriptsPerMonth }}</p>
-          <p class="text-sm text-gray-600" *ngIf="status.usage.lastUpdated">
-            Last Updated: {{ formatDate(status.usage.lastUpdated) }}
+        <!-- Cancellation Notice -->
+        <div *ngIf="status.subscription.cancelAtPeriodEnd" 
+             class="bg-amber-50 border border-amber-200 rounded-md p-4">
+          <p class="text-amber-800">
+            <span class="font-medium">Subscription Cancellation:</span> 
+            Your access will continue until {{ formatDate(status.subscription.currentPeriodEnd) }}
           </p>
         </div>
       </div>
     </div>
 
-    <!-- Subscription Actions -->
-    <div class="flex gap-4">
+    <!-- Action Buttons -->
+    <div class="flex flex-wrap gap-4">
       <button *ngIf="!status.active"
               (click)="handleSubscription()"
-              class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+              class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors">
         Subscribe Now
       </button>
       
       <button *ngIf="status.active"
               (click)="manageSubscription()"
-              class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+              class="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700 transition-colors">
         Manage Subscription
       </button>
       
       <button *ngIf="status.active && !status.subscription.cancelAtPeriodEnd"
               (click)="cancelSubscription()"
-              class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+              class="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition-colors">
         Cancel Subscription
       </button>
     </div>
   </ng-container>
+
+  <!-- Loading State -->
+  <div *ngIf="!(subscriptionStatus$ | async)" class="flex justify-center p-8">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+  </div>
 </div>
