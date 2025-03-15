@@ -10,12 +10,13 @@ import { fadeInOutAnimation } from '../../../animations/animations';
 import { environment } from '../../../../environments/environment';
 import { Auth, User } from '@angular/fire/auth';
 import { AuthService } from '../../../services/auth/auth.service';
-
+import { take } from 'rxjs/operators';
+import { AsyncPipe } from '@angular/common';
 @Component({
   selector: 'app-upload',
   templateUrl: './upload.component.html',
   styleUrls: ['./upload.component.css'],
-  animations: [fadeInOutAnimation]
+  animations: [fadeInOutAnimation],
 })
 export class UploadComponent implements OnInit, OnDestroy {
   isButtonDisabled: boolean = true;
@@ -73,43 +74,48 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   handleFileInput(files: FileList) {
-    // if (!this.auth.currentUser) {
-    //   this.openDialog('Authentication Required', 'error', 'Please sign in to upload files.');
-    //   return;
-    // }
+    // Add authentication check
+    this.authService.user$.pipe(
+      take(1)  // Take only the current value
+    ).subscribe(user => {
+      if (!user) {
+        this.openDialog('Please sign in to upload files', 'error');
+        return;
+      }
 
-    this.working = true;
-    this.fileToUpload = files.item(0);
-    this.openDialog(this.fileToUpload.name, "scan");
-  
-    // Upload our script
-    this.$script_data = this.upload.postFile(this.fileToUpload);
-    this.dataSubscription = this.$script_data
-      .pipe(
-        catchError((err) => {
+      this.working = true;
+      this.fileToUpload = files.item(0);
+      this.openDialog(this.fileToUpload.name, "scan");
+    
+      // Upload our script
+      this.$script_data = this.upload.postFile(this.fileToUpload);
+      this.dataSubscription = this.$script_data
+        .pipe(
+          catchError((err) => {
+            this.dialog.closeAll();
+            this.openDialog('An error occurred', "error", err);
+            return EMPTY;
+          })
+        )
+        .subscribe(({scriptData}) => {
+          const { allLines, title } = scriptData;
+          this.allLines = this.processSeverResponseAndCheckForPage2(allLines);
+          alert(
+            'your IP is safe. ' + title + ' was just deleted from our servers.'
+          );
           this.dialog.closeAll();
-          this.openDialog('An error occurred', "error", err);
-          return EMPTY;
-        })
-      )
-      .subscribe((data) => {
-        const { allLines, title } = data;
-        this.allLines = this.processSeverResponseAndCheckForPage2(allLines);
-        alert(
-          'your IP is safe. ' + title + ' was just deleted from our servers.'
-        );
-        this.dialog.closeAll();
-        this.pdf.initializeData();
-        this.router.navigate(['download']);
-      });
+          this.pdf.initializeData();
+          this.router.navigate(['download']);
+        });
+    });
   }
 
-  openDialog(title, dialogOption, error = null) {
+  openDialog(title, dialogOption, response = null) {
     if (this.working) {
       const dialogRef = this.dialog.open(SpinningBotComponent, {
         height: '750px',
         width: '750px',
-        data: { title, dialogOption, error },
+        data: { title, dialogOption, response},
         disableClose: false,
       });
       dialogRef.afterClosed().subscribe((result) => {
@@ -143,11 +149,21 @@ export class UploadComponent implements OnInit, OnDestroy {
       ) || '2.';
     return missingTwo;
   }
+
+  // Add method to handle test upload with auth check
   skipUploadForTest() {
-    this.$script_data = this.upload.getTestJSON('test');
-    this.dialog.closeAll();
-    this.pdf.initializeData();
-    this.router.navigate(['download']);
+    this.authService.user$.pipe(
+      take(1)
+    ).subscribe(user => {
+      if (!user) {
+        this.openDialog('Please sign in to use test upload', 'error');
+        return;
+      }
+      
+      this.$script_data = this.upload.getTestJSON('test');
+      this.dialog.closeAll();
+      this.pdf.initializeData();
+      this.router.navigate(['download']);
+    });
   }
-  
 }

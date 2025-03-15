@@ -197,7 +197,7 @@ export class DashboardRightComponent implements OnInit {
       alert('No Script data detected - routing to upload ');
       this.router.navigate(['/']);
     }
-
+debugger
     this.dataSource = new MatTableDataSource(this.pdf.scenes);
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
@@ -448,13 +448,6 @@ private handleSubscriptionRequired(finalDocument: any, response: SubscriptionRes
   });
 }
 
-
-
-  logSelected(): void {
-    // let x = this.scenes.filter(scene => {
-    //   return scene.problems
-    // }).map(scene => scene = scene.problems).flat()
-  }
   waterMarkPages(watermark, doc) {
     doc.forEach((page) => {
       page[0].watermarkText = watermark;

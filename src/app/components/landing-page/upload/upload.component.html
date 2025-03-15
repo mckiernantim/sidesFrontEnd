@@ -27,21 +27,31 @@
         </div>
 
         <div class="flex flex-col lg:flex-row lg:space-x-4 justify-center">
-          <!-- Authentication Section -->
-  
-            <!-- File Upload Button (Only visible when authenticated) -->
-            <button mat-raised-button color="warn" (click)="fileInput.click()"
+          @if (user$ | async; as user) {
+            <!-- Show upload button only when authenticated -->
+            <button mat-raised-button color="warn" 
+              (click)="fileInput.click()"
               class="text-white py-8 font-semibold px-8 rounded-md mb-4 lg:mb-0 custom-button">
               Upload Script PDF
             </button>
-  
+            <input hidden (change)="handleFileInput($event.target.files)" 
+              #fileInput type="file" id="file" accept="application/pdf">
+          } @else {
+            <!-- Show sign in button when not authenticated -->
+            <button mat-raised-button color="primary" 
+              (click)="signIn()"
+              class="text-white py-8 font-semibold px-8 rounded-md mb-4 lg:mb-0 custom-button">
+              Sign In to Continue
+            </button>
+          }
 
           @if (this.underConstruction) {
-          <button mat-raised-button class="bg-soft-red text-xl text-black py-3 px-8 rounded-md mb-4 lg:mb-0"
-            (click)="skipUploadForTest()">skipUploadForTest</button>
+            <button mat-raised-button 
+              class="bg-soft-red text-xl text-black py-3 px-8 rounded-md mb-4 lg:mb-0"
+              (click)="skipUploadForTest()">
+              skipUploadForTest
+            </button>
           }
-          <input hidden (change)="handleFileInput($event.target.files)" #fileInput type="file" id="file"
-            accept="application/pdf">
         </div>
       </div>
 

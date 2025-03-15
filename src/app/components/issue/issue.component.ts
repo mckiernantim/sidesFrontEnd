@@ -48,9 +48,10 @@ export class IssueComponent implements OnInit, AfterViewInit {
   userDisplayEmail:string;
   // New properties for delete confirmation
   isDeleteDialog: boolean = false;
+  isDeleteAccountDialog: boolean = false;
   deleteConfirmation: string = '';
   confirmDelete: boolean = false;
-
+  errorReason: string = '';
   constructor(
     public upload: UploadService,
     public dialogRef: MatDialogRef<IssueComponent>,
@@ -58,7 +59,13 @@ export class IssueComponent implements OnInit, AfterViewInit {
     public cdr: ChangeDetectorRef,
     private auth:AuthService,
     @Inject(MAT_DIALOG_DATA) public data: any
-  ) {}
+  ) {
+   
+    this.isDeleteDialog = this.data?.isDelete || false;
+    this.isDeleteAccountDialog = this.data?.isDeleteAccount || false;
+    this.errorDetails = this.data?.errorDetails || "Unkown Error occured";
+    this.errorReason = this.data?.errorReason || "";
+  }
 
   ngOnInit(): void {
     // Check if this is a delete confirmation dialog
@@ -79,8 +86,6 @@ export class IssueComponent implements OnInit, AfterViewInit {
       this.cdr.detectChanges();
     });
 
-    this.isDeleteDialog = this.data?.isDelete || false;
-
     if (this.isDeleteDialog) {
       // Initialize delete dialog specific properties
       this.confirmDelete = false;
@@ -99,7 +104,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
         : (this.waitingForScript = false);
 
       if (this.data && this.data.error) {
-        this.errorDetails = this.data.error;
+       
         this.error = true;
       }
     }
