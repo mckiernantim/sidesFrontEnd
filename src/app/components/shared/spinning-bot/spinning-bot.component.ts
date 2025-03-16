@@ -15,9 +15,10 @@ interface ModalData {
   error?:ServerError
 }
 @Component({
-  selector: 'app-spinning-bot',
-  templateUrl: './spinning-bot.component.html',
-  styleUrls: ['./spinning-bot.component.css']
+    selector: 'app-spinning-bot',
+    templateUrl: './spinning-bot.component.html',
+    styleUrls: ['./spinning-bot.component.css'],
+    standalone: false
 }) 
 
 

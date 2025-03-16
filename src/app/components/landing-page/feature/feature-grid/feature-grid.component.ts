@@ -2,9 +2,10 @@ import { Component } from '@angular/core';
 import { FeatureCardComponent } from '../feature-card/feature-card.component';
 
 @Component({
-  selector: 'app-feature-grid',
-  templateUrl: './feature-grid.component.html',
-  styleUrls: ['./feature-grid.component.css'],
+    selector: 'app-feature-grid',
+    templateUrl: './feature-grid.component.html',
+    styleUrls: ['./feature-grid.component.css'],
+    standalone: false
 })
 export class FeatureGridComponent {
   titles: string[] = [`Production`, `Casting`, `StudentFilms`];

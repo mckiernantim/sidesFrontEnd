@@ -9,9 +9,10 @@ import { SubscriptionStatus } from '../../types/SubscriptionTypes';
 import { User } from '@angular/fire/auth';
 
 @Component({
-  selector: 'app-subscription',
-  templateUrl: './subscription.component.html',
-  styleUrls: ['./subscription.component.css']
+    selector: 'app-subscription',
+    templateUrl: './subscription.component.html',
+    styleUrls: ['./subscription.component.css'],
+    standalone: false
 })
 export class SubscriptionComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();

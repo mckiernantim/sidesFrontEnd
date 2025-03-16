@@ -1,9 +1,10 @@
 import { Component, EventEmitter, Output} from '@angular/core';
 
 @Component({
-  selector: 'app-add-watermark',
-  templateUrl: './add-watermark.component.html',
-  styleUrls: ['./add-watermark.component.css']
+    selector: 'app-add-watermark',
+    templateUrl: './add-watermark.component.html',
+    styleUrls: ['./add-watermark.component.css'],
+    standalone: false
 })
 export class AddWatermarkComponent {
   displayWaterMark: boolean;

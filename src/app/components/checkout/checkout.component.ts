@@ -11,8 +11,8 @@ export interface scriptData {
 }
 
 @Component({
-  selector: 'app-checkout',
-  template: `
+    selector: 'app-checkout',
+    template: `
     <section>
       <div>
 
@@ -20,7 +20,8 @@ export interface scriptData {
       <button mat-raised-button color="warn"  (click)="fireGetPdf()">Get my Sides</button>
     </section>
   `,
-  styleUrls: ['./checkout.component.css']
+    styleUrls: ['./checkout.component.css'],
+    standalone: false
 })
 
 export class CheckoutComponent {

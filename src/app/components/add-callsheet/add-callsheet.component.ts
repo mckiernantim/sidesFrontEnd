@@ -3,9 +3,10 @@ import { UploadService } from 'src/app/services/upload/upload.service';
 import { catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
 @Component({
-  selector: 'app-add-callsheet',
-  templateUrl: './add-callsheet.component.html',
-  styleUrls: ['./add-callsheet.component.css']
+    selector: 'app-add-callsheet',
+    templateUrl: './add-callsheet.component.html',
+    styleUrls: ['./add-callsheet.component.css'],
+    standalone: false
 })
 export class AddCallsheetComponent {
     constructor(public upload:UploadService) {}

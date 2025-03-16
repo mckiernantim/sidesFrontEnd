@@ -14,10 +14,11 @@ import * as _ from 'lodash';
 import { DragDropOptions } from 'src/app/types/DragDropOptions';
 import { CdkDragDrop, CdkDragStart} from '@angular/cdk/drag-drop'
 @Component({
-  selector: 'app-last-looks-page',
-  templateUrl: './last-looks-page.component.html',
-  styleUrls: ['./last-looks-page.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-last-looks-page',
+    templateUrl: './last-looks-page.component.html',
+    styleUrls: ['./last-looks-page.component.css'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class LastLooksPageComponent {
   @Input() page: any;

@@ -13,10 +13,11 @@ import { AuthService } from '../../../services/auth/auth.service';
 import { take } from 'rxjs/operators';
 import { AsyncPipe } from '@angular/common';
 @Component({
-  selector: 'app-upload',
-  templateUrl: './upload.component.html',
-  styleUrls: ['./upload.component.css'],
-  animations: [fadeInOutAnimation],
+    selector: 'app-upload',
+    templateUrl: './upload.component.html',
+    styleUrls: ['./upload.component.css'],
+    animations: [fadeInOutAnimation],
+    standalone: false
 })
 export class UploadComponent implements OnInit, OnDestroy {
   isButtonDisabled: boolean = true;

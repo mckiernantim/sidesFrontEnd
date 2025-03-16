@@ -14,9 +14,10 @@ import { getAnalytics } from "firebase/analytics";
 
 
 @Component({
-  selector: 'app-complete',
-  templateUrl: './complete.component.html',
-  styleUrls: ['./complete.component.css'],
+    selector: 'app-complete',
+    templateUrl: './complete.component.html',
+    styleUrls: ['./complete.component.css'],
+    standalone: false
 })
 export class CompleteComponent implements OnInit, OnDestroy, AfterViewInit {
   name: string = localStorage.getItem('name') || '';

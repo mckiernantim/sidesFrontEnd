@@ -28,10 +28,11 @@ interface QueueItem {
 import { fadeInOutAnimation } from 'src/app/animations/animations';
 
 @Component({
-  selector: 'app-last-looks',
-  templateUrl: './last-looks.component.html',
-  styleUrls: ['./last-looks.component.css'],
-  animations: [fadeInOutAnimation],
+    selector: 'app-last-looks',
+    templateUrl: './last-looks.component.html',
+    styleUrls: ['./last-looks.component.css'],
+    animations: [fadeInOutAnimation],
+    standalone: false
 })
 export class LastLooksComponent implements OnInit {
   constructor(

@@ -31,10 +31,11 @@ interface toolTipOption {
   ind: number;
 }
 @Component({
-  selector: 'app-dashboard-right',
-  templateUrl: './dashboard-right.component.html',
-  styleUrls: ['./dashboard-right.component.css'],
-  animations: [fadeInOutAnimation],
+    selector: 'app-dashboard-right',
+    templateUrl: './dashboard-right.component.html',
+    styleUrls: ['./dashboard-right.component.css'],
+    animations: [fadeInOutAnimation],
+    standalone: false
 })
 export class DashboardRightComponent implements OnInit {
   // STATE BOOLEANS

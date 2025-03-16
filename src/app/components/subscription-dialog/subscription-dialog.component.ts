@@ -4,8 +4,8 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 
 @Component({
-  selector: 'app-subscription-dialog',
-  template: `
+    selector: 'app-subscription-dialog',
+    template: `
     <div class="p-6 max-w-md">
       <h2 class="text-xl font-semibold mb-4">{{ data.title || 'Subscription Required' }}</h2>
       
@@ -39,8 +39,7 @@ import { MatButtonModule } from '@angular/material/button';
       </div>
     </div>
   `,
-  standalone: true,
-  imports: [CommonModule, MatButtonModule]
+    imports: [CommonModule, MatButtonModule]
 })
 export class SubscriptionDialogComponent {
   constructor(

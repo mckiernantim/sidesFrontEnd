@@ -19,9 +19,10 @@ import { SpinningBotComponent } from '../shared/spinning-bot/spinning-bot.compon
 import { AuthService } from 'src/app/services/auth/auth.service';
 
 @Component({
-  selector: 'app-issue',
-  templateUrl: './issue.component.html',
-  styleUrls: ['./issue.component.css'],
+    selector: 'app-issue',
+    templateUrl: './issue.component.html',
+    styleUrls: ['./issue.component.css'],
+    standalone: false
 })
 export class IssueComponent implements OnInit, AfterViewInit {
   @ViewChild('callSheet') el: ElementRef;

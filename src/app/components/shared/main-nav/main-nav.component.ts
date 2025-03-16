@@ -8,9 +8,10 @@ import { AuthService } from 'src/app/services/auth/auth.service';
 import { User } from '@angular/fire/auth';
 
 @Component({
-  selector: 'app-main-nav',
-  templateUrl: './main-nav.component.html',
-  styleUrls: ['./main-nav.component.css']
+    selector: 'app-main-nav',
+    templateUrl: './main-nav.component.html',
+    styleUrls: ['./main-nav.component.css'],
+    standalone: false
 })
 export class MainNavComponent implements OnInit {
   countdown:number = Date.now() + 5000;
