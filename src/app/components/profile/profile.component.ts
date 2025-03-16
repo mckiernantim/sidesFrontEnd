@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { firstValueFrom, Observable, of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { IssueComponent } from '../issue/issue.component';
-import { switchMap } from 'rxjs';
+import { switchMap, catchError, tap } from 'rxjs';
 import { User } from '@angular/fire/auth';
 import { SubscriptionStatus } from 'src/app/types/SubscriptionTypes';
 
@@ -20,6 +20,14 @@ export class ProfileComponent implements OnInit {
   usageStats: {
     pdfsGenerated: number;
   };
+  isLoading = true;
+  subscriptionBenefits = [
+    'Unlimited PDF generations',
+    'Priority customer support',
+    'Access to premium templates',
+    'Advanced customization options'
+  ];
+  subscriptionPrice = '$20 per week';
 
   constructor(
     private auth: AuthService,
@@ -32,26 +40,59 @@ export class ProfileComponent implements OnInit {
     this.usageStats = {
       pdfsGenerated: 0
     };
+    
+    // Assign the subscription status observable
+    this.subscriptionStatus$ = this.stripe.subscriptionStatus$;
+  }
 
-    this.subscriptionStatus$ = this.auth.user$.pipe(
-      switchMap(user => user ? this.stripe.getSubscriptionStatus(user.uid) : of(null))
-    );
-
+  ngOnInit() {
+    // Set initial loading state
+    this.isLoading = true;
+    
+    // Subscribe to user changes
+    this.auth.user$.subscribe(user => {
+      if (!user) {
+        this.isLoading = false;
+        console.log('No authenticated user found');
+      }
+    });
+    
+    // Subscribe to subscription status changes
     this.subscriptionStatus$.subscribe(status => {
+      this.isLoading = false;
+      debugger
       if (status) {
-        this.usageStats = {
-          pdfsGenerated: status.usage.pdfsGenerated
-        };
-        this.cdr.detectChanges();
+        console.log('Subscription status received:', status);
+        
+        // Update usage stats if available
+        if (status.usage) {
+          this.usageStats = {
+            pdfsGenerated: status.usage.pdfsGenerated || 0
+          };
+        }
+        
+        // Log subscription details
+        if (status.subscription) {
+          console.log('Subscription details:', {
+            active: status.active,
+            renewalDate: status.subscription.currentPeriodEnd,
+            autoRenew: !status.subscription.cancelAtPeriodEnd
+          });
+        }
+      } else {
+        console.log('No subscription status available');
       }
     });
   }
 
-  ngOnInit() {}
 
-  formatDate(date: Date | null): string {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('en-US', {
+  logout() {
+    this.auth.signOut();
+  }
+
+  formatDate(dateString: string | null): string {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -92,66 +133,44 @@ export class ProfileComponent implements OnInit {
         }
       }
     } catch (error) {
-      this.handleError('Failed to initiate subscription');
+      this.showError(error);
     }
   }
 
   async manageSubscription() {
     try {
-      const user = await firstValueFrom(this.user$);
+      const user = await firstValueFrom(this.auth.user$);
       if (!user) {
         throw new Error('User must be logged in to manage subscription');
       }
       
-      const response = await firstValueFrom(this.stripe.createPortalSession(user.uid));
+      console.log('Opening subscription portal for user:', user.uid);
+      const response = await firstValueFrom(this.stripe.createPortalSession(user.uid, user.email));
+      
       if (response?.url) {
+        console.log('Redirecting to portal URL:', response.url);
         window.location.href = response.url;
+      } else {
+        throw new Error('No portal URL returned');
       }
     } catch (error) {
-      this.handleError('Failed to access subscription portal');
+      console.error('Failed to open subscription portal:', error);
+      this.showError({
+        message: 'Failed to open subscription management',
+        details: error.message || 'Unknown error'
+      });
     }
   }
 
-  async cancelSubscription() {
-    try {
-      const status = await firstValueFrom(this.subscriptionStatus$);
-      if (!status?.subscription.id) return;
-
-      const dialogRef = this.dialog.open(IssueComponent, {
-        width: '500px',
-        data: {
-          isDeleteDialog: true,
-          title: 'Cancel Subscription',
-          message: `Are you sure you want to cancel your subscription? Your access will continue until ${this.formatDate(status.subscription.currentPeriodEnd)}.`,
-          showConfirmButton: true,
-          confirmButtonText: 'Cancel Subscription'
-        }
-      });
-
-      dialogRef.afterClosed().subscribe(async result => {
-        if (result === 'confirm') {
-          try {
-            await firstValueFrom(this.stripe.cancelSubscription(status.subscription.id));
-            this.dialog.open(IssueComponent, {
-              width: '400px',
-              data: { 
-                message: `Your subscription has been cancelled. You will have access until ${this.formatDate(status.subscription.currentPeriodEnd)}.` 
-              }
-            });
-          } catch (error) {
-            this.handleError('Failed to cancel subscription');
-          }
-        }
-      });
-    } catch (error) {
-      this.handleError('Failed to process cancellation request');
-    }
-  }
-
-  private handleError(message: string) {
+  private showError(error: any) {
     this.dialog.open(IssueComponent, {
       width: '400px',
-      data: { error: message }
+      data: { 
+        error: true,
+        errorDetails: error.message || 'An error occurred',
+        errorReason: error.details || '',
+        statusCode: error.statusCode
+      }
     });
   }
 }

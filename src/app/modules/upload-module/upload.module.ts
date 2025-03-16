@@ -12,7 +12,7 @@ import { FeatureCardComponent } from 'src/app/components/landing-page/feature/fe
 import { CarouselComponent } from 'src/app/components/carousel/carousel.component';
 import { TestimonialGridComponent } from 'src/app/components/landing-page/testimonial/testimonial-grid/testimonial-grid.component';
 import { SharedModule } from '../shared-module/shared.module';
-
+;
 @NgModule({
   declarations: [
     UploadComponent,
@@ -33,4 +33,8 @@ import { SharedModule } from '../shared-module/shared.module';
     UploadComponent
   ]
 })
-export class UploadModule { }
+export class UploadModule {
+   constructor() {
+    setInput: true  
+  }
+ }

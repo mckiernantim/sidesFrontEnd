@@ -197,7 +197,7 @@ export class DashboardRightComponent implements OnInit {
       alert('No Script data detected - routing to upload ');
       this.router.navigate(['/']);
     }
-debugger
+
     this.dataSource = new MatTableDataSource(this.pdf.scenes);
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;

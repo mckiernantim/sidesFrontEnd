@@ -103,7 +103,7 @@ export class PdfService {
           }
         }
       }
-
+  
       this.length = this.allLines?.length || 0;
       // assign PAGENUMBER values to page 0 and 1 in order for future
       try {
@@ -471,7 +471,7 @@ export class PdfService {
     this.finalDocument.data = sanitizedPages;
 
     this.finalDocReady = true;
-  
+    
     return true
   }
 

@@ -6,6 +6,7 @@ import { StripeService } from '../../services/stripe/stripe.service';
 import { AuthService } from '../../services/auth/auth.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SubscriptionStatus } from '../../types/SubscriptionTypes';
+import { User } from '@angular/fire/auth';
 
 @Component({
   selector: 'app-subscription',
@@ -54,7 +55,7 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
     }
 
     try {
-      const response = await firstValueFrom(this.stripeService.createPortalSession(user.uid));
+      const response = await firstValueFrom(this.stripeService.createPortalSession(user.uid, user.email));
       if (response.url) {
         window.location.href = response.url;
       }

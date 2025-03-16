@@ -31,7 +31,7 @@
 <ng-container *ngIf="dialogOption == 'error'">
   <div class="dialog-content flex flex-col justify-center items-center h-full text-center p-4">
     <div class="w-[80vw] md:w-[70vw] lg:w-[60vw] h-[120vw] lg:h-[40vw]  bg-white rounded-lg shadow-lg">
-      <h3 class="title text-base md:text-lg lg:text-xl pt-8 font-bold mb-2">Error Occurred:</h3>
+      <h3 class="title text-base md:text-lg lg:text-xl pt-8 font-bold mb-2">{{this.error.type }} Error Occurred:</h3>
       <div class="message p-4">
         <p class="text-sm md:text-lg lg:text-xl">{{ this.error.message || "please try again" }}</p>
       </div>

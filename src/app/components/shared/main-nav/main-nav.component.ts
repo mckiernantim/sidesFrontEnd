@@ -50,7 +50,6 @@ export class MainNavComponent implements OnInit {
 } 
 handleImageError(event: any) {
   // Fallback to material icon if image fails to load
-  debugger
   event.target.style.display = 'none';
   const iconElement = document.createElement('mat-icon');
   iconElement.textContent = 'err';

@@ -143,7 +143,6 @@ c
       catchError(error => {
         if (error.status === 403 && error.error.needsSubscription) {
           console.log("Error- subscription needed", error);
-          debugger
           return this.handleSubscriptionFlow(finalDocument, error.error.checkoutUrl);
         }
         return throwError(() => error);
@@ -180,12 +179,34 @@ c
     });
   }
   getTestJSON(name) {
-    let params = new HttpParams();
-    params.append('name', name);
-    this.httpOptions.params = params;
-    this.httpOptions.headers = new Headers();
-    this.httpOptions.responseType = 'blob';
-    return this.httpClient.post(this.url + '/testing', this.script);
+    return from(this.auth.user$).pipe(
+      switchMap(user => {
+        if (!user) {
+          return throwError(() => new Error('User must be authenticated to use test JSON'));
+        }
+
+        let params = new HttpParams()
+          .set('name', name)
+          .set('userEmail', user.email)
+          .set('userId', user.uid);
+
+        this.httpOptions.params = params;
+        this.httpOptions.headers = new Headers();
+        this.httpOptions.responseType = 'blob';
+        
+        return this.httpClient.post(this.url + '/testing', this.script).pipe(
+          catchError(error => {
+            console.error('Test JSON error:', {
+              userEmail: user.email,
+              testName: name,
+              timestamp: new Date().toISOString(),
+              error: error
+            });
+            return throwError(() => error);
+          })
+        );
+      })
+    );
   }
 
   makeJSON(data) {
@@ -201,45 +222,93 @@ c
   // get classified data => returns observable for stuff to plug into
   postFile(fileToUpload: File): Observable<any> {
     this.resetHttpOptions();
-    localStorage.setItem('name', fileToUpload.name.replace(/.pdf/, ''));
-    this.script = localStorage.getItem('name');
-    const formData: FormData = new FormData();
-    formData.append('script', fileToUpload, fileToUpload.name);
-    return this.httpClient
-      .post(this.url + '/api', formData, this.httpOptions)
-      .pipe(
-        map((data: any) => {
-          let { allLines, allChars, individualPages, title, firstAndLastLinesOfScenes } = data
-          this.allLines = allLines;
-          this.firstAndLastLinesOfScenes = firstAndLastLinesOfScenes
-          this.individualPages = individualPages;
-          this.allChars = allChars
-          this.title = title;
-          this.lineCount = [];
-          this.individualPages.forEach((page) => {
-            this.lineCount.push(page.filter((item) => item.totalLines));
-          });
-          return data;
-        })
-      );
+    
+    // Get current user from auth service
+    return from(this.auth.user$).pipe(
+      switchMap(user => {
+        if (!user) {
+          return throwError(() => new Error('User must be authenticated to upload files'));
+        }
+
+        localStorage.setItem('name', fileToUpload.name.replace(/.pdf/, ''));
+        this.script = localStorage.getItem('name');
+        
+        const formData: FormData = new FormData();
+        formData.append('script', fileToUpload, fileToUpload.name);
+        // Add user metadata to the request
+        formData.append('userEmail', user.email);
+        formData.append('userId', user.uid);
+        formData.append('uploadTime', new Date().toISOString());
+
+        return this.httpClient
+          .post(this.url + '/api', formData, this.httpOptions)
+          .pipe(
+            map((res: any) => {
+              let { allLines, allChars, individualPages, title, firstAndLastLinesOfScenes } = res.scriptData;
+              this.allLines = allLines;
+              this.firstAndLastLinesOfScenes = firstAndLastLinesOfScenes;
+              this.individualPages = individualPages;
+              this.allChars = allChars;
+              this.title = title;
+              this.lineCount = [];
+              this.individualPages.forEach((page) => {
+                this.lineCount.push(page.filter((item) => item.totalLines));
+              });
+              return res;
+            }),
+            catchError(error => {
+              console.error('Upload error:', {
+                userEmail: user.email,
+                fileName: fileToUpload.name,
+                timestamp: new Date().toISOString(),
+                error: error
+              });
+              return throwError(() => error);
+            })
+          );
+      })
+    );
   }
 
 
   postCallSheet(fileToUpload: File): Observable<any> {
     this.resetHttpOptions();
-    const formData: FormData = new FormData();
-    if (fileToUpload) {
-      this.coverSheet = fileToUpload;
-      formData.append('callSheet', fileToUpload, fileToUpload.name);
-    } else {
-      this.coverSheet = null;
-      formData.append('callSheet', null);
-    }
+    
+    return from(this.auth.user$).pipe(
+      switchMap(user => {
+        if (!user) {
+          return throwError(() => new Error('User must be authenticated to upload callsheet'));
+        }
 
-    return this.httpClient.post(
-      this.url + '/callsheet',
-      formData,
-      this.httpOptions
+        const formData: FormData = new FormData();
+        if (fileToUpload) {
+          this.coverSheet = fileToUpload;
+          formData.append('callSheet', fileToUpload, fileToUpload.name);
+          // Add user metadata
+          formData.append('userEmail', user.email);
+          formData.append('userId', user.uid);
+          formData.append('uploadTime', new Date().toISOString());
+        } else {
+          this.coverSheet = null;
+          formData.append('callSheet', null);
+        }
+
+        return this.httpClient.post(
+          this.url + '/callsheet',
+          formData,
+          this.httpOptions
+        ).pipe(
+          catchError(error => {
+            console.error('Callsheet upload error:', {
+              userEmail: user.email,
+              fileName: fileToUpload?.name,
+              timestamp: new Date().toISOString(),
+              error: error
+            });
+            return throwError(() => error);
+          })
+        );
+      })
     );
   }
 
