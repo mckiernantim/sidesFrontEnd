@@ -1,12 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, throwError, tap, catchError, of, from, switchMap } from 'rxjs';
 import { map, } from 'rxjs/operators';
-import {
-  HttpClient,
-  HttpHeaders,
-  HttpParams,
-  HttpErrorResponse
-} from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Line } from '../../types/Line';
 import { TokenService } from '../token/token.service';

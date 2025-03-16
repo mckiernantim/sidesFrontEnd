@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { AppRoutingModule } from './app-routing.module';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FormsModule } from '@angular/forms';
@@ -19,17 +19,14 @@ import { IssueComponent } from './components/issue/issue.component';
 import { SharedModule } from './modules/shared-module/shared.module';
 import { DashboardModule } from './modules/dashboard-module/dashboard.module';
 
-@NgModule({
-    declarations: [
+@NgModule({ declarations: [
         AppComponent,
         IssueComponent,
         AboutComponent,
         DonateComponent,
-     ],
-    imports: [
-        BrowserModule,
+    ],
+    bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,
-        HttpClientModule,
         BrowserAnimationsModule,
         LayoutModule,
         SharedModule,
@@ -37,13 +34,10 @@ import { DashboardModule } from './modules/dashboard-module/dashboard.module';
         FirebaseModule,
         FormsModule,
         UploadModule,
-        DashboardModule,
-    ],
-    providers: [
+        DashboardModule], providers: [
         DatePipe,
-    ],
-    bootstrap: [AppComponent]
-})
+        provideHttpClient(withInterceptorsFromDi()),
+    ] })
 export class AppModule {}
     
 
