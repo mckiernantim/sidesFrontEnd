@@ -1,7 +1,6 @@
-@import 'tailwindcss/utilities';
-@import "https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css";
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 
 
@@ -84,7 +83,6 @@ body {
     border-radius: 0.375rem; 
     margin-bottom: 1rem; 
   }
-@import 'https://fonts.googleapis.com/icon?family=Material+Icons';
 
 .material-icons{
     font-family: 'Material Icons' 

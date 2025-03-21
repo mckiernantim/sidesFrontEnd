@@ -1,175 +1,257 @@
 import { Injectable } from '@angular/core';
-import {
-  Auth,
+import { 
+  Auth, 
+  GoogleAuthProvider, 
   signInWithPopup,
-  GoogleAuthProvider,
-  User,
+  signInWithRedirect,
+  getRedirectResult,
+  signOut, 
+  User, 
   onAuthStateChanged,
-  getIdToken,
+  browserLocalPersistence,
+  setPersistence,
+  inMemoryPersistence,
+  AuthError
 } from '@angular/fire/auth';
-import {
-  Firestore,
-  doc,
-  getDoc,
-  setDoc,
-  deleteDoc,
+import { 
+  Firestore, 
+  doc, 
+  getDoc, 
+  setDoc, 
   onSnapshot,
+  deleteDoc
 } from '@angular/fire/firestore';
-
-import {
-  BehaviorSubject,
-  Observable,
-  map,
-  of,
-  throwError,
-  firstValueFrom,
-} from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { SubscriptionStatus } from '../../types/SubscriptionTypes';
+import { AngularFirestore } from '@angular/fire/compat/firestore';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
 import { HttpClient } from '@angular/common/http';
 import { StripeSession } from 'src/app/types/user';
 import { environment } from 'src/environments/environment';
+import { map, take, switchMap, filter } from 'rxjs/operators';
+import { Router } from '@angular/router';
 
+// Define the auth state interface
 export interface AuthState {
   user: User | null;
   loading: boolean;
   error: string | null;
-  subscription?: SubscriptionStatus;
-}
-
-interface SubscriptionStatus {
-  active: boolean;
-  currentPeriodEnd: Date;
-  stripeCustomerId: string;
-  stripeSubscriptionId: string;
 }
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class AuthService {
-  public authState = new BehaviorSubject<AuthState>({
+  // Create a BehaviorSubject with the auth state
+  private authStateSubject = new BehaviorSubject<AuthState>({
     user: null,
     loading: true,
-    error: null,
+    error: null
   });
-
-  user$ = this.authState.pipe(map((state) => state.user));
-  loading$ = this.authState.pipe(map((state) => state.loading));
-  error$ = this.authState.pipe(map((state) => state.error));
-  subscription$ = this.authState.pipe(map((state) => state.subscription));
+  
+  // Expose the auth state as an Observable
+  authState$: Observable<AuthState> = this.authStateSubject.asObservable();
+  
+  // Add user$ property that extracts just the user from authState
+  user$ = this.authState$.pipe(map(state => state.user));
+  
   apiUrl = environment.url;
+
   constructor(
     private auth: Auth,
     private firestore: Firestore,
-    private http: HttpClient
+    private http: HttpClient,
+    private router: Router
   ) {
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        console.log(user)
-        // Start listening to subscription changes
-        this.listenToSubscription(user.uid);
+    console.log('AUTH_SERVICE_INIT', { currentUser: this.auth.currentUser?.uid });
+    
+   
+    // Listen for auth state changes
+    onAuthStateChanged(this.auth, 
+      (user) => {
+        console.log('AUTH_STATE_CHANGED', { 
+          userId: user?.uid,
+          isAnonymous: user?.isAnonymous,
+          emailVerified: user?.emailVerified,
+          timestamp: new Date().toISOString()
+        });
+        
+        // Store auth state in localStorage for debugging
+        if (user) {
+          localStorage.setItem('auth_debug_user_id', user.uid);
+          localStorage.setItem('auth_debug_timestamp', Date.now().toString());
+        } else {
+          localStorage.removeItem('auth_debug_user_id');
+          localStorage.removeItem('auth_debug_timestamp');
+        }
+        
+        // Update auth state with user
+        this.authStateSubject.next({
+          user,
+          loading: false,
+          error: null
+        });
+      },
+      (error) => {
+        console.error('AUTH_STATE_ERROR', error);
+        // Handle auth state error
+        this.authStateSubject.next({
+          user: null,
+          loading: false,
+          error: this.getErrorMessage(error)
+        });
       }
-
-      this.authState.next({
-        user,
-        loading: false,
-        error: null,
-      });
-    });
+    );
+    
   }
-
-  private listenToSubscription(userId: string) {
-    const subscriptionRef = doc(this.firestore, `subscriptions/${userId}`);
-    onSnapshot(subscriptionRef, (snapshot) => {
-      const subscription = snapshot.data() as SubscriptionStatus | undefined;
-
-      this.authState.next({
-        ...this.authState.value,
-        subscription,
-      });
-    });
-  }
-
-  async signIn(): Promise<User | null> {
+  
+  // Alternative method to set persistence
+  private async setAlternativePersistence(): Promise<void> {
     try {
-      this.authState.next({
-        ...this.authState.value,
+      // Try using the compat version if available
+      const auth = this.auth as any;
+      if (auth.setPersistence) {
+        await auth.setPersistence('local');
+        console.log('AUTH_COMPAT_PERSISTENCE_SET');
+      } else {
+        console.warn('AUTH_NO_PERSISTENCE_AVAILABLE');
+      }
+    } catch (error) {
+      console.error('AUTH_ALTERNATIVE_PERSISTENCE_FAILED', error);
+    }
+  }
+  
+  // Check if we have persisted auth that doesn't match current state
+  private checkPersistedAuth(): void {
+    try {
+      const persistedUserId = localStorage.getItem('auth_debug_user_id');
+      const currentUserId = this.auth.currentUser?.uid;
+      
+      console.log('AUTH_PERSISTENCE_CHECK', { 
+        persistedUserId, 
+        currentUserId,
+        match: persistedUserId === currentUserId
+      });
+      
+      // If we have a persisted user but no current user, there might be a sync issue
+      if (persistedUserId && !currentUserId) {
+        console.warn('AUTH_PERSISTENCE_MISMATCH', 'Persisted user exists but no current user');
+        
+        // Instead of using onAuthStateChanged which might cause another error,
+        // just log the issue and let the normal auth flow handle it
+        console.log('AUTH_WAITING_FOR_STATE_CHANGE');
+      }
+    } catch (error) {
+      console.error('AUTH_PERSISTENCE_CHECK_ERROR', error);
+    }
+  }
+  
+  // Simple, focused Google sign-in with popup only
+  async signInWithGoogle(): Promise<void> {
+    try {
+      // Update loading state
+      this.authStateSubject.next({
+        ...this.authStateSubject.value,
         loading: true,
-        error: null,
+        error: null
       });
-
+      
+      // Create Google provider with minimal configuration
       const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      const result = await signInWithPopup(this.auth, provider);
-
-      // Create or update user document
-      await setDoc(
-        doc(this.firestore, `users/${result.user.uid}`),
-        {
-          email: result.user.email,
-          lastLogin: new Date(),
-          firebaseUid: result.user.uid,
-        },
-        { merge: true }
-      );
-
-      return result.user;
-    } catch (error: any) {
-      const errorMessage = this.getAuthErrorMessage(error.code);
-      this.authState.next({
-        ...this.authState.value,
+      
+      // Attempt sign in with popup
+      const userCredential = await signInWithPopup(this.auth, provider);
+      
+      // If successful, update user data
+      if (userCredential.user) {
+        await this.updateUserData(userCredential.user);
+        
+        // Update auth state with user
+        this.authStateSubject.next({
+          user: userCredential.user,
+          loading: false,
+          error: null
+        });
+      }
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      
+      // Update auth state with error
+      this.authStateSubject.next({
+        ...this.authStateSubject.value,
         loading: false,
-        error: errorMessage,
+        error: this.getErrorMessage(error)
       });
-      throw error;
     }
   }
-  async getIdToken(): Promise<string> {
-    const user = this.auth.currentUser;
-    if (!user) {
-      throw new Error('No user logged in');
-    }
-    return await getIdToken(user);
-  }
-  private getAuthErrorMessage(code: string): string {
-    const errorMessages = {
-      'auth/popup-closed-by-user':
-        'Sign-in window was closed. Please try again.',
-      'auth/popup-blocked':
-        'Pop-up was blocked by browser. Please enable pop-ups and try again.',
+  
+  // Update user data in Firestore
+  private async updateUserData(user: User): Promise<void> {
+    const userRef = doc(this.firestore, `users/${user.uid}`);
+    const userData = {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      lastLogin: new Date()
     };
-    return errorMessages[code] || 'Authentication failed';
+    
+    await setDoc(userRef, userData, { merge: true });
   }
-
-  async checkSubscriptionStatus(): Promise<boolean> {
-    const user = this.getCurrentUser();
-    if (!user) return false;
-
-    const subscriptionDoc = await getDoc(
-      doc(this.firestore, `subscriptions/${user.uid}`)
-    );
-    const subscription = subscriptionDoc.data() as SubscriptionStatus;
-
-    return (
-      subscription?.active &&
-      new Date(subscription.currentPeriodEnd) > new Date()
-    );
-  }
-
+  
+  // Sign out
   async signOut(): Promise<void> {
     try {
-      await this.auth.signOut();
-      this.authState.next({
+      // Set loading state
+      this.authStateSubject.next({
+        ...this.authStateSubject.value,
+        loading: true
+      });
+      
+      await signOut(this.auth);
+      
+      // Update auth state
+      this.authStateSubject.next({
         user: null,
         loading: false,
-        error: null,
-        subscription: undefined,
+        error: null
       });
+      
+      this.router.navigate(['/']);
     } catch (error) {
-      this.authState.next({
-        ...this.authState.value,
-        error: 'Error signing out',
+      console.error('Sign out error:', error);
+      // Update auth state with error
+      this.authStateSubject.next({
+        ...this.authStateSubject.value,
+        loading: false,
+        error: this.getErrorMessage(error)
       });
-      throw error;
+    }
+  }
+  
+  // Helper method to get error message
+  private getErrorMessage(error: any): string {
+    const errorCode = error.code || '';
+    switch (errorCode) {
+      case 'auth/user-not-found':
+        return 'User not found';
+      case 'auth/wrong-password':
+        return 'Invalid password';
+      case 'auth/invalid-email':
+        return 'Invalid email';
+      case 'auth/user-disabled':
+        return 'User account has been disabled';
+      case 'auth/popup-closed-by-user':
+        return 'Authentication popup was closed';
+      case 'auth/popup-blocked':
+        return 'Authentication popup was blocked';
+      case 'auth/cancelled-popup-request':
+        return 'Authentication request was cancelled';
+      case 'auth/operation-not-allowed':
+        return 'Operation not allowed';
+      default:
+        return error.message || 'An unknown error occurred';
     }
   }
 
@@ -177,30 +259,59 @@ export class AuthService {
     return this.auth.currentUser;
   }
 
-  isAuthenticated(): boolean {
-    return !!this.auth.currentUser;
+  private listenToSubscription(userId: string) {
+    const subscriptionRef = doc(this.firestore, `subscriptions/${userId}`);
+    
+    onSnapshot(subscriptionRef, (snapshot) => {
+      const subscription = snapshot.data() as SubscriptionStatus | undefined;
+
+      this.authStateSubject.next({
+        ...this.authStateSubject.value,
+        user: this.auth.currentUser
+      });
+    });
   }
+
+  async checkSubscriptionStatus(): Promise<boolean> {
+    const user = this.auth.currentUser;
+    if (!user) return false;
+
+    const subscriptionDocRef = doc(this.firestore, `subscriptions/${user.uid}`);
+    const subscriptionSnapshot = await getDoc(subscriptionDocRef);
+    const response = subscriptionSnapshot.data() as SubscriptionStatus;
+
+    return (
+      response?.active &&
+      new Date(response.subscription.currentPeriodEnd) > new Date()
+    );
+  }
+
   async deleteAccount(): Promise<void> {
-    const user = await this.auth.currentUser;
+    const user = this.auth.currentUser;
     if (!user) throw new Error('No user found');
 
     try {
       // Delete user data collections
-      await deleteDoc(doc(this.firestore, 'users', user.uid));
-      await deleteDoc(doc(this.firestore, 'subscriptions', user.uid));
+      await deleteDoc(doc(this.firestore, `users/${user.uid}`));
+      await deleteDoc(doc(this.firestore, `subscriptions/${user.uid}`));
       
       // Finally delete the auth user
       await user.delete();
       
       // Clear local auth state
-      this.authState.next(null);
+      this.authStateSubject.next({
+        user: null,
+        loading: false,
+        error: null
+      });
     } catch (error) {
       console.error('Error deleting account:', error);
       throw error;
     }
   }
+
   async initiateSubscription(email: string): Promise<{ success: boolean; checkoutUrl?: string }> {
-    const user = await firstValueFrom(this.user$);
+    const user = await this.getCurrentUser();
     if (!user) throw new Error('Must be logged in to subscribe');
 
     try {
@@ -213,6 +324,13 @@ export class AuthService {
 
       if (!response?.checkoutUrl) throw new Error('No checkout URL received');
 
+      // Instead of using a popup which can cause COOP errors, redirect to Stripe
+      window.location.href = response.checkoutUrl;
+      
+      // Return a placeholder - the actual flow will continue after redirect back
+      return { success: true, checkoutUrl: response.checkoutUrl };
+      
+      /* Removing popup approach to avoid COOP errors
       // Open Stripe checkout in popup
       const popupWidth = 500;
       const popupHeight = 700;
@@ -224,35 +342,29 @@ export class AuthService {
         'StripeCheckout',
         `width=${popupWidth},height=${popupHeight},left=${left},top=${top}`
       );
-
-      // Return a promise that resolves when subscription is complete
-      return new Promise((resolve, reject) => {
-        const checkInterval = setInterval(async () => {
-          try {
-            // Check subscription status
-            const status = await this.checkSubscriptionStatus();
-            if (status) {
-              clearInterval(checkInterval);
-              if (popup) popup.close();
-              resolve({ success: true });
-            }
-          } catch (error) {
-            clearInterval(checkInterval);
-            reject(error);
-          }
-        }, 1000);
-
-        // Handle popup close
-        const popupCheck = setInterval(() => {
-          if (popup?.closed) {
-            clearInterval(popupCheck);
-            clearInterval(checkInterval);
-            resolve({ success: false, checkoutUrl: response.checkoutUrl });
-          }
-        }, 500);
-      });
+      */
     } catch (error) {
       console.error('Subscription error:', error);
       throw error;
     }
-}}
+  }
+
+  // Add a method to ensure user is loaded
+  ensureUserLoaded(): Observable<User | null> {
+    return this.user$.pipe(
+      take(1),
+      switchMap(user => {
+        if (user !== undefined) {
+          // User state is already determined
+          return of(user);
+        } else {
+          // Wait for auth state to be determined
+          return this.user$.pipe(
+            filter(u => u !== undefined),
+            take(1)
+          );
+        }
+      })
+    );
+  }
+}

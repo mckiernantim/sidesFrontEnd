@@ -207,7 +207,7 @@ export class DashboardRightComponent implements OnInit {
   async handleAuthAction() {
     try {
       if (!this.userData) {
-        await this.auth.signIn();
+        await this.auth.signInWithGoogle();
       } else {
         await this.openConfirmPurchaseDialog();
       }
@@ -313,7 +313,7 @@ export class DashboardRightComponent implements OnInit {
       loginDialog.afterClosed().subscribe(async (result) => {
         if (result === 'login') {
           try {
-            await this.auth.signIn();
+            await this.auth.signInWithGoogle();
     
             this.sendFinalDocumentToServer(finalDocument);
           } catch (error) {

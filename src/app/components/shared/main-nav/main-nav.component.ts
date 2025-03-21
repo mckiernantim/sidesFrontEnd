@@ -17,8 +17,7 @@ export class MainNavComponent implements OnInit {
   countdown:number = Date.now() + 5000;
   countdownClock: string | null = null;
   displayClock: boolean = true;  
-  user$: Observable<User>;
-  cd:ChangeDetectorRef
+  user$: Observable<User | null>;
   
   isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
     .pipe(
@@ -29,10 +28,13 @@ export class MainNavComponent implements OnInit {
   constructor(
     private breakpointObserver: BreakpointObserver, 
     private token: TokenService,
-    private router:Router,
+    private router: Router,
     private route: ActivatedRoute,
     private auth: AuthService,
-  ) {}
+    private cd: ChangeDetectorRef
+  ) {
+    this.user$ = this.auth.authState$.pipe(map(state => state.user));
+  }
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
@@ -47,15 +49,15 @@ export class MainNavComponent implements OnInit {
         console.log("countdown: " + this.countdownClock)
       })
     })
-    this.user$ = this.auth.user$;
-} 
-handleImageError(event: any) {
-  // Fallback to material icon if image fails to load
-  event.target.style.display = 'none';
-  const iconElement = document.createElement('mat-icon');
-  iconElement.textContent = 'err';
-  event.target.parentNode.appendChild(iconElement);
-}
+  } 
+
+  handleImageError(event: any) {
+    // Fallback to material icon if image fails to load
+    event.target.style.display = 'none';
+    const iconElement = document.createElement('mat-icon');
+    iconElement.textContent = 'err';
+    event.target.parentNode.appendChild(iconElement);
+  }
 
   formatTime(milliseconds) {
     try {
@@ -80,14 +82,14 @@ handleImageError(event: any) {
     }
   }
 
-  signOut() {
-    this.auth.signOut();
-    this.cd.detectChanges();
+  async signOut() {
+    await this.auth.signOut();
+    // Remove the detectChanges call
   }
   
-  signIn() {
-    this.auth.signIn();
-    this.cd.detectChanges();
+  async signIn() {
+    await this.auth.signInWithGoogle();
+    // Remove the detectChanges call
   }
 }
 

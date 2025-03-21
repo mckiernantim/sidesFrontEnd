@@ -67,7 +67,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   signIn() {
-    this.authService.signIn();
+    this.authService.signInWithGoogle();
   }
 
   signOut() {

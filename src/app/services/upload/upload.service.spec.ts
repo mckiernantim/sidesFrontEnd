@@ -6,11 +6,16 @@ import { UploadService } from './upload.service';
 import Cookies from 'js-cookie';
 import { TokenService } from '../token/token.service';
 import { after } from 'lodash';
+import { AuthService } from '../auth/auth.service';
+import { StripeService } from '../stripe/stripe.service';
+import { of } from 'rxjs';
 
 describe('UploadService', () => {
   let service: UploadService;
   let httpMock: HttpTestingController;
   let httpClient: HttpClient;
+  let authServiceMock: any;
+  let stripeServiceMock: any;
 
   const dummyPdfData = {
     allLines: [],
@@ -21,18 +26,45 @@ describe('UploadService', () => {
   };
 
   beforeEach(() => {
+    // Create mocks
+    authServiceMock = {
+      getCurrentUser: jest.fn().mockReturnValue({
+        uid: 'test-user-id',
+        email: 'test@example.com',
+        getIdToken: jest.fn().mockResolvedValue('mock-token')
+      }),
+      user$: of({
+        uid: 'test-user-id',
+        email: 'test@example.com'
+      })
+    };
+
+    stripeServiceMock = {
+      getSubscriptionStatus: jest.fn().mockReturnValue(of({
+        active: true,
+        subscription: {
+          status: 'active'
+        }
+      }))
+    };
+
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [UploadService, { provide: TokenService, useValue: {} }]
+      providers: [
+        UploadService,
+        { provide: AuthService, useValue: authServiceMock },
+        { provide: StripeService, useValue: stripeServiceMock }
+      ]
     });
+
     service = TestBed.inject(UploadService);
     httpMock = TestBed.inject(HttpTestingController);
   });
+
   afterEach(() => {
     httpMock.verify();
-  })
+  });
 
-  
   it('should exist', () => {
     expect(service).toBeDefined();
   });
@@ -118,8 +150,92 @@ describe('generatePdf', () => {
     req.flush({}); // Mock the response
   });
 });
-  
-  
-  
+
+  it('should upload file for subscribed users', () => {
+    // Mock file
+    const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' });
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('userId', 'test-user-id');
+    
+    // Mock response
+    const mockResponse = { success: true, fileId: '123' };
+    
+    // Call service
+    service.uploadFile(file).subscribe(response => {
+      expect(response).toEqual(mockResponse);
+    });
+    
+    // Verify HTTP request
+    const req = httpMock.expectOne(`${environment.url}/upload`);
+    expect(req.request.method).toBe('POST');
+    req.flush(mockResponse);
+  });
+
+  it('should check subscription status before upload', () => {
+    // Mock file
+    const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' });
+    
+    // Call service
+    service.uploadFile(file).subscribe();
+    
+    // Verify subscription check
+    expect(stripeServiceMock.getSubscriptionStatus).toHaveBeenCalledWith('test-user-id');
+    
+    // Verify HTTP request
+    const req = httpMock.expectOne(`${environment.url}/upload`);
+    req.flush({ success: true });
+  });
+
+  it('should handle upload error', () => {
+    // Mock file
+    const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' });
+    
+    // Call service
+    service.uploadFile(file).subscribe(
+      () => fail('should have failed with an error'),
+      (error) => {
+        expect(error).toBeTruthy();
+      }
+    );
+    
+    // Simulate HTTP error
+    const req = httpMock.expectOne(`${environment.url}/upload`);
+    req.flush('Error uploading file', { status: 500, statusText: 'Server Error' });
+  });
+
+  it('should track usage after successful upload', () => {
+    // Mock tracking method
+    spyOn(service, 'trackUsage').and.returnValue(of({ success: true }));
+    
+    // Mock file
+    const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' });
+    
+    // Call service
+    service.uploadFile(file).subscribe();
+    
+    // Verify HTTP request
+    const req = httpMock.expectOne(`${environment.url}/upload`);
+    req.flush({ success: true, fileId: '123' });
+    
+    // Verify tracking was called
+    expect(service.trackUsage).toHaveBeenCalledWith('test-user-id', 'pdf_generated');
+  });
+
+  it('should track usage', () => {
+    // Call tracking method
+    service.trackUsage('test-user-id', 'pdf_generated').subscribe(response => {
+      expect(response).toEqual({ success: true });
+    });
+    
+    // Verify HTTP request
+    const req = httpMock.expectOne(`${environment.url}/usage/track`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ 
+      userId: 'test-user-id', 
+      eventType: 'pdf_generated' 
+    });
+    req.flush({ success: true });
+  });
 });
 

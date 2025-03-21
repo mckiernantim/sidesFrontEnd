@@ -1,4 +1,4 @@
-export const environment = {
+export const environmentProd = {
   production: true,
   stripe:"pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ",
   // firebaseConfig:{

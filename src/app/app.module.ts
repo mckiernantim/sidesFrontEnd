@@ -18,26 +18,34 @@ import { DonateComponent } from './components/donate/donate.component';
 import { IssueComponent } from './components/issue/issue.component';
 import { SharedModule } from './modules/shared-module/shared.module';
 import { DashboardModule } from './modules/dashboard-module/dashboard.module';
+import { ProfileLoaderComponent } from './components/profile/profile-loader.component';
 
-@NgModule({ declarations: [
-        AppComponent,
-        IssueComponent,
-        AboutComponent,
-        DonateComponent,
-    ],
-    bootstrap: [AppComponent], imports: [BrowserModule,
-        AppRoutingModule,
-        BrowserAnimationsModule,
-        LayoutModule,
-        SharedModule,
-        MaterialModule,
-        FirebaseModule,
-        FormsModule,
-        UploadModule,
-        DashboardModule], providers: [
-        DatePipe,
-        provideHttpClient(withInterceptorsFromDi()),
-    ] })
+@NgModule({ 
+  declarations: [
+    AppComponent,
+    IssueComponent,
+    AboutComponent,
+    DonateComponent,
+  ],
+  bootstrap: [AppComponent], 
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    BrowserAnimationsModule,
+    LayoutModule,
+    SharedModule,
+    MaterialModule,
+    FirebaseModule,
+    FormsModule,
+    UploadModule,
+    DashboardModule,
+    ProfileLoaderComponent
+  ], 
+  providers: [
+    DatePipe,
+    provideHttpClient(withInterceptorsFromDi()),
+  ] 
+})
 export class AppModule {}
     
 

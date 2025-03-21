@@ -124,7 +124,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
   }
   async login() {
     try {
-      await this.auth.signIn();
+      await this.auth.signInWithGoogle();
       this.dialogRef.close('login');
     } catch (error) {
       console.error('Login failed:', error);

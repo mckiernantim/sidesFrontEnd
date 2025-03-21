@@ -12,6 +12,8 @@ import { PaymentSuccessComponent } from './components/payment-success/payment-su
 import { ProfileComponent } from './components/profile/profile.component';
 import { UserGuard } from './guards/user/user.guard';
 import { SubscriptionComponent } from './components/subscription/subscription.component';
+import { ProfileLoaderComponent } from './components/profile/profile-loader.component';
+import { AuthGuard } from './guards/auth.guard'
 
 const routes: Routes = [
   {
@@ -29,7 +31,8 @@ const routes: Routes = [
   { path: 'Home', component: UploadComponent },
   { path: 'payment-success', component: PaymentSuccessComponent },
   { path: 'Checkout', component: CheckoutComponent },
-  { path: 'profile', component: ProfileComponent, canActivate: [UserGuard] },
+  { path: 'profile-loader', component: ProfileLoaderComponent },
+  { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard] },
   { path: "**", component:FourOfourComponent}
  ];
 

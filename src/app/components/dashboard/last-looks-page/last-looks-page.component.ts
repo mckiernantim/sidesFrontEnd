@@ -4,15 +4,18 @@ import {
   EventEmitter,
   SimpleChanges,
   ElementRef,
-  ChangeDetectionStrategy,
+  Input,
+  ChangeDetectorRef,
+  HostListener
 } from '@angular/core';
-import { Input, ChangeDetectorRef, HostListener } from '@angular/core';
 import { DragDropService } from 'src/app/services/drag-drop/drag-drop.service';
 import { UndoService } from 'src/app/services/edit/undo.service';
 import { Line } from 'src/app/types/Line';
 import * as _ from 'lodash';
 import { DragDropOptions } from 'src/app/types/DragDropOptions';
 import { CdkDragDrop, CdkDragStart} from '@angular/cdk/drag-drop'
+import { ChangeDetectionStrategy } from '@angular/core';
+const { OnPush } = ChangeDetectionStrategy;
 @Component({
     selector: 'app-last-looks-page',
     templateUrl: './last-looks-page.component.html',

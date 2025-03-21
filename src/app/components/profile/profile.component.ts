@@ -1,13 +1,13 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { AuthService } from 'src/app/services/auth/auth.service';
 import { StripeService } from 'src/app/services/stripe/stripe.service';
 import { Router } from '@angular/router';
-import { firstValueFrom, Observable, of } from 'rxjs';
+import { firstValueFrom, Observable, of, switchMap, BehaviorSubject, Subscription } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { IssueComponent } from '../issue/issue.component';
-import { switchMap, catchError, tap } from 'rxjs';
+import { catchError, tap } from 'rxjs';
 import { User } from '@angular/fire/auth';
-import { SubscriptionStatus } from 'src/app/types/SubscriptionTypes';
+import { SubscriptionStatus, SubscriptionStatusType, SUBSCRIPTION_STATUS_DISPLAY } from 'src/app/types/SubscriptionTypes';
 
 @Component({
     selector: 'app-profile',
@@ -15,13 +15,26 @@ import { SubscriptionStatus } from 'src/app/types/SubscriptionTypes';
     styleUrls: ['./profile.component.css'],
     standalone: false
 })
-export class ProfileComponent implements OnInit {
-  user$: Observable<User | null>;
-  subscriptionStatus$: Observable<SubscriptionStatus | null>;
-  usageStats: {
-    pdfsGenerated: number;
-  };
+export class ProfileComponent implements OnInit, OnDestroy {
+  // User data
+  user: User | null = null;
+  
+  // Subscription data
+  subscription$ = new BehaviorSubject<SubscriptionStatus | null>(null);
+  subscription: SubscriptionStatus | null = null;
+  renewalDate: Date | null = null;
+  expirationDate: Date | null = null;
+  
+  // UI state
   isLoading = true;
+  error: string | null = null;
+  
+  // Usage stats
+  usageStats = {
+    pdfsGenerated: 0
+  };
+  
+  // Subscription benefits for marketing
   subscriptionBenefits = [
     'Unlimited PDF generations',
     'Priority customer support',
@@ -29,6 +42,9 @@ export class ProfileComponent implements OnInit {
     'Advanced customization options'
   ];
   subscriptionPrice = '$20 per week';
+  
+  // Subscriptions to clean up
+  private subscriptions = new Subscription();
 
   constructor(
     private auth: AuthService,
@@ -36,142 +52,207 @@ export class ProfileComponent implements OnInit {
     private router: Router,
     private dialog: MatDialog,
     private cdr: ChangeDetectorRef
-  ) {
-    this.user$ = this.auth.user$;
-    this.usageStats = {
-      pdfsGenerated: 0
-    };
-    
-    // Assign the subscription status observable
-    this.subscriptionStatus$ = this.stripe.subscriptionStatus$;
-  }
+  ) {}
 
   ngOnInit() {
-    // Set initial loading state
-    this.isLoading = true;
+    // Get current user
+    this.user = this.auth.getCurrentUser();
     
-    // Subscribe to user changes
-    this.auth.user$.subscribe(user => {
-      if (!user) {
-        this.isLoading = false;
-        console.log('No authenticated user found');
-      }
-    });
-    
-    // Subscribe to subscription status changes
-    this.subscriptionStatus$.subscribe(status => {
+    if (!this.user) {
+      console.log('PROFILE: No authenticated user found');
       this.isLoading = false;
-      debugger
-      if (status) {
-        console.log('Subscription status received:', status);
+      return;
+    }
+    
+    // Load subscription data
+    this.loadSubscriptionData();
+  }
+  
+  ngOnDestroy() {
+    // Clean up subscriptions
+    this.subscriptions.unsubscribe();
+  }
+  
+  // Load subscription data
+  loadSubscriptionData(): void {
+    if (!this.user) {
+      this.isLoading = false;
+      return;
+    }
+    
+    console.log('PROFILE: Loading subscription data for user', this.user.uid);
+    
+    const sub = this.stripe.getSubscriptionStatus(this.user.uid).subscribe({
+      next: (subscription) => {
+        console.log('PROFILE: Subscription loaded', subscription);
+        debugger
+        // Store the subscription
+        this.subscription = subscription;
+        this.subscription$.next(subscription);
         
-        // Update usage stats if available
-        if (status.usage) {
-          this.usageStats = {
-            pdfsGenerated: status.usage.pdfsGenerated || 0
-          };
+        // Process dates
+        this.processSubscriptionDates(subscription);
+        
+        // Update usage stats
+        if (subscription.usage) {
+          this.usageStats.pdfsGenerated = subscription.usage.pdfsGenerated || 0;
         }
         
-        // Log subscription details
-        if (status.subscription) {
-          console.log('Subscription details:', {
-            active: status.active,
-            renewalDate: status.subscription.currentPeriodEnd,
-            autoRenew: !status.subscription.cancelAtPeriodEnd
-          });
-        }
-      } else {
-        console.log('No subscription status available');
+        // Update loading state
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('PROFILE: Error loading subscription', error);
+        this.error = 'Failed to load subscription data';
+        this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
+    
+    this.subscriptions.add(sub);
   }
-
-
-  logout() {
-    this.auth.signOut();
+  
+  // Process subscription dates
+  private processSubscriptionDates(subscription: SubscriptionStatus): void {
+    if (!subscription?.subscription?.currentPeriodEnd) {
+      this.renewalDate = null;
+      this.expirationDate = null;
+      return;
+    }
+    
+    const endDate = new Date(subscription.subscription.currentPeriodEnd);
+    const status = subscription.subscription.status?.toLowerCase() || '';
+    
+    if (status === 'canceled') {
+      this.expirationDate = endDate;
+      this.renewalDate = null;
+      console.log('PROFILE: Subscription is canceled, expires on', endDate);
+    } else {
+      this.renewalDate = endDate;
+      this.expirationDate = null;
+      console.log('PROFILE: Subscription renews on', endDate);
+    }
   }
-
-  formatDate(dateString: string | null): string {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
+  
+  // Format date for display
+  formatDate(date: Date | null): string {
+    if (!date) return 'N/A';
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
   }
-
-  async handleSubscription() {
-    try {
-      const user = await firstValueFrom(this.user$);
-      if (!user || !user.email) {
-        throw new Error('User must be logged in to subscribe');
-      }
-
-      const response = await firstValueFrom(
-        this.stripe.createSubscription(user.uid, user.email)
-      );
-      
-      if (response.checkoutUrl) {
-        const stripeWindow = window.open(
-          response.checkoutUrl,
-          'stripe',
-          'width=700,height=1000'
-        );
-
-        if (stripeWindow) {
-          const windowCheck = setInterval(async () => {
-            if (stripeWindow.closed) {
-              clearInterval(windowCheck);
-              const status = await firstValueFrom(this.stripe.getSubscriptionStatus(user.uid));
-              if (status?.active) {
-                this.dialog.open(IssueComponent, {
-                  width: '400px',
-                  data: { message: 'Subscription activated successfully!' }
-                });
-              }
-            }
-          }, 500);
+  
+  // Handle new subscription
+  handleNewSubscription(): void {
+    if (!this.user || !this.user.email) {
+      this.showError('You must be logged in to subscribe');
+      return;
+    }
+    
+    const sub = this.stripe.createSubscription(this.user.uid, this.user.email).subscribe({
+      next: (result) => {
+        console.log('PROFILE: Subscription creation result', result);
+     
+        // Check for url property in the response
+        if (result.success && result.url) {
+          console.log('Redirecting to checkout URL:', result.url);
+          // Redirect to Stripe checkout
+          window.location.href = result.url;
+        } else if (result.success && result.checkoutUrl) {
+          console.log('Redirecting to checkout URL:', result.checkoutUrl);
+          // Redirect to Stripe checkout (using checkoutUrl property)
+          window.location.href = result.checkoutUrl;
+        } else {
+          console.error('No URL found in response:', result);
+          this.showError('Failed to create subscription: No checkout URL received');
         }
+      },
+      error: (error) => {
+        console.error('PROFILE: Error creating subscription', error);
+        this.showError('An error occurred while creating your subscription');
       }
-    } catch (error) {
-      this.showError(error);
-    }
+    });
+    
+    this.subscriptions.add(sub);
   }
+  
+  // Manage existing subscription
+  manageSubscription(): void {
 
-  async manageSubscription() {
-    try {
-      const user = await firstValueFrom(this.auth.user$);
-      if (!user) {
-        throw new Error('User must be logged in to manage subscription');
-      }
-      
-      console.log('Opening subscription portal for user:', user.uid);
-      const response = await firstValueFrom(this.stripe.createPortalSession(user.uid, user.email));
-      
-      if (response?.url) {
-        console.log('Redirecting to portal URL:', response.url);
-        window.location.href = response.url;
-      } else {
-        throw new Error('No portal URL returned');
-      }
-    } catch (error) {
-      console.error('Failed to open subscription portal:', error);
-      this.showError({
-        message: 'Failed to open subscription management',
-        details: error.message || 'Unknown error'
-      });
+    if (!this.user || !this.user.email) {
+      this.showError('You must be logged in to manage your subscription');
+      return;
     }
+    
+    const sub = this.stripe.createPortalSession(this.user.uid, this.user.email).subscribe({
+      next: (result) => {
+        if (result.success && result.url) {
+          // Redirect to Stripe portal
+          window.location.href = result.url;
+        } else {
+          this.showError('Failed to open subscription management');
+        }
+      },
+      error: (error) => {
+        console.error('PROFILE: Error opening portal', error);
+        this.showError('An error occurred while opening subscription management');
+      }
+    });
+    
+    this.subscriptions.add(sub);
   }
-
-  private showError(error: any) {
+  
+  // Show error dialog
+  private showError(message: string): void {
     this.dialog.open(IssueComponent, {
       width: '400px',
       data: { 
         error: true,
-        errorDetails: error.message || 'An error occurred',
-        errorReason: error.details || '',
-        statusCode: error.statusCode
+        errorDetails: message,
+        errorReason: '',
+        statusCode: null
       }
     });
+  }
+  
+  // Logout
+  logout(): void {
+    this.auth.signOut();
+  }
+
+  // Helper functions to determine subscription status
+  getSubscriptionStatusType(subscription: SubscriptionStatus): SubscriptionStatusType {
+    if (!subscription?.subscription?.status) {
+      return 'none';
+    }
+    
+    const status = subscription.subscription.status.toLowerCase();
+    const willAutoRenew = subscription.subscription.willAutoRenew;
+    
+    if (status === 'active' || status === 'trialing') {
+      return willAutoRenew ? 'active' : 'expiring';
+    } else if (status === 'canceled') {
+      return 'canceled';
+    }
+    
+    return 'none';
+  }
+
+  getStatusColor(subscription: SubscriptionStatus): string {
+    const statusType = this.getSubscriptionStatusType(subscription);
+    return SUBSCRIPTION_STATUS_DISPLAY[statusType].color;
+  }
+
+  getStatusIcon(subscription: SubscriptionStatus): string {
+    const statusType = this.getSubscriptionStatusType(subscription);
+    return SUBSCRIPTION_STATUS_DISPLAY[statusType].icon;
+  }
+
+  getStatusText(subscription: SubscriptionStatus): string {
+    const statusType = this.getSubscriptionStatusType(subscription);
+    return SUBSCRIPTION_STATUS_DISPLAY[statusType].text;
   }
 }

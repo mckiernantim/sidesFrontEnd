@@ -80,14 +80,23 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "buildTarget": "sideWays:build"
+            "buildTarget": "sideWays:build",
+            "headers": {
+              "Cross-Origin-Opener-Policy": "same-origin-allow-popups"
+            }
           },
           "configurations": {
             "production": {
-              "buildTarget": "sideWays:build:production"
+              "buildTarget": "sideWays:build:production",
+              "headers": {
+                "Cross-Origin-Opener-Policy": "same-origin-allow-popups"
+              }
             },
             "dev": {
-              "buildTarget": "sideWays:build:dev"
+              "buildTarget": "sideWays:build:dev",
+              "headers": {
+                "Cross-Origin-Opener-Policy": "same-origin-allow-popups"
+              }
             }
           },
           "defaultConfiguration": "dev"
