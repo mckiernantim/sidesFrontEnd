@@ -46,7 +46,7 @@ export class UploadService {
   ) {
 
   }
-c
+
   // Helper type guard for checking response type
   isSubscriptionResponse(response: PdfGenerationResponse): response is SubscriptionResponse {
     return !response.success && 'needsSubscription' in response;
@@ -145,15 +145,34 @@ c
     );
   }
 
-  downloadPdf(name: string, callsheet: string, pdfToken: string): Observable<Blob> {
+  downloadPdf(name: string, callsheet: string, pdfToken: string, userId?: string): Observable<Blob> {
+    // Create request body with all parameters
+    const requestBody: any = {
+      pdfToken,
+      name,
+      callsheet: callsheet || ''
+    };
     
-    return this.httpClient.get(`${this.url}/complete/${pdfToken}`, {
-      params: {
-        name: name,
-        callsheet: callsheet || ''
-      },
-      responseType: 'blob'
+    // Only add userId if it exists
+    if (userId) {
+      requestBody.userId = userId;
+    }
+    
+    // Log the request for debugging
+    console.log('Download PDF request:', {
+      endpoint: `${this.url}/complete`,
+      requestBody: { ...requestBody, pdfToken: '***redacted***' } // Don't log the actual token
     });
+    
+    return this.httpClient.post(`${this.url}/complete`, requestBody, {
+      responseType: 'blob'
+    }).pipe(
+      tap(() => console.log('Download PDF response received')),
+      catchError(error => {
+        console.error('Download PDF error:', error);
+        return throwError(() => error);
+      })
+    );
   }
   // Add method to verify subscription status
   verifySubscriptionStatus(sessionId: string): Observable<any> {
@@ -234,12 +253,12 @@ c
         formData.append('userEmail', user.email);
         formData.append('userId', user.uid);
         formData.append('uploadTime', new Date().toISOString());
-
+        debugger
         return this.httpClient
           .post(this.url + '/api', formData, this.httpOptions)
           .pipe(
             map((res: any) => {
-              let { allLines, allChars, individualPages, title, firstAndLastLinesOfScenes } = res.scriptData;
+              let { allLines, allChars, individualPages, title, firstAndLastLinesOfScenes } = res;
               this.allLines = allLines;
               this.firstAndLastLinesOfScenes = firstAndLastLinesOfScenes;
               this.individualPages = individualPages;

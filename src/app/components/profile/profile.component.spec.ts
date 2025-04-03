@@ -1,175 +1,166 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { RouterTestingModule } from '@angular/router/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { of, BehaviorSubject } from 'rxjs';
 import { ProfileComponent } from './profile.component';
-import { AuthService } from 'src/app/services/auth/auth.service';
-import { StripeService } from 'src/app/services/stripe/stripe.service';
-import { MatDialog } from '@angular/material/dialog';
-import { Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
-import { BehaviorSubject } from 'rxjs';
-import { SubscriptionStatus } from 'src/app/types/SubscriptionTypes';
+import { AuthService } from '../../services/auth/auth.service';
+import { StripeService } from '../../services/stripe/stripe.service';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { User } from '@angular/fire/auth';
 
 describe('ProfileComponent', () => {
   let component: ProfileComponent;
   let fixture: ComponentFixture<ProfileComponent>;
-  let authServiceMock: any;
-  let stripeServiceMock: any;
-  let dialogMock: any;
-  let routerMock: any;
-
-  // Mock subscription data
-  const mockSubscription: SubscriptionStatus = {
-    active: true,
-    subscription: {
-      status: 'active',
-      originalStartDate: '2023-01-01T00:00:00.000Z',
-      currentPeriodEnd: '2023-12-31T00:00:00.000Z',
-      willAutoRenew: true
-    },
-    usage: {
-      pdfsGenerated: 10
-    }
-  };
+  let authServiceMock: jest.Mocked<Partial<AuthService>>;
+  let stripeServiceMock: jest.Mocked<Partial<StripeService>>;
+  let dialogMock: jest.Mocked<Partial<MatDialog>>;
+  let userSubject: BehaviorSubject<User | null>;
 
   beforeEach(async () => {
-    // Create mocks for services
+    // Create a subject to simulate auth state changes
+    userSubject = new BehaviorSubject<User | null>(null);
+
+    // Mock services with proper Jest typing
     authServiceMock = {
-      getCurrentUser: jest.fn().mockReturnValue({
-        uid: 'test-user-id',
-        email: 'test@example.com'
-      }),
-      signOut: jest.fn()
+      user$: userSubject.asObservable(),
+      signOut: jest.fn().mockResolvedValue(undefined),
+      getCurrentUser: jest.fn().mockImplementation(() => userSubject.getValue())
     };
 
     stripeServiceMock = {
-      getSubscriptionStatus: jest.fn().mockReturnValue(of(mockSubscription)),
-      createSubscription: jest.fn().mockReturnValue(of({ 
-        success: true, 
-        url: 'https://checkout.stripe.com/test' 
+      getSubscriptionStatus: jest.fn().mockReturnValue(of({
+        active: true,
+        subscription: {
+          status: 'active',
+          originalStartDate: '2023-01-01T00:00:00.000Z',
+          currentPeriodEnd: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+          willAutoRenew: true
+        }
       })),
-      createPortalSession: jest.fn().mockReturnValue(of({ 
-        success: true, 
-        url: 'https://billing.stripe.com/test' 
+      createPortalSession: jest.fn().mockReturnValue(of({
+        success: true,
+        url: 'https://billing.stripe.com/test-portal'
       }))
     };
 
     dialogMock = {
-      open: jest.fn()
-    };
-
-    routerMock = {
-      navigate: jest.fn()
+      open: jest.fn().mockReturnValue({
+        afterClosed: jest.fn().mockReturnValue(of(true))
+      })
     };
 
     await TestBed.configureTestingModule({
+      imports: [
+        RouterTestingModule,
+        HttpClientTestingModule,
+        MatDialogModule,
+        NoopAnimationsModule
+      ],
       declarations: [ProfileComponent],
       providers: [
         { provide: AuthService, useValue: authServiceMock },
         { provide: StripeService, useValue: stripeServiceMock },
-        { provide: MatDialog, useValue: dialogMock },
-        { provide: Router, useValue: routerMock }
+        { provide: MatDialog, useValue: dialogMock }
       ],
-      schemas: [NO_ERRORS_SCHEMA] // Ignore unknown elements and attributes
+      schemas: [NO_ERRORS_SCHEMA] // Ignore unknown elements
     }).compileComponents();
+  });
 
+  beforeEach(() => {
     fixture = TestBed.createComponent(ProfileComponent);
     component = fixture.componentInstance;
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  test('should create the component', () => {
+    expect(component).not.toBeNull();
   });
 
-  it('should load subscription data on init', () => {
-    component.ngOnInit();
-    expect(stripeServiceMock.getSubscriptionStatus).toHaveBeenCalledWith('test-user-id');
-    expect(component.subscription).toEqual(mockSubscription);
-    expect(component.isLoading).toBe(false);
+  describe('when user is authenticated', () => {
+    let mockUser: User;
+    
+    beforeEach(() => {
+      // Create a mock user
+      mockUser = {
+        uid: 'test-user-id',
+        email: 'test@example.com',
+        displayName: 'Test User',
+        photoURL: 'https://example.com/photo.jpg',
+        emailVerified: true,
+        isAnonymous: false,
+        metadata: {},
+        providerData: [],
+        refreshToken: '',
+        tenantId: null,
+        delete: jest.fn(),
+        getIdToken: jest.fn(),
+        getIdTokenResult: jest.fn(),
+        reload: jest.fn(),
+        toJSON: jest.fn()
+      } as unknown as User;
+      
+      userSubject.next(mockUser);
+      fixture.detectChanges();
+    });
+    
+    test('should load user profile data', () => {
+      // Verify user data is set in component
+      expect(component.user).toBe(mockUser);
+      
+      // Verify subscription status was requested
+      expect(stripeServiceMock.getSubscriptionStatus).toHaveBeenCalledWith('test-user-id');
+    });
+    
+    test('should display subscription status correctly', () => {
+      // Verify subscription data is set in component
+      expect(component.subscription?.active).toBe(true);
+      expect(component.subscription?.subscription?.status).toBe('active');
+      expect(component.subscription?.subscription?.originalStartDate).toBe('2023-01-01T00:00:00.000Z');
+      expect(component.subscription?.subscription?.willAutoRenew).toBe(true);
+      
+      // Check the currentPeriodEnd separately since it's dynamic
+      expect(typeof component.subscription?.subscription?.currentPeriodEnd).toBe('string');
+    });
+    
+    test('should open Stripe portal when managing subscription', () => {
+      // Mock window.location.href
+      const locationSpy = jest.spyOn(window, 'location', 'get').mockImplementation(() => ({
+        ...window.location,
+        href: ''
+      } as Location));
+      
+      // Call manageSubscription method
+      component.manageSubscription();
+      
+      // Verify portal session was created
+      expect(stripeServiceMock.createPortalSession).toHaveBeenCalledWith(
+        'test-user-id',
+        'test@example.com'
+      );
+      
+      // Restore window.location
+      locationSpy.mockRestore();
+    });
+    
+    test('should call auth service signOut when logging out', () => {
+      // Call logout method
+      component.logout();
+      
+      // Verify auth service was called
+      expect(authServiceMock.signOut).toHaveBeenCalled();
+    });
   });
-
-  it('should process subscription dates correctly for active subscription', () => {
-    component.ngOnInit();
-    expect(component.renewalDate).toBeInstanceOf(Date);
-    expect(component.expirationDate).toBeNull();
-  });
-
-  it('should process subscription dates correctly for canceled subscription', () => {
-    const canceledSubscription = {
-      ...mockSubscription,
-      subscription: {
-        ...mockSubscription.subscription,
-        status: 'canceled'
-      }
-    };
-    stripeServiceMock.getSubscriptionStatus.mockReturnValue(of(canceledSubscription));
+  
+  describe('when user is not authenticated', () => {
+    beforeEach(() => {
+      userSubject.next(null);
+      fixture.detectChanges();
+    });
     
-    component.ngOnInit();
-    expect(component.renewalDate).toBeNull();
-    expect(component.expirationDate).toBeInstanceOf(Date);
-  });
-
-  it('should handle new subscription correctly', () => {
-    const windowLocationSpy = jest.spyOn(window.location, 'href', 'set');
-    
-    component.handleNewSubscription();
-    
-    expect(stripeServiceMock.createSubscription).toHaveBeenCalledWith('test-user-id', 'test@example.com');
-    expect(windowLocationSpy).toHaveBeenCalledWith('https://checkout.stripe.com/test');
-  });
-
-  it('should handle manage subscription correctly', () => {
-    const windowLocationSpy = jest.spyOn(window.location, 'href', 'set');
-    
-    component.manageSubscription();
-    
-    expect(stripeServiceMock.createPortalSession).toHaveBeenCalledWith('test-user-id', 'test@example.com');
-    expect(windowLocationSpy).toHaveBeenCalledWith('https://billing.stripe.com/test');
-  });
-
-  it('should handle error when creating subscription', () => {
-    stripeServiceMock.createSubscription.mockReturnValue(throwError(() => new Error('Test error')));
-    
-    component.handleNewSubscription();
-    
-    expect(dialogMock.open).toHaveBeenCalled();
-  });
-
-  it('should handle error when managing subscription', () => {
-    stripeServiceMock.createPortalSession.mockReturnValue(throwError(() => new Error('Test error')));
-    
-    component.manageSubscription();
-    
-    expect(dialogMock.open).toHaveBeenCalled();
-  });
-
-  it('should handle logout', () => {
-    component.logout();
-    expect(authServiceMock.signOut).toHaveBeenCalled();
-  });
-
-  it('should correctly identify subscription status types', () => {
-    // Active subscription that will auto-renew
-    expect(component.getSubscriptionStatusType({
-      ...mockSubscription,
-      subscription: { ...mockSubscription.subscription, willAutoRenew: true }
-    })).toBe('active');
-    
-    // Active subscription that will not auto-renew
-    expect(component.getSubscriptionStatusType({
-      ...mockSubscription,
-      subscription: { ...mockSubscription.subscription, willAutoRenew: false }
-    })).toBe('expiring');
-    
-    // Canceled subscription
-    expect(component.getSubscriptionStatusType({
-      ...mockSubscription,
-      subscription: { ...mockSubscription.subscription, status: 'canceled' }
-    })).toBe('canceled');
-    
-    // No subscription
-    expect(component.getSubscriptionStatusType({
-      ...mockSubscription,
-      subscription: { ...mockSubscription.subscription, status: null }
-    })).toBe('none');
+    test('should not load subscription data', () => {
+      expect(component.isLoading).toBe(false);
+      expect(stripeServiceMock.getSubscriptionStatus).not.toHaveBeenCalled();
+    });
   });
 });

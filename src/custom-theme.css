@@ -1,0 +1,45 @@
+/* Define the colors as variables */
+:root {
+  --primary-color: #007bff; /* Soft Blue */
+  --accent-color: #20c997; /* Vibrant Teal */
+  --warn-color: #fc130f; /* Moderate Red */
+  --background-color: #f8f9fa; /* Light Gray */
+  --text-color: #343a40; /* Dark Gray */
+  --off-white: #f9f9f9; /* Off-White */
+  --light-gray: #d3d3d3; /* Light Gray for tables */
+}
+
+/* Custom global styles */
+body {
+  background-color: white; 
+  color: var(--text-color);
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Custom component styles */
+.mat-mdc-table {
+  background-color: var(--light-gray);
+}
+
+.mat-mdc-card {
+  background-color: var(--off-white);
+}
+
+.mat-mdc-toolbar.mat-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.mat-mdc-button.mat-primary {
+  background-color: var(--primary-color);
+}
+
+.mat-mdc-button.mat-accent {
+  background-color: var(--accent-color);
+}
+
+.mat-mdc-button.mat-warn {
+  background-color: var(--warn-color);
+} 

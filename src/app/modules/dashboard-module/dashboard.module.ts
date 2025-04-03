@@ -1,6 +1,7 @@
-import { NgModule } from '@angular/core';
+import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
 import { DashboardComponent } from '../../components/dashboard/dashboard.component';
 import { DashboardRightComponent } from '../../components/dashboard/dashboard-right/dashboard-right.component';
@@ -10,7 +11,6 @@ import { AddCallsheetComponent } from '../../components/add-callsheet/add-callsh
 import { ToolTipComponent } from '../../components/shared/tool-tip/tool-tip.component';
 import { AddWatermarkComponent } from '../../components/add-watermark/add-watermark.component';
 import { SharedModule } from '../shared-module/shared.module';
-import { MaterialModule } from '../material-module/material.module';
 import { CheckoutComponent } from 'src/app/components/checkout/checkout.component';
 
 @NgModule({
@@ -26,9 +26,17 @@ import { CheckoutComponent } from 'src/app/components/checkout/checkout.componen
   ],
   imports: [
     CommonModule,
-    SharedModule,
-    MaterialModule
+    FormsModule,
+    ReactiveFormsModule,
+    RouterModule,
+    SharedModule
   ],
- 
+  exports: [
+    DashboardComponent,
+    DashboardRightComponent,
+    LastLooksComponent,
+    LastLooksPageComponent
+  ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DashboardModule { }

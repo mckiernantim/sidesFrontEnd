@@ -1,62 +1,48 @@
 import { NgModule } from '@angular/core';
-import { DatePipe } from '@angular/common';
-import { AppRoutingModule } from './app-routing.module';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { FormsModule } from '@angular/forms';
-import { LayoutModule } from '@angular/cdk/layout';
-// material stuff
-import { MaterialModule } from './modules/material-module/material.module';
-// Firebase
-import { FirebaseModule } from './modules/firebase-module/firebase.module';
-import { UploadModule } from './modules/upload-module/upload.module';
-// components
+import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { HttpClientModule } from '@angular/common/http';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+
+import { FirebaseModule } from './modules/firebase-module/firebase.module';
+
 import { AboutComponent } from './components/about/about.component';
 import { DonateComponent } from './components/donate/donate.component';
 import { IssueComponent } from './components/issue/issue.component';
-import { SharedModule } from './modules/shared-module/shared.module';
+import { UploadModule } from './modules/upload-module/upload.module';
 import { DashboardModule } from './modules/dashboard-module/dashboard.module';
-import { ProfileLoaderComponent } from './components/profile/profile-loader.component';
+import { SharedModule } from './modules/shared-module/shared.module';
+import { PaymentSuccessComponent } from './components/payment-success/payment-success.component';
+import { ProfileComponent } from './components/profile/profile.component';
+import { TestComponent } from './components/test/test.component';
 
-@NgModule({ 
+@NgModule({
   declarations: [
     AppComponent,
-    IssueComponent,
     AboutComponent,
     DonateComponent,
+    IssueComponent,
+    ProfileComponent,
+    PaymentSuccessComponent,
+    TestComponent
   ],
-  bootstrap: [AppComponent], 
   imports: [
     BrowserModule,
     AppRoutingModule,
     BrowserAnimationsModule,
-    LayoutModule,
-    SharedModule,
-    MaterialModule,
-    FirebaseModule,
+    HttpClientModule,
     FormsModule,
+    ReactiveFormsModule,
+    CommonModule,
     UploadModule,
+    SharedModule,
     DashboardModule,
-    ProfileLoaderComponent
-  ], 
-  providers: [
-    DatePipe,
-    provideHttpClient(withInterceptorsFromDi()),
-  ] 
+    FirebaseModule.forRoot()
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
 })
-export class AppModule {}
-    
-
-  
-
-
-
-
-
-
-
-
-
-
+export class AppModule { }

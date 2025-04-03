@@ -3,27 +3,24 @@ import { Observable } from 'rxjs';
 import { IssueComponent } from '../../issue/issue.component';
 import { Router,  NavigationEnd } from '@angular/router';
 import { UploadService } from '../../../services/upload/upload.service';
-import { Component, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
-import { MatPaginator } from '@angular/material/paginator';
-import { MatSort } from '@angular/material/sort';
-import { MatTableDataSource } from '@angular/material/table';
-import { MatDialog } from '@angular/material/dialog';
+import { Component, OnInit, ViewChild, ChangeDetectorRef, ElementRef } from '@angular/core';
+
 import { StripeService } from '../../../services/stripe/stripe.service';
 import { Subscription, firstValueFrom, filter } from 'rxjs';
 import { UndoService } from '../../../services/edit/undo.service';
 import { Line } from 'src/app/types/Line';
 import { PdfService } from '../../../services/pdf/pdf.service';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+
 import { fadeInOutAnimation } from '../../../animations/animations';
 import { SpinningBotComponent } from '../../shared/spinning-bot/spinning-bot.component';
 import { TokenService } from 'src/app/services/token/token.service';
 import { AuthService } from 'src/app/services/auth/auth.service';
-import { SubscriptionDialogComponent } from '../../subscription-dialog/subscription-dialog.component';
 import { privateDecrypt } from 'crypto';
-import { logEvent, getAnalytics, Analytics } from '@angular/fire/analytics';
+import { getAnalytics } from '@angular/fire/analytics';
 import { User, PdfResponse, SubscriptionResponse, isPdfResponse, PdfGenerationResponse, DeleteResponse, isErrorResponse, isSubscriptionResponse } from 'src/app/types/user';
+import { TailwindDialogService } from '../../../services/tailwind-dialog/tailwind-dialog.service';
 
-
+import { animate, style, transition, trigger } from '@angular/animations';
 
 interface toolTipOption {
   title: string;
@@ -34,10 +31,22 @@ interface toolTipOption {
     selector: 'app-dashboard-right',
     templateUrl: './dashboard-right.component.html',
     styleUrls: ['./dashboard-right.component.css'],
-    animations: [fadeInOutAnimation],
+    animations: [
+      trigger('fadeInOut', [
+        transition(':enter', [
+          style({ opacity: 0 }),
+          animate('300ms', style({ opacity: 1 })),
+        ]),
+        transition(':leave', [
+          animate('300ms', style({ opacity: 0 }))
+        ])
+      ])
+    ],
     standalone: false
 })
 export class DashboardRightComponent implements OnInit {
+  @ViewChild('input') input: ElementRef;
+  
   // STATE BOOLEANS
   userData: any;
   dataReady: boolean = false;
@@ -78,7 +87,7 @@ export class DashboardRightComponent implements OnInit {
   // DATA FOR SCRIPT
   allLines;
   displayedColumns: string[] = ['number', 'text', 'select'];
-  dataSource: MatTableDataSource<any>;
+  dataSource: any;
   scenes: any[];
   initialSelection: any[] = [];
   selected: any[];
@@ -104,6 +113,7 @@ export class DashboardRightComponent implements OnInit {
   initialFinalDocState: Line[];
   callsheet: string;
   watermark: string;
+  currentPage: number = 0;
   script: string = localStorage.getItem('name');
   // DEPCREACEATED WATSON STUFF MAY COME BACK
 
@@ -113,8 +123,13 @@ export class DashboardRightComponent implements OnInit {
   scriptProblems: any[];
 
   // DATA TABLE HELPERS FROM ANGULAR
-  @ViewChild(MatPaginator, { static: true }) paginator: MatPaginator;
-  @ViewChild(MatSort, { static: true }) sort: MatSort;
+
+
+  // Analytics
+  private analytics: any;
+
+  // Add this property to the DashboardRightComponent class
+  pageSize: number = 10;
 
   constructor(
     public cdr: ChangeDetectorRef,
@@ -122,19 +137,36 @@ export class DashboardRightComponent implements OnInit {
     public upload: UploadService,
     public undoService: UndoService,
     public router: Router,
-    public dialog: MatDialog,
-    public errorDialog: MatDialog,
     public lineOut: LineOutService,
     public pdf: PdfService,
-    private breaks: BreakpointObserver,
     public token: TokenService,
     public auth: AuthService,
-    private analytics: Analytics
+    private dialog: TailwindDialogService
   ) {
-    // DATA ITEMS FOR FUN
-    this.analytics = getAnalytics();
+    // Initialize analytics if available
+    try {
+      this.analytics = getAnalytics();
+    } catch (error) {
+      console.warn('Firebase Analytics not available:', error);
+      // Create a mock analytics object to prevent errors
+      this.analytics = {
+        logEvent: () => {}
+      };
+    }
+    
     this.totalLines;
     this.scriptLength;
+  }
+
+  // Helper method for analytics that won't crash if analytics isn't available
+  logAnalyticsEvent(eventName: string, params?: Record<string, any>) {
+    try {
+      if (this.analytics && typeof this.analytics.logEvent === 'function') {
+        this.analytics.logEvent(eventName, params);
+      }
+    } catch (error) {
+      console.warn('Failed to log analytics event:', error);
+    }
   }
 
   ngOnInit(): void {
@@ -154,6 +186,7 @@ export class DashboardRightComponent implements OnInit {
         this.handleStripeReturn();
       }
     });
+
   }
         
   ngAfterViewInit(): void {
@@ -199,23 +232,14 @@ export class DashboardRightComponent implements OnInit {
       this.router.navigate(['/']);
     }
 
-    this.dataSource = new MatTableDataSource(this.pdf.scenes);
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
+    // Replace MatTableDataSource with direct array assignment
+    this.dataSource = this.pdf.scenes || [];
     this.length = this.pdf.allLines.length;
+    
+    // Initialize current page to 0
+    this.currentPage = 0;
   }
-  async handleAuthAction() {
-    try {
-      if (!this.userData) {
-        await this.auth.signInWithGoogle();
-      } else {
-        await this.openConfirmPurchaseDialog();
-      }
-    } catch (error) {
-      console.error('Authentication error:', error);
-      this.handleError('Authentication failed. Please try again.');
-    }
-  }
+
   // lets get lookback tighter  - should be able to refrence lastCharacterIndex
   lookBack(line) {
     let newText = '';
@@ -277,10 +301,19 @@ export class DashboardRightComponent implements OnInit {
   }
 
   applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
-    if (this.dataSource.paginator) {
-      this.dataSource.paginator.firstPage();
+    const filterValue = (event.target as HTMLInputElement).value.trim().toLowerCase();
+    
+    if (filterValue) {
+      // Filter the data based on all properties
+      this.dataSource = this.pdf.scenes.filter(scene => {
+        return Object.keys(scene).some(key => {
+          const value = scene[key];
+          return value && value.toString().toLowerCase().includes(filterValue);
+        });
+      });
+    } else {
+      // Reset to original data
+      this.dataSource = this.pdf.scenes;
     }
   }
 
@@ -299,7 +332,6 @@ export class DashboardRightComponent implements OnInit {
 
 
   private handleLoginRequired(finalDocument: any): Promise<void> {
-    
     return new Promise((resolve) => {
       const loginDialog = this.dialog.open(IssueComponent, {
         width: '500px',
@@ -314,11 +346,10 @@ export class DashboardRightComponent implements OnInit {
         if (result === 'login') {
           try {
             await this.auth.signInWithGoogle();
-    
             this.sendFinalDocumentToServer(finalDocument);
           } catch (error) {
             console.error('Login failed:', error);
-            this.handleError('Login failed. Please try again.');
+            this.handleError('Login failed. Please try again.', error.message || 'Unknown error');
           }
         }
         resolve();
@@ -326,128 +357,130 @@ export class DashboardRightComponent implements OnInit {
     });
   }
   async sendFinalDocumentToServer(finalDocument) {
-    const loadingDialog = this.dialog.open(SpinningBotComponent, {
-      width: '550px',
-      height: '600px',
-      data: { title: this.script, dialogOption: 'payment' }
-    });
-  
     try {
+      // Track analytics event
+      this.logAnalyticsEvent('pdf_generation_started', {
+        documentName: this.script,
+        hasCallsheet: !!this.callsheet,
+        sceneCount: this.selected.length
+      });
+      
+      // Get current user
       const user = await firstValueFrom(this.auth.user$);
       if (!user) {
-        loadingDialog.close();
-        await this.handleLoginRequired(finalDocument);
+        this.handleError('Authentication required', 'Please sign in to generate a PDF');
         return;
       }
       
-      // Get existing token if available
-      const existingToken = this.token.getToken(this.token.pdfKey);
-      
-      const response = await firstValueFrom(this.upload.generatePdf({
+      // Prepare document with user data
+      const documentToSend = {
         ...finalDocument,
+        name: this.script,
         email: user.email,
         userId: user.uid,
-        pdfToken: existingToken
-      }));
+        callSheet: this.callsheet || null
+      };
       
-      loadingDialog.close();
-  
-      // Always store token and expiration
-      if (response.pdfToken) {
-        this.token.setToken(this.token.pdfKey, response.pdfToken);
-        this.token.setToken(this.token.tokenKey, response.expires);
-      }
-  
-      if (response.success) {
-        this.router.navigate(['complete'], {
-          queryParams: { 
-            pdfToken: response.pdfToken,
-            expires: response.expires
-          }
-        });
-      } else if (response.needsSubscription) {
-        const dialogRef = this.dialog.open(SubscriptionDialogComponent, {
-          width: '500px',
-          data: {
-            title: 'Subscription Required',
-            message: 'A subscription is required to generate PDFs. Would you like to subscribe now?',
-            pricing: true,
-            checkoutUrl: response.checkoutUrl
-          }
-        });
-  
-        dialogRef.afterClosed().subscribe(async result => {
-          if (result === 'subscribe') {
-            const stripeWindow = window.open(
-              response.checkoutUrl,
-              'stripe',
-              'width=700,height=1000'
-            );
+      // Generate PDF
+      this.upload.generatePdf(documentToSend).subscribe({
+        next: (response: any) => {
+          // Close spinner dialog if open
+          this.dialog.closeAll();
+          
+          // Check if we have a valid response with the expected properties
+          if (response && response.status === 'complete' && response.jwtToken) {
+            // Success - PDF was generated
+            this.logAnalyticsEvent('pdf_generation_success', {
+              documentName: this.script
+            });
             
-            const windowCheck = setInterval(() => {
-              if (stripeWindow?.closed) {
-                clearInterval(windowCheck);
-                this.auth.checkSubscriptionStatus().then(status => {
-                  if (status) {
-                    // Retry with existing token
-                    this.sendFinalDocumentToServer(finalDocument);
-                  }
-                });
+            // Navigate to complete component with token and expiration
+            this.router.navigate(['/complete'], { 
+              queryParams: { 
+                pdfToken: response.jwtToken,
+                expires: response.expirationTime || Date.now() + 3600000 // Default 1 hour expiry
               }
-            }, 500);
+            });
+          } else if (response && response.needsSubscription) {
+            // Handle subscription required
+            this.handleSubscriptionRequired(documentToSend);
+          } else {
+            // Unexpected response format
+            console.error('Unexpected response format:', response);
+            this.handleError('PDF Generation Failed', 'Received an invalid response from the server');
           }
-        });
-      }
-  
+        },
+        error: (error) => {
+          this.dialog.closeAll();
+          
+          // Log the error
+          console.error('PDF generation error:', error);
+          this.logAnalyticsEvent('pdf_generation_error', {
+            documentName: this.script,
+            errorMessage: error.message || 'Unknown error'
+          });
+          
+          if (error.status === 403 && error.error?.needsSubscription) {
+            // Subscription required error
+            this.handleSubscriptionRequired(documentToSend);
+          } else {
+            // General error
+            this.handleError('PDF Generation Failed', 
+              error.message || 'An error occurred while generating your PDF. Please try again.');
+          }
+        }
+      });
     } catch (error) {
-      loadingDialog.close();
-      this.handleError(error instanceof Error ? 
-        error.message : 'Failed to process document. Please try again.');
+      console.error('Error in sendFinalDocumentToServer:', error);
+      this.handleError('Unexpected Error', 'An unexpected error occurred. Please try again.');
     }
   }
 
-  private handleStripeReturn() {
-
-    const pendingDocument = sessionStorage.getItem('pendingDocument');
+  private handleSubscriptionRequired(documentToSend) {
+    // Open subscription dialog
     
-    if (pendingDocument) {
-      sessionStorage.removeItem('pendingDocument');
-      this.sendFinalDocumentToServer(JSON.parse(pendingDocument));
-    }
   }
 
-  private handleError(message: string) {
+  private handleError(title: string, message: string) {
+    this.dialog.closeAll();
+    this.waitingForScript = false;
+    
     this.dialog.open(IssueComponent, {
-      width: '500px',
-      height: '600px',
-      data: { error: message }
+      width: '400px',
+      data: {
+        title: title,
+        message: message,
+        isError: true
+      }
     });
   }
 
-
-private handleSubscriptionRequired(finalDocument: any, response: SubscriptionResponse) {
-  // Save current document state
-  sessionStorage.setItem('pendingDocument', JSON.stringify(finalDocument));
-  sessionStorage.setItem('returnPath', this.router.url);
-  
-  // Show subscription dialog
-  const subDialog = this.dialog.open(IssueComponent, {
-    width: '500px',
-    height: '600px',
-    data: {
-      error: 'Subscription Required',
-      message: 'A subscription is required to generate PDFs. Would you like to subscribe now?',
-      showSubscribeButton: true,
-    },
-  });
-
-  subDialog.afterClosed().subscribe((result) => {
-    if (result === 'subscribe') {
-      // Redirect to Stripe
-      window.location.href = response.checkoutUrl;
+  // Handle return from Stripe checkout
+  private handleStripeReturn() {
+    // Check if we have a pending document to generate
+    if (this.pdf.finalDocument) {
+      // Show loading spinner
+      this.openFinalSpinner();
+      
+      // Check subscription status
+      this.stripe.getSubscriptionStatus(this.userData.uid).subscribe({
+        next: (status) => {
+          if (status.active) {
+            // Subscription is active, generate PDF
+            this.sendFinalDocumentToServer(this.pdf.finalDocument);
+          } else {
+            this.handleError('Subscription Required', 
+              'Your subscription could not be verified. Please try again.');
+          }
+        },
+        error: (error) => {
+          console.error('Error checking subscription:', error);
+          this.handleError('Subscription Check Failed', 
+            'Could not verify your subscription status. Please try again.');
+        }
+      });
     }
-  });
-}
+  }
 
   waterMarkPages(watermark, doc) {
     doc.forEach((page) => {
@@ -465,30 +498,24 @@ private handleSubscriptionRequired(finalDocument: any, response: SubscriptionRes
   }
   openFinalSpinner() {
     this.waitingForScript = true;
-    // observe the size of screen
-    // this.breaks.observe([Breakpoints.Handset]).subscribe((result) => {
-    //   const isHandset = result.matches;
-
-    //   const dialogRef = this.dialog.open(SpinningBotComponent, {
-    //     width: isHandset ? '100vw' : '75vw',
-    //     height: isHandset ? '100vh' : '75vw',
-    //     maxWidth: '100vw',
-    //     maxHeight: '100vh',
-    //     panelClass: 'full-screen-dialog',
-    //     data: {
-    //       selected: this.selected,
-    //       script: this.script,
-    //       individualPages: this.individualPages.length - 1,
-    //       callsheet: this.callsheet,
-    //       waitingForScript: true,
-    //       title: this.script,
-    //       dialogOption: 'error',
-    //     },
-    //   });
-    //   dialogRef.afterClosed().subscribe((result) => {
-    //     result;
-    //   });
-    // });
+    
+    const dialogRef = this.dialog.open(SpinningBotComponent, {
+      width: '75vw',
+      height: '75vw',
+      data: {
+        selected: this.selected,
+        script: this.script,
+        individualPages: this.individualPages.length - 1,
+        callsheet: this.callsheet,
+        waitingForScript: true,
+        title: this.script,
+        dialogOption: 'error',
+      },
+    });
+    
+    dialogRef.afterClosed().subscribe((result) => {
+      // Handle dialog close if needed
+    });
   }
   getLastPage = (scene) => {
     return this.allLines[scene.lastLine].page || null;
@@ -637,5 +664,13 @@ private handleSubscriptionRequired(finalDocument: any, response: SubscriptionRes
       console.log(err);
       console.error('failed during setLastLines dashboard-right-component');
     }
+  }
+
+  onRowClick(scene: any) {
+    this.toggleSelected(null, scene);
+  }
+
+  onPageChange(page: number) {
+    this.currentPage = page;
   }
 }

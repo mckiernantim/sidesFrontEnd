@@ -4,7 +4,9 @@ import { takeUntil, switchMap } from 'rxjs/operators';
 import { firstValueFrom, of } from 'rxjs';
 import { StripeService } from '../../services/stripe/stripe.service';
 import { AuthService } from '../../services/auth/auth.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { CommonModule } from '@angular/common';
+import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
+
 import { SubscriptionStatus } from '../../types/SubscriptionTypes';
 import { User } from '@angular/fire/auth';
 
@@ -21,7 +23,6 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
   constructor(
     private stripeService: StripeService,
     private authService: AuthService,
-    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit() {
@@ -34,7 +35,6 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
   async startSubscription() {
     const user = await firstValueFrom(this.authService.user$);
     if (!user) {
-      this.snackBar.open('Please sign in to subscribe', 'Close', { duration: 3000 });
       return;
     }
 
@@ -44,14 +44,13 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
         window.location.href = response.checkoutUrl;
       }
     } catch (error) {
-      this.snackBar.open('Failed to start subscription process', 'Close', { duration: 3000 });
+      console.error('Error starting subscription:', error);
     }
   }
 
   async manageSubscription() {
     const user = await firstValueFrom(this.authService.user$);
     if (!user) {
-      this.snackBar.open('Please sign in to manage your subscription', 'Close', { duration: 3000 });
       return;
     }
 
@@ -61,8 +60,16 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
         window.location.href = response.url;
       }
     } catch (error) {
-      this.snackBar.open('Failed to open subscription portal', 'Close', { duration: 3000 });
+      console.error('Error managing subscription:', error);
     }
+  }
+
+  async cancelSubscription() {
+    await this.manageSubscription();
+  }
+
+  async reactivateSubscription() {
+    await this.startSubscription();
   }
 
   formatBytes(bytes: number): string {
@@ -78,3 +85,10 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 }
+
+@NgModule({
+  imports: [CommonModule],
+  declarations: [SubscriptionComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+})
+export class SubscriptionComponentModule {}

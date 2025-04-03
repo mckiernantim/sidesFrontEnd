@@ -2,16 +2,14 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, Subscription, EMPTY } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { MatDialog } from '@angular/material/dialog';
 import { UploadService } from '../../../services/upload/upload.service';
 import { PdfService } from '../../../services/pdf/pdf.service';
-import { SpinningBotComponent } from '../../shared/spinning-bot/spinning-bot.component';
 import { fadeInOutAnimation } from '../../../animations/animations';
 import { environment } from '../../../../environments/environment';
 import { Auth, User } from '@angular/fire/auth';
 import { AuthService } from '../../../services/auth/auth.service';
 import { take } from 'rxjs/operators';
-import { AsyncPipe } from '@angular/common';
+
 @Component({
     selector: 'app-upload',
     templateUrl: './upload.component.html',
@@ -38,11 +36,11 @@ export class UploadComponent implements OnInit, OnDestroy {
   allLines: any[];
   $script_data: Observable<any>;
   user$: Observable<User | null>;
+  selectedFiles: File[] = [];
 
   constructor(
     public upload: UploadService,
     public router: Router,
-    public dialog: MatDialog,
     public pdf: PdfService,
     private auth: Auth,
     private authService: AuthService
@@ -66,7 +64,7 @@ export class UploadComponent implements OnInit, OnDestroy {
     if (this.totalCharacters) this.totalCharacters.unsubscribe();
   }
 
-  signIn() {
+  signIn(): void {
     this.authService.signInWithGoogle();
   }
 
@@ -93,18 +91,17 @@ export class UploadComponent implements OnInit, OnDestroy {
       this.dataSubscription = this.$script_data
         .pipe(
           catchError((err) => {
-            this.dialog.closeAll();
             this.openDialog('An error occurred', "error", err);
             return EMPTY;
           })
         )
-        .subscribe(({scriptData}) => {
+        .subscribe((scriptData) => {
           const { allLines, title } = scriptData;
           this.allLines = this.processSeverResponseAndCheckForPage2(allLines);
           alert(
             'your IP is safe. ' + title + ' was just deleted from our servers.'
           );
-          this.dialog.closeAll();
+          this.working = false;
           this.pdf.initializeData();
           this.router.navigate(['download']);
         });
@@ -113,15 +110,8 @@ export class UploadComponent implements OnInit, OnDestroy {
 
   openDialog(title, dialogOption, response = null) {
     if (this.working) {
-      const dialogRef = this.dialog.open(SpinningBotComponent, {
-        height: '750px',
-        width: '750px',
-        data: { title, dialogOption, response},
-        disableClose: false,
-      });
-      dialogRef.afterClosed().subscribe((result) => {
-        this.toggleWorking();
-      });
+      console.log('Dialog would show:', { title, dialogOption, response });
+      this.toggleWorking();
     }
   }
 
@@ -162,9 +152,26 @@ export class UploadComponent implements OnInit, OnDestroy {
       }
       
       this.$script_data = this.upload.getTestJSON('test');
-      this.dialog.closeAll();
+      this.working = false;
+      
       this.pdf.initializeData();
       this.router.navigate(['download']);
     });
+  }
+
+  onFileSelected(event: any): void {
+    this.selectedFiles = Array.from(event.target.files);
+  }
+
+  uploadFiles(): void {
+    // Implement file upload logic without Material dialog
+    console.log('Uploading files:', this.selectedFiles);
+    
+    // Navigate to next page after upload
+    this.router.navigate(['/dashboard']);
+  }
+
+  cancel(): void {
+    this.selectedFiles = [];
   }
 }

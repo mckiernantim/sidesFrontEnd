@@ -1,16 +1,47 @@
-import { Injectable, EventEmitter, Input } from '@angular/core';
+import { Injectable } from '@angular/core';
+import { Observable, Subject } from 'rxjs';
 import { Line } from '../../types/Line';
-import { Subject } from 'rxjs';
 import { DragDropOptions } from 'src/app/types/DragDropOptions';
 import { PositionChange } from 'src/app/types/PositionChange';
-import { CdkDragStart, CdkDragEnd, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { UndoService } from '../edit/undo.service';
 
+// Define interfaces to replace CDK types
+interface DragPosition {
+  x: number;
+  y: number;
+}
+
+interface DragEvent {
+  source: any;
+  pointerPosition: { x: number, y: number };
+  distance: { x: number, y: number };
+  dropPoint?: { x: number, y: number };
+  item?: any;
+  container?: any;
+  previousIndex?: number;
+  currentIndex?: number;
+}
+
+interface LineUpdate {
+  line: Line;
+  index: number;
+}
+
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class DragDropService {
-  public update: Subject<any> = new Subject<void>();
+  private dragStartSubject = new Subject<DragEvent>();
+  private dragEndSubject = new Subject<DragEvent>();
+  private dragDropSubject = new Subject<DragEvent>();
+  private update = new Subject<LineUpdate>();
+
+  // Public observables
+  dragStart$: Observable<DragEvent> = this.dragStartSubject.asObservable();
+  dragEnd$: Observable<DragEvent> = this.dragEndSubject.asObservable();
+  dragDrop$: Observable<DragEvent> = this.dragDropSubject.asObservable();
+  update$ = this.update.asObservable();
+
   selectedLine: Line | null;
   draggingLine: boolean = false;
   draggingBar: boolean = false;
@@ -27,13 +58,98 @@ export class DragDropService {
 
   allowDragTimer: any;
 
-  constructor(public undo:UndoService) {}
+  constructor(public undo: UndoService) { }
+
+  // Method to handle drag start events
+  handleDragStart(event: any): void {
+    // Create a simplified event object
+    const dragEvent: DragEvent = {
+      source: event.source || {},
+      pointerPosition: event.pointerPosition || { x: 0, y: 0 },
+      distance: { x: 0, y: 0 }
+    };
+    
+    this.dragStartSubject.next(dragEvent);
+  }
+
+  // Method to handle drag end events
+  handleDragEnd(event: any): void {
+    // Create a simplified event object
+    const dragEvent: DragEvent = {
+      source: event.source || {},
+      pointerPosition: event.pointerPosition || { x: 0, y: 0 },
+      distance: { x: 0, y: 0 }
+    };
+    
+    this.dragEndSubject.next(dragEvent);
+  }
+
+  // Method to handle drop events
+  handleDrop(event: any): void {
+    // Create a simplified event object
+    const dragEvent: DragEvent = {
+      source: event.source || {},
+      pointerPosition: event.pointerPosition || { x: 0, y: 0 },
+      distance: { x: 0, y: 0 },
+      dropPoint: event.dropPoint || { x: 0, y: 0 },
+      item: event.item,
+      container: event.container,
+      previousIndex: event.previousIndex,
+      currentIndex: event.currentIndex
+    };
+    
+    this.dragDropSubject.next(dragEvent);
+  }
+
+  // Helper method to calculate position
+  getPosition(element: HTMLElement): DragPosition {
+    const rect = element.getBoundingClientRect();
+    return {
+      x: rect.left + window.scrollX,
+      y: rect.top + window.scrollY
+    };
+  }
+
+  // Method to simulate drag functionality
+  simulateDrag(element: HTMLElement, targetX: number, targetY: number): void {
+    const startPosition = this.getPosition(element);
+    
+    // Simulate drag start
+    this.dragStartSubject.next({
+      source: { element },
+      pointerPosition: startPosition,
+      distance: { x: 0, y: 0 }
+    });
+    
+    // Simulate drag end
+    this.dragEndSubject.next({
+      source: { element },
+      pointerPosition: { x: targetX, y: targetY },
+      distance: { 
+        x: targetX - startPosition.x, 
+        y: targetY - startPosition.y 
+      }
+    });
+    
+    // Simulate drop
+    this.dragDropSubject.next({
+      source: { element },
+      pointerPosition: { x: targetX, y: targetY },
+      distance: { 
+        x: targetX - startPosition.x, 
+        y: targetY - startPosition.y 
+      },
+      dropPoint: { x: targetX, y: targetY }
+    });
+  }
+
   // emits value from observable to stop signal end of update
   updateComponent(line: Line) {
     this.update.next({ line, index: this.indexOfLineToUpdate });
   }
-  startDrag(event: CdkDragStart, line: any, index: number, isBarDrag: string | null = null): void {
-    if(isBarDrag) {
+
+  startDrag(event: any, line: any, index: number, isBarDrag: string | null = null): void {
+    if (isBarDrag) {
       // drag logic
     } else {
       this.indexOfLineToUpdate = index;
@@ -43,48 +159,46 @@ export class DragDropService {
     }
   }
 
-  onDrop(event: CdkDragEnd, line: Line, page: number, isBarDrag: string | null = null): void {
+  onDrop(event: any, line: Line, page: number, isBarDrag: string | null = null): void {
     const nativeEvent = event.event as MouseEvent | TouchEvent;
     let clientY: number = this.getEventClientY(nativeEvent);
-    this.undo.push({pageIndex: page, line:line });
+    this.undo.push({ pageIndex: page, line: line });
     this.getDeltaForYpos(line, clientY);
     let deltaY = this.initialLineY - this.currentYPosDiff + 'px';
     if (isBarDrag) {
-        let diff = parseInt(deltaY)
-        this.updateElementStyle(event, line, isBarDrag, diff)
-    } else { 
+      let diff = parseInt(deltaY);
+      this.updateElementStyle(event, line, isBarDrag, diff);
+    } else {
       line.calculatedYpos = deltaY;
       this.updateElementStyle(event, line);
     }
     this.updateComponent(line);
-    this.update.next(true);
+   
   }
-      
+
   stopDrag(line: any): void {
     line.dragging = false;
-    this.update.next(line);
+    this.updateComponent(line);
   }
 
-
- 
-  updateElementStyle(event: CdkDragEnd, line: Line, isBarDrag: string | null = null, deltaY:number | null = null): void {
+  updateElementStyle(event: any, line: Line, isBarDrag: string | null = null, deltaY: number | null = null): void {
     const element = event.source.getRootElement();
-    if(!isBarDrag) {
+    if (!isBarDrag) {
       element.style.bottom = line.calculatedYpos + 'px';
       element.style.left = line.calculatedXpos;
     } else {
-      switch(isBarDrag) {
+      switch (isBarDrag) {
         case "end":
-           line.calculatedEnd = this.initialLineY - deltaY + "px"
-           element.style.bottom = line.calculatedEnd 
-         default :
-          line.calculatedBarY = this.initialLineY - deltaY + "px"
-          element.style.bottom = line.calculatedBarY 
-        }
+          line.calculatedEnd = this.initialLineY - deltaY + "px";
+          element.style.bottom = line.calculatedEnd;
+          break;
+        default:
+          line.calculatedBarY = this.initialLineY - deltaY + "px";
+          element.style.bottom = line.calculatedBarY;
+      }
     }
-
-    // do not change this value
   }
+
   getDeltaForYpos(line: Line, clientY) {
     this.currentYPosDiff = clientY - this.initialMouseY;
   }
@@ -102,6 +216,7 @@ export class DragDropService {
       console.error('No reliable touch or mouse position available.');
     }
   }
+
   calculateContainerTopOffset(element: HTMLElement): number {
     // Calculate the top offset of the container to adjust the position accurately
     return element.getBoundingClientRect().top + window.scrollY;
@@ -113,7 +228,6 @@ export class DragDropService {
       ? event.clientY
       : event.touches[0].clientY;
   }
-
 
   dragBar(event: MouseEvent) {
     // const target = event.target as HTMLSpanElement;
@@ -145,7 +259,8 @@ export class DragDropService {
 
     event.preventDefault();
   }
-allowDrag() {
+
+  allowDrag() {
     if (!this.allowDragTimer) {
       this.allowDragTimer = setTimeout(() => {
         clearTimeout(this.allowDragTimer);
@@ -156,12 +271,6 @@ allowDrag() {
     return false;
   }
 
-
- 
- 
-
-
-
   processLinePosition() {
     // Calculate new X and Y positions based on initial values and differences
     const newXPosition = this.initialLineX + this.currentXPosDiff;
@@ -171,6 +280,7 @@ allowDrag() {
     if (this.selectedLine)
       this.selectedLine.calculatedYpos = newYPosition.toFixed(2) + 'px';
   }
+
   processBarChange(newBarPosition) {
     const newBarY = this.initialBarY - newBarPosition;
     return newBarY + 'px';

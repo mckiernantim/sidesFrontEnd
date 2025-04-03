@@ -3,11 +3,13 @@ import { AuthService } from 'src/app/services/auth/auth.service';
 import { StripeService } from 'src/app/services/stripe/stripe.service';
 import { Router } from '@angular/router';
 import { firstValueFrom, Observable, of, switchMap, BehaviorSubject, Subscription } from 'rxjs';
-import { MatDialog } from '@angular/material/dialog';
+import { NgClass, NgIf } from '@angular/common';
+
 import { IssueComponent } from '../issue/issue.component';
 import { catchError, tap } from 'rxjs';
 import { User } from '@angular/fire/auth';
 import { SubscriptionStatus, SubscriptionStatusType, SUBSCRIPTION_STATUS_DISPLAY } from 'src/app/types/SubscriptionTypes';
+// import { SubscriptionService } from 'src/app/services/subscription/subscription.service';
 
 @Component({
     selector: 'app-profile',
@@ -20,7 +22,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   user: User | null = null;
   
   // Subscription data
-  subscription$ = new BehaviorSubject<SubscriptionStatus | null>(null);
+  subscription$: Observable<SubscriptionStatus | null> = of(null);
   subscription: SubscriptionStatus | null = null;
   renewalDate: Date | null = null;
   expirationDate: Date | null = null;
@@ -50,8 +52,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     private auth: AuthService,
     private stripe: StripeService,
     private router: Router,
-    private dialog: MatDialog,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+   
   ) {}
 
   ngOnInit() {
@@ -88,7 +90,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         debugger
         // Store the subscription
         this.subscription = subscription;
-        this.subscription$.next(subscription);
+        this.subscription$ = of(subscription);
         
         // Process dates
         this.processSubscriptionDates(subscription);
@@ -181,7 +183,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   
   // Manage existing subscription
   manageSubscription(): void {
-
+debugger
     if (!this.user || !this.user.email) {
       this.showError('You must be logged in to manage your subscription');
       return;
@@ -207,15 +209,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   
   // Show error dialog
   private showError(message: string): void {
-    this.dialog.open(IssueComponent, {
-      width: '400px',
-      data: { 
-        error: true,
-        errorDetails: message,
-        errorReason: '',
-        statusCode: null
-      }
-    });
+   
   }
   
   // Logout

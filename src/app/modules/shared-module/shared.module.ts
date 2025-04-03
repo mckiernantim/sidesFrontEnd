@@ -1,52 +1,56 @@
-import { NgModule } from '@angular/core';
+import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router'; // Import RouterModule
-import { MatDialogModule } from '@angular/material/dialog'; // If you use Angular Material Dialog
+import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 // Import your shared components
-import { MainNavComponent } from 'src/app/components/shared/main-nav/main-nav.component';
+import { MainNavComponent } from '../../components/shared/main-nav/main-nav.component';
 import { NavComponent } from 'src/app/components/shared/nav/nav.component';
-import { FooterComponent } from 'src/app/components/shared/footer/footer.component';
-import { ProfileComponent } from 'src/app/components/profile/profile.component';
+import { FooterComponent } from '../../components/shared/footer/footer.component';
 import { SpinningBotComponent } from 'src/app/components/shared/spinning-bot/spinning-bot.component';
+import { AboutItemGridComponent } from 'src/app/components/landing-page/about/about-item-grid/about-item-grid.component';
+import { CarouselComponent } from 'src/app/components/carousel/carousel.component';
 
-import { MaterialModule } from '../material-module/material.module';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { DatePipe, AsyncPipe } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { SubscriptionComponent } from 'src/app/components/subscription/subscription.component';
+import { DateFormatPipe } from 'src/app/pipes/date-format.pipe';
+import { TailwindDialogComponent } from 'src/app/components/shared/tailwind-dialog/tailwind-dialog.component';
+import { TailwindTableComponent } from 'src/app/components/shared/tailwind-table/tailwind-table.component';
+import { TailwindTableColumnDirective } from 'src/app/components/shared/tailwind-table/tailwind-table-column.directive';
+
 @NgModule({
   declarations: [
-    MainNavComponent,
     NavComponent,
     FooterComponent,
     SpinningBotComponent,
-    ProfileComponent,
-    SubscriptionComponent
+    MainNavComponent,
+    AboutItemGridComponent,
+    CarouselComponent,
+    DateFormatPipe,
+    TailwindDialogComponent,
+    TailwindTableComponent,
+    TailwindTableColumnDirective
   ],
   imports: [
     CommonModule,
     RouterModule,
-    MatDialogModule, // If needed for SpinningBotComponent
-    MaterialModule,
-    MatMenuModule,
-    MatCardModule
+    FormsModule
   ],
   exports: [
-    MainNavComponent,
     NavComponent,
     FooterComponent,
     SpinningBotComponent,
+    AboutItemGridComponent,
+    CarouselComponent,
     CommonModule,
     RouterModule,
-    MatDialogModule,
-    MatMenuModule,
-    MatButtonModule,
-    MatIconModule,
-    SubscriptionComponent
+    FormsModule,
+    MainNavComponent,
+    DateFormatPipe,
+    TailwindDialogComponent,
+    TailwindTableComponent,
+    TailwindTableColumnDirective
   ],
-  providers: [DatePipe],
+  providers: [DatePipe, AsyncPipe, DateFormatPipe],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class SharedModule { }

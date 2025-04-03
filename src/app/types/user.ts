@@ -15,11 +15,14 @@ export interface ApiResponse {
 }
 
 // PDF Related Types
-export interface PdfResponse extends ApiResponse {
+export interface PdfResponse {
    success: boolean;
-   pdfToken: string;
-   redirectUrl: string;
-   expires: number;
+   status: string;
+   bigs: string;
+   smalls: string;
+   filenameHash: string;
+   jwtToken: string;
+   expirationTime: number;
 }
 
 export interface PdfGenerationResponse extends Partial<PdfResponse> {
@@ -74,8 +77,11 @@ export interface ErrorResponse extends ApiResponse {
 }
 
 // Type Guards
-export function isPdfResponse(response: PdfGenerationResponse): response is PdfResponse {
-   return response.success && 'pdfToken' in response;
+export function isPdfResponse(response: any): response is PdfResponse {
+   return response && 
+          response.status === 'complete' && 
+          typeof response.jwtToken === 'string' &&
+          typeof response.expirationTime === 'number';
 }
 
 export function isSubscriptionResponse(response: PdfGenerationResponse): response is SubscriptionResponse {

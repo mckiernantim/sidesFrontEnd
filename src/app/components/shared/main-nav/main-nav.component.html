@@ -1,47 +1,60 @@
-<mat-toolbar class="bg-my-blue text-offWhite top-0 relative z-10000 w-full">
-  <span class="logo nav-item text-white">Sides-Ways</span>
-  <span class="spacer"></span>
-  
-  @if (displayClock) {
-    <ng-container>
-      <div class="right nav-item text-red-500">Deleting your IP in: {{ countdownClock }}</div>
-    </ng-container>
-  }
 
-  <button mat-raised-button class="nav-item text-offWhite" routerLink="/">Home</button>
-  <button mat-raised-button class="nav-item text-offWhite" routerLink="/About">About</button>
-  
-  @if (user$ | async; as user) {
-    <div class="flex items-center gap-3 ml-4">
-      <div class="text-sm text-white">{{ user.email }}</div>
-      <button 
-        [matMenuTriggerFor]="profileMenu" 
-        class="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center">
-          <img 
-            src={{user.photoURL}} 
-            [alt]="user?.displayName || 'Profile'"
-            class="w-full h-full object-cover"
-            >
-      </button>
+<nav class="bg-white shadow-md">
+  <div class="container mx-auto px-4">
+    <div class="flex justify-between items-center py-4">
+      <div class="flex items-center">
+        <a href="/" class="text-xl font-bold text-gray-800">SideWays</a>
+      </div>
       
-      <mat-menu #profileMenu="matMenu">
-        <button mat-menu-item routerLink="/profile">
-          <mat-icon>account_circle</mat-icon>
-          <span>Profile</span>
-        </button>
-        <button mat-menu-item (click)="signOut()">
-          <mat-icon>exit_to_app</mat-icon>
-          <span>Sign Out</span>
-        </button>
-      </mat-menu>
+      <div class="hidden md:flex items-center space-x-8">
+        <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors">Home</a>
+        <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
+        <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
+        <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors">About</a>
+        <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors">Contact</a>
+      </div>
+      
+      <div class="flex items-center space-x-4">
+        <ng-container *ngIf="!isLoggedIn; else loggedInTemplate">
+          <a href="/login" class="text-gray-600 hover:text-gray-900 transition-colors">Log in</a>
+          <a href="/signup" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">Sign up</a>
+        </ng-container>
+        
+        <ng-template #loggedInTemplate>
+          <div class="relative" (click)="toggleUserMenu()" (clickOutside)="closeUserMenu()">
+            <button class="flex items-center space-x-2 focus:outline-none">
+              <img src="assets/avatar-placeholder.png" alt="User avatar" class="w-8 h-8 rounded-full">
+              <span class="text-gray-700">{{ username }}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+            </button>
+            
+            <div *ngIf="isUserMenuOpen" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+              <a href="/profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+              <a href="/settings" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Settings</a>
+              <a href="#" (click)="logout()" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Logout</a>
+            </div>
+          </div>
+        </ng-template>
+      </div>
+      
+      <button class="md:hidden focus:outline-none" (click)="toggleMobileMenu()">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
     </div>
-  } @else {
-    <button mat-raised-button class="nav-item text-offWhite" (click)="signIn()">
-      Sign In
-    </button>
-  }
-</mat-toolbar>
+    
+    <div *ngIf="isMobileMenuOpen" class="md:hidden py-4">
+      <a href="#" class="block py-2 text-gray-600 hover:text-gray-900">Home</a>
+      <a href="#" class="block py-2 text-gray-600 hover:text-gray-900">Features</a>
+      <a href="#" class="block py-2 text-gray-600 hover:text-gray-900">Pricing</a>
+      <a href="#" class="block py-2 text-gray-600 hover:text-gray-900">About</a>
+      <a href="#" class="block py-2 text-gray-600 hover:text-gray-900">Contact</a>
+    </div>
+  </div>
+</nav>
 
-<div class="app-container">
-  <router-outlet></router-outlet>
+<div class="pt-16">
 </div>

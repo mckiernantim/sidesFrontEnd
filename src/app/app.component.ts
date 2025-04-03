@@ -1,7 +1,5 @@
 import { Component } from '@angular/core';
-import { environment } from '../environments/environment';
-import { NavComponent } from './components/shared/nav/nav.component';
-
+import { MainNavComponent } from './components/shared/main-nav/main-nav.component';
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
@@ -9,5 +7,5 @@ import { NavComponent } from './components/shared/nav/nav.component';
     standalone: false
 })
 export class AppComponent {
-  title = 'sideWays';
+  title = 'side-ways';
 }

@@ -14,16 +14,24 @@ export class UserGuard implements CanActivate {
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
   ): Observable<boolean> {
-    return this.auth.user$.pipe(
+    return this.auth.ensureUserLoaded().pipe(
       map(user => {
         if (user) {
           return true;
         } else {
-          this.router.navigate(['/']);
+          this.router.navigate(['/login'], { 
+            queryParams: { returnUrl: state.url } 
+          });
           return false;
         }
       })
     );
   }
   
+  canActivateChild(
+    childRoute: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot
+  ) {
+    return this.canActivate(childRoute, state);
+  }
 }

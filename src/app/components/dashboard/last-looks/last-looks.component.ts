@@ -14,7 +14,7 @@ import { TokenService } from 'src/app/services/token/token.service';
 import { Router } from '@angular/router';
 import { UndoService } from 'src/app/services/edit/undo.service';
 import { Observable, Subscription } from 'rxjs';
-import { DragDropService } from 'src/app/services/drag-drop/drag-drop.service';
+// import { DragDropService } from 'src/app/services/drag-drop/drag-drop.service';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
 
 interface CallsheetPage {
@@ -38,7 +38,7 @@ export class LastLooksComponent implements OnInit {
   constructor(
     private upload: UploadService,
     private stripe: StripeService,
-    public drag: DragDropService,
+    // public drag: DragDropService,
     public undoService: UndoService,
     private token: TokenService,
     private router: Router,
@@ -227,7 +227,7 @@ export class LastLooksComponent implements OnInit {
   }
   toggleEditMode() {
     this.canEditDocument = !this.canEditDocument;
-    this.drag;
+    // this.drag;
   }
   selectEditFunction(e) {
     this.selectedEditFunctionChange.emit(this.selectedEditFunction);
@@ -396,8 +396,6 @@ export class LastLooksComponent implements OnInit {
         } catch (e) {
           console.error('token not saved');
         }
-
-        // Save the PDF token obtained from the server using the TokenService
       },
       (error: any) => {
         console.error('Error in PDF generation:', error);

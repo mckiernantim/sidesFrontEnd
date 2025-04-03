@@ -10,11 +10,7 @@ import {
   Input,
 } from '@angular/core';
 import { UploadService } from '../../services/upload/upload.service';
-import {
-  MatDialogRef,
-  MatDialog,
-  MAT_DIALOG_DATA,
-} from '@angular/material/dialog';
+
 import { SpinningBotComponent } from '../shared/spinning-bot/spinning-bot.component';
 import { AuthService } from 'src/app/services/auth/auth.service';
 
@@ -52,14 +48,14 @@ export class IssueComponent implements OnInit, AfterViewInit {
   isDeleteAccountDialog: boolean = false;
   deleteConfirmation: string = '';
   confirmDelete: boolean = false;
+  data:any;
   errorReason: string = '';
   constructor(
     public upload: UploadService,
-    public dialogRef: MatDialogRef<IssueComponent>,
-    public errorDialogRef: MatDialogRef<IssueComponent>,
+
     public cdr: ChangeDetectorRef,
     private auth:AuthService,
-    @Inject(MAT_DIALOG_DATA) public data: any
+
   ) {
    
     this.isDeleteDialog = this.data?.isDelete || false;
@@ -117,15 +113,12 @@ export class IssueComponent implements OnInit, AfterViewInit {
 
   // Existing methods
   addCallSheet() {
-    this.dialogRef.close({
-      selected: this.selected,
-      callsheet: this.file,
-    });
+ 
   }
   async login() {
     try {
       await this.auth.signInWithGoogle();
-      this.dialogRef.close('login');
+ 
     } catch (error) {
       console.error('Login failed:', error);
       // Handle login error
@@ -161,7 +154,7 @@ export class IssueComponent implements OnInit, AfterViewInit {
   }
 
   proceedToCheckout(proceedToCheckout: boolean): void {
-    this.dialogRef.close(proceedToCheckout);
+
   }
 
   handleClick() {
@@ -173,13 +166,17 @@ export class IssueComponent implements OnInit, AfterViewInit {
   // New methods for delete confirmation
   onConfirmDelete(): void {
     if (this.isDeleteConfirmed) {
-      this.dialogRef.close('confirm');
+ 
     }
   }
   onClose(): void {
-    this.dialogRef.close();
+ 
   }
   onCancelDelete(): void {
-    this.dialogRef.close(false);
+   
+  }
+
+  closeDialog(): void {
+    console.log('Dialog close requested');
   }
 }

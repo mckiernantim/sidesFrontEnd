@@ -2,19 +2,16 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from 'src/app/services/auth/auth.service';
 import { take } from 'rxjs/operators';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-profile-loader',
   template: `
     <div class="flex justify-center items-center min-h-screen">
-      <mat-spinner diameter="50"></mat-spinner>
       <p class="ml-4 text-gray-600">Loading your profile...</p>
     </div>
   `,
-  standalone: true,
-  imports: [CommonModule, MatProgressSpinnerModule]
+  imports: [CommonModule, ]
 })
 export class ProfileLoaderComponent implements OnInit {
   constructor(

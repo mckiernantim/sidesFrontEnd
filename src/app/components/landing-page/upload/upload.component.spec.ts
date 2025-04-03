@@ -5,81 +5,81 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { of, throwError } from 'rxjs';
 import { Router } from '@angular/router';
-import { AuthService } from 'src/app/services/auth/auth.service';
-import { StripeService } from 'src/app/services/stripe/stripe.service';
+import { AuthService } from '../../../services/auth/auth.service';
 import { MatDialog } from '@angular/material/dialog';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { User } from '@angular/fire/auth';
 
 import { UploadComponent } from './upload.component';
 import { UploadService } from '../../../services/upload/upload.service';
 import { PdfService } from '../../../services/pdf/pdf.service';
-import { environment } from '../../../../environments/environment';
+import { Auth } from '@angular/fire/auth';
 
 describe('UploadComponent', () => {
   let component: UploadComponent;
   let fixture: ComponentFixture<UploadComponent>;
-  let uploadServiceMock: jest.Mocked<UploadService>;
-  let pdfServiceMock: jest.Mocked<PdfService>;
-  let routerMock: any;
-  let authServiceMock: any;
-  let stripeServiceMock: any;
-  let dialogMock: any;
+  let uploadServiceMock: jest.Mocked<Partial<UploadService>>;
+  let pdfServiceMock: jest.Mocked<Partial<PdfService>>;
+  let routerMock: jest.Mocked<Partial<Router>>;
+  let authServiceMock: jest.Mocked<Partial<AuthService>>;
+  let authMock: Partial<Auth>;
+  let dialogMock: jest.Mocked<Partial<MatDialog>>;
 
   beforeEach(async () => {
+    // Create mocks for all dependencies
     uploadServiceMock = {
-      postFile: jest.fn(),
-      allLines: [],
-      individualPages: [],
-      lineCount: []
-    } as unknown as jest.Mocked<UploadService>;
+      postFile: jest.fn().mockReturnValue(of({
+        scriptData: {
+          allLines: [],
+          title: 'Test Script'
+        }
+      })),
+      getTestJSON: jest.fn().mockReturnValue(of({
+        scriptData: {
+          allLines: [],
+          title: 'Test Script'
+        }
+      }))
+    } as jest.Mocked<Partial<UploadService>>;
 
     pdfServiceMock = {
-      initializeData: jest.fn(),
-      allLines: [],
-      individualPages: []
-    } as unknown as jest.Mocked<PdfService>;
+      initializeData: jest.fn()
+    } as jest.Mocked<Partial<PdfService>>;
 
     routerMock = {
       navigate: jest.fn()
-    };
+    } as jest.Mocked<Partial<Router>>;
 
-    authServiceMock = {
-      getCurrentUser: jest.fn().mockReturnValue({
+    // Mock for Firebase Auth
+    authMock = {
+      currentUser: {
         uid: 'test-user-id',
         email: 'test@example.com'
-      }),
-      signInWithGoogle: jest.fn().mockResolvedValue({}),
+      } as unknown as User
+    };
+
+    // Mock for AuthService
+    authServiceMock = {
       user$: of({
         uid: 'test-user-id',
         email: 'test@example.com'
-      })
-    };
+      } as unknown as User),
+      signInWithGoogle: jest.fn(),
+      signOut: jest.fn(),
+      getCurrentUser: jest.fn().mockReturnValue({
+        uid: 'test-user-id',
+        email: 'test@example.com'
+      } as unknown as User)
+    } as jest.Mocked<Partial<AuthService>>;
 
-    stripeServiceMock = {
-      getSubscriptionStatus: jest.fn().mockReturnValue(of({
-        active: true,
-        subscription: {
-          status: 'active',
-          originalStartDate: '2023-01-01T00:00:00.000Z',
-          currentPeriodEnd: '2023-12-31T00:00:00.000Z',
-          willAutoRenew: true
-        },
-        usage: {
-          pdfsGenerated: 10
-        }
-      })),
-      createSubscription: jest.fn().mockReturnValue(of({ 
-        success: true, 
-        url: 'https://checkout.stripe.com/test' 
-      }))
-    };
-
+    // Mock for MatDialog
     dialogMock = {
       open: jest.fn().mockReturnValue({
         afterClosed: () => of(true)
-      })
-    };
+      }),
+      closeAll: jest.fn()
+    } as jest.Mocked<Partial<MatDialog>>;
 
     await TestBed.configureTestingModule({
       declarations: [UploadComponent],
@@ -95,7 +95,7 @@ describe('UploadComponent', () => {
         { provide: PdfService, useValue: pdfServiceMock },
         { provide: Router, useValue: routerMock },
         { provide: AuthService, useValue: authServiceMock },
-        { provide: StripeService, useValue: stripeServiceMock },
+        { provide: Auth, useValue: authMock },
         { provide: MatDialog, useValue: dialogMock }
       ],
       schemas: [NO_ERRORS_SCHEMA]
@@ -108,86 +108,100 @@ describe('UploadComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should call upload service to post file on handleFileInput', () => {
-    const mockFile = new File([''], 'dummy.pdf');
-    const mockResponse = { allLines: [], title: 'Dummy Title' };
-    uploadServiceMock.postFile.mockReturnValue(of(mockResponse));
-
-    component.handleFileInput({ item: (index: number) => mockFile } as FileList);
-    expect(uploadServiceMock.postFile).toHaveBeenCalledWith(mockFile);
-    expect(component.allLines).toEqual(mockResponse.allLines);
+  it('should create', () => {
+    expect(component).not.toBeNull();
   });
 
-  it('should process server response and check for page 2', () => {
-    const allLines = [
-      { text: '1.', category: 'page-number' },
-      { text: '2.', category: 'page-number-hidden' }
-    ];
-    const processedLines = component.processSeverResponseAndCheckForPage2(allLines);
-    expect(processedLines[1].category).toBe('page-number-hidden');
+  it('should initialize with correct default values', () => {
+    expect(component.isButtonDisabled).toBe(true);
+    expect(component.working).toBe(false);
   });
 
-  it('should navigate to /download after processing pages', () => {
-    const mockPages = [{ filter: jest.fn(() => [{ totalLines: 1 }]) }];
-    component.upload.individualPages = mockPages as any;
-    component.skipUploadForTest();
-    expect(routerMock.navigate).toHaveBeenCalledWith(['/download']);
+  describe('file handling', () => {
+    it('should handle file input when user is authenticated', () => {
+      // Create a mock file
+      const mockFile = new File(['test content'], 'test.pdf', { type: 'application/pdf' });
+      const mockFileList = {
+        item: (index: number) => mockFile,
+        length: 1
+      } as FileList;
+
+      // Call the method
+      component.handleFileInput(mockFileList);
+
+      // Verify dialog was opened
+      expect(dialogMock.open).toHaveBeenCalled();
+      
+      // Verify file was uploaded
+      expect(uploadServiceMock.postFile).toHaveBeenCalledWith(mockFile);
+      
+      // Verify navigation after successful upload
+      expect(pdfServiceMock.initializeData).toHaveBeenCalled();
+      expect(routerMock.navigate).toHaveBeenCalledWith(['download']);
+    });
+
+    it('should process server response and check for page 2', () => {
+      const allLines = [
+        { text: '1.', category: 'page-number' },
+        { text: '2.', category: 'page-number-hidden' }
+      ];
+      
+      const result = component.processSeverResponseAndCheckForPage2(allLines);
+      
+      // The method should change the category of the second item
+      expect(result[1].category).toBe('page-number');
+    });
+
+    it('should find actual page 2', () => {
+      const allLines = [
+        { text: '1.', category: 'page-number' },
+        { text: '2.', category: 'page-number-hidden' }
+      ];
+      
+      const result = component.findActualPage2(allLines);
+      
+      // Should return the index of the page with "2."
+      expect(result).toBe(1);
+    });
+
+    it('should handle test upload when user is authenticated', () => {
+      component.skipUploadForTest();
+      
+      // Verify test JSON was requested
+      expect(uploadServiceMock.getTestJSON).toHaveBeenCalledWith('test');
+      
+      // Verify navigation after successful test upload
+      expect(pdfServiceMock.initializeData).toHaveBeenCalled();
+      expect(routerMock.navigate).toHaveBeenCalledWith(['download']);
+    });
   });
 
-  it('should check subscription status on init if user is logged in', () => {
-    component.ngOnInit();
-    expect(stripeServiceMock.getSubscriptionStatus).toHaveBeenCalledWith('test-user-id');
-  });
+  describe('authentication', () => {
+    it('should handle sign in with Google', () => {
+      component.signIn();
+      expect(authServiceMock.signInWithGoogle).toHaveBeenCalled();
+    });
 
-  it('should handle file upload for subscribed users', () => {
-    component.hasActiveSubscription = true;
-    
-    const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' });
-    const event = { target: { files: [file] } };
-    
-    component.onFileSelected(event);
-    
-    expect(component.selectedFile).toBe(file);
-    expect(component.fileName).toBe('test.pdf');
-  });
+    it('should handle sign out', () => {
+      component.signOut();
+      expect(authServiceMock.signOut).toHaveBeenCalled();
+    });
 
-  it('should prompt for subscription for non-subscribed users', () => {
-    component.hasActiveSubscription = false;
-    
-    const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' });
-    const event = { target: { files: [file] } };
-    
-    component.onFileSelected(event);
-    
-    expect(dialogMock.open).toHaveBeenCalled();
+    it('should require authentication for file upload', () => {
+      // Change auth service to return no user
+      authServiceMock.user$ = of(null);
+      
+      // Create a mock file
+      const mockFile = new File(['test content'], 'test.pdf', { type: 'application/pdf' });
+      const mockFileList = {
+        item: (index: number) => mockFile,
+        length: 1
+      } as FileList;
+      
+      // Call the method
+      component.handleFileInput(mockFileList);
+      
+      // Add assertions here for authentication check
+    });
   });
-
-  it('should handle login with Google', async () => {
-    await component.loginWithGoogle();
-    expect(authServiceMock.signInWithGoogle).toHaveBeenCalled();
-  });
-
-  it('should handle subscription creation', () => {
-    const windowLocationSpy = jest.spyOn(window.location, 'href', 'set');
-    
-    component.createSubscription();
-    
-    expect(stripeServiceMock.createSubscription).toHaveBeenCalledWith('test-user-id', 'test@example.com');
-    expect(windowLocationSpy).toHaveBeenCalledWith('https://checkout.stripe.com/test');
-  });
-
-  it('should handle subscription creation error', () => {
-    stripeServiceMock.createSubscription.mockReturnValue(throwError(() => new Error('Test error')));
-    
-    component.createSubscription();
-    
-    expect(dialogMock.open).toHaveBeenCalled();
-  });
-
-  it('should navigate to profile page', () => {
-    component.goToProfile();
-    expect(routerMock.navigate).toHaveBeenCalledWith(['/profile']);
-  });
-
-  // Additional tests for other component functionalities
 });

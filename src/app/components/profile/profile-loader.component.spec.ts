@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ProfileLoaderComponent } from './profile-loader.component';
-import { AuthService } from 'src/app/services/auth/auth.service';
+import { AuthService } from '../../services/auth/auth.service';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
 import { CommonModule } from '@angular/common';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 
@@ -26,7 +26,6 @@ describe('ProfileLoaderComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         CommonModule,
-        MatProgressSpinnerModule
       ],
       providers: [
         { provide: AuthService, useValue: authServiceMock },
@@ -38,7 +37,7 @@ describe('ProfileLoaderComponent', () => {
     // Create the standalone component
     TestBed.overrideComponent(ProfileLoaderComponent, {
       set: {
-        imports: [CommonModule, MatProgressSpinnerModule],
+        imports: [CommonModule, ],
         providers: [
           { provide: AuthService, useValue: authServiceMock },
           { provide: Router, useValue: routerMock }

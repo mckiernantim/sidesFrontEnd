@@ -1,7 +1,7 @@
 <main class="last-looks-container">
     <div class="page shadow-lg border" (click)="showContextMenu && closeContextMenu()">
         <div class="break">
-            <ul cdkDropList [cdkDropListData]="page" class="screenbox" [ngClass]="{ 'edit-mode': canEditDocument }">
+            <ul class="screenbox" [ngClass]="{ 'edit-mode': canEditDocument }">
                 <!-- [attr.contenteditable]="canEditDocument ? 'true' : 'false'" this line will activate easy edit - -->
 
                 <ng-container *ngFor="let line of page; let lineIndex = index">
@@ -29,29 +29,16 @@
                     <span *ngIf="line.category !== 'page-number' && line.category !== 'page-number-hidden' && line.category !== 'injected-break'"
                         [attr.data-line-id]="line.id" [class]="(line.bar ? line.bar : 'hideBar')"
                         [style.bottom]="line.calculatedYpos">
-                        <!-- Conditionally add dragging functionality -->
-                        <ng-container *ngIf="canEditDocument; else noDragStart">
-                            <span cdkDrag (cdkDragStarted)="dragDrop.startDrag($event, line, lineIndex, 'start')"
-                                (cdkDragEnded)="dragDrop.onDrop($event, page[lineIndex], lineIndex, 'start')"
-                                [cdkDragData]="{ index: lineIndex, line: page[lineIndex] }"
-                                (mouseup)="dragDrop.stopDrag(line)">
-                                <span class="start-span">START {{ line.sceneNumberText }} </span>
-                            </span>
-                        </ng-container>
-                        <ng-template #noDragStart>
-                            <span class="start-span">START {{ line.sceneNumberText }}</span>
-                        </ng-template>
+                        <!-- Removed cdkDrag functionality -->
+                        <span class="start-span">START {{ line.sceneNumberText }}</span>
                     </span>
 
                     <!-- Conditionally render li element -->
                     <ng-container *ngIf="canEditDocument; else nonEditable">
-                        <li cdkDrag (cdkDragStarted)="dragDrop.startDrag($event, line, lineIndex)"
-                            (cdkDragEnded)="dragDrop.onDrop($event, page[lineIndex], page)"
-                            [cdkDragData]="{ index: lineIndex, line: page[lineIndex] }" id="{{ line.index }}"
-                            autofocus tabindex="0" [value]="line.sceneNumber"
+                        <li id="{{ line.index }}" autofocus tabindex="0" [value]="line.sceneNumber"
                             [class]="line.category + ' ' + line.visible + ' ' + line.hidden"
                             [class.selected]="isSelectedLine(line, lineIndex)"
-                            [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex), 'edit-li': canEditDocument && !selectedLine }"
+                            [ngClass]="{ 'edit-li': canEditDocument && !selectedLine }"
                             [style.bottom]="line.calculatedYpos" [style.left]="line.calculatedXpos"
                             [textContent]="line.text" (contextmenu)="canEditDocument && openContextMenu($event, line)">
                         </li>
@@ -72,43 +59,18 @@
                     </span>
 
                     <!-- continue spans -->
-                    <ng-container *ngIf="canEditDocument; else noDragContinue">
-                        <span cdkDrag [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex) }"
-                            class="bar-span continue-span" [attr.data-line-id]="line.id"
-                            [class]="(line.cont ? line.cont : 'hideCont') + ' ' + line.hidden"
-                            [style.bottom]="line.calculatedBarY">
-                            ↓↓↓ {{ line.sceneNumberText }} CONTINUED ↓↓↓
-                        </span>
-                    </ng-container>
-                    <ng-template #noDragContinue>
-                        <span [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex) }"
-                            class="bar-span continue-span" [attr.data-line-id]="line.id"
-                            [class]="(line.cont ? line.cont : 'hideCont') + ' ' + line.hidden"
-                            [style.bottom]="line.calculatedBarY">
-                            ↓↓↓ {{ line.sceneNumberText }} CONTINUED ↓↓↓
-                        </span>
-                    </ng-template>
+                    <span class="bar-span continue-span" [attr.data-line-id]="line.id"
+                        [class]="(line.cont ? line.cont : 'hideCont') + ' ' + line.hidden"
+                        [style.bottom]="line.calculatedBarY">
+                        ↓↓↓ {{ line.sceneNumberText }} CONTINUED ↓↓↓
+                    </span>
 
                     <!-- end span -->
-                    <ng-container *ngIf="canEditDocument; else noDragEnd">
-                        <span cdkDrag (cdkDragStarted)="dragDrop.startDrag($event, line, lineIndex, 'end')"
-                            (cdkDragEnded)="dragDrop.onDrop($event, page[lineIndex], lineIndex, 'end')"
-                            [cdkDragData]="{ index: lineIndex, line: page[lineIndex] }"
-                            [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex) }" class="bar-span end-span"
-                            [attr.data-line-id]="line.id"
-                            [class]="(line.end === 'END' ? 'END' : 'hideEnd') + ' ' + line.hidden"
-                            [style.bottom]="line.calculatedEnd">
-                            <span class="end-span"> END {{ line.sceneNumberText }} </span>
-                        </span>
-                    </ng-container>
-                    <ng-template #noDragEnd>
-                        <span [ngClass]="{ 'grab-cursor': isSelectedLine(line, lineIndex) }" class="bar-span end-span"
-                            [attr.data-line-id]="line.id"
-                            [class]="(line.end === 'END' ? 'END' : 'hideEnd') + ' ' + line.hidden"
-                            [style.bottom]="line.calculatedEnd">
-                            <span class="end-span"> END {{ line.sceneNumberText }} </span>
-                        </span>
-                    </ng-template>
+                    <span class="bar-span end-span" [attr.data-line-id]="line.id"
+                        [class]="(line.end === 'END' ? 'END' : 'hideEnd') + ' ' + line.hidden"
+                        [style.bottom]="line.calculatedEnd">
+                        <span class="end-span"> END {{ line.sceneNumberText }} </span>
+                    </span>
 
                     <!-- right scene number span -->
                     <span *ngIf="line.category === 'scene-header'"
