@@ -9,6 +9,8 @@ import { environment } from '../../../../environments/environment';
 import { Auth, User } from '@angular/fire/auth';
 import { AuthService } from '../../../services/auth/auth.service';
 import { take } from 'rxjs/operators';
+import { TailwindDialogService } from '../../../services/tailwind-dialog/tailwind-dialog.service';
+import { TailwindDialogComponent } from '../../../components/shared/tailwind-dialog/tailwind-dialog.component';
 
 @Component({
     selector: 'app-upload',
@@ -43,7 +45,8 @@ export class UploadComponent implements OnInit, OnDestroy {
     public router: Router,
     public pdf: PdfService,
     private auth: Auth,
-    private authService: AuthService
+    private authService: AuthService,
+    private dialogService: TailwindDialogService
   ) {}
 
   ngOnInit(): void {
@@ -160,18 +163,58 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   onFileSelected(event: any): void {
-    this.selectedFiles = Array.from(event.target.files);
-  }
-
-  uploadFiles(): void {
-    // Implement file upload logic without Material dialog
-    console.log('Uploading files:', this.selectedFiles);
-    
-    // Navigate to next page after upload
-    this.router.navigate(['/dashboard']);
+    const file = event.target.files[0];
+    if (file) {
+      try {
+        // Open loading modal with spinner
+        const dialogRef = this.dialogService.openSpinner(
+          'Uploading File',
+          'Please wait while we process your file...',
+          { spinnerImage: 'assets/icons/logoBot.png' }
+        );
+        
+        // Process the file upload
+        this.upload.postFile(file).subscribe({
+          next: (response) => {
+            // Close the dialog
+            dialogRef.close();
+            // Navigate to dashboard
+            this.router.navigate(['/dashboard']);
+          },
+          error: (error) => {
+            // Close the dialog
+            dialogRef.close();
+            debugger
+            // Show enhanced error dialog with details
+            this.dialogService.openErrorWithDetails(
+              error,
+              'Upload Failed',
+              { 
+                showRetryButton: true 
+              }
+            ).afterClosed().subscribe(result => {
+              if (result === 'retry') {
+                // Handle retry logic
+                this.onFileSelected(event);
+              }
+            });
+          }
+        });
+      } catch (e) {
+        console.error('Error in file upload process', e);
+        this.dialogService.openErrorWithDetails(e, 'Upload Error');
+      }
+    }
   }
 
   cancel(): void {
     this.selectedFiles = [];
+  }
+
+  uploadFiles(): void {
+    // If there are selected files, upload the first one
+    if (this.selectedFiles.length > 0) {
+      this.onFileSelected({ target: { files: [this.selectedFiles[0]] } });
+    }
   }
 }

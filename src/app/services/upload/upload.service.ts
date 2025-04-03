@@ -253,7 +253,7 @@ export class UploadService {
         formData.append('userEmail', user.email);
         formData.append('userId', user.uid);
         formData.append('uploadTime', new Date().toISOString());
-        debugger
+        
         return this.httpClient
           .post(this.url + '/api', formData, this.httpOptions)
           .pipe(

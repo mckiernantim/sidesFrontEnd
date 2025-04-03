@@ -14,8 +14,11 @@ import { CarouselComponent } from 'src/app/components/carousel/carousel.componen
 import { DatePipe, AsyncPipe } from '@angular/common';
 import { DateFormatPipe } from 'src/app/pipes/date-format.pipe';
 import { TailwindDialogComponent } from 'src/app/components/shared/tailwind-dialog/tailwind-dialog.component';
+import { ErrorDialogComponent } from 'src/app/components/shared/error-dialog/error-dialog.component';
+import { SpinnerDialogComponent } from 'src/app/components/shared/spinner-dialog/spinner-dialog.component';
 import { TailwindTableComponent } from 'src/app/components/shared/tailwind-table/tailwind-table.component';
 import { TailwindTableColumnDirective } from 'src/app/components/shared/tailwind-table/tailwind-table-column.directive';
+import { SpinnerComponent } from '../../components/shared/spinner/spinner.component';
 
 @NgModule({
   declarations: [
@@ -27,8 +30,11 @@ import { TailwindTableColumnDirective } from 'src/app/components/shared/tailwind
     CarouselComponent,
     DateFormatPipe,
     TailwindDialogComponent,
+    ErrorDialogComponent,
+    SpinnerDialogComponent,
     TailwindTableComponent,
-    TailwindTableColumnDirective
+    TailwindTableColumnDirective,
+    SpinnerComponent
   ],
   imports: [
     CommonModule,
@@ -47,8 +53,11 @@ import { TailwindTableColumnDirective } from 'src/app/components/shared/tailwind
     MainNavComponent,
     DateFormatPipe,
     TailwindDialogComponent,
+    ErrorDialogComponent,
+    SpinnerDialogComponent,
     TailwindTableComponent,
-    TailwindTableColumnDirective
+    TailwindTableColumnDirective,
+    SpinnerComponent
   ],
   providers: [DatePipe, AsyncPipe, DateFormatPipe],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]

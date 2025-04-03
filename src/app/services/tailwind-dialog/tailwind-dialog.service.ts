@@ -1,5 +1,7 @@
 import { Injectable, ComponentFactoryResolver, ApplicationRef, Injector, EmbeddedViewRef, ComponentRef, Type } from '@angular/core';
 import { TailwindDialogComponent } from '../../components/shared/tailwind-dialog/tailwind-dialog.component';
+import { ErrorDialogComponent } from '../../components/shared/error-dialog/error-dialog.component';
+import { SpinnerDialogComponent } from '../../components/shared/spinner-dialog/spinner-dialog.component';
 import { Observable, Subject } from 'rxjs';
 
 export interface DialogConfig {
@@ -7,11 +9,6 @@ export interface DialogConfig {
   data?: any;
   width?: string;
   height?: string;
-  showIcon?: boolean;
-  showConfirmButton?: boolean;
-  showCancelButton?: boolean;
-  confirmButtonText?: string;
-  cancelButtonText?: string;
 }
 
 export interface DialogRef {
@@ -23,67 +20,160 @@ export interface DialogRef {
   providedIn: 'root'
 })
 export class TailwindDialogService {
+  private dialogComponentRef: ComponentRef<any>;
+
   constructor(
     private componentFactoryResolver: ComponentFactoryResolver,
-    private appRef: ApplicationRef,
-    private injector: Injector
+    private injector: Injector,
+    private appRef: ApplicationRef
   ) {}
 
-  open(component: Type<any>, config: DialogConfig = {}): DialogRef {
-    // Create dialog container
-    const dialogComponentRef = this.componentFactoryResolver
-      .resolveComponentFactory(TailwindDialogComponent)
-      .create(this.injector);
+  // General purpose dialog opener
+  open(componentOrConfig: Type<any> | DialogConfig, config?: DialogConfig): DialogRef {
+    let component: Type<any>;
+    let finalConfig: DialogConfig = {};
     
-    // Set dialog properties
-    dialogComponentRef.instance.isOpen = true;
-    dialogComponentRef.instance.title = config.title || '';
-    dialogComponentRef.instance.showIcon = config.showIcon !== undefined ? config.showIcon : true;
-    dialogComponentRef.instance.showConfirmButton = config.showConfirmButton !== undefined ? config.showConfirmButton : true;
-    dialogComponentRef.instance.showCancelButton = config.showCancelButton !== undefined ? config.showCancelButton : true;
-    dialogComponentRef.instance.confirmButtonText = config.confirmButtonText || 'Confirm';
-    dialogComponentRef.instance.cancelButtonText = config.cancelButtonText || 'Cancel';
+    if (typeof componentOrConfig === 'function') {
+      component = componentOrConfig;
+      finalConfig = config || {};
+    } else {
+      component = TailwindDialogComponent;
+      finalConfig = componentOrConfig || {};
+    }
     
-    // Create content component
-    const contentComponentRef = this.componentFactoryResolver
-      .resolveComponentFactory(component)
-      .create(this.injector);
+    return this.createDialog(component, finalConfig);
+  }
+
+  // Specialized method for error dialogs
+  openError(title: string, message: string, buttonText: string = 'OK'): DialogRef {
+    return this.createDialog(ErrorDialogComponent, {
+      data: {
+        title,
+        content: message,
+        buttonText
+      }
+    });
+  }
+
+  // Specialized method for spinner dialogs
+  openSpinner(title: string, message: string, options: {
+    spinnerImage?: string,
+    spinnerSpeed?: number,
+    showCloseButton?: boolean,
+    disableBackdropClose?: boolean
+  } = {}): DialogRef {
+    return this.createDialog(SpinnerDialogComponent, {
+      data: {
+        title,
+        message,
+        spinnerImage: options.spinnerImage || 'assets/icons/logoBot.png',
+        spinnerSpeed: options.spinnerSpeed || 3,
+        showCloseButton: options.showCloseButton !== undefined ? options.showCloseButton : false,
+        disableBackdropClose: options.disableBackdropClose !== undefined ? options.disableBackdropClose : true
+      }
+    });
+  }
+
+  /**
+   * Opens an error dialog with enhanced error handling for backend errors
+   */
+  openErrorWithDetails(error: any, title?: string, options: {
+    buttonText?: string,
+    showRetryButton?: boolean,
+    showSpinner?: boolean,
+    spinnerImage?: string,
+    spinnerSpeed?: number
+  } = {}): DialogRef {
+    // Extract error message if it's in the standard HTTP error format
+    let errorMessage = '';
     
-    // Pass data to content component if available
+    if (error.error && error.error.message) {
+      errorMessage = error.error.message;
+    } else if (error.message) {
+      errorMessage = error.message;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    } else {
+      errorMessage = 'An unexpected error occurred';
+    }
+    
+    // Log for debugging
+    console.log('Opening error dialog with message:', errorMessage);
+    
+    return this.createDialog(ErrorDialogComponent, {
+      data: {
+        title: title || 'Error',
+        content: errorMessage, // Pass the raw message, let the component handle formatting
+        buttonText: options.buttonText || 'OK',
+        showRetryButton: options.showRetryButton || false,
+        showSpinner: options.showSpinner !== undefined ? options.showSpinner : true,
+        spinnerImage: options.spinnerImage || 'assets/icons/logoBot.png',
+        spinnerSpeed: options.spinnerSpeed || 1,
+        error: error
+      }
+    });
+  }
+
+  private createDialog(component: Type<any>, config: DialogConfig): DialogRef {
+    // Create component
+    const componentFactory = this.componentFactoryResolver.resolveComponentFactory(component);
+    const componentRef = componentFactory.create(this.injector);
+    
+    // Set properties
     if (config.data) {
-      Object.assign(contentComponentRef.instance, { data: config.data });
+      Object.assign(componentRef.instance, config.data);
+      
+      // For our known components, also set the data property
+      if (componentRef.instance.data !== undefined) {
+        componentRef.instance.data = config.data;
+      }
+    }
+    
+    // Set isOpen to true
+    if (componentRef.instance.isOpen !== undefined) {
+      componentRef.instance.isOpen = true;
     }
     
     // Attach to the DOM
-    this.appRef.attachView(dialogComponentRef.hostView);
-    this.appRef.attachView(contentComponentRef.hostView);
+    this.appRef.attachView(componentRef.hostView);
     
-    // Get DOM elements
-    const dialogElement = (dialogComponentRef.hostView as EmbeddedViewRef<any>).rootNodes[0];
-    const contentElement = (contentComponentRef.hostView as EmbeddedViewRef<any>).rootNodes[0];
-    
-    // Find content container and append content
-    const contentContainer = dialogElement.querySelector('.mt-2');
-    contentContainer.appendChild(contentElement);
+    // Get DOM element
+    const domElem = (componentRef.hostView as EmbeddedViewRef<any>).rootNodes[0];
     
     // Add to body
-    document.body.appendChild(dialogElement);
+    document.body.appendChild(domElem);
+    
+    // Store the component reference
+    this.dialogComponentRef = componentRef;
     
     // Create close subject
     const afterClosedSubject = new Subject<any>();
     
-    // Handle dialog events
-    dialogComponentRef.instance.confirmed.subscribe(() => {
-      afterClosedSubject.next('confirm');
-      afterClosedSubject.complete();
-      this.removeFromDOM(dialogComponentRef, contentComponentRef);
-    });
+    // Handle close event
+    if (componentRef.instance.close) {
+      componentRef.instance.close.subscribe((result: any) => {
+        afterClosedSubject.next(result || 'close');
+        afterClosedSubject.complete();
+        this.removeFromDOM(componentRef);
+      });
+    }
     
-    dialogComponentRef.instance.close.subscribe(() => {
-      afterClosedSubject.next('cancel');
-      afterClosedSubject.complete();
-      this.removeFromDOM(dialogComponentRef, contentComponentRef);
-    });
+    // Handle confirmed event if it exists
+    if (componentRef.instance.confirmed) {
+      componentRef.instance.confirmed.subscribe((result: any) => {
+        afterClosedSubject.next(result || 'confirm');
+        afterClosedSubject.complete();
+        this.removeFromDOM(componentRef);
+      });
+    }
+    
+    // Handle actionSelected event if it exists
+    if (componentRef.instance.actionSelected) {
+      componentRef.instance.actionSelected.subscribe((result: any) => {
+        afterClosedSubject.next(result);
+        // Don't complete or remove - the component will handle this
+      });
+    }
     
     // Return dialog reference
     return {
@@ -91,16 +181,14 @@ export class TailwindDialogService {
       close: (result?: any) => {
         afterClosedSubject.next(result);
         afterClosedSubject.complete();
-        this.removeFromDOM(dialogComponentRef, contentComponentRef);
+        this.removeFromDOM(componentRef);
       }
     };
   }
   
-  private removeFromDOM(dialogRef: ComponentRef<any>, contentRef: ComponentRef<any>) {
+  private removeFromDOM(dialogRef: ComponentRef<any>) {
     this.appRef.detachView(dialogRef.hostView);
-    this.appRef.detachView(contentRef.hostView);
     dialogRef.destroy();
-    contentRef.destroy();
   }
 
   closeAll(): void {
@@ -109,5 +197,12 @@ export class TailwindDialogService {
     dialogElements.forEach(element => {
       document.body.removeChild(element);
     });
+  }
+
+  close() {
+    if (this.dialogComponentRef) {
+      this.appRef.detachView(this.dialogComponentRef.hostView);
+      this.dialogComponentRef.destroy();
+    }
   }
 } 

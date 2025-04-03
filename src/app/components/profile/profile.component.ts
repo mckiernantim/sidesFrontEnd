@@ -87,7 +87,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const sub = this.stripe.getSubscriptionStatus(this.user.uid).subscribe({
       next: (subscription) => {
         console.log('PROFILE: Subscription loaded', subscription);
-        debugger
+        
         // Store the subscription
         this.subscription = subscription;
         this.subscription$ = of(subscription);
@@ -183,7 +183,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   
   // Manage existing subscription
   manageSubscription(): void {
-debugger
+
     if (!this.user || !this.user.email) {
       this.showError('You must be logged in to manage your subscription');
       return;

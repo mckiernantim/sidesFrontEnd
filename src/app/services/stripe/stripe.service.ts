@@ -194,7 +194,7 @@ export class StripeService {
         ).pipe(
           map(response => {
             console.log('STRIPE: Portal session response', response);
-            debugger
+            
             if (!response?.url) {
               throw new Error('No portal URL received');
             }
