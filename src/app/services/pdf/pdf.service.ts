@@ -86,40 +86,29 @@ export class PdfService {
     }
   }
   getScenes() {
-    try {
-      if (this.individualPages && this.allLines) {
-        this.scenes = this.allLines.filter((line) => {
-          return line.category === 'scene-header';
-        });
-        for (let i = 0; i < this.scenes.length; i++) {
-          try {
-            let sceneRefInTable = this.scenes[i];
-            let sceneInActualScript = this.allLines[sceneRefInTable.index];
-            // give scenes extra data for later
-            this.setLastLines(i);
-            this.processSceneHeader(sceneRefInTable, sceneInActualScript);
-          } catch (error) {
-            console.error(`Error processing scene at index ${i}:`, error);
-          }
-        }
+    if (this.individualPages && this.allLines) {
+      this.scenes = this.allLines.filter((line) => {
+        return line.category === 'scene-header';
+      });
+      for (let i = 0; i < this.scenes.length; i++) {
+        let sceneRefInTable = this.scenes[i];
+        let sceneInActualScript = this.allLines[sceneRefInTable.index];
+        // give scenes extra data for later
+        this.setLastLines(i);
+
+        this.processSceneHeader(sceneRefInTable, sceneInActualScript);
+        
       }
-  
-      this.length = this.allLines?.length || 0;
-      // assign PAGENUMBER values to page 0 and 1 in order for future
-      try {
-        for (let i = 0; i < 200; i++) {
-          if (!this.allLines[i]) continue;
-          this.allLines[i].page == 0
-            ? (this.allLines[i].pageNumber = 0)
-            : this.allLines[i].page == 1
-            ? (this.allLines[i].pageNumber = 1)
-            : this.allLines;
-        }
-      } catch (error) {
-        console.error('Error assigning page numbers:', error);
-      }
-    } catch (error) {
-      console.error('Error in getScenes:', error);
+    }
+
+    this.length = this.allLines.length || 0;
+    // assign PAGENUMBER values to page 0 and 1 in order for future
+    for (let i = 0; i < 200; i++) {
+      this.allLines[i].page == 0
+        ? (this.allLines[i].pageNumber = 0)
+        : this.allLines[i].page == 1
+        ? (this.allLines[i].pageNumber = 1)
+        : this.allLines;
     }
   }
 
@@ -471,7 +460,7 @@ export class PdfService {
     this.finalDocument.data = sanitizedPages;
 
     this.finalDocReady = true;
-    
+  
     return true
   }
 
@@ -919,5 +908,15 @@ export class PdfService {
       this.allLines[this.scenes[ind].index + 2]?.text)
       ? this.allLines[this.scenes[ind].index + 2]?.text
       : ' ';
+  }
+
+  private _selectedScenes: any[] = [];
+
+  getSelectedScenes(): any[] {
+    return this._selectedScenes || [];
+  }
+
+  setSelectedScenes(scenes: any[]): void {
+    this._selectedScenes = scenes;
   }
 }

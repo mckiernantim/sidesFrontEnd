@@ -10,14 +10,13 @@ import { FooterComponent } from '../../components/shared/footer/footer.component
 import { SpinningBotComponent } from 'src/app/components/shared/spinning-bot/spinning-bot.component';
 import { AboutItemGridComponent } from 'src/app/components/landing-page/about/about-item-grid/about-item-grid.component';
 import { CarouselComponent } from 'src/app/components/carousel/carousel.component';
-
+import { TailwindTableColumnDirective } from 'src/app/components/shared/tailwind-table/tailwind-table-column.directive';
 import { DatePipe, AsyncPipe } from '@angular/common';
 import { DateFormatPipe } from 'src/app/pipes/date-format.pipe';
 import { TailwindDialogComponent } from 'src/app/components/shared/tailwind-dialog/tailwind-dialog.component';
 import { ErrorDialogComponent } from 'src/app/components/shared/error-dialog/error-dialog.component';
 import { SpinnerDialogComponent } from 'src/app/components/shared/spinner-dialog/spinner-dialog.component';
-import { TailwindTableComponent } from 'src/app/components/shared/tailwind-table/tailwind-table.component';
-import { TailwindTableColumnDirective } from 'src/app/components/shared/tailwind-table/tailwind-table-column.directive';
+import { TailwindTableComponent } from '../../components/shared/tailwind-table/tailwind-table.component';
 import { SpinnerComponent } from '../../components/shared/spinner/spinner.component';
 
 @NgModule({

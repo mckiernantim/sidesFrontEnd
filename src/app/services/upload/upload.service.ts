@@ -258,6 +258,7 @@ export class UploadService {
           .post(this.url + '/api', formData, this.httpOptions)
           .pipe(
             map((res: any) => {
+              
               let { allLines, allChars, individualPages, title, firstAndLastLinesOfScenes } = res;
               this.allLines = allLines;
               this.firstAndLastLinesOfScenes = firstAndLastLinesOfScenes;
@@ -268,6 +269,7 @@ export class UploadService {
               this.individualPages.forEach((page) => {
                 this.lineCount.push(page.filter((item) => item.totalLines));
               });
+      
               return res;
             }),
             catchError(error => {

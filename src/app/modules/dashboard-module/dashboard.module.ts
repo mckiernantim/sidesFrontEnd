@@ -12,6 +12,7 @@ import { ToolTipComponent } from '../../components/shared/tool-tip/tool-tip.comp
 import { AddWatermarkComponent } from '../../components/add-watermark/add-watermark.component';
 import { SharedModule } from '../shared-module/shared.module';
 import { CheckoutComponent } from 'src/app/components/checkout/checkout.component';
+import { SceneSelectionComponent } from '../../components/dashboard/scene-selection/scene-selection.component';
 
 @NgModule({
   declarations: [
@@ -22,7 +23,8 @@ import { CheckoutComponent } from 'src/app/components/checkout/checkout.componen
     AddCallsheetComponent,
     ToolTipComponent,
     AddWatermarkComponent,
-    CheckoutComponent
+    CheckoutComponent,
+    SceneSelectionComponent
   ],
   imports: [
     CommonModule,
@@ -35,7 +37,8 @@ import { CheckoutComponent } from 'src/app/components/checkout/checkout.componen
     DashboardComponent,
     DashboardRightComponent,
     LastLooksComponent,
-    LastLooksPageComponent
+    LastLooksPageComponent,
+    SceneSelectionComponent
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

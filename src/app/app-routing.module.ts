@@ -19,7 +19,7 @@ import { TestComponent } from './components/test/test.component';
 const routes: Routes = [
   { path: 'test', component: TestComponent },
   {
-    path: 'download',
+    path: 'dashboard',
     component: DashboardComponent,
   },
   { path: 'complete',

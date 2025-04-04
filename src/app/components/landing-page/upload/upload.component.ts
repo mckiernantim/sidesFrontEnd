@@ -43,10 +43,10 @@ export class UploadComponent implements OnInit, OnDestroy {
   constructor(
     public upload: UploadService,
     public router: Router,
+    private dialogService: TailwindDialogService,
     public pdf: PdfService,
     private auth: Auth,
-    private authService: AuthService,
-    private dialogService: TailwindDialogService
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -167,24 +167,33 @@ export class UploadComponent implements OnInit, OnDestroy {
     if (file) {
       try {
         // Open loading modal with spinner
-        const dialogRef = this.dialogService.openSpinner(
-          'Uploading File',
-          'Please wait while we process your file...',
-          { spinnerImage: 'assets/icons/logoBot.png' }
-        );
+        const dialogRef = this.dialogService.open(TailwindDialogComponent, {
+          data: {
+            title: 'Uploading File',
+            content: `<div class="flex justify-center">
+                      <img src="assets/animations/ScriptBot_Animation-BW.gif" alt="Loading..." class="w-24 h-24">
+                    </div>
+                    <p class="text-center mt-4">Please wait while we process your file...</p>`,
+            showCloseButton: false,
+            disableClose: true
+          }
+        });
         
         // Process the file upload
         this.upload.postFile(file).subscribe({
           next: (response) => {
             // Close the dialog
             dialogRef.close();
+            
+            // Initialize PDF data
+            this.pdf.initializeData();
+            
             // Navigate to dashboard
             this.router.navigate(['/dashboard']);
           },
           error: (error) => {
             // Close the dialog
             dialogRef.close();
-            debugger
             // Show enhanced error dialog with details
             this.dialogService.openErrorWithDetails(
               error,

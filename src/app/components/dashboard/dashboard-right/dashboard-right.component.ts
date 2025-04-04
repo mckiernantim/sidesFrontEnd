@@ -21,6 +21,9 @@ import { User, PdfResponse, SubscriptionResponse, isPdfResponse, PdfGenerationRe
 import { TailwindDialogService } from '../../../services/tailwind-dialog/tailwind-dialog.service';
 
 import { animate, style, transition, trigger } from '@angular/animations';
+import { SceneSelectionComponent } from '../scene-selection/scene-selection.component';
+import { TailwindTableComponent } from '../../shared/tailwind-table/tailwind-table.component';
+import { CommonModule } from '@angular/common';
 
 interface toolTipOption {
   title: string;
@@ -88,7 +91,7 @@ export class DashboardRightComponent implements OnInit {
   allLines;
   displayedColumns: string[] = ['number', 'text', 'select'];
   dataSource: any;
-  scenes: any[];
+  scenes: any[] = [];
   initialSelection: any[] = [];
   selected: any[];
   pages: any[];
@@ -131,6 +134,18 @@ export class DashboardRightComponent implements OnInit {
   // Add this property to the DashboardRightComponent class
   pageSize: number = 10;
 
+  // Define table columns for scene selection
+  tableColumns = [
+    { key: 'sceneNumberText', header: 'Scene' },
+    { key: 'text', header: 'Location' },
+    { 
+      key: 'preview', 
+      header: 'Preview',
+      cell: (item: any) => this.truncateText(item.preview, 50)
+    },
+    { key: 'page', header: 'Page' }
+  ];
+
   constructor(
     public cdr: ChangeDetectorRef,
     public stripe: StripeService,
@@ -170,14 +185,27 @@ export class DashboardRightComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Update table columns to include truncated preview
+    this.tableColumns = [
+      { key: 'sceneNumberText', header: 'Scene' },
+      { key: 'text', header: 'Location' },
+      { 
+        key: 'preview', 
+        header: 'Preview',
+        cell: (item: any) => this.truncateText(item.preview, 50)
+      },
+      { key: 'page', header: 'Page' }
+    ];
+    
     this.intizilazeState();
     this.initializeSceneSelectionTable();
-    this.openFinalSpinner();
+    
     this.auth.user$.subscribe(data => {
       console.log('Auth state changed:', data);
-        this.userData = data
-        this.cdr.detectChanges()
+      this.userData = data;
+      this.cdr.detectChanges();
     });
+    
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: NavigationEnd) => {
@@ -186,11 +214,10 @@ export class DashboardRightComponent implements OnInit {
         this.handleStripeReturn();
       }
     });
-
   }
         
   ngAfterViewInit(): void {
-    this.scriptLength = this.individualPages.length - 1 || 0;
+    this.scriptLength = this.individualPages ? this.individualPages.length - 1 : 0;
     this.dataReady = true;
     this.cdr.detectChanges();
   }
@@ -221,23 +248,42 @@ export class DashboardRightComponent implements OnInit {
     this.scriptProblems = [];
     this.modalData = [];
     // SAVED ON THE SERVICE
-    this.allLines = this.pdf.allLines;
-    this.individualPages = this.pdf.individualPages || null;
+
+    this.allLines = this.pdf.allLines || [];
+    this.individualPages = this.pdf.individualPages || [];
     this.lastLooksReady = false;
+    this.initializeSceneSelectionTable();
   }
 
   initializeSceneSelectionTable() {
-    if (!this.pdf.allLines) {
-      alert('No Script data detected - routing to upload ');
-      this.router.navigate(['/']);
+    if (this.allLines && this.allLines.length) {
+      try {
+        // Call getScenes() to initialize the scenes in the PDF service
+        this.pdf.getScenes();
+        
+        // Get the scenes from the PDF service's property
+        this.scenes = this.pdf.scenes || [];
+        
+        // Log the scenes to check if they're all there
+        console.log('Scenes from PDF service:', this.scenes.length, this.scenes);
+        
+        // Set the data source for the table
+        this.dataSource = [...this.scenes]; // Create a new array to ensure change detection
+        
+        // Initialize selected array if not already done
+        this.selected = this.selected || [];
+        
+        console.log('Scene data loaded:', this.dataSource.length);
+      } catch (error) {
+        console.error('Error loading scenes:', error);
+        this.dataSource = [];
+        this.scenes = [];
+      }
+    } else {
+      console.warn('No lines data available to create scene table');
+      this.dataSource = [];
+      this.scenes = [];
     }
-
-    // Replace MatTableDataSource with direct array assignment
-    this.dataSource = this.pdf.scenes || [];
-    this.length = this.pdf.allLines.length;
-    
-    // Initialize current page to 0
-    this.currentPage = 0;
   }
 
   // lets get lookback tighter  - should be able to refrence lastCharacterIndex
@@ -488,13 +534,23 @@ export class DashboardRightComponent implements OnInit {
     });
   }
 
-  toggleSelected(event, scene) {
-    !this.selected.includes(scene)
-      ? this.selected.push(scene)
-      : this.selected.splice(this.selected.indexOf(scene, 1));
-    // this.selected.length > 10 ?
-    //   this.active = false :
-    //   this.active = true
+  toggleSelected(event: MouseEvent | null, scene: any) {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    const index = this.selected.findIndex(s => s.index === scene.index);
+    
+    if (index === -1) {
+      this.selected.push(scene);
+    } else {
+      this.selected.splice(index, 1);
+    }
+    
+    console.log('Selected scenes:', this.selected);
+    
+    // Force change detection
+    this.cdr.detectChanges();
   }
   openFinalSpinner() {
     this.waitingForScript = true;
@@ -505,7 +561,7 @@ export class DashboardRightComponent implements OnInit {
       data: {
         selected: this.selected,
         script: this.script,
-        individualPages: this.individualPages.length - 1,
+        individualPages: this.individualPages ? this.individualPages.length - 1 : 0,
         callsheet: this.callsheet,
         waitingForScript: true,
         title: this.script,
@@ -672,5 +728,30 @@ export class DashboardRightComponent implements OnInit {
 
   onPageChange(page: number) {
     this.currentPage = page;
+  }
+
+  handleSceneSelection(scene: any): void {
+    console.log('Selected scene:', scene);
+    // Add your logic to handle the selected scene
+  }
+
+  // Get scenes sorted by their index in the script
+  getSortedSelectedScenes(): any[] {
+    return [...this.selected].sort((a, b) => a.index - b.index);
+  }
+
+  // Remove a scene from the selected list
+  removeSelectedScene(scene: any): void {
+    const index = this.selected.findIndex(s => s.index === scene.index);
+    if (index !== -1) {
+      this.selected.splice(index, 1);
+      this.cdr.detectChanges();
+    }
+  }
+
+  // Helper method to truncate text
+  truncateText(text: string, maxLength: number): string {
+    if (!text) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
   }
 }
