@@ -21,8 +21,7 @@
             [pagination]="true"
             [pageSize]="pageSize"
             [selectedItems]="selected"
-            (selectionChange)="selected = $event"
-            (rowClick)="onRowClick($event)">
+            (selectionChange)="onSelectionChange($event)">
           </app-tailwind-table>
         </div>
       </div>

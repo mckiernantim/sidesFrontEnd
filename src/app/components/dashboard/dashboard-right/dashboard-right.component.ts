@@ -118,23 +118,19 @@ export class DashboardRightComponent implements OnInit {
   watermark: string;
   currentPage: number = 0;
   script: string = localStorage.getItem('name');
-  // DEPCREACEATED WATSON STUFF MAY COME BACK
+
 
   subscription: Subscription;
   linesCrawled: Observable<any>;
   problemsData: Observable<any>;
   scriptProblems: any[];
 
-  // DATA TABLE HELPERS FROM ANGULAR
 
 
-  // Analytics
   private analytics: any;
 
-  // Add this property to the DashboardRightComponent class
   pageSize: number = 10;
 
-  // Define table columns for scene selection
   tableColumns = [
     { key: 'sceneNumberText', header: 'Scene' },
     { key: 'text', header: 'Location' },
@@ -145,6 +141,9 @@ export class DashboardRightComponent implements OnInit {
     },
     { key: 'page', header: 'Page' }
   ];
+
+  // Add a selectedScenes map to track selections
+  selectedScenesMap: Map<number, any> = new Map();
 
   constructor(
     public cdr: ChangeDetectorRef,
@@ -158,12 +157,10 @@ export class DashboardRightComponent implements OnInit {
     public auth: AuthService,
     private dialog: TailwindDialogService
   ) {
-    // Initialize analytics if available
     try {
       this.analytics = getAnalytics();
     } catch (error) {
       console.warn('Firebase Analytics not available:', error);
-      // Create a mock analytics object to prevent errors
       this.analytics = {
         logEvent: () => {}
       };
@@ -173,7 +170,6 @@ export class DashboardRightComponent implements OnInit {
     this.scriptLength;
   }
 
-  // Helper method for analytics that won't crash if analytics isn't available
   logAnalyticsEvent(eventName: string, params?: Record<string, any>) {
     try {
       if (this.analytics && typeof this.analytics.logEvent === 'function') {
@@ -185,7 +181,6 @@ export class DashboardRightComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Update table columns to include truncated preview
     this.tableColumns = [
       { key: 'sceneNumberText', header: 'Scene' },
       { key: 'text', header: 'Location' },
@@ -258,19 +253,17 @@ export class DashboardRightComponent implements OnInit {
   initializeSceneSelectionTable() {
     if (this.allLines && this.allLines.length) {
       try {
-        // Call getScenes() to initialize the scenes in the PDF service
+   
         this.pdf.getScenes();
         
-        // Get the scenes from the PDF service's property
+
         this.scenes = this.pdf.scenes || [];
         
-        // Log the scenes to check if they're all there
+ 
         console.log('Scenes from PDF service:', this.scenes.length, this.scenes);
         
-        // Set the data source for the table
         this.dataSource = [...this.scenes]; // Create a new array to ensure change detection
         
-        // Initialize selected array if not already done
         this.selected = this.selected || [];
         
         console.log('Scene data loaded:', this.dataSource.length);
@@ -336,7 +329,6 @@ export class DashboardRightComponent implements OnInit {
   }
 
   onPageUpdate(updatedPage: Line[]) {
-    // Update the PDF service with the changes
     this.pdf.updatePdfState(updatedPage);
   }
 
@@ -501,14 +493,11 @@ export class DashboardRightComponent implements OnInit {
     });
   }
 
-  // Handle return from Stripe checkout
+  
   private handleStripeReturn() {
     // Check if we have a pending document to generate
     if (this.pdf.finalDocument) {
-      // Show loading spinner
       this.openFinalSpinner();
-      
-      // Check subscription status
       this.stripe.getSubscriptionStatus(this.userData.uid).subscribe({
         next: (status) => {
           if (status.active) {
@@ -722,8 +711,20 @@ export class DashboardRightComponent implements OnInit {
     }
   }
 
-  onRowClick(scene: any) {
-    this.toggleSelected(null, scene);
+
+  onRowClick(scene: any): void {
+    // Toggle selection using the map
+    if (this.selectedScenesMap.has(scene.index)) {
+      this.selectedScenesMap.delete(scene.index);
+    } else {
+      this.selectedScenesMap.set(scene.index, scene);
+    }
+    
+    // Update the selected array from the map values
+    this.selected = Array.from(this.selectedScenesMap.values());
+    
+    // Only trigger change detection for this component
+    this.cdr.markForCheck(); // Use markForCheck instead of detectChanges for better performance
   }
 
   onPageChange(page: number) {
@@ -740,11 +741,18 @@ export class DashboardRightComponent implements OnInit {
     return [...this.selected].sort((a, b) => a.index - b.index);
   }
 
-  // Remove a scene from the selected list
+  // Update the removeSelectedScene method to handle both the array and UI update
   removeSelectedScene(scene: any): void {
+    // Find and remove the scene from the selected array
     const index = this.selected.findIndex(s => s.index === scene.index);
     if (index !== -1) {
       this.selected.splice(index, 1);
+      
+      // Force the table to update its selection state
+      // We need to create a new array reference for Angular change detection
+      this.selected = [...this.selected];
+      
+      // Update the UI
       this.cdr.detectChanges();
     }
   }
@@ -753,5 +761,27 @@ export class DashboardRightComponent implements OnInit {
   truncateText(text: string, maxLength: number): string {
     if (!text) return '';
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  }
+
+
+  onSelectionChange(scene: any): void {
+    // Find if the scene is already selected
+    const index = this.selected.findIndex(s => s.index === scene.index);
+    
+    if (index === -1) {
+      // Add to selection if not already selected
+      this.selected.push(scene);
+    } else {
+      // Remove from selection if already selected
+      this.selected.splice(index, 1);
+    }
+    
+    // Update the UI
+    this.cdr.detectChanges();
+  }
+
+  // Update this method to properly check if a scene is selected
+  isSceneSelected(scene: any): boolean {
+    return this.selectedScenesMap.has(scene.index);
   }
 }

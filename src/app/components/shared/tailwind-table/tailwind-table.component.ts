@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter, ContentChildren, QueryList, Aft
 import { CommonModule } from '@angular/common';
 import { TailwindTableColumnDirective } from './tailwind-table-column.directive';
 
-// Define the column interface to match what you're using
+
 export interface TableColumn {
   key: string;
   header: string;
@@ -48,12 +48,11 @@ export class TailwindTableComponent implements AfterContentInit, OnChanges {
       }));
     }
     
-    // Initialize the display data
+    
     this.updateDisplayData();
   }
   
   ngOnChanges(changes: SimpleChanges): void {
-    // Update display data when inputs change
     if (changes.data || changes.pagination || changes.pageSize || changes.sortColumn || changes.sortDirection) {
       this.updateDisplayData();
     }
@@ -85,31 +84,27 @@ export class TailwindTableComponent implements AfterContentInit, OnChanges {
     }
     
     let result = [...this.data];
-    
-    // Apply sorting
     if (this.sortColumn) {
       result.sort((a, b) => {
         const valueA = a[this.sortColumn];
         const valueB = b[this.sortColumn];
-        
-        // Handle undefined or null values
+    
         if (valueA === undefined || valueA === null) return this.sortDirection === 'asc' ? -1 : 1;
         if (valueB === undefined || valueB === null) return this.sortDirection === 'asc' ? 1 : -1;
         
-        // Handle string comparison
         if (typeof valueA === 'string' && typeof valueB === 'string') {
           return this.sortDirection === 'asc' 
             ? valueA.localeCompare(valueB) 
             : valueB.localeCompare(valueA);
         }
         
-        // Handle number comparison
+        
         const comparison = valueA < valueB ? -1 : (valueA > valueB ? 1 : 0);
         return this.sortDirection === 'asc' ? comparison : -comparison;
       });
     }
     
-    // Apply pagination
+   
     if (this.pagination) {
       const start = (this.currentPage - 1) * this.pageSize;
       const end = Math.min(start + this.pageSize, result.length);
@@ -190,28 +185,17 @@ export class TailwindTableComponent implements AfterContentInit, OnChanges {
   }
   
   isSelected(item: any): boolean {
-    return this.selectedItems.some(selected => 
-      selected.index === item.index || selected.id === item.id
-    );
+    if (!item || !this.selectedItems) return false;
+    return this.selectedItems.some(selected => selected.index === item.index);
   }
   
   toggleSelection(event: Event, item: any): void {
-    event.stopPropagation();
-    
-    const index = this.selectedItems.findIndex(selected => 
-      selected.index === item.index || selected.id === item.id
-    );
-    
-    if (index === -1) {
-      this.selectedItems.push(item);
-    } else {
-      this.selectedItems.splice(index, 1);
-    }
-    
-    this.selectionChange.emit(this.selectedItems);
+    // Just emit the item that was clicked
+    this.selectionChange.emit(item);
   }
   
   onRowClick(item: any): void {
+    // Only emit the clicked item, don't modify the selection
     this.rowClick.emit(item);
   }
   

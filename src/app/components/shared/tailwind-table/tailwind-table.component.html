@@ -2,7 +2,6 @@
   <table class="min-w-full bg-white border border-gray-200">
     <thead>
       <tr class="bg-gray-100">
-        <!-- Remove select all checkbox and just have a simple header for selection column -->
         <th *ngIf="selectable" class="w-10 px-4 py-2"></th>
         
         <th *ngFor="let column of columns" 
@@ -17,9 +16,8 @@
     </thead>
     <tbody>
       <tr *ngFor="let item of sortedData" 
-          class="border-t border-gray-200 hover:bg-gray-50 cursor-pointer"
-          [class.bg-indigo-50]="isSelected(item)"
-          (click)="onRowClick(item)">
+          class="border-t border-gray-200 hover:bg-gray-50"
+          [class.bg-indigo-50]="isSelected(item)">
         <td *ngIf="selectable" class="w-10 px-4 py-2">
           <input type="checkbox" 
                  [checked]="isSelected(item)"
@@ -44,7 +42,6 @@
   </table>
 </div>
 
-<!-- Pagination -->
 <div *ngIf="pagination && totalPages > 1" class="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
   <div class="flex justify-between sm:hidden">
     <button [disabled]="currentPage === 1"
