@@ -1,9 +1,8 @@
-
 <nav class="bg-white shadow-md">
   <div class="container mx-auto px-4">
     <div class="flex justify-between items-center py-4">
       <div class="flex items-center">
-        <a href="/" class="text-xl font-bold text-gray-800">SideWays</a>
+        <a [routerLink]="['/']" class="text-xl font-bold text-gray-800">SideWays</a>
       </div>
       
       <div class="hidden md:flex items-center space-x-8">
@@ -31,9 +30,9 @@
             </button>
             
             <div *ngIf="isUserMenuOpen" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-              <a href="/profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
-              <a href="/settings" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Settings</a>
-              <a href="#" (click)="logout()" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Logout</a>
+              <a [routerLink]="['/profile']" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+              <a [routerLink]="['/settings']" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Settings</a>
+              <a (click)="logout()" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Logout</a>
             </div>
           </div>
         </ng-template>

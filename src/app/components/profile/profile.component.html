@@ -1,134 +1,215 @@
 <div class="container mx-auto px-4 py-8 max-w-4xl">
-  @if (isLoading) {
-    <div class="flex justify-center items-center min-h-[400px]">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+  <!-- Loading spinner -->
+  <div *ngIf="isLoading" class="flex justify-center items-center min-h-[400px]">
+    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+  </div>
+  
+  <!-- Error message -->
+  <div *ngIf="error" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 text-center">
+    <h3 class="font-bold text-lg mb-2">Error</h3>
+    <p>{{ error }}</p>
+    <div class="mt-4">
+      <button 
+        (click)="loadSubscriptionData()" 
+        class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+      >
+        Try Again
+      </button>
     </div>
-  } @else {
-    <div class="bg-white rounded-lg shadow-md p-8">
-      <h1 class="text-2xl font-bold mb-8 text-center">Your Profile</h1>
+  </div>
+  
+  <!-- Not logged in state -->
+  <div *ngIf="!isLoading && !user" class="bg-white rounded-lg shadow-md p-8 text-center">
+    <h1 class="text-2xl font-bold mb-6">Sign In to View Your Profile</h1>
+    <p class="mb-8 text-gray-600">You need to be signed in to view your profile and manage your subscription.</p>
+    <button 
+      (click)="signIn()" 
+      class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-md transition-colors"
+    >
+      Sign in with Google
+    </button>
+  </div>
+  
+  <!-- Profile content (logged in) -->
+  <div *ngIf="!isLoading && user && !error" class="bg-white rounded-lg shadow-md p-8 mx-auto max-w-3xl">
+    <h1 class="text-2xl font-bold mb-8 text-center">Your Profile</h1>
+    
+    <!-- Subscription Section -->
+    <div class="mb-10">
+      <h2 class="text-xl font-semibold mb-6 pb-2 border-b border-gray-200">Subscription</h2>
       
-      <!-- Subscription Section -->
-      <div class="mb-10">
-        <h2 class="text-xl font-semibold mb-6 pb-2 border-b border-gray-200">Subscription</h2>
-        
-        <!-- Has subscription data -->
-        <ng-container *ngIf="(subscription$ | async) as subscription; else noSubscription">
-          <!-- Has subscription data with status - show the details -->
-          <div *ngIf="subscription.subscription?.status" class="subscription-info">
-            <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
-              <div [ngClass]="getStatusColor(subscription)" class="inline-flex items-center rounded-full px-4 py-2 mb-4 md:mb-0 self-start">
-                <svg *ngIf="getStatusIcon(subscription) === 'check_circle'" class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                </svg>
-                <svg *ngIf="getStatusIcon(subscription) === 'warning'" class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                </svg>
-                <svg *ngIf="getStatusIcon(subscription) === 'error'" class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                </svg>
-                <span class="font-medium">{{ getStatusText(subscription) }}</span>
-              </div>
-              
-              <div class="subscription-actions">
-                <!-- Manage subscription button -->
-                <button 
-                  (click)="manageSubscription()"
-                  class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                >
-                  Manage Subscription
-                </button>
-                
-                <!-- Renew button for expiring subscriptions -->
-                <button 
-                  *ngIf="getSubscriptionStatusType(subscription) === 'expiring'" 
-                  (click)="manageSubscription()"
-                  class="ml-2 border border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-medium py-2 px-4 rounded-md transition-colors"
-                >
-                  Renew Subscription
-                </button>
-              </div>
+      <!-- Active subscription that will renew -->
+      <div *ngIf="isSubscriptionActive() && subscription?.subscription?.willAutoRenew" class="p-6 bg-green-50 rounded-lg border border-green-100 mb-4">
+        <div class="flex flex-col">
+          <div class="text-green-800 font-medium mb-2">Your subscription is active</div>
+          
+          <!-- Subscription details -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm text-green-700">
+            <div>
+              <p class="font-medium">Member since</p>
+              <p>{{ formatDate(subscription?.subscription?.originalStartDate) }}</p>
             </div>
-            
-            <div class="p-6 bg-gray-50 rounded-lg border border-gray-200">
-              <!-- Show renewal or expiration date -->
-              <p *ngIf="renewalDate" class="mb-2 text-lg">
-                Your subscription will renew on <strong>{{ formatDate(renewalDate) }}</strong>
-              </p>
-              <p *ngIf="expirationDate" class="mb-2 text-lg">
-                Your subscription will expire on <strong>{{ formatDate(expirationDate) }}</strong>
-              </p>
+            <div>
+              <p class="font-medium">Current period ends</p>
+              <p>{{ formatDate(subscription?.subscription?.currentPeriodEnd) }}</p>
+            </div>
+            <div>
+              <p class="font-medium">Documents processed</p>
+              <p>{{ subscription?.usage?.pdfsGenerated || 0 }}</p>
+            </div>
+            <div *ngIf="subscription?.plan">
+              <p class="font-medium">Billing</p>
+              <p>{{ formatCurrency(subscription?.plan?.amount) }} per {{ subscription?.plan?.interval }}</p>
             </div>
           </div>
           
-          <!-- No subscription status - show signup -->
-          <ng-container *ngIf="!subscription.subscription?.status">
-            <ng-container *ngTemplateOutlet="subscriptionSignup"></ng-container>
-          </ng-container>
-        </ng-container>
-        
-        <!-- No Subscription Data - show signup -->
-        <ng-template #noSubscription>
-          <ng-container *ngTemplateOutlet="subscriptionSignup"></ng-container>
-        </ng-template>
-        
-        <!-- Reusable subscription signup template -->
-        <ng-template #subscriptionSignup>
-          <div class="p-6 bg-blue-50 rounded-lg border border-blue-100">
-            <h3 class="text-xl font-semibold mb-4 text-blue-800">Upgrade to Premium</h3>
-            <div class="subscription-benefits">
-              <ul class="mb-6">
-                <li *ngFor="let benefit of subscriptionBenefits" class="flex items-center mb-3">
-                  <svg class="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                  </svg>
-                  <span>{{ benefit }}</span>
-                </li>
-              </ul>
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between">
-                <p class="text-xl font-bold text-blue-800 mb-4 sm:mb-0">{{ subscriptionPrice }}</p>
-                <button 
-                  (click)="handleNewSubscription()" 
-                  class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition-colors"
-                >
-                  Subscribe Now
-                </button>
-              </div>
-            </div>
-          </div>
-        </ng-template>
-      </div>
-      
-      <!-- Usage Stats -->
-      <div class="mb-10">
-        <h2 class="text-xl font-semibold mb-6 pb-2 border-b border-gray-200">Your Usage</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          <div class="bg-blue-50 p-6 rounded-lg border border-blue-100 flex flex-col items-center justify-center">
-            <p class="text-sm text-gray-600 mb-2">PDFs Generated</p>
-            <p class="text-3xl font-bold text-blue-700">{{ usageStats.pdfsGenerated }}</p>
-          </div>
-          <!-- Add more usage stats as needed -->
-        </div>
-      </div>
-      
-      <!-- Account Settings Section -->
-      <div class="mt-10">
-        <h2 class="text-xl font-semibold mb-6 pb-2 border-b border-gray-200">Account Settings</h2>
-        <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
-          <div *ngIf="user" class="mb-6">
-            <p class="text-sm text-gray-600 mb-1">Email</p>
-            <p class="font-medium text-lg">{{ user.email }}</p>
-          </div>
-          
-          <div class="mt-6 pt-4 border-t border-gray-200">
+          <div class="flex justify-end">
             <button 
-              (click)="logout()"
-              class="border border-red-600 text-red-600 hover:bg-red-50 font-medium py-2 px-4 rounded-md transition-colors"
+              (click)="manageSubscription()" 
+              class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
             >
-              Sign Out
+              Manage Subscription
             </button>
           </div>
         </div>
       </div>
+      
+      <!-- Active subscription that will be canceled -->
+      <div *ngIf="isSubscriptionCanceling()" class="p-6 bg-orange-50 rounded-lg border border-orange-100 mb-4">
+        <div class="flex flex-col">
+          <div class="text-orange-800 font-medium mb-2">
+            Your subscription is {{ subscription?.subscription?.status === 'active' ? 'active' : 'canceled' }} but will not renew
+          </div>
+          
+          <!-- Subscription details -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm text-orange-700">
+            <div>
+              <p class="font-medium">Member since</p>
+              <p>{{ formatDate(subscription?.subscription?.originalStartDate) }}</p>
+            </div>
+            <div>
+              <p class="font-medium">Access until</p>
+              <p>{{ formatDate(subscription?.subscription?.currentPeriodEnd) }}</p>
+            </div>
+            <div>
+              <p class="font-medium">Documents processed</p>
+              <p>{{ subscription?.usage?.pdfsGenerated || 0 }}</p>
+            </div>
+            <div *ngIf="subscription?.plan">
+              <p class="font-medium">Billing</p>
+              <p>{{ formatCurrency(subscription?.plan?.amount) }} per {{ subscription?.plan?.interval }}</p>
+            </div>
+          </div>
+          
+          <div class="flex justify-between mt-2">
+            <button 
+              (click)="handleNewSubscription()" 
+              class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+            >
+              Renew Subscription
+            </button>
+            
+            <button 
+              (click)="manageSubscription()" 
+              class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+            >
+              Manage Subscription
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Canceled subscription -->
+      <div *ngIf="!isSubscriptionActive() && subscription?.subscription?.status === 'canceled'" class="p-6 bg-yellow-50 rounded-lg border border-yellow-100 mb-4">
+        <div class="flex flex-col">
+          <div class="text-yellow-800 font-medium mb-2">Your subscription has been canceled</div>
+          
+          <div class="text-sm text-yellow-700 mb-4">
+            <div *ngIf="subscription?.subscription?.originalStartDate">
+              Your subscription started on {{ formatDate(subscription?.subscription?.originalStartDate) }}
+            </div>
+            <div *ngIf="subscription?.subscription?.currentPeriodEnd">
+              and ended on {{ formatDate(subscription?.subscription?.currentPeriodEnd) }}
+            </div>
+          </div>
+          
+          <div class="flex justify-end">
+            <button 
+              (click)="handleNewSubscription()" 
+              class="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+            >
+              Restart Subscription
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- No subscription yet or pending subscription -->
+      <div *ngIf="!isSubscriptionActive() && subscription?.subscription?.status !== 'canceled'" class="p-6 bg-blue-50 rounded-lg border border-blue-100">
+        <h3 class="text-xl font-semibold mb-4 text-blue-800">Upgrade to Premium</h3>
+        
+        <!-- Show pending message if status is pending -->
+        <div *ngIf="subscription?.subscription?.status === 'pending'" class="mb-4 p-3 bg-yellow-50 border border-yellow-100 rounded text-yellow-800">
+          <p>Your subscription is currently being processed. This may take a few moments.</p>
+          <p class="mt-2 text-sm">If this status persists for more than a few minutes, please refresh the page or contact support.</p>
+          
+          <div class="mt-4 flex justify-between">
+            <button 
+              (click)="refreshSubscriptionStatus()" 
+              class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+            >
+              Refresh Status
+            </button>
+            
+            <button 
+              (click)="manageSubscription()" 
+              class="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+            >
+              Manage Subscription
+            </button>
+          </div>
+        </div>
+        
+        <!-- Benefits list -->
+        <div class="mb-6">
+          <h4 class="font-medium text-blue-800 mb-2">Premium Benefits:</h4>
+          <ul class="list-disc pl-5 space-y-1 text-blue-700">
+            <li *ngFor="let benefit of benefits">{{ benefit }}</li>
+          </ul>
+        </div>
+        
+        <div class="flex justify-between items-center">
+          <p class="text-xl font-bold text-blue-800">$20 per week</p>
+          <button 
+            (click)="handleNewSubscription()" 
+            [disabled]="subscription?.subscription?.status === 'pending'"
+            [ngClass]="{'opacity-50 cursor-not-allowed': subscription?.subscription?.status === 'pending'}"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition-colors"
+          >
+            {{ subscription?.subscription?.status === 'pending' ? 'Processing...' : 'Subscribe Now' }}
+          </button>
+        </div>
+      </div>
     </div>
-  }
+    
+    <!-- Account Settings Section -->
+    <div class="mt-10">
+      <h2 class="text-xl font-semibold mb-6 pb-2 border-b border-gray-200">Account Settings</h2>
+      <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+        <div *ngIf="user" class="mb-6">
+          <p class="text-sm text-gray-600 mb-1">Email</p>
+          <p class="font-medium text-lg">{{ user.email }}</p>
+        </div>
+        
+        <div class="mt-6 pt-4 border-t border-gray-200">
+          <button 
+            (click)="logout()"
+            class="border border-red-600 text-red-600 hover:bg-red-50 font-medium py-2 px-4 rounded-md transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

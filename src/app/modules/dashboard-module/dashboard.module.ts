@@ -13,6 +13,7 @@ import { AddWatermarkComponent } from '../../components/add-watermark/add-waterm
 import { SharedModule } from '../shared-module/shared.module';
 import { CheckoutComponent } from 'src/app/components/checkout/checkout.component';
 import { SceneSelectionComponent } from '../../components/dashboard/scene-selection/scene-selection.component';
+import { CheckoutModalComponent } from '../../components/dashboard/checkout-modal/checkout-modal.component';
 
 @NgModule({
   declarations: [
@@ -24,7 +25,8 @@ import { SceneSelectionComponent } from '../../components/dashboard/scene-select
     ToolTipComponent,
     AddWatermarkComponent,
     CheckoutComponent,
-    SceneSelectionComponent
+    SceneSelectionComponent,
+    CheckoutModalComponent
   ],
   imports: [
     CommonModule,
@@ -38,7 +40,8 @@ import { SceneSelectionComponent } from '../../components/dashboard/scene-select
     DashboardRightComponent,
     LastLooksComponent,
     LastLooksPageComponent,
-    SceneSelectionComponent
+    SceneSelectionComponent,
+    CheckoutModalComponent
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

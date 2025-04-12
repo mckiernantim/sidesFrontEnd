@@ -24,6 +24,7 @@ import { animate, style, transition, trigger } from '@angular/animations';
 import { SceneSelectionComponent } from '../scene-selection/scene-selection.component';
 import { TailwindTableComponent } from '../../shared/tailwind-table/tailwind-table.component';
 import { CommonModule } from '@angular/common';
+import { CheckoutModalComponent } from '../checkout-modal/checkout-modal.component';
 
 interface toolTipOption {
   title: string;
@@ -144,6 +145,8 @@ export class DashboardRightComponent implements OnInit {
 
   // Add a selectedScenes map to track selections
   selectedScenesMap: Map<number, any> = new Map();
+
+  showCheckoutModal: boolean = false;
 
   constructor(
     public cdr: ChangeDetectorRef,
@@ -396,14 +399,14 @@ export class DashboardRightComponent implements OnInit {
   }
   async sendFinalDocumentToServer(finalDocument) {
     try {
-      // Track analytics event
+   
       this.logAnalyticsEvent('pdf_generation_started', {
         documentName: this.script,
         hasCallsheet: !!this.callsheet,
         sceneCount: this.selected.length
       });
       
-      // Get current user
+   
       const user = await firstValueFrom(this.auth.user$);
       if (!user) {
         this.handleError('Authentication required', 'Please sign in to generate a PDF');
@@ -419,31 +422,31 @@ export class DashboardRightComponent implements OnInit {
         callSheet: this.callsheet || null
       };
       
+      console.log('Sending document to server:', documentToSend);
+      
       // Generate PDF
       this.upload.generatePdf(documentToSend).subscribe({
         next: (response: any) => {
-          // Close spinner dialog if open
           this.dialog.closeAll();
           
-          // Check if we have a valid response with the expected properties
-          if (response && response.status === 'complete' && response.jwtToken) {
-            // Success - PDF was generated
+          console.log('PDF generation response:', response);
+          
+          // Check if we can see any cookies (we won't see HttpOnly cookies)
+          console.log('All cookies:', document.cookie);
+          
+          if (response && response.status === 'complete') {
             this.logAnalyticsEvent('pdf_generation_success', {
               documentName: this.script
             });
             
-            // Navigate to complete component with token and expiration
-            this.router.navigate(['/complete'], { 
-              queryParams: { 
-                pdfToken: response.jwtToken,
-                expires: response.expirationTime || Date.now() + 3600000 // Default 1 hour expiry
-              }
-            });
+            // Store document name - that's all we need
+            localStorage.setItem('name', this.script);
+            
+            // Navigate to complete page - the cookie is already set by the server
+            this.router.navigate(['/complete']);
           } else if (response && response.needsSubscription) {
-            // Handle subscription required
             this.handleSubscriptionRequired(documentToSend);
           } else {
-            // Unexpected response format
             console.error('Unexpected response format:', response);
             this.handleError('PDF Generation Failed', 'Received an invalid response from the server');
           }
@@ -469,8 +472,9 @@ export class DashboardRightComponent implements OnInit {
         }
       });
     } catch (error) {
+      this.dialog.closeAll();
       console.error('Error in sendFinalDocumentToServer:', error);
-      this.handleError('Unexpected Error', 'An unexpected error occurred. Please try again.');
+      this.handleError('PDF Generation Failed', error.message || 'An unexpected error occurred');
     }
   }
 
@@ -615,41 +619,43 @@ export class DashboardRightComponent implements OnInit {
     this.waitingForScript = true;
   }
 
-  async openConfirmPurchaseDialog() {
-    if (this.modalData) {
-      const callsheetRef = this.callsheet ? this.callsheet : null;
-  
-      // First check auth state using the Observable
-      const user = await firstValueFrom(this.auth.user$);
+  openConfirmPurchaseDialog(): void {
+    this.showCheckoutModal = true;
+  }
+
+  handleCheckout(confirmed: boolean): void {
+    if (confirmed) {
+      // Close the modal first
+      this.showCheckoutModal = false;
       
-      const dialogRef = this.dialog.open(IssueComponent, {
-        width: '750px',
-        height: '750px',
-        data: {
-          scenes: this.modalData,
-          selected: this.selected,
-          callsheet: callsheetRef,
-          loginRequired: !user,
-          isAuthenticated: !!user,
-          user: user
-        },
-      });
-  
-      dialogRef.afterClosed().subscribe((result) => {
-        if (result) {
-          if (this.callsheet) {
-            this.prepFinalDocument(true);
-            this.openFinalSpinner();
-            this.sendFinalDocumentToServer(this.pdf.finalDocument);
-          } else {
-            this.prepFinalDocument(false);
-            this.openFinalSpinner();
-            this.sendFinalDocumentToServer(this.pdf.finalDocument);
+      console.log('Checkout confirmed, preparing document...');
+      
+      // Use the existing method to prepare and send the document
+      if (this.pdf.finalDocument) {
+        this.prepFinalDocument(!!this.callsheet);
+        this.openFinalSpinner();
+        this.sendFinalDocumentToServer(this.pdf.finalDocument);
+      } else {
+        console.error('No final document available');
+        this.dialog.open(IssueComponent, {
+          width: '400px',
+          data: {
+            error: true,
+            errorDetails: 'Document preparation failed',
+            errorReason: 'No final document available'
           }
-        }
-      });
+        });
+      }
+    } else {
+      // Just close the modal if not confirmed
+      this.showCheckoutModal = false;
     }
   }
+
+  closeCheckoutModal(): void {
+    this.showCheckoutModal = false;
+  }
+
   triggerLastLooksAction(str) {
     if (str === 'resetDoc') {
       this.resetFinalDocState = !this.resetFinalDocState;
@@ -783,5 +789,11 @@ export class DashboardRightComponent implements OnInit {
   // Update this method to properly check if a scene is selected
   isSceneSelected(scene: any): boolean {
     return this.selectedScenesMap.has(scene.index);
+  }
+
+  // Helper method to generate a random ID
+  private generateRandomId(): string {
+    return Math.random().toString(36).substring(2, 15) + 
+           Math.random().toString(36).substring(2, 15);
   }
 }

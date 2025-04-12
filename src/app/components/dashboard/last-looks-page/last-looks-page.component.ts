@@ -13,6 +13,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges {
   @Output() lineChanged = new EventEmitter<any>();
   @Output() lineSelected = new EventEmitter<any>();
   @Output() categoryChanged = new EventEmitter<any>();
+  @Output() proceedToCheckout = new EventEmitter<void>();
 
   showContextMenu: boolean = false;
   mouseEvent: any;
@@ -70,5 +71,9 @@ export class LastLooksPageComponent implements OnInit, OnChanges {
       lineIndex,
       category
     });
+  }
+
+  onProceedToCheckout(): void {
+    this.proceedToCheckout.emit();
   }
 }

@@ -25,13 +25,13 @@ export interface PdfResponse {
    expirationTime: number;
 }
 
-export interface PdfGenerationResponse extends Partial<PdfResponse> {
+export interface PdfGenerationResponse {
    success: boolean;
+   message?: string;
    needsSubscription?: boolean;
    checkoutUrl?: string;
-   sessionId?: string;
-   message?: string;
-   error?: string;
+   pdfToken?: string;
+   documentId?: string;
 }
 
 export interface DeleteResponse extends ApiResponse {

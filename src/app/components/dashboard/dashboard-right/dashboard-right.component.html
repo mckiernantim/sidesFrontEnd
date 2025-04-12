@@ -185,4 +185,12 @@
       </div>
     </ng-template>
   </div>
+
+  <app-checkout-modal 
+    *ngIf="showCheckoutModal"
+    [selectedScenes]="selected"
+    [userData]="userData"
+    (checkout)="handleCheckout($event)"
+    (close)="closeCheckoutModal()"
+  ></app-checkout-modal>
 </div>

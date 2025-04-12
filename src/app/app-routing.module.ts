@@ -22,9 +22,10 @@ const routes: Routes = [
     path: 'dashboard',
     component: DashboardComponent,
   },
-  { path: 'complete',
+  { 
+    path: 'complete', 
     component: CompleteComponent,
-    canActivate : [TokenGuard],
+    canActivate: [AuthGuard, TokenGuard]
   },
   { path: 'About', component: AboutComponent },
   { path: 'Donate', component: DonateComponent },
@@ -33,7 +34,7 @@ const routes: Routes = [
   { path: 'payment-success', component: PaymentSuccessComponent },
   { path: 'Checkout', component: CheckoutComponent },
   { path: 'profile-loader', component: ProfileLoaderComponent },
-  { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard] },
+  { path: 'profile', component: ProfileComponent },
   { path: "**", component:FourOfourComponent}
  ];
 

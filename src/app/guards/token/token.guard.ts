@@ -11,14 +11,33 @@ export class TokenGuard implements CanActivate {
   canActivate(
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
-    const token = route.queryParams['pdfToken'];
-    const expires = +route.queryParams['expires'];
-    if (token && expires && expires > Date.now()) {
-      return true;
-    } else {
-      alert('No valid session token or expiration time found or token has expired.');
-      // this.router.navigate(['/']);
+    
+    // Check if the document name exists in localStorage
+    const documentName = localStorage.getItem('name');
+    if (!documentName) {
+      this.showErrorAndRedirect('No document information found.');
       return false;
     }
+    
+    // Check for session cookie
+    // Since we can't directly access HttpOnly cookies from JavaScript,
+    // we'll rely on the presence of the document name in localStorage
+    // as an indicator that a valid session was established
+    
+    // You could also add an expiration time in localStorage when setting up the session
+    const sessionExpires = localStorage.getItem('sessionExpires');
+    if (sessionExpires && +sessionExpires < Date.now()) {
+      this.showErrorAndRedirect('Your document session has expired.');
+      return false;
+    }
+    
+    return true;
+  }
+  
+  private showErrorAndRedirect(message: string): void {
+    alert(message + ' You will be redirected to the upload page.');
+    localStorage.removeItem('name');
+    localStorage.removeItem('sessionExpires');
+    this.router.navigate(['/']);
   }
 }

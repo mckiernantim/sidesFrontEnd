@@ -1,78 +1,84 @@
-import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AuthService } from 'src/app/services/auth/auth.service';
 import { StripeService } from 'src/app/services/stripe/stripe.service';
-import { Router } from '@angular/router';
-import { firstValueFrom, Observable, of, switchMap, BehaviorSubject, Subscription } from 'rxjs';
-import { NgClass, NgIf } from '@angular/common';
-
-import { IssueComponent } from '../issue/issue.component';
-import { catchError, tap } from 'rxjs';
+import { Router, NavigationEnd } from '@angular/router';
 import { User } from '@angular/fire/auth';
-import { SubscriptionStatus, SubscriptionStatusType, SUBSCRIPTION_STATUS_DISPLAY } from 'src/app/types/SubscriptionTypes';
-// import { SubscriptionService } from 'src/app/services/subscription/subscription.service';
+import { SubscriptionStatus } from 'src/app/types/SubscriptionTypes';
+import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 @Component({
-    selector: 'app-profile',
-    templateUrl: './profile.component.html',
-    styleUrls: ['./profile.component.css'],
-    standalone: false
+  selector: 'app-profile',
+  templateUrl: './profile.component.html',
+  styleUrls: ['./profile.component.css'],
+  standalone: false
 })
 export class ProfileComponent implements OnInit, OnDestroy {
   // User data
   user: User | null = null;
   
   // Subscription data
-  subscription$: Observable<SubscriptionStatus | null> = of(null);
   subscription: SubscriptionStatus | null = null;
-  renewalDate: Date | null = null;
-  expirationDate: Date | null = null;
   
   // UI state
   isLoading = true;
   error: string | null = null;
   
-  // Usage stats
-  usageStats = {
-    pdfsGenerated: 0
-  };
-  
-  // Subscription benefits for marketing
-  subscriptionBenefits = [
-    'Unlimited PDF generations',
-    'Priority customer support',
-    'Access to premium templates',
-    'Advanced customization options'
+  // Subscription benefits
+  benefits: string[] = [
+    'Unlimited document processing',
+    'Priority support',
+    'Advanced formatting options',
+    'Cloud storage for your documents'
   ];
-  subscriptionPrice = '$20 per week';
   
-  // Subscriptions to clean up
-  private subscriptions = new Subscription();
-
+  // Router subscription
+  private routerSubscription: Subscription | null = null;
+  private authSubscription: Subscription | null = null;
+  
   constructor(
     private auth: AuthService,
     private stripe: StripeService,
-    private router: Router,
-    private cdr: ChangeDetectorRef,
-   
+    private router: Router
   ) {}
 
   ngOnInit() {
-    // Get current user
-    this.user = this.auth.getCurrentUser();
+    console.log('Profile component initialized');
     
-    if (!this.user) {
-      console.log('PROFILE: No authenticated user found');
-      this.isLoading = false;
-      return;
-    }
+    // Subscribe to auth state changes
+    this.authSubscription = this.auth.user$.subscribe(user => {
+      this.user = user;
+      if (user) {
+        console.log('User is authenticated, loading subscription data');
+        this.loadSubscriptionData();
+      } else {
+        console.log('User is not authenticated');
+        this.isLoading = false;
+      }
+    });
     
-    // Load subscription data
-    this.loadSubscriptionData();
+    // Set up router event listener to refresh data when navigating back to this page
+    this.routerSubscription = this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      console.log('Navigation event detected, refreshing data');
+      // Clear the cache to force a fresh fetch
+      this.stripe.clearCache();
+      // Reload data if user is authenticated
+      if (this.user) {
+        this.loadSubscriptionData();
+      }
+    });
   }
   
   ngOnDestroy() {
     // Clean up subscriptions
-    this.subscriptions.unsubscribe();
+    if (this.routerSubscription) {
+      this.routerSubscription.unsubscribe();
+    }
+    if (this.authSubscription) {
+      this.authSubscription.unsubscribe();
+    }
   }
   
   // Load subscription data
@@ -82,134 +88,152 @@ export class ProfileComponent implements OnInit, OnDestroy {
       return;
     }
     
-    console.log('PROFILE: Loading subscription data for user', this.user.uid);
+    this.isLoading = true;
+    this.error = null;
     
-    const sub = this.stripe.getSubscriptionStatus(this.user.uid).subscribe({
-      next: (subscription) => {
-        console.log('PROFILE: Subscription loaded', subscription);
-        
-        // Store the subscription
-        this.subscription = subscription;
-        this.subscription$ = of(subscription);
-        
-        // Process dates
-        this.processSubscriptionDates(subscription);
-        
-        // Update usage stats
-        if (subscription.usage) {
-          this.usageStats.pdfsGenerated = subscription.usage.pdfsGenerated || 0;
-        }
-        
-        // Update loading state
+    console.log('Loading subscription data for user:', this.user.uid);
+    
+    // Set a timeout to handle server downtime
+    const timeoutId = setTimeout(() => {
+      if (this.isLoading) {
+        console.error('Subscription data loading timed out');
         this.isLoading = false;
-        this.cdr.detectChanges();
+        this.error = 'Unable to connect to the server. Please try again later.';
+      }
+    }, 10000); // 10 seconds timeout
+    
+    this.stripe.getSubscriptionStatus(this.user.uid).subscribe({
+      next: (subscription) => {
+        clearTimeout(timeoutId); // Clear the timeout on success
+        console.log('Subscription data loaded:', subscription);
+        this.subscription = subscription;
+        this.isLoading = false;
       },
       error: (error) => {
-        console.error('PROFILE: Error loading subscription', error);
-        this.error = 'Failed to load subscription data';
+        clearTimeout(timeoutId); // Clear the timeout on error
+        console.error('Error loading subscription', error);
+        this.error = 'Failed to load subscription data. Server may be down.';
         this.isLoading = false;
-        this.cdr.detectChanges();
       }
     });
-    
-    this.subscriptions.add(sub);
   }
   
-  // Process subscription dates
-  private processSubscriptionDates(subscription: SubscriptionStatus): void {
-    if (!subscription?.subscription?.currentPeriodEnd) {
-      this.renewalDate = null;
-      this.expirationDate = null;
-      return;
+  // Check if subscription is active
+  isSubscriptionActive(): boolean {
+    // Consider a subscription active if:
+    // 1. Its status is 'active', OR
+    // 2. It has a future end date (even if it's been canceled)
+    if (this.subscription?.subscription?.status === 'active') {
+      return true;
     }
     
-    const endDate = new Date(subscription.subscription.currentPeriodEnd);
-    const status = subscription.subscription.status?.toLowerCase() || '';
-    
-    if (status === 'canceled') {
-      this.expirationDate = endDate;
-      this.renewalDate = null;
-      console.log('PROFILE: Subscription is canceled, expires on', endDate);
-    } else {
-      this.renewalDate = endDate;
-      this.expirationDate = null;
-      console.log('PROFILE: Subscription renews on', endDate);
+    // Check if the subscription has a future end date
+    if (this.subscription?.subscription?.currentPeriodEnd) {
+      const endDate = new Date(this.subscription.subscription.currentPeriodEnd);
+      const now = new Date();
+      return endDate > now;
     }
+    
+    return false;
   }
   
-  // Format date for display
-  formatDate(date: Date | null): string {
-    if (!date) return 'N/A';
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+  // Check if subscription is pending
+  isSubscriptionPending(): boolean {
+    return this.subscription?.subscription?.status === 'pending';
+  }
+  
+  // Check if subscription is active but will be canceled
+  isSubscriptionCanceling(): boolean {
+    // It's canceling if:
+    // 1. It's active but won't auto-renew, OR
+    // 2. It has a future end date but status is not 'active'
+    if (this.subscription?.subscription?.status === 'active' && 
+        !this.subscription?.subscription?.willAutoRenew) {
+      return true;
+    }
+    
+    if (this.subscription?.subscription?.currentPeriodEnd) {
+      const endDate = new Date(this.subscription.subscription.currentPeriodEnd);
+      const now = new Date();
+      return endDate > now && this.subscription.subscription.status !== 'active';
+    }
+    
+    return false;
   }
   
   // Handle new subscription
   handleNewSubscription(): void {
     if (!this.user || !this.user.email) {
-      this.showError('You must be logged in to subscribe');
+      this.error = 'You must be logged in to subscribe';
       return;
     }
     
-    const sub = this.stripe.createSubscription(this.user.uid, this.user.email).subscribe({
+    console.log('Creating new subscription for user:', this.user.uid);
+    this.isLoading = true;
+    
+    this.stripe.createSubscription(this.user.uid, this.user.email).subscribe({
       next: (result) => {
-        console.log('PROFILE: Subscription creation result', result);
-     
-        // Check for url property in the response
-        if (result.success && result.url) {
-          console.log('Redirecting to checkout URL:', result.url);
-          // Redirect to Stripe checkout
-          window.location.href = result.url;
-        } else if (result.success && result.checkoutUrl) {
-          console.log('Redirecting to checkout URL:', result.checkoutUrl);
-          // Redirect to Stripe checkout (using checkoutUrl property)
-          window.location.href = result.checkoutUrl;
+        console.log('Subscription creation result:', result);
+        this.isLoading = false;
+        
+        if (result.success && (result.url || result.checkoutUrl)) {
+          // Set return URL to profile page
+          const returnUrl = `${window.location.origin}/profile`;
+          const redirectUrl = result.url || result.checkoutUrl || '';
+          
+          // Add return URL as query parameter if not already present
+          const urlWithReturn = redirectUrl.includes('return_url=') 
+            ? redirectUrl 
+            : `${redirectUrl}${redirectUrl.includes('?') ? '&' : '?'}return_url=${encodeURIComponent(returnUrl)}`;
+          
+          window.location.href = urlWithReturn;
         } else {
-          console.error('No URL found in response:', result);
-          this.showError('Failed to create subscription: No checkout URL received');
+          this.error = 'Failed to create subscription';
         }
       },
       error: (error) => {
-        console.error('PROFILE: Error creating subscription', error);
-        this.showError('An error occurred while creating your subscription');
+        console.error('Error creating subscription', error);
+        this.error = 'An error occurred while creating your subscription';
+        this.isLoading = false;
       }
     });
-    
-    this.subscriptions.add(sub);
   }
   
   // Manage existing subscription
   manageSubscription(): void {
-
     if (!this.user || !this.user.email) {
-      this.showError('You must be logged in to manage your subscription');
+      this.error = 'You must be logged in to manage your subscription';
       return;
     }
     
-    const sub = this.stripe.createPortalSession(this.user.uid, this.user.email).subscribe({
+    console.log('Opening portal for user:', this.user.uid);
+    this.isLoading = true;
+    
+    // Set return URL to profile page
+    const returnUrl = `${window.location.origin}/profile`;
+    
+    this.stripe.createPortalSession(this.user.uid, this.user.email, returnUrl).subscribe({
       next: (result) => {
+        console.log('Portal creation result:', result);
+        this.isLoading = false;
+        
         if (result.success && result.url) {
-          // Redirect to Stripe portal
           window.location.href = result.url;
         } else {
-          this.showError('Failed to open subscription management');
+          this.error = 'Failed to open subscription management';
         }
       },
       error: (error) => {
-        console.error('PROFILE: Error opening portal', error);
-        this.showError('An error occurred while opening subscription management');
+        console.error('Error opening portal', error);
+        this.error = 'An error occurred while opening subscription management';
+        this.isLoading = false;
       }
     });
-    
-    this.subscriptions.add(sub);
   }
   
-  // Show error dialog
-  private showError(message: string): void {
-   
+  // Sign in with Google
+  signIn(): void {
+    this.auth.signInWithGoogle();
   }
   
   // Logout
@@ -217,36 +241,50 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.auth.signOut();
   }
 
-  // Helper functions to determine subscription status
-  getSubscriptionStatusType(subscription: SubscriptionStatus): SubscriptionStatusType {
-    if (!subscription?.subscription?.status) {
-      return 'none';
+  // Format dates
+  formatDate(dateString: string | null): string {
+    if (!dateString) return 'N/A';
+    
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+
+  // Refresh subscription status
+  refreshSubscriptionStatus(): void {
+    if (!this.user) {
+      return;
     }
     
-    const status = subscription.subscription.status.toLowerCase();
-    const willAutoRenew = subscription.subscription.willAutoRenew;
+    console.log('Forcing refresh of subscription status');
+    this.isLoading = true;
     
-    if (status === 'active' || status === 'trialing') {
-      return willAutoRenew ? 'active' : 'expiring';
-    } else if (status === 'canceled') {
-      return 'canceled';
-    }
+    this.stripe.forceRefreshSubscription(this.user.uid).subscribe({
+      next: (subscription) => {
+        console.log('Forced refresh result:', subscription);
+        this.subscription = subscription;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error forcing refresh', error);
+        this.error = 'Failed to refresh subscription status';
+        this.isLoading = false;
+      }
+    });
+  }
+
+  // Format currency
+  formatCurrency(amount: number | undefined): string {
+    if (amount === undefined) return '$0.00';
     
-    return 'none';
-  }
-
-  getStatusColor(subscription: SubscriptionStatus): string {
-    const statusType = this.getSubscriptionStatusType(subscription);
-    return SUBSCRIPTION_STATUS_DISPLAY[statusType].color;
-  }
-
-  getStatusIcon(subscription: SubscriptionStatus): string {
-    const statusType = this.getSubscriptionStatusType(subscription);
-    return SUBSCRIPTION_STATUS_DISPLAY[statusType].icon;
-  }
-
-  getStatusText(subscription: SubscriptionStatus): string {
-    const statusType = this.getSubscriptionStatusType(subscription);
-    return SUBSCRIPTION_STATUS_DISPLAY[statusType].text;
+    // Convert cents to dollars
+    const dollars = amount / 100;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(dollars);
   }
 }

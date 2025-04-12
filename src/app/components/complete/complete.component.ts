@@ -1,183 +1,111 @@
-import { saveAs } from 'file-saver';
+import { Component, OnInit } from '@angular/core';
 import { UploadService } from '../../services/upload/upload.service';
-import { AfterViewInit, Component, OnInit, OnDestroy } from '@angular/core';
-import { TokenService } from 'src/app/services/token/token.service';
-import { catchError, subscribeOn } from 'rxjs/operators';
-import { throwError, of, Subscription, Observable, switchMap } from 'rxjs';
-import { ActivatedRoute, Router } from '@angular/router';
-import { HttpErrorResponse } from '@angular/common/http';
-
-import { IssueComponent } from '../issue/issue.component';
 import { AuthService } from 'src/app/services/auth/auth.service';
+import { Router, ActivatedRoute } from '@angular/router';
+import { switchMap, catchError } from 'rxjs/operators';
+import { throwError } from 'rxjs';
 
 @Component({
-    selector: 'app-complete',
-    templateUrl: './complete.component.html',
-    styleUrls: ['./complete.component.css'],
-    standalone: false
+  selector: 'app-complete',
+  templateUrl: './complete.component.html',
+  styleUrls: ['./complete.component.css'],
+  standalone: false
 })
-export class CompleteComponent implements OnInit, OnDestroy, AfterViewInit {
+export class CompleteComponent implements OnInit {
   name: string = localStorage.getItem('name') || '';
-  layout: string = localStorage.getItem('layout') || '';
-  callsheet: string = localStorage.getItem('callsheet') || '';
-  downloadTimeRemaining: number = Infinity;
-  countdownSubscription: Subscription;
-  pdfToken: string = '';
-  downloadToken: number = 0;
-  expires: number;
-  private navigationState: any;
-  downloadSessionValid: boolean = true;
-  documentHasBeenDownloaded: boolean = false;
-  private readonly ERROR_MESSAGES = {
-    401: 'Your session has expired. Please try again.',
-    403: 'You don\'t have permission to access this document.',
-    404: 'Document not found. It may have been deleted.',
-    413: 'The document is too large to process.',
-    429: 'Too many requests. Please wait a moment.',
-    500: 'Server error. Please try again later.',
-    default: 'An unexpected error occurred. Please try again.'
-  };
+  documentHash: string = '';
+  isLoading: boolean = false;
+  error: string = '';
+  isDownloading: boolean = false;
+  userId: string = '';
 
   constructor(
-    public upload: UploadService,
-    public token: TokenService,
-    public router: Router,
-    public route: ActivatedRoute,
-    public auth: AuthService
+    private upload: UploadService,
+    private auth: AuthService,
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit() {
-    this.route.queryParams.subscribe(params => {
-      this.pdfToken = params['pdfToken'];
-      this.expires = +params['expires'];
-      
-      if (!this.pdfToken || !this.expires) {
-        this.logErrorAndRedirect('Invalid URL parameters');
-        return;
-      }
-      
-      this.token.initializeCountdown(this.expires);
-    });
-  }
-
-  ngAfterViewInit(): void {
-    console.log('Token state:', this.token.getTokenDebugInfo()); // Add this to debug
-    if (this.token.isTokenValid()) {
-      this.downloadPDF(this.name, this.callsheet, this.pdfToken);
-    } else {
-      this.handleExpiredToken();
-    }
+    this.name = localStorage.getItem('name') || '';
+    // Get userId from the current user object
+    const currentUser = this.auth.getCurrentUser();
+    this.userId = currentUser?.uid || '';
     
-    this.countdownSubscription = this.token.countdown$.subscribe(
-      (timeRemaining) => {
-        this.downloadTimeRemaining = timeRemaining;
-        if (this.downloadTimeRemaining <= 0) {
-          this.handleExpiredToken();
-        }
-      }
-    );
-  }
-
-  private handleError(error: HttpErrorResponse): Observable<never> {
-    const errorMessage = this.ERROR_MESSAGES[error.status] || this.ERROR_MESSAGES.default;
-    return throwError(() => ({ ...error, userMessage: errorMessage }));
-  }
-
-  private logErrorAndRedirect(message: string) {
-    console.error(message);
-    this.router.navigate(['/']);
-  }
-
-  downloadPDF(name: string, callsheet: string, pdfToken: string) {
-    if (!name || !pdfToken) {
-      this.logErrorAndRedirect('Missing required parameters for download');
+    if (!this.name) {
+      this.error = 'Document information not found';
       return;
     }
     
-    console.log('Starting PDF download process');
-    const startTime = Date.now();
-    
-    // Use ensureUserLoaded to make sure we have the user before proceeding
-    this.auth.ensureUserLoaded().pipe(
-      switchMap(user => {
-        const userId = user?.uid;
-        console.log('User ID for download:', userId || 'Not authenticated'); 
+    // No need to check token validity - the server will handle that
+    this.downloadPDF();
+  }
+
+  downloadPDF() {
+    if (!this.name) {
+      this.error = 'Document name not found';
+      return;
+    }
+
+    this.isLoading = true;
+    this.isDownloading = true;
+    this.error = '';
+
+    // Just pass the name - the cookie contains the token
+    this.upload.downloadDocumentById(this.name, this.userId).subscribe({
+      next: (blob) => {
+        this.isLoading = false;
+        this.isDownloading = false;
         
-        // Call the download method with the user ID
-        return this.upload.downloadPdf(name, callsheet, pdfToken, userId);
-      }),
-      switchMap((blob) => {
-        try {
-          console.log('Received blob response, size:', blob.size);
-          const url = window.URL.createObjectURL(blob);
-          const anchor = document.createElement('a');
-          anchor.href = url;
-          anchor.download = `${name}-Sides-Ways.zip`;
-          anchor.click();
-          window.URL.revokeObjectURL(url);
-          console.log('Download initiated in browser');
-          return of(null);
-        } catch (error) {
-          console.error('Error processing blob:', error);
-          throw new Error('Failed to process download');
-        }
-      }),
-      catchError((error) => {
-        console.error('Download error:', error);
-        return this.handleError(error);
-      })
-    )
-    .subscribe({
-      next: () => {
-        console.log('Download completed successfully');
-        this.documentHasBeenDownloaded = true;
+        // Create download from blob
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${this.name}-Sides-Ways.zip`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
       },
       error: (error) => {
-        console.error('Download failed:', error);
-        // Show user-friendly error message
-        alert(error.userMessage || this.ERROR_MESSAGES.default);
+        console.error('Download error:', error);
+        
+        // Provide more specific error messages based on error type
+        if (error.status === 403) {
+          this.error = 'You do not have permission to download this document';
+        } else if (error.status === 404) {
+          this.error = 'Document not found. It may have been deleted';
+        } else if (error.status === 401 || error.status === 400) {
+          this.error = 'Your download link has expired. Please generate a new document.';
+          // Redirect to home after a delay
+          setTimeout(() => this.router.navigate(['/']), 3000);
+        } else {
+          this.error = error.message || 'Failed to download document';
+        }
+        
+        this.isLoading = false;
+        this.isDownloading = false;
       }
     });
   }
 
-  handleExpiredToken() {
-    alert('Your session has expired. Please start a new session.');
-    this.router.navigate(['/']);
-  }
-
-  ngOnDestroy() {
-    if (this.countdownSubscription) {
-      this.countdownSubscription.unsubscribe();
+  handleDeleteDocument() {
+    if (confirm('Are you sure you want to delete this document?')) {
+      // No need to pass any ID - the cookie has the token
+      this.upload.deleteDocumentById().subscribe({
+        next: () => {
+          localStorage.removeItem('name');
+          this.router.navigate(['/']);
+        },
+        error: (err) => {
+          console.error('Delete error:', err);
+          this.error = 'Failed to delete document';
+        }
+      });
     }
   }
-  
-  handleDeleteClick() {
-    // const dialogRef = this.dialog.open(IssueComponent, {
-    //   width: '500px',
-    //   data: {isDelete: true}
-    // });
 
-    // dialogRef.afterClosed().subscribe((result) => {
-    //   if (result) {
-    //     this.upload.deleteFinalDocument(this.pdfToken).subscribe({
-    //       next: (data) => {
-    //         if (data) {
-    //           this.token.removeToken();
-              
-    //           // Clear local storage
-    //           localStorage.removeItem('name');
-    //           localStorage.removeItem('layout');
-    //           localStorage.removeItem('callsheet');
-              
-    //           this.router.navigate(['/']);
-    //         }
-    //       },
-    //       error: (error) => {
-    //         console.error('Delete error:', error);
-    //         alert('Failed to delete document. Please try again.');
-    //       }
-    //     });
-    //   }
-    // });
+  navigateToProfile() {
+    this.router.navigate(['/profile']);
   }
 }

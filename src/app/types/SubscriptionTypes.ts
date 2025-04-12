@@ -14,24 +14,51 @@ export interface FirestoreSubscription {
   canceledAt?: Timestamp;
 }
 
+export interface SubscriptionDetails {
+  status: string | null;
+  originalStartDate: string | null;
+  currentPeriodEnd: string | null;
+  willAutoRenew: boolean;
+}
+
+export interface SubscriptionUsage {
+  pdfsGenerated: number;
+}
+
+export interface StripeSubscriptionPlan {
+  id: string;
+  object: string;
+  active: boolean;
+  aggregate_usage: any;
+  amount: number;
+  amount_decimal: string;
+  billing_scheme: string;
+  created: number;
+  currency: string;
+  interval: string;
+  interval_count: number;
+  livemode: boolean;
+  metadata: Record<string, any>;
+  meter: any;
+  nickname: string | null;
+  product: string;
+  tiers_mode: any;
+  transform_usage: any;
+  trial_period_days: any;
+  usage_type: string;
+}
+
 export interface SubscriptionStatus {
   active: boolean;
-  subscription: {
-    status: string | null;
-    originalStartDate: string | null;
-    currentPeriodEnd: string | null;
-    willAutoRenew: boolean;
-  };
-  usage: {
-    pdfsGenerated: number;
-  };
+  subscription: SubscriptionDetails | null;
+  usage: SubscriptionUsage;
+  plan?: StripeSubscriptionPlan | null;
 }
 
 export interface SubscriptionResponse {
   success: boolean;
+  url?: string;
   checkoutUrl?: string;
-  sessionId?: string;
-  needsSubscription?: boolean;
 }
 
 export type SubscriptionStatusType = 'active' | 'expiring' | 'canceled' | 'none';

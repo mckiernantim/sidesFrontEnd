@@ -1,16 +1,35 @@
 import { Injectable } from '@angular/core';
-import { Observable, throwError, tap, catchError, of, from, switchMap } from 'rxjs';
-import { map, } from 'rxjs/operators';
-import { HttpClient, HttpHeaders, HttpParams, HttpErrorResponse } from '@angular/common/http';
+import {
+  Observable,
+  throwError,
+  tap,
+  catchError,
+  of,
+  from,
+  switchMap,
+  timeout,
+} from 'rxjs';
+import { map } from 'rxjs/operators';
+import {
+  HttpClient,
+  HttpHeaders,
+  HttpParams,
+  HttpErrorResponse,
+} from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Line } from '../../types/Line';
 import { TokenService } from '../token/token.service';
 import { AuthService } from '../auth/auth.service';
 import { getAuth, Auth } from 'firebase/auth';
-import Cookies from "js-cookie";
-import { User, PdfResponse, SubscriptionResponse, isPdfResponse, PdfGenerationResponse, DeleteResponse } from 'src/app/types/user';
-
-
+import Cookies from 'js-cookie';
+import {
+  User,
+  PdfResponse,
+  SubscriptionResponse,
+  isPdfResponse,
+  PdfGenerationResponse,
+  DeleteResponse,
+} from 'src/app/types/user';
 
 @Injectable({
   providedIn: 'root',
@@ -43,40 +62,44 @@ export class UploadService {
     public httpClient: HttpClient,
     public token: TokenService,
     public auth: AuthService
-  ) {
-
-  }
+  ) {}
 
   // Helper type guard for checking response type
-  isSubscriptionResponse(response: PdfGenerationResponse): response is SubscriptionResponse {
+  isSubscriptionResponse(
+    response: PdfGenerationResponse
+  ): response is SubscriptionResponse {
     return !response.success && 'needsSubscription' in response;
   }
 
   isPdfResponse(response: PdfGenerationResponse): response is PdfResponse {
     return response.success && 'pdfToken' in response;
   }
- 
-  handleSubscriptionFlow(finalDocument: any, checkoutUrl: string): Observable<PdfGenerationResponse> {
+
+  handleSubscriptionFlow(
+    finalDocument: any,
+    checkoutUrl: string
+  ): Observable<PdfGenerationResponse> {
     const popupWidth = 700;
     const popupHeight = 1000;
-    const left = (window.screen.width / 2) - (popupWidth / 2);
-    const top = (window.screen.height / 2) - (popupHeight / 2);
-  
+    const left = window.screen.width / 2 - popupWidth / 2;
+    const top = window.screen.height / 2 - popupHeight / 2;
+
     const popup = window.open(
       checkoutUrl,
       'StripeCheckout',
       `width=${popupWidth},height=${popupHeight},left=${left},top=${top}`
     );
-  
-    return new Observable<PdfGenerationResponse>(observer => {
+
+    return new Observable<PdfGenerationResponse>((observer) => {
       const popupCheck = setInterval(async () => {
         if (popup?.closed) {
           clearInterval(popupCheck);
-          
+
           try {
             // Check subscription status after popup closes
-            const subscriptionStatus = await this.auth.checkSubscriptionStatus();
-            
+            const subscriptionStatus =
+              await this.auth.checkSubscriptionStatus();
+
             if (subscriptionStatus) {
               // Just return the response, let component handle navigation
               this.generatePdf(finalDocument).subscribe({
@@ -84,17 +107,17 @@ export class UploadService {
                   observer.next({
                     ...response,
                     success: true,
-                    needsSubscription: false
+                    needsSubscription: false,
                   });
                   observer.complete();
                 },
-                error: (err) => observer.error(err)
+                error: (err) => observer.error(err),
               });
             } else {
               observer.next({
                 success: false,
                 needsSubscription: true,
-                message: 'Subscription process incomplete'
+                message: 'Subscription process incomplete',
               });
               observer.complete();
             }
@@ -103,7 +126,7 @@ export class UploadService {
           }
         }
       }, 500);
-  
+
       // Cleanup
       return () => {
         clearInterval(popupCheck);
@@ -113,10 +136,13 @@ export class UploadService {
   }
 
   generatePdf(finalDocument: any): Observable<PdfGenerationResponse> {
+    console.log('Generating PDF with document:', finalDocument);
     
     // Get the current user's token
     return from(getAuth().currentUser?.getIdToken() || Promise.reject('No user')).pipe(
-      switchMap(token => {
+      switchMap((token) => {
+        console.log('Got auth token, sending request to server');
+        
         return this.httpClient.post<PdfResponse>(
           this.url + '/pdf', 
           {
@@ -129,55 +155,82 @@ export class UploadService {
           }, 
           {
             headers: {
-              Authorization: `Bearer ${token}`
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
             },
-            withCredentials: true
+            withCredentials: true // Important: This ensures cookies are set
           }
         );
       }),
-      catchError(error => {
-        if (error.status === 403 && error.error.needsSubscription) {
-          console.log("Error- subscription needed", error);
-          return this.handleSubscriptionFlow(finalDocument, error.error.checkoutUrl);
+      tap((response) => {
+        console.log('Response received from server:', response);
+        
+        // Store the token from the response for backup
+        if (response && response.jwtToken) {
+          localStorage.setItem('pdfBackupToken', response.jwtToken);
+          
+          // Also store the expiration time
+          if (response.expirationTime) {
+            localStorage.setItem('pdfTokenExpires', response.expirationTime.toString());
+          }
         }
+      }),
+      catchError((error) => {
+        console.error('Error in generatePdf:', error);
+
+        if (error.status === 403 && error.error?.needsSubscription) {
+          console.log('Subscription needed, handling subscription flow');
+          return this.handleSubscriptionFlow(
+            finalDocument,
+            error.error.checkoutUrl
+          );
+        }
+
         return throwError(() => error);
       })
     );
   }
 
-  downloadPdf(name: string, callsheet: string, pdfToken: string, userId?: string): Observable<Blob> {
+  downloadPdf(
+    name: string,
+    callsheet: string,
+    pdfToken: string,
+    userId?: string
+  ): Observable<Blob> {
     // Create request body with all parameters
     const requestBody: any = {
       pdfToken,
       name,
-      callsheet: callsheet || ''
+      callsheet: callsheet || '',
     };
-    
+
     // Only add userId if it exists
     if (userId) {
       requestBody.userId = userId;
     }
-    
+
     // Log the request for debugging
     console.log('Download PDF request:', {
       endpoint: `${this.url}/complete`,
-      requestBody: { ...requestBody, pdfToken: '***redacted***' } // Don't log the actual token
+      requestBody: { ...requestBody, pdfToken: '***redacted***' }, // Don't log the actual token
     });
-    
-    return this.httpClient.post(`${this.url}/complete`, requestBody, {
-      responseType: 'blob'
-    }).pipe(
-      tap(() => console.log('Download PDF response received')),
-      catchError(error => {
-        console.error('Download PDF error:', error);
-        return throwError(() => error);
+
+    return this.httpClient
+      .post(`${this.url}/complete`, requestBody, {
+        responseType: 'blob',
       })
-    );
+      .pipe(
+        tap(() => console.log('Download PDF response received')),
+        catchError((error) => {
+          console.error('Download PDF error:', error);
+          return throwError(() => error);
+        })
+      );
   }
   // Add method to verify subscription status
   verifySubscriptionStatus(sessionId: string): Observable<any> {
     return this.httpClient.get(`/subscription-status?session_id=${sessionId}`, {
-      withCredentials: true
+      withCredentials: true,
     });
   }
 
@@ -194,9 +247,11 @@ export class UploadService {
   }
   getTestJSON(name) {
     return from(this.auth.user$).pipe(
-      switchMap(user => {
+      switchMap((user) => {
         if (!user) {
-          return throwError(() => new Error('User must be authenticated to use test JSON'));
+          return throwError(
+            () => new Error('User must be authenticated to use test JSON')
+          );
         }
 
         let params = new HttpParams()
@@ -207,14 +262,14 @@ export class UploadService {
         this.httpOptions.params = params;
         this.httpOptions.headers = new Headers();
         this.httpOptions.responseType = 'blob';
-        
+
         return this.httpClient.post(this.url + '/testing', this.script).pipe(
-          catchError(error => {
+          catchError((error) => {
             console.error('Test JSON error:', {
               userEmail: user.email,
               testName: name,
               timestamp: new Date().toISOString(),
-              error: error
+              error: error,
             });
             return throwError(() => error);
           })
@@ -236,30 +291,37 @@ export class UploadService {
   // get classified data => returns observable for stuff to plug into
   postFile(fileToUpload: File): Observable<any> {
     this.resetHttpOptions();
-    
+
     // Get current user from auth service
     return from(this.auth.user$).pipe(
-      switchMap(user => {
+      switchMap((user) => {
         if (!user) {
-          return throwError(() => new Error('User must be authenticated to upload files'));
+          return throwError(
+            () => new Error('User must be authenticated to upload files')
+          );
         }
 
         localStorage.setItem('name', fileToUpload.name.replace(/.pdf/, ''));
         this.script = localStorage.getItem('name');
-        
+
         const formData: FormData = new FormData();
         formData.append('script', fileToUpload, fileToUpload.name);
         // Add user metadata to the request
         formData.append('userEmail', user.email);
         formData.append('userId', user.uid);
         formData.append('uploadTime', new Date().toISOString());
-        
+
         return this.httpClient
           .post(this.url + '/api', formData, this.httpOptions)
           .pipe(
             map((res: any) => {
-              
-              let { allLines, allChars, individualPages, title, firstAndLastLinesOfScenes } = res;
+              let {
+                allLines,
+                allChars,
+                individualPages,
+                title,
+                firstAndLastLinesOfScenes,
+              } = res;
               this.allLines = allLines;
               this.firstAndLastLinesOfScenes = firstAndLastLinesOfScenes;
               this.individualPages = individualPages;
@@ -269,15 +331,15 @@ export class UploadService {
               this.individualPages.forEach((page) => {
                 this.lineCount.push(page.filter((item) => item.totalLines));
               });
-      
+
               return res;
             }),
-            catchError(error => {
+            catchError((error) => {
               console.error('Upload error:', {
                 userEmail: user.email,
                 fileName: fileToUpload.name,
                 timestamp: new Date().toISOString(),
-                error: error
+                error: error,
               });
               return throwError(() => error);
             })
@@ -286,14 +348,15 @@ export class UploadService {
     );
   }
 
-
   postCallSheet(fileToUpload: File): Observable<any> {
     this.resetHttpOptions();
-    
+
     return from(this.auth.user$).pipe(
-      switchMap(user => {
+      switchMap((user) => {
         if (!user) {
-          return throwError(() => new Error('User must be authenticated to upload callsheet'));
+          return throwError(
+            () => new Error('User must be authenticated to upload callsheet')
+          );
         }
 
         const formData: FormData = new FormData();
@@ -309,21 +372,19 @@ export class UploadService {
           formData.append('callSheet', null);
         }
 
-        return this.httpClient.post(
-          this.url + '/callsheet',
-          formData,
-          this.httpOptions
-        ).pipe(
-          catchError(error => {
-            console.error('Callsheet upload error:', {
-              userEmail: user.email,
-              fileName: fileToUpload?.name,
-              timestamp: new Date().toISOString(),
-              error: error
-            });
-            return throwError(() => error);
-          })
-        );
+        return this.httpClient
+          .post(this.url + '/callsheet', formData, this.httpOptions)
+          .pipe(
+            catchError((error) => {
+              console.error('Callsheet upload error:', {
+                userEmail: user.email,
+                fileName: fileToUpload?.name,
+                timestamp: new Date().toISOString(),
+                error: error,
+              });
+              return throwError(() => error);
+            })
+          );
       })
     );
   }
@@ -342,39 +403,41 @@ export class UploadService {
   }
 
   deleteFinalDocument(tokenId: string): Observable<DeleteResponse> {
-
     // const sessionToken = Cookies.get(this.tokenKey);
 
-    // if (!sessionToken) 
+    // if (!sessionToken)
     //   return throwError(() => new Error('No session token found'));
     // }
 
     const httpOptions = {
       headers: new HttpHeaders({
         'Content-Type': 'application/json',
-        'Authorization': `Bearer`
-      })
+        Authorization: `Bearer`,
+      }),
     };
 
-    return this.httpClient.post<DeleteResponse>(
-      `${this.url}/delete`,
-      { pdfToken: tokenId }, // Changed to match backend expectation of 'pdfToken'
-      httpOptions
-    ).pipe(
-      tap(response => {
-        if (response.success) {
-          console.log('Document deleted successfully:', response.pdfToken);
-        }
-      }),
-      catchError(this.handleError)
-    );
+    return this.httpClient
+      .post<DeleteResponse>(
+        `${this.url}/delete`,
+        { pdfToken: tokenId }, // Changed to match backend expectation of 'pdfToken'
+        httpOptions
+      )
+      .pipe(
+        tap((response) => {
+          if (response.success) {
+            console.log('Document deleted successfully:', response.pdfToken);
+          }
+        }),
+        catchError(this.handleError)
+      );
   }
 
   private handleError(error: HttpErrorResponse) {
     let errorMessage = 'An error occurred while processing your request.';
 
     if (error.status === 0) {
-      errorMessage = 'Unable to connect to the server. Please check your internet connection.';
+      errorMessage =
+        'Unable to connect to the server. Please check your internet connection.';
     } else if (error.status === 401) {
       errorMessage = 'Your session has expired. Please log in again.';
     } else if (error.status === 403) {
@@ -390,7 +453,7 @@ export class UploadService {
     console.error('Error:', {
       status: error.status,
       message: errorMessage,
-      error: error.error
+      error: error.error,
     });
 
     return throwError(() => new Error(errorMessage));
@@ -400,5 +463,39 @@ export class UploadService {
   private getAuthToken(): string | null {
     return Cookies.get(this.tokenKey);
   }
-}
 
+  downloadDocumentById(name: string, userId: string): Observable<Blob> {
+    // We don't need to extract the token - the browser will automatically send the cookie
+    return this.httpClient.post(
+      `${this.url}/complete`,
+      { name: name,
+        userId:userId 
+       },
+      {
+        responseType: 'blob',
+        withCredentials: true  // This ensures cookies are sent with the request
+      }
+    ).pipe(
+      catchError(error => {
+        console.error('Download error:', error);
+        return throwError(() => new Error('Failed to download document: ' + (error.message || 'Unknown error')));
+      })
+    );
+  }
+
+  deleteDocumentById(): Observable<any> {
+    // The cookie is automatically sent with the request
+    return this.httpClient.post(
+      `${this.url}/delete`,
+      {},  // Empty body, the cookie contains the token
+      {
+        withCredentials: true  // Include the cookie
+      }
+    ).pipe(
+      catchError(error => {
+        console.error('Delete error:', error);
+        return throwError(() => new Error('Failed to delete document: ' + (error.message || 'Unknown error')));
+      })
+    );
+  }
+}

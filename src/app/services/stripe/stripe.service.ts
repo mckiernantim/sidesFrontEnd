@@ -65,22 +65,22 @@ export class StripeService {
               this.subscriptionStatusSubject.next(emptyStatus);
               return emptyStatus;
             }
-            
             // Transform response to standard format
             const status: SubscriptionStatus = {
-              active: response.active || response.subscription?.status === 'active',
+              active: response.subscription?.status === 'active',
               subscription: {
                 status: response.subscription?.status || null,
-                originalStartDate: response.subscription?.originalStartDate || null,
+                originalStartDate: response.subscription?.created || null,
                 currentPeriodEnd: response.subscription?.currentPeriodEnd || null,
                 willAutoRenew: response.subscription?.willAutoRenew || false
               },
               usage: {
                 pdfsGenerated: response.usage?.pdfsGenerated || 0
-              }
+              },
+              plan: response.subscription?.plan || null
             };
             
-            // Cache the result
+            debugger
             this.subscriptionStatusSubject.next(status);
             console.log('STRIPE: Processed subscription status', status);
             
@@ -106,7 +106,7 @@ export class StripeService {
     );
   }
   
-  // Create empty subscription status
+
   private createEmptyStatus(): SubscriptionStatus {
     return {
       active: false,
@@ -120,16 +120,14 @@ export class StripeService {
     };
   }
 
-  // Clear cache (call when subscription might have changed)
+ 
   clearCache(): void {
     console.log('STRIPE: Clearing subscription cache');
     this.subscriptionStatusSubject.next(null);
   }
 
-  // Create subscription - returns an Observable
   createSubscription(userId: string, userEmail: string): Observable<{ success: boolean; url?: string; checkoutUrl?: string }> {
     console.log('STRIPE: Creating subscription', { userId, userEmail });
-    
     return this.getAuthHeaders().pipe(
       switchMap(headers => {
         return this.http.post<any>(
@@ -138,6 +136,7 @@ export class StripeService {
           { headers, withCredentials: true }
         ).pipe(
           map(response => {
+            
             console.log('STRIPE: Create subscription response', response);
             
             // Check for url in the response
@@ -178,8 +177,8 @@ export class StripeService {
   }
 
   // Open customer portal - returns an Observable
-  createPortalSession(userId: string, userEmail: string): Observable<{ success: boolean; url?: string }> {
-    console.log('STRIPE: Creating portal session', { userId, userEmail });
+  createPortalSession(userId: string, userEmail: string, returnUrl?: string): Observable<{ success: boolean; url?: string }> {
+    console.log('STRIPE: Creating portal session', { userId, userEmail, returnUrl });
     
     return this.getAuthHeaders().pipe(
       switchMap(headers => {
@@ -188,7 +187,7 @@ export class StripeService {
           { 
             userId,
             userEmail,
-            returnUrl: `${window.location.origin}/dashboard`
+            returnUrl: returnUrl || `${window.location.origin}/profile`
           },
           { headers, withCredentials: true }
         ).pipe(
@@ -274,5 +273,57 @@ export class StripeService {
       message: error.error?.message || error.message || 'Unknown error',
       statusCode: error.status
     }));
+  }
+
+  forceRefreshSubscription(userId: string): Observable<SubscriptionStatus> {
+    console.log('STRIPE: Forcing refresh of subscription data');
+    debugger
+    this.clearCache();
+    // Add a cache-busting parameter to the URL
+    const timestamp = new Date().getTime();
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => {
+        return this.http.get<any>(
+          `${this.apiUrl}/stripe/subscription-status/${userId}?_t=${timestamp}`,
+          { headers, withCredentials: true }
+        ).pipe(
+          map(response => {
+            console.log('STRIPE: Forced refresh response', response);
+            
+            // Handle empty response
+            if (!response || typeof response !== 'object') {
+              console.log('STRIPE: Empty response, returning default status');
+              const emptyStatus = this.createEmptyStatus();
+              this.subscriptionStatusSubject.next(emptyStatus);
+              return emptyStatus;
+            }
+            
+            // Transform response to standard format
+            const status: SubscriptionStatus = {
+              active: response.subscription?.status === 'active',
+              subscription: {
+                status: response.subscription?.status || null,
+                originalStartDate: response.subscription?.originalStartDate || null,
+                currentPeriodEnd: response.subscription?.currentPeriodEnd || null,
+                willAutoRenew: response.subscription?.willAutoRenew || false
+              },
+              usage: {
+                pdfsGenerated: response.usage?.pdfsGenerated || 0
+              }
+            };
+            
+            // Cache the result
+            this.subscriptionStatusSubject.next(status);
+            console.log('STRIPE: Processed forced refresh status', status);
+            
+            return status;
+          }),
+          catchError(error => {
+            console.error('STRIPE: Error forcing refresh', error);
+            return of(this.createEmptyStatus());
+          })
+        );
+      })
+    );
   }
 }

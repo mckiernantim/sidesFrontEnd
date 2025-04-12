@@ -1,0 +1,65 @@
+<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div class="text-center mb-6">
+      <h2 class="text-2xl font-bold text-gray-800">Checkout Summary</h2>
+      <p class="text-gray-600">Please review your selection before proceeding</p>
+    </div>
+
+    <!-- Selected Scenes -->
+    <div class="mb-6">
+      <h3 class="text-lg font-bold mb-2">Selected Scenes:</h3>
+      <ul class="space-y-2">
+        <li *ngFor="let scene of selectedScenes" class="p-2 bg-gray-50 rounded border border-gray-200">
+          <span class="font-medium">{{ scene.sceneNumberText }}:</span> {{ scene.text }}
+        </li>
+      </ul>
+      <div class="mt-4 text-center">
+        <h2 class="text-xl font-bold text-green-600">Total: FREE FOR BETA</h2>
+        <p class="text-sm text-gray-500">Note: Stripe will process a test payment. Your card will not be charged.</p>
+      </div>
+    </div>
+
+    <!-- Terms and Conditions -->
+    <div class="mb-6">
+      <div class="flex items-center justify-between">
+        <label class="flex items-center space-x-2">
+          <input type="checkbox" [(ngModel)]="agreeToTerms" class="form-checkbox h-4 w-4 text-blue-600">
+          <span class="text-gray-700">I agree to the Terms of Service</span>
+        </label>
+        <button (click)="toggleTerms()" class="text-blue-500 hover:underline text-sm">
+          {{ showTerms ? 'Hide Terms' : 'Show Terms' }}
+        </button>
+      </div>
+      
+      <div *ngIf="showTerms" class="mt-4 p-4 bg-gray-50 rounded border border-gray-200 text-sm text-gray-700 max-h-40 overflow-y-auto">
+        <h4 class="font-bold mb-2">Terms of Service</h4>
+        <p>By using our service, you agree to the following terms:</p>
+        <ul class="list-disc pl-5 mt-2 space-y-1">
+          <li>You have the right to use the uploaded script for the purpose of generating sides.</li>
+          <li>You understand that we do not store your script data beyond the processing period.</li>
+          <li>You acknowledge that this service is provided "as is" without warranty of any kind.</li>
+          <li>You agree not to use this service for any illegal or unauthorized purpose.</li>
+          <li>You understand that during the beta period, the service is provided free of charge.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex space-x-4">
+      <button 
+        (click)="onClose()" 
+        class="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none transition-colors"
+      >
+        Cancel
+      </button>
+      <button 
+        (click)="proceedToCheckout()" 
+        [disabled]="!agreeToTerms" 
+        [class.opacity-50]="!agreeToTerms"
+        class="flex-1 py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none transition-colors disabled:cursor-not-allowed"
+      >
+        Get My Sides
+      </button>
+    </div>
+  </div>
+</div> 

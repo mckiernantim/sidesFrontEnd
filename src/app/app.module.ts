@@ -3,7 +3,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
@@ -18,6 +18,7 @@ import { SharedModule } from './modules/shared-module/shared.module';
 import { PaymentSuccessComponent } from './components/payment-success/payment-success.component';
 import { ProfileComponent } from './components/profile/profile.component';
 import { TestComponent } from './components/test/test.component';
+import { HttpLogInterceptor } from './services/http-interceptor.service';
 
 @NgModule({
   declarations: [
@@ -42,7 +43,9 @@ import { TestComponent } from './components/test/test.component';
     DashboardModule,
     FirebaseModule.forRoot()
   ],
-  providers: [],
+  providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: HttpLogInterceptor, multi: true }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
