@@ -11,11 +11,11 @@ import { provideFirebaseApp, FirebaseAppModule } from '@angular/fire/app';
 import { provideAuth, AuthModule } from '@angular/fire/auth';
 import { provideFirestore, FirestoreModule } from '@angular/fire/firestore';
 import { provideStorage, StorageModule } from '@angular/fire/storage';
-import { environment } from '../../../environments/environment';
-import { environmentProd } from '../../../environments/environment.prod';
+import { getConfig } from '../../../environments/environment';
 
-// Determine which config to use based on environment
-const { firebaseConfig } = isDevMode() ? environment : environmentProd;
+// Get the correct config based on mode
+const config = getConfig(!isDevMode());
+const { firebaseConfig } = config;
 
 @NgModule({
   imports: [

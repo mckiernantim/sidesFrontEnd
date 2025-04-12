@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, isDevMode } from '@angular/core';
 import {
   Observable,
   throwError,
@@ -16,7 +16,7 @@ import {
   HttpParams,
   HttpErrorResponse,
 } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
+import { getConfig } from '../../../environments/environment';
 import { Line } from '../../types/Line';
 import { TokenService } from '../token/token.service';
 import { AuthService } from '../auth/auth.service';
@@ -55,14 +55,18 @@ export class UploadService {
     responseType: null,
   };
   msg: any;
-  public url: string = environment.url;
+  public url: string;
 
   constructor(
     // private firestore: Firestore,
     public httpClient: HttpClient,
     public token: TokenService,
     public auth: AuthService
-  ) {}
+  ) {
+    // Get config based on production mode
+    const config = getConfig(!isDevMode());
+    this.url = config.url;
+  }
 
   // Helper type guard for checking response type
   isSubscriptionResponse(

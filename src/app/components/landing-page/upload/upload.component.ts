@@ -1,18 +1,16 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, isDevMode } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, Subscription, EMPTY } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { UploadService } from '../../../services/upload/upload.service';
 import { PdfService } from '../../../services/pdf/pdf.service';
 import { fadeInOutAnimation } from '../../../animations/animations';
-import { environment } from '../../../../environments/environment';
+import { getConfig } from '../../../../environments/environment';
 import { Auth, User } from '@angular/fire/auth';
 import { AuthService } from '../../../services/auth/auth.service';
 import { take } from 'rxjs/operators';
 import { TailwindDialogService } from '../../../services/tailwind-dialog/tailwind-dialog.service';
 import { TailwindDialogComponent } from '../../../components/shared/tailwind-dialog/tailwind-dialog.component';
-
-
 
 @Component({
     selector: 'app-upload',
@@ -20,7 +18,6 @@ import { TailwindDialogComponent } from '../../../components/shared/tailwind-dia
     styleUrls: ['./upload.component.css'],
     animations: [fadeInOutAnimation],
     standalone: false,
-
 })
 export class UploadComponent implements OnInit, OnDestroy {
   isButtonDisabled: boolean = true;
@@ -53,7 +50,8 @@ export class UploadComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.underConstruction = !environment.production;
+    const config = getConfig(!isDevMode());
+    this.underConstruction = !config.production;
     this.working = false;
     this.resetLocalData();
     this.user$ = this.authService.user$;

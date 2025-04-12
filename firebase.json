@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist/sideWays",
+    "public": "dist/sideWays/browser",
     "ignore": [
       "firebase.json",
       "**/.*",

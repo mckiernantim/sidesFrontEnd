@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, isDevMode } from '@angular/core';
 import { loadStripe } from '@stripe/stripe-js';
-import { environment } from '../../../environments/environment';
+import { getConfig } from '../../../environments/environment';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { from, Observable, throwError, BehaviorSubject, of } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
@@ -12,8 +12,9 @@ import { SubscriptionStatus, SubscriptionResponse } from 'src/app/types/Subscrip
   providedIn: 'root'
 })
 export class StripeService {
-  private stripePromise = loadStripe(environment.stripe);
-  public apiUrl: string = environment.url;
+  private config = getConfig(!isDevMode());
+  private stripePromise = loadStripe(this.config.stripe);
+  public apiUrl: string = this.config.url;
   
   // Subscription status as a BehaviorSubject
   private subscriptionStatusSubject = new BehaviorSubject<SubscriptionStatus | null>(null);
@@ -23,7 +24,8 @@ export class StripeService {
     private http: HttpClient,
     private router: Router,
     private auth: AuthService
-  ) {}
+  ) {
+  }
 
   // Get auth headers for API requests
   private getAuthHeaders(): Observable<HttpHeaders> {

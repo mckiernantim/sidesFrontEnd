@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, isDevMode } from '@angular/core';
 import { 
   Auth, 
   GoogleAuthProvider, 
@@ -28,7 +28,7 @@ import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import { HttpClient } from '@angular/common/http';
 import { StripeSession } from 'src/app/types/user';
-import { environment } from 'src/environments/environment';
+import { getConfig } from 'src/environments/environment';
 import { map, take, switchMap, filter } from 'rxjs/operators';
 import { Router } from '@angular/router';
 
@@ -56,7 +56,9 @@ export class AuthService {
   // Add user$ property that extracts just the user from authState
   user$ = this.authState$.pipe(map(state => state.user));
   
-  apiUrl = environment.url;
+  // Get the correct environment configuration
+  private config = getConfig(!isDevMode());
+  apiUrl = this.config.url;
 
   constructor(
     private auth: Auth,
