@@ -5,11 +5,13 @@ import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 
 import { FirebaseModule } from './modules/firebase-module/firebase.module';
 
 import { AboutComponent } from './components/about/about.component';
+import { PricingComponent } from './components/pricing/pricing.component';
+import { ContactComponent } from './components/contact/contact.component';
 import { DonateComponent } from './components/donate/donate.component';
 import { IssueComponent } from './components/issue/issue.component';
 import { UploadModule } from './modules/upload-module/upload.module';
@@ -19,16 +21,22 @@ import { PaymentSuccessComponent } from './components/payment-success/payment-su
 import { ProfileComponent } from './components/profile/profile.component';
 import { TestComponent } from './components/test/test.component';
 import { HttpLogInterceptor } from './services/http-interceptor.service';
-
+import { HowItWorksComponent } from './components/how-it-works/how-it-works.component';
 @NgModule({
   declarations: [
     AppComponent,
     AboutComponent,
+    PricingComponent,
+    ContactComponent,
     DonateComponent,
     IssueComponent,
     ProfileComponent,
     PaymentSuccessComponent,
-    TestComponent
+    TestComponent,
+    HowItWorksComponent,
+    PricingComponent,
+    AboutComponent,
+    ContactComponent,
   ],
   imports: [
     BrowserModule,
@@ -44,6 +52,7 @@ import { HttpLogInterceptor } from './services/http-interceptor.service';
     FirebaseModule.forRoot()
   ],
   providers: [
+    DatePipe,
     { provide: HTTP_INTERCEPTORS, useClass: HttpLogInterceptor, multi: true }
   ],
   bootstrap: [AppComponent]

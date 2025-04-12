@@ -1,25 +1,89 @@
 <div class="p-8 relative">
-  <div class="blob-3"></div>
-  <div class="blob-4"></div>
   <h2 class="font-bold text-6xl flex flex-row justify-center">Trusted By The Best</h2>
 </div>
-<div class="flex items-center justify-center relative p-8">
-  <button (click)="prev()" class="p-2 bg-gray-300 rounded-full absolute left-[15vw] ml-4 z-10">
-    <span class="material-icons">chevron_left</span>
-  </button>
-  <div class="w-full flex flex-col items-center justify-center overflow-hidden relative"
-       [ngClass]="{ 'fade-out': isTransitioning, 'fade-in': !isTransitioning }">
-    <div class="md:w-[40vw] w-[75vw] text-center">
-      <p class="font-semi-bold text-xl italic">"{{currentTestimonial.text}}"</p>
-      <p class="font-bold text-xl p-8"> {{currentTestimonial.user}} - {{currentTestimonial.jobTitle}}</p>
+<div class="carousel-container px-4 pb-8" 
+     (mouseenter)="pauseAutoScroll()" 
+     (mouseleave)="resumeAutoScroll()">
+  
+  <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+    <div class="md:flex">
+      <!-- Image section - reduced size -->
+      <div class="md:w-2/5 relative h-64 md:h-auto">
+        <div class="absolute inset-0 bg-indigo-50 flex items-center justify-center" [class.opacity-0]="!isTransitioning">
+          <!-- Loading placeholder -->
+          <div class="animate-pulse">
+            <div class="w-12 h-12 rounded-full bg-indigo-300"></div>
+          </div>
+        </div>
+        
+        <img [src]="visibleImage" 
+             alt="User testimonial" 
+             class="w-full h-full object-cover transition-opacity duration-300"
+             [class.opacity-0]="isTransitioning"
+             [@fadeAnimation]>
+      </div>
+      
+      <!-- Testimonial section - increased size -->
+      <div class="md:w-3/5 p-8 flex flex-col justify-center">
+        <div class="relative">
+          <!-- Opening quote -->
+          <div class="absolute top-0 left-0">
+            <svg class="h-8 w-8 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+            </svg>
+          </div>
+          
+          <!-- Quote text with padding for quotes -->
+          <p class="text-gray-700 text-xl mb-6 italic pt-10 px-6" [@fadeAnimation]>
+            {{ currentTestimonial?.quote }}
+          </p>
+          
+          <!-- Closing quote -->
+          <div class="absolute bottom-6 right-0">
+            <svg class="h-8 w-8 text-indigo-600 transform rotate-180" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+            </svg>
+          </div>
+        </div>
+        
+        <div class="flex items-center mt-4">
+          <div class="flex-shrink-0 mr-3">
+            <div class="bg-indigo-50 rounded-full p-1 inline-flex items-center justify-center w-12 h-12">
+            </div>
+          </div>
+          <div>
+            <p class="text-gray-900 font-semibold">{{ currentTestimonial?.name }}</p>
+            <p class="text-indigo-600 text-sm">{{ currentTestimonial?.title }}</p>
+          </div>
+        </div>
+      </div>
     </div>
-    <img 
-      [ngClass]="{ 'fade-out': isTransitioning, 'fade-in': !isTransitioning }"
-      [src]="visibleImage" 
-      alt="Poster Image" 
-      class="max-w-full h-75vh transition-opacity duration-500">
   </div>
-  <button (click)="next()" class="p-2 bg-gray-300 rounded-full absolute right-[15vw] mr-4 z-10">
-    <span class="material-icons">chevron_right</span>
-  </button>
+  
+  <!-- Navigation buttons -->
+  <div class="flex justify-center mt-8 space-x-4">
+    <button (click)="prev()" 
+            class="p-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors shadow-md">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg>
+    </button>
+    
+    <button (click)="next()" 
+            class="p-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors shadow-md">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+  </div>
+  
+  <!-- Indicator dots -->
+  <div class="flex justify-center mt-4">
+    <div *ngFor="let poster of posters; let i = index" 
+         class="mx-1 h-2 w-2 rounded-full transition-colors duration-200 cursor-pointer"
+         [class.bg-indigo-600]="i === currentIndex"
+         [class.bg-gray-300]="i !== currentIndex"
+         (click)="goToSlide(i)">
+    </div>
+  </div>
 </div>

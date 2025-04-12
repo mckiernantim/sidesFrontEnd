@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MainNavComponent } from './main-nav.component';
-import { BreakpointObserver } from '@angular/cdk/layout';
 import { Observable, of, Subscription } from 'rxjs';
 import { TokenService } from '../../../services/token/token.service';
 import { Router, ActivatedRoute } from '@angular/router';

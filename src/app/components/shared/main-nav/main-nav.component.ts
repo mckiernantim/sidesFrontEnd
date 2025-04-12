@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
-import { AuthService } from 'src/app/services/auth/auth.service';
+import { AuthService } from '../../../services/auth/auth.service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -13,10 +13,11 @@ export class MainNavComponent implements OnInit {
   user$: Observable<any>;
   displayClock = false;
   countdownClock = '';
-  isLoggedIn: boolean = false;
-  username: string = '';
-  isUserMenuOpen: boolean = false;
-  isMobileMenuOpen: boolean = false;
+  isLoggedIn = false;
+  username = '';
+  userAvatar = '';
+  isUserMenuOpen = false;
+  isMobileMenuOpen = false;
 
   constructor(
     private authService: AuthService,
@@ -25,10 +26,13 @@ export class MainNavComponent implements OnInit {
     this.user$ = this.authService.user$;
   }
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.authService.user$.subscribe(user => {
       this.isLoggedIn = !!user;
-      this.username = user ? user.displayName || 'User' : '';
+      if (user) {
+        this.username = user.displayName || user.email || 'User';
+        this.userAvatar = user.photoURL || '';
+      }
     });
   }
 
@@ -37,25 +41,27 @@ export class MainNavComponent implements OnInit {
   }
 
   signOut() {
-    this.authService.signOut();
-    this.router.navigate(['/']);
+    this.authService.signOut().then(() => {
+      this.router.navigate(['/']);
+    });
   }
 
-  toggleUserMenu() {
+  toggleUserMenu(): void {
     this.isUserMenuOpen = !this.isUserMenuOpen;
   }
 
-  closeUserMenu() {
+  closeUserMenu(): void {
     this.isUserMenuOpen = false;
   }
 
-  toggleMobileMenu() {
+  toggleMobileMenu(): void {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
   }
 
-  logout() {
-    this.authService.signOut();
-    this.closeUserMenu();
+  logout(): void {
+    this.authService.signOut().then(() => {
+      this.router.navigate(['/']);
+    });
   }
 }
 

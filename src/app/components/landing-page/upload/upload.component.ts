@@ -12,12 +12,15 @@ import { take } from 'rxjs/operators';
 import { TailwindDialogService } from '../../../services/tailwind-dialog/tailwind-dialog.service';
 import { TailwindDialogComponent } from '../../../components/shared/tailwind-dialog/tailwind-dialog.component';
 
+
+
 @Component({
     selector: 'app-upload',
     templateUrl: './upload.component.html',
     styleUrls: ['./upload.component.css'],
     animations: [fadeInOutAnimation],
-    standalone: false
+    standalone: false,
+
 })
 export class UploadComponent implements OnInit, OnDestroy {
   isButtonDisabled: boolean = true;
@@ -224,6 +227,14 @@ export class UploadComponent implements OnInit, OnDestroy {
     // If there are selected files, upload the first one
     if (this.selectedFiles.length > 0) {
       this.onFileSelected({ target: { files: [this.selectedFiles[0]] } });
+    }
+  }
+
+  // Scroll to upload section
+  scrollToUpload(): void {
+    const uploadElement = document.querySelector('.upload-component');
+    if (uploadElement) {
+      uploadElement.scrollIntoView({ behavior: 'smooth' });
     }
   }
 }

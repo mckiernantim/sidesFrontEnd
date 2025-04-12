@@ -15,6 +15,9 @@ import { SubscriptionComponent } from './components/subscription/subscription.co
 import { ProfileLoaderComponent } from './components/profile/profile-loader.component';
 import { AuthGuard } from './guards/auth.guard'
 import { TestComponent } from './components/test/test.component';
+import { PricingComponent } from './components/pricing/pricing.component';
+import { ContactComponent } from './components/contact/contact.component';
+import { HowItWorksComponent } from './components/how-it-works/how-it-works.component';
 
 const routes: Routes = [
   { path: 'test', component: TestComponent },
@@ -35,13 +38,15 @@ const routes: Routes = [
   { path: 'Checkout', component: CheckoutComponent },
   { path: 'profile-loader', component: ProfileLoaderComponent },
   { path: 'profile', component: ProfileComponent },
+  { path: 'about', component: AboutComponent },
+  { path: 'pricing', component: PricingComponent },
+  { path: 'contact', component: ContactComponent },
+  { path: 'how-it-works', component: HowItWorksComponent },
   { path: "**", component:FourOfourComponent}
  ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes, 
-    // { enableTracing: true }
-    )],
+  imports: [RouterModule.forRoot(routes)],
   exports: [RouterModule]
 })
 export class AppRoutingModule { }

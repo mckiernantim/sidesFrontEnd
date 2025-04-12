@@ -1,126 +1,192 @@
-<div class="container mx-auto px-4 py-8">
-  <!-- Hero Section -->
-  <section class="mb-16">
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-      <div class="md:flex">
-        <div class="md:w-1/2 p-8">
-          <h1 class="text-4xl font-bold text-gray-900 mb-4">Sides-Ways</h1>
-          <h2 class="text-2xl text-indigo-600 mb-8">Free Open Beta</h2>
-          
-          <div class="space-y-4 mb-8">
-            <div class="flex items-center">
-              <div class="bg-indigo-100 p-2 rounded-full mr-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-              <span class="text-lg font-medium">Secure</span>
+<div class="container mx-auto px-4 py-4">
+  <!-- Upload component with integrated CTA -->
+  <div class="bg-white rounded-lg shadow-lg p-6 mb-12 max-w-6xl mx-auto upload-component">
+    <!-- Hero CTA section - more compact -->
+    <div class="text-center mb-6 border-b border-gray-200 pb-6">
+      <h1 class="text-6xl md:text-7xl font-extrabold mb-4 text-indigo-800 leading-tight">
+        STOP MAKING SIDES 
+        <span class="relative inline-block">
+          <span class="absolute inset-0 bg-red-600 transform -skew-x-12" style="z-index: 1;"></span>
+          <span class="relative text-white px-4" style="z-index: 2;"> BY HAND</span>
+        </span>
+      </h1>
+      <p class="text-2xl text-gray-600 max-w-3xl mx-auto">
+        Secure Set-Ready Sides in Seconds. Free Open Beta      
+      </p>
+    </div>
+
+    <!-- Upload section - more compact -->
+    <div class="md:flex">
+      <!-- Left side content -->
+      <div class="md:w-1/2 p-4">
+        <h1 class="text-3xl font-bold text-indigo-800 mb-2">Sides-Ways</h1>
+      
+        <div class="space-y-2 mb-4">
+          <!-- Features list - more compact -->
+          <div class="flex items-center">
+            <div class="bg-indigo-100 p-2 rounded-full mr-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
             </div>
-            
-            <div class="flex items-center">
-              <div class="bg-indigo-100 p-2 rounded-full mr-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <span class="text-lg font-medium">Set-Ready</span>
-            </div>
-            
-            <div class="flex items-center">
-              <div class="bg-indigo-100 p-2 rounded-full mr-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <span class="text-lg font-medium">Sides in Seconds</span>
-            </div>
+            <span class="text-base font-medium">Secure</span>
           </div>
           
-          <div class="mb-8">
-            <p class="text-xl font-medium text-gray-800">We Make Sides</p>
-            <p class="text-xl font-medium text-gray-800 italic">That's it.</p>
+          <div class="flex items-center">
+            <div class="bg-indigo-100 p-2 rounded-full mr-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span class="text-base font-medium">Set-Ready</span>
           </div>
           
-          <div>
-            <ng-container *ngIf="(user$ | async) as user; else signIn">
-              <div class="flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow-md">
-                <h2 class="text-2xl font-bold mb-4">Upload Your File</h2>
-                
-                <div class="w-full max-w-md">
-                  <label class="block mb-2 text-sm font-medium text-gray-700">
-                    Select a file to upload
-                  </label>
-                  <div class="flex items-center justify-center w-full">
-                    <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                      <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                        <svg class="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-                        </svg>
-                        <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
-                        <p class="text-xs text-gray-500">CSV, Excel, or other supported formats</p>
-                      </div>
-                      <input id="file-upload" type="file" class="hidden" (change)="onFileSelected($event)" />
-                    </label>
-                  </div>
-                </div>
-                
-                <div class="mt-6 flex space-x-4">
-                  <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                          (click)="uploadFiles()">
-                    Upload
-                  </button>
-                  <button class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-                          (click)="cancel()">
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </ng-container>
-            
-            <ng-template #signIn>
-              <button 
-                (click)="this.signIn()"
-                class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-colors">
-                Sign In to Continue
-              </button>
-            </ng-template>
-            
-            @if (this.underConstruction) {
-              <button 
-                (click)="skipUploadForTest()"
-                class="ml-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors">
-                skipUploadForTest
-              </button>
-            }
+          <div class="flex items-center">
+            <div class="bg-indigo-100 p-2 rounded-full mr-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <span class="text-base font-medium">Sides in Seconds</span>
           </div>
         </div>
         
-        <div class="md:w-1/2 p-8 flex items-center justify-center">
-          <img src="assets/icons/logoFlat.png" alt="Sides-Ways Logo" class="max-w-full h-auto">
+        <div class="mb-4">
+          <p class="text-lg font-medium text-gray-800">We Make Sides</p>
+          <p class="text-lg font-medium text-gray-800 italic">That's it.</p>
+        </div>
+        
+        <div>
+          <ng-container *ngIf="(user$ | async) as user; else signIn">
+            <div class="flex flex-col items-center justify-center p-4 bg-white rounded-lg shadow-md">
+              <h2 class="text-xl font-bold mb-2">Upload Your File</h2>
+              
+              <div class="w-full max-w-md">
+                <label class="block mb-1 text-sm font-medium text-gray-700">
+                  Select a file to upload
+                </label>
+                <div class="flex items-center justify-center w-full">
+                  <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                    <div class="flex flex-col items-center justify-center pt-4 pb-4">
+                      <svg class="w-7 h-7 mb-2 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                      </svg>
+                      <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                      <p class="text-xs text-gray-500">PDF, Word, or text formats</p>
+                    </div>
+                    <input id="file-upload" type="file" class="hidden" (change)="onFileSelected($event)" />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+          
+          <ng-template #signIn>
+            <button 
+              (click)="this.signIn()"
+              class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-colors">
+              Sign In to Continue
+            </button>
+          </ng-template>
         </div>
       </div>
+      
+      <!-- Right side image -->
+      <div class="md:w-1/2 p-4 flex items-center justify-center">
+        <img src="assets/icons/logoFlat.png" alt="Sides-Ways Logo" class="max-w-full h-auto">
+      </div>
     </div>
-  </section>
+  </div>
   
-  <!-- About Product Section -->
-  <!-- <section class="mb-16">
-    <div class="bg-white rounded-lg shadow-lg p-8">
-      <h2 class="text-2xl font-bold text-center mb-8 text-gray-800">How It Works</h2>
-      <app-about-item-grid></app-about-item-grid>
+  <!-- How it works section -->
+  <div class="max-w-5xl mx-auto mb-20">
+    <h2 class="text-6xl font-bold text-center mb-12 text-indigo-700">How It Works</h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Step 1 -->
+      <div class="bg-white rounded-lg shadow-md p-6 text-center">
+        <div class="flex justify-center mb-4">
+          <div class="bg-indigo-50 rounded-full p-2 inline-flex items-center justify-center w-36 h-36">
+            <img src="assets/icons/bot-about-images/scan.jpg" alt="Upload Script" class="h-28 w-28 object-contain">
+          </div>
+        </div>
+        <h3 class="text-xl font-semibold mb-2 text-indigo-600">1. Upload Your Script</h3>
+        <p class="text-gray-600">
+          Simply upload your Script PDF. Your document is deleted after processing. Nothing is saved. EVER.
+        </p>
+      </div>
+      
+      <!-- Step 2 -->
+      <div class="bg-white rounded-lg shadow-md p-6 text-center">
+        <div class="flex justify-center mb-4">
+          <div class="bg-indigo-50 rounded-full p-2 inline-flex items-center justify-center w-36 h-36">
+            <img src="assets/icons/bot-about-images/select.jpg" alt="Select Scenes" class="h-28 w-28 object-contain">
+          </div>
+        </div>
+        <h3 class="text-xl font-semibold mb-2 text-indigo-600">2. Select Your Scenes</h3>
+        <p class="text-gray-600">
+          Select the scenes you need for the day.
+        </p>
+      </div>
+      
+      <!-- Step 3 -->
+      <div class="bg-white rounded-lg shadow-md p-6 text-center">
+        <div class="flex justify-center mb-4">
+          <div class="bg-indigo-50 rounded-full p-2 inline-flex items-center justify-center w-36 h-36">
+            <img src="assets/icons/bot-about-images/lastLooks.jpg" alt="Download Sides" class="h-28 w-28 object-contain">
+          </div>
+        </div>
+        <h3 class="text-xl font-semibold mb-2 text-indigo-600">3. Last Looks & Go</h3>
+        <p class="text-gray-600">
+          Preview your sides and make any last-minute adjustments.
+        </p>
+        <p class="text-gray-600">
+            <strong>Download and go.</strong>
+        </p>
+      </div>
     </div>
-  </section>
+  </div>
   
+  <!-- Security section with footer coloring -->
+  <div class="bg-gray-800 text-white rounded-lg p-8 max-w-5xl mx-auto mb-16">
+    <div class="flex flex-col md:flex-row items-center">
+      <div class="md:w-1/3 flex justify-center mb-6 md:mb-0">
+        <div class="bg-gray-700 rounded-full p-3 inline-flex items-center justify-center w-44 h-44">
+          <img src="assets/icons/bot-about-images/lastLooks.jpg" alt="Security" class="h-36 w-36 object-contain">
+        </div>
+      </div>
+      <div class="md:w-2/3">
+        <h2 class="text-2xl font-bold mb-4 text-white">Your Security Is Our Priority</h2>
+        <p class="text-gray-300 mb-4">
+          We take your privacy seriously. Your scripts are processed securely and deleted immediately after your sides are generated.
+        </p>
+        <ul class="list-disc pl-5 text-gray-300 space-y-2">
+          <li><strong class="text-white">Nothing is saved. EVER.</strong> Your documents are deleted as soon as processing is complete.</li>
+          <li><strong class="text-white">Secure processing.</strong> All uploads are encrypted and processed in a secure environment.</li>
+          <li><strong class="text-white">No data sharing.</strong> We never share your scripts or data with third parties.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 
-  <section class="mb-16">
-    <div class="bg-white rounded-lg shadow-lg p-8">
-      <h2 class="text-2xl font-bold text-center mb-8 text-gray-800">What Our Customers Say</h2>
+  <!-- Testimonial Carousel Section -->
+  <div class="bg-indigo-50 py-12 mb-16">
+    <div class="max-w-5xl mx-auto">
       <app-carousel></app-carousel>
     </div>
-  </section>
+  </div>
   
-  <section class="mb-16">
-    <div class="bg-white rounded-lg shadow-lg p-8">
-      <app-spinning-bot [title]="'fake name'"></app-spinning-bot>
-    </div>
-  </section> -->
+  <!-- Final CTA -->
+  <div class="text-center max-w-3xl mx-auto">
+    <h2 class="text-3xl font-bold mb-4 text-indigo-800">Start Saving Time NOW.</h2>
+    <p class="text-xl text-gray-600 mb-6">
+      Let Sides-Ways save you time and hassle.
+    </p>
+    <button 
+      class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg text-xl transition-colors"
+      (click)="scrollToUpload()"
+    >
+      Get Started Now
+    </button>
+  </div>
 </div>

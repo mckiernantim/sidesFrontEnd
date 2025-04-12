@@ -1,95 +1,96 @@
-export type Testimonial = {
-    user: String,
-    text:String,
-    jobTitle:String,
-    project?:String
+export interface Testimonial {
+    name: string;
+    quote: string;
+    title: string;
+    avatarUrl?: string;
+    project?: string;
 }
 
-export const testimonials: Testimonial[] =  [
+export const testimonials: Testimonial[] = [
     {
-        user:"Arron Eckland",
-        text:"Forget sharpies! This generator makes sides fast and easy. Wish I had it when I was a PA.",
-        jobTitle:"Assistant Director",
-        project:null
+        name: "Arron Eckland",
+        quote: "Forget sharpies! This generator makes sides fast and easy. Wish I had it when I was a PA.",
+        title: "Assistant Director",
+        avatarUrl: "assets/testimonials/avatar1.jpg"
     },
     {
-        user:"Alexander Yellen",
-        text:"5$ is cheaper than OT for the PAs.  Seems like a no brainer to me.",
-        jobTitle:"Director of Photography",
-        project:null
+        name: "Alexander Yellen",
+        quote: "$5 is cheaper than OT for the PAs. Seems like a no brainer to me.",
+        title: "Director of Photography",
+        avatarUrl: "assets/testimonials/avatar2.jpg"
     },
     {
-        user:"Dakotah Hill",
-        text:"Sides-ways is fast and easy.  Sides are a pain",
-        jobTitle:"Producer",
-        project:null
+        name: "Dakotah Hill",
+        quote: "Sides-ways is fast and easy. Sides are a pain.",
+        title: "Producer",
+        avatarUrl: "assets/testimonials/avatar3.jpg"
     },
     {
-        user:"Brittany Underwood",
-        text:"A real time-saver for anyone working in a production office - the sides generator is a game-changer",
-        jobTitle:"Director",
-        project:null
+        name: "Brittany Underwood",
+        quote: "A real time-saver for anyone working in a production office - the sides generator is a game-changer.",
+        title: "Director",
+        avatarUrl: "assets/testimonials/avatar4.jpg"
     },
     {
-        user:"Ted Jeffer",
-        text:"Effortless --- a must have tool for every production team.",
-        jobTitle:"Assitant Director",
-        project:null
+        name: "Ted Jeffer",
+        quote: "Effortless --- a must have tool for every production team.",
+        title: "Assistant Director",
+        avatarUrl: "assets/testimonials/avatar5.jpg"
     },
     {
-        user:"Marc Barnes",
-        text:"As someone deeply involved in production, I appreciate the time and stress it saves.",
-        jobTitle:"Production Manager / Director",
-        project:null
+        name: "Marc Barnes",
+        quote: "As someone deeply involved in production, I appreciate the time and stress it saves.",
+        title: "Production Manager / Director",
+        avatarUrl: "assets/testimonials/avatar6.jpg"
     },
     {
-        user:"Nicki Bianchi",
-        text:"Once people start using it, people won't go back to making sides by hand. It’s so convenient and easy.",
-        jobTitle:"Director",
-        project:null
+        name: "Nicki Bianchi",
+        quote: "Once people start using it, people won't go back to making sides by hand. It's so convenient and easy.",
+        title: "Director",
+        avatarUrl: "assets/testimonials/avatar7.jpg"
     },
     {
-        user:"Dre Swain",
-        text:"A valuable asset for any film or TV project",
-        jobTitle:"Producer / Actor",
-        project:null
+        name: "Dre Swain",
+        quote: "A valuable asset for any film or TV project.",
+        title: "Producer / Actor",
+        avatarUrl: "assets/testimonials/avatar8.jpg"
     },
     {
-        user:"Nima Azadi",
-        text:"Saved the production time and money",
-        jobTitle:"Production Manager",
-        project:null
+        name: "Nima Azadi",
+        quote: "Saved the production time and money.",
+        title: "Production Manager",
+        avatarUrl: "assets/testimonials/avatar9.jpg"
     },
     {
-        user:"Anne Montavon",
-        text:"Costs less than paying a PA to make them [Sides] at the end of the day",
-        jobTitle:"Producer",
-        project:null
+        name: "Anne Montavon",
+        quote: "Costs less than paying a PA to make them [Sides] at the end of the day.",
+        title: "Producer",
+        avatarUrl: "assets/testimonials/avatar10.jpg"
     },
     {
-        user:"Glen Miller",
-        text:"Incredible resource for production! It cuts down on the time and effort of making sides- traditionally spent at the end of a long day",
-        jobTitle:"Assistant Director",
-        project:null
+        name: "Glen Miller",
+        quote: "Incredible resource for production! It cuts down on the time and effort of making sides- traditionally spent at the end of a long day.",
+        title: "Assistant Director",
+        avatarUrl: "assets/testimonials/avatar11.jpg"
     },
     {
-        user:"Colin Conrad",
-        text:"Super Easy to use",
-        jobTitle:"Production Assistant",
-        project:null
+        name: "Colin Conrad",
+        quote: "Super Easy to use.",
+        title: "Production Assistant",
+        avatarUrl: "assets/testimonials/avatar12.jpg"
     },
     {
-        user:"Thomas Henessey",
-        text:"Huge time saver for production. Makes the sides in like two minutes. Great product.",
-        jobTitle:"Director of Photography",
-        project:null
+        name: "Thomas Henessey",
+        quote: "Huge time saver for production. Makes the sides in like two minutes. Great product.",
+        title: "Director of Photography",
+        avatarUrl: "assets/testimonials/avatar13.jpg"
     },
     {
-        user:"Dain August",
-        text:"This should have been done years ago",
-        jobTitle:"Producer",
-        project:null
-    },
-]
+        name: "Dain August",
+        quote: "This should have been done years ago.",
+        title: "Producer",
+        avatarUrl: "assets/testimonials/avatar14.jpg"
+    }
+];
 
 

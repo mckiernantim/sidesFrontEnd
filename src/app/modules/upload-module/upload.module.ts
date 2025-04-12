@@ -7,13 +7,15 @@ import { SharedModule } from '../shared-module/shared.module';
 import { FeatureGridComponent } from '../../components/landing-page/feature/feature-grid/feature-grid.component';
 import { FeatureCardComponent } from '../../components/landing-page/feature/feature-card/feature-card.component';
 import { TestimonialGridComponent } from '../../components/landing-page/testimonial/testimonial-grid/testimonial-grid.component';
+import { CarouselComponent } from '../../components/carousel/carousel.component';
 
 @NgModule({
   declarations: [
     UploadComponent,
     FeatureGridComponent,
     FeatureCardComponent,
-    TestimonialGridComponent
+    TestimonialGridComponent,
+    CarouselComponent
   ],
   imports: [
     CommonModule,
@@ -24,9 +26,10 @@ import { TestimonialGridComponent } from '../../components/landing-page/testimon
     UploadComponent,
     FeatureGridComponent,
     FeatureCardComponent,
-    TestimonialGridComponent
+    TestimonialGridComponent,
+    CarouselComponent
   ],
   providers: [AsyncPipe],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+
 })
 export class UploadModule { }
