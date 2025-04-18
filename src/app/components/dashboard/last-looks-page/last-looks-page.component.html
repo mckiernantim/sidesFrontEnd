@@ -33,23 +33,42 @@
                         <span class="start-span">START {{ line.sceneNumberText }}</span>
                     </span>
 
-                    <!-- Conditionally render li element -->
+                    <!-- Conditionally render li element with drag functionality -->
                     <ng-container *ngIf="canEditDocument; else nonEditable">
-                        <li id="{{ line.index }}" autofocus tabindex="0" [value]="line.sceneNumber"
+                        <li id="{{ line.index }}" 
+                            cdkDrag
+                            [cdkDragDisabled]="!canEditDocument"
+                            (cdkDragStarted)="onDragStarted($event, line)"
+                            (cdkDragMoved)="onDragMoved($event, line)"
+                            (cdkDragEnded)="onDragEnded($event, line, lineIndex)"
+                            [value]="line.sceneNumber"
                             [class]="line.category + ' ' + line.visible + ' ' + line.hidden"
-                            [class.selected]="isSelectedLine(line, lineIndex)"
-                            [ngClass]="{ 'edit-li': canEditDocument && !selectedLine }"
-                            [style.bottom]="line.calculatedYpos" [style.left]="line.calculatedXpos"
-                            [textContent]="line.text" (contextmenu)="canEditDocument && openContextMenu($event, line)">
+                            [class.selected-line]="isLineSelected(line)"
+                            [class.multi-selected]="selectedLineIds.length > 1 && isLineSelected(line)"
+                            [class.editing]="editingLine === lineIndex"
+                            [class.crossed-out]="line.crossedOut"
+                            [ngClass]="{ 'edit-li': canEditDocument }"
+                            (click)="selectLine(line, $event)"
+                            (dblclick)="onDoubleClick(lineIndex, line.text)"
+                            [style.bottom]="line.calculatedYpos" 
+                            [style.left]="line.calculatedXpos"
+                            [attr.contenteditable]="editingLine === lineIndex ? 'true' : 'false'"
+                            [style.background-color]="editingLine === lineIndex ? 'orange' : 'transparent'"
+                            (blur)="editingLine === lineIndex && saveEdit()"
+                            (keydown)="handleKeyDown($event, line, lineIndex)"
+                            (input)="editingLine === lineIndex && onEditTextChange($event.target.textContent)"
+                            [textContent]="line.text"
+                            (contextmenu)="canEditDocument && openContextMenu($event, line, lineIndex)">
                         </li>
                     </ng-container>
                     <ng-template #nonEditable>
-                        <li id="{{ line.index }}" autofocus tabindex="0" [value]="line.sceneNumber"
+                        <li id="{{ line.index }}" 
+                            [value]="line.sceneNumber"
                             [class]="line.category + ' ' + line.visible + ' ' + line.hidden"
-                            [class.selected]="isSelectedLine(line, lineIndex)"
+                            [class.selected-line]="isSelectedLine(line, lineIndex)"
                             [style.bottom]="line.calculatedYpos"
-                            [style.left]="line.calculatedXpos" [textContent]="line.text"
-                            (contextmenu)="canEditDocument && openContextMenu($event, line)">
+                            [style.left]="line.calculatedXpos" 
+                            [textContent]="line.text">
                         </li>
                     </ng-template>
 
@@ -69,7 +88,9 @@
                     <span class="bar-span end-span" [attr.data-line-id]="line.id"
                         [class]="(line.end === 'END' ? 'END' : 'hideEnd') + ' ' + line.hidden"
                         [style.bottom]="line.calculatedEnd">
-                        <span class="end-span"> END {{ line.sceneNumberText }} </span>
+                        <span class="end-span" [class.draggable-end]="canEditDocument"> 
+                            END {{ line.sceneNumberText }} 
+                        </span>
                     </span>
 
                     <!-- right scene number span -->
@@ -78,23 +99,29 @@
                         [style.bottom]="line.calculatedYpos" [style.right]="line.calculatedXPos">
                         {{ line.sceneNumberText }}
                     </span>
-
-                    <div *ngIf="showContextMenu" class="context-menu" [style.left.px]="mouseEvent.clientX"
-                        [style.top.px]="mouseEvent.clientY">
-                        <ul>
-                            <li *ngFor="let choice of classificationChoices"
-                                (click)="changeLineCategory($event, choice, line, lineIndex)"
-                                class="classification-option">
-                                {{ choice }}
-                            </li>
-                            <li (click)="changeLineCategory($event, 'hidden', line, lineIndex)"
-                                class="classification-option">delete
-                            </li>
-                        </ul>
-                    </div>
                 </ng-container>
             </ul>
             <li class="footer">made by Sides-Ways</li>
         </div>
+    </div>
+
+    <!-- Enhanced context menu with category presets -->
+    <div *ngIf="showContextMenu" class="context-menu" [style.left.px]="contextMenuPosition.x" [style.top.px]="contextMenuPosition.y">
+        <ul>
+            <li *ngFor="let choice of categoryPresets" 
+                (click)="changeLineCategory($event, choice.category, choice.xPos, selectedLine, selectedLineIndex)"
+                class="classification-option">
+                {{ choice.label }}
+            </li>
+            <li (click)="changeLineCategory($event, 'hidden', '', selectedLine, selectedLineIndex)" 
+                class="classification-option text-red-500">
+                Delete
+            </li>
+        </ul>
+    </div>
+
+    <!-- Add a click handler to the page container to clear selection when clicking outside -->
+    <div class="page-background" (click)="clearSelection()">
+        <!-- Your existing page content -->
     </div>
 </main>

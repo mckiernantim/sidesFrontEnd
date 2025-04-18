@@ -40,5 +40,7 @@ export interface Line {
   calculatedEnd?: string | number
   hidden?:"hidden" | null;
   
-  
+  // Add these properties for multiple selection
+  multipleSelected?: boolean;
+  selectedCount?: number;
 }

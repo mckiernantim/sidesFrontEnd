@@ -2,6 +2,7 @@ import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 
 import { DashboardComponent } from '../../components/dashboard/dashboard.component';
 import { DashboardRightComponent } from '../../components/dashboard/dashboard-right/dashboard-right.component';
@@ -33,7 +34,8 @@ import { CheckoutModalComponent } from '../../components/dashboard/checkout-moda
     FormsModule,
     ReactiveFormsModule,
     RouterModule,
-    SharedModule
+    SharedModule,
+    DragDropModule
   ],
   exports: [
     DashboardComponent,

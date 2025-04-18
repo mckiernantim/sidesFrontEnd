@@ -162,7 +162,11 @@ export class DragDropService {
   onDrop(event: any, line: Line, page: number, isBarDrag: string | null = null): void {
     const nativeEvent = event.event as MouseEvent | TouchEvent;
     let clientY: number = this.getEventClientY(nativeEvent);
-    this.undo.push({ pageIndex: page, line: line });
+    this.undo.push({ 
+      type: 'position',
+      pageIndex: page, 
+      line: line 
+    });
     this.getDeltaForYpos(line, clientY);
     let deltaY = this.initialLineY - this.currentYPosDiff + 'px';
     if (isBarDrag) {

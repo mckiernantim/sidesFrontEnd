@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, isDevMode } from '@angular/core';
+import { Component, OnInit, OnDestroy, isDevMode, ViewChild, ElementRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, Subscription, EMPTY } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -11,7 +11,7 @@ import { AuthService } from '../../../services/auth/auth.service';
 import { take } from 'rxjs/operators';
 import { TailwindDialogService } from '../../../services/tailwind-dialog/tailwind-dialog.service';
 import { TailwindDialogComponent } from '../../../components/shared/tailwind-dialog/tailwind-dialog.component';
-
+import { CarouselComponent } from '../../../components/carousel/carousel.component';
 @Component({
     selector: 'app-upload',
     templateUrl: './upload.component.html',
@@ -20,6 +20,7 @@ import { TailwindDialogComponent } from '../../../components/shared/tailwind-dia
     standalone: false,
 })
 export class UploadComponent implements OnInit, OnDestroy {
+  @ViewChild('fileInput') fileInput: ElementRef<HTMLInputElement>;
   isButtonDisabled: boolean = true;
   logo: string = '../../assets/icons/logoFlat.png';
   fileToUpload: File;
@@ -39,6 +40,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   $script_data: Observable<any>;
   user$: Observable<User | null>;
   selectedFiles: File[] = [];
+  private currentUploadSubscription: Subscription = null;
 
   constructor(
     public upload: UploadService,
@@ -61,15 +63,23 @@ export class UploadComponent implements OnInit, OnDestroy {
     if (this.dataSubscription) {
       this.dataSubscription.unsubscribe();
     }
-    // Unsubscribe from other subscriptions if they exist
+    if (this.currentUploadSubscription) {
+      this.currentUploadSubscription.unsubscribe();
+    }
     if (this.totalTickets) this.totalTickets.unsubscribe();
     if (this.totalLines) this.totalLines.unsubscribe();
     if (this.totalScenes) this.totalScenes.unsubscribe();
     if (this.totalCharacters) this.totalCharacters.unsubscribe();
   }
 
-  signIn(): void {
-    this.authService.signInWithGoogle();
+  signIn() {
+    this.authService.signInWithGoogle()
+      .then(() => {
+        console.log('Successfully signed in');
+      })
+      .catch(error => {
+        console.error('Error signing in:', error);
+      });
   }
 
   signOut() {
@@ -77,9 +87,8 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   handleFileInput(files: FileList) {
-    // Add authentication check
     this.authService.user$.pipe(
-      take(1)  // Take only the current value
+      take(1)
     ).subscribe(user => {
       if (!user) {
         this.openDialog('Please sign in to upload files', 'error');
@@ -90,7 +99,6 @@ export class UploadComponent implements OnInit, OnDestroy {
       this.fileToUpload = files.item(0);
       this.openDialog(this.fileToUpload.name, "scan");
     
-      // Upload our script
       this.$script_data = this.upload.postFile(this.fileToUpload);
       this.dataSubscription = this.$script_data
         .pipe(
@@ -145,7 +153,6 @@ export class UploadComponent implements OnInit, OnDestroy {
     return missingTwo;
   }
 
-  // Add method to handle test upload with auth check
   skipUploadForTest() {
     this.authService.user$.pipe(
       take(1)
@@ -164,10 +171,14 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   onFileSelected(event: any): void {
+    if (this.currentUploadSubscription) {
+      this.currentUploadSubscription.unsubscribe();
+      this.currentUploadSubscription = null;
+    }
+    
     const file = event.target.files[0];
     if (file) {
       try {
-        // Open loading modal with spinner
         const dialogRef = this.dialogService.open(TailwindDialogComponent, {
           data: {
             title: 'Uploading File',
@@ -180,22 +191,25 @@ export class UploadComponent implements OnInit, OnDestroy {
           }
         });
         
-        // Process the file upload
-        this.upload.postFile(file).subscribe({
+        this.currentUploadSubscription = this.upload.postFile(file).subscribe({
           next: (response) => {
-            // Close the dialog
             dialogRef.close();
             
-            // Initialize PDF data
             this.pdf.initializeData();
             
-            // Navigate to dashboard
+            this.resetFileInput();
+            
+            this.currentUploadSubscription = null;
+            
             this.router.navigate(['/dashboard']);
           },
           error: (error) => {
-            // Close the dialog
             dialogRef.close();
-            // Show enhanced error dialog with details
+            
+            this.resetFileInput();
+            
+            this.currentUploadSubscription = null;
+            
             this.dialogService.openErrorWithDetails(
               error,
               'Upload Failed',
@@ -204,8 +218,8 @@ export class UploadComponent implements OnInit, OnDestroy {
               }
             ).afterClosed().subscribe(result => {
               if (result === 'retry') {
-                // Handle retry logic
-                this.onFileSelected(event);
+                const newEvent = { target: { files: [file] } };
+                this.onFileSelected(newEvent);
               }
             });
           }
@@ -213,6 +227,10 @@ export class UploadComponent implements OnInit, OnDestroy {
       } catch (e) {
         console.error('Error in file upload process', e);
         this.dialogService.openErrorWithDetails(e, 'Upload Error');
+        
+        this.resetFileInput();
+        
+        this.currentUploadSubscription = null;
       }
     }
   }
@@ -222,17 +240,30 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   uploadFiles(): void {
-    // If there are selected files, upload the first one
     if (this.selectedFiles.length > 0) {
       this.onFileSelected({ target: { files: [this.selectedFiles[0]] } });
     }
   }
 
-  // Scroll to upload section
   scrollToUpload(): void {
     const uploadElement = document.querySelector('.upload-component');
     if (uploadElement) {
       uploadElement.scrollIntoView({ behavior: 'smooth' });
     }
+  }
+
+  resetFileInput(): void {
+    if (this.fileInput && this.fileInput.nativeElement) {
+      this.fileInput.nativeElement.value = '';
+    } else {
+      const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+    }
+    
+    this.selectedFiles = [];
+    this.fileToUpload = null;
+    this.working = false;
   }
 }

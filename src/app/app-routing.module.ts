@@ -10,8 +10,7 @@ import { UploadComponent } from './components/landing-page/upload/upload.compone
 import { TokenGuard } from './guards/token/token.guard';
 import { PaymentSuccessComponent } from './components/payment-success/payment-success.component';
 import { ProfileComponent } from './components/profile/profile.component';
-import { UserGuard } from './guards/user/user.guard';
-import { SubscriptionComponent } from './components/subscription/subscription.component';
+
 import { ProfileLoaderComponent } from './components/profile/profile-loader.component';
 import { AuthGuard } from './guards/auth.guard'
 import { TestComponent } from './components/test/test.component';

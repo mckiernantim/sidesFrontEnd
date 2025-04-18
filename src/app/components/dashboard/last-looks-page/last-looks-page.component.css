@@ -265,10 +265,10 @@ li.page-number {
 
 }
 .selected {
-    border:2px solid black;
-    background-color:yellow;
-    transform: scale(1.1);
-    z-index: 10000000;
+    border: 2px solid black;
+    background-color: rgba(255, 255, 0, 0.3);
+    transform: scale(1.05);
+    z-index: 1000;
 }
 
 .isRevision {
@@ -342,3 +342,162 @@ li.page-number {
     max-width: 100%;
     height: auto;
   }
+
+/* Add these styles for better drag feedback */
+.cdk-drag-preview {
+  opacity: 0.9 !important;
+  background-color: white !important;
+  border: 2px solid #3b82f6 !important;
+  border-radius: 3px !important;
+  box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4) !important;
+  z-index: 1001 !important;
+  transform: scale(1.05) !important;
+  transition: transform 0.1s ease-in-out !important;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.4 !important;
+  background-color: rgba(59, 130, 246, 0.2) !important;
+  border: 2px dashed #3b82f6 !important;
+  border-radius: 3px !important;
+}
+
+.cdk-drop-list-dragging .cdk-drag {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1) !important;
+}
+
+.cdk-drag-animating {
+  transition: transform 300ms cubic-bezier(0, 0, 0.2, 1) !important;
+}
+
+/* Context menu styling */
+.context-menu {
+  position: fixed;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  z-index: 1000;
+  min-width: 150px;
+}
+
+.context-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.classification-option {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.classification-option:hover {
+  background-color: #f5f5f5;
+}
+
+/* Add a subtle indicator for draggable items */
+.edit-mode li {
+  cursor: move;
+  display: block !important;
+}
+
+.edit-mode li:hover::before {
+  content: "⋮";
+  position: absolute;
+  left: -15px;
+  color: #888;
+}
+
+/* Add this to your component's CSS */
+.selected-line, li.selected-line {
+  outline: 2px solid #3b82f6 !important; /* Blue outline */
+  background-color: rgba(59, 130, 246, 0.2) !important; /* Light blue background */
+  border-radius: 4px !important;
+  position: absolute !important; /* Keep the absolute positioning */
+  z-index: 100 !important; /* Higher z-index to ensure visibility */
+  display: block !important; /* Ensure it's visible */
+  opacity: 1 !important; /* Full opacity */
+  transform: scale(1.05) !important; /* Slightly larger */
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.5) !important; /* Subtle glow */
+}
+
+/* Add a subtle hover effect for lines in edit mode */
+.line-container:hover {
+  cursor: pointer;
+}
+
+.edit-mode .line-container:hover:not(.selected-line) {
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+/* Add styles for multiple selection */
+.multi-selected {
+  outline: 2px dashed #3b82f6 !important;
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Add styles for drag selection */
+.edit-mode {
+  user-select: none; /* Prevent text selection during drag */
+}
+
+/* Style for the drag selection indicator */
+.drag-selecting {
+  background-color: rgba(59, 130, 246, 0.1);
+  position: absolute;
+  border: 1px dashed #3b82f6;
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* Update multi-selected style */
+.multi-selected {
+  outline: 2px dashed #3b82f6 !important;
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Add cursor styles */
+.edit-mode li {
+  cursor: default;
+}
+
+.edit-mode li.edit-li:hover {
+  cursor: text;
+}
+
+.edit-mode li.edit-li[cdkDragDisabled="false"]:hover {
+  cursor: move;
+}
+
+/* Simplify the editing style - just background and border */
+li.editing {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid #3b82f6 !important;
+  border-radius: 3px !important;
+}
+
+/* Remove the blinking cursor and other complex styling */
+li.editing::after {
+  content: none;
+}
+
+/* Make the edit input more visible but keep it simple */
+.edit-line-input {
+  background-color: white !important;
+  border: 1px solid #3b82f6 !important;
+  border-radius: 3px !important;
+  padding: 4px 8px !important;
+  font-family: 'Courier Prime', monospace !important;
+  font-size: 12pt !important;
+  color: #000 !important;
+  min-width: 200px !important;
+  box-shadow: 0 0 5px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Add this CSS to show crossed-out lines */
+li[crossedout="true"], 
+li.crossed-out {
+  text-decoration: line-through;
+  color: #ff0000; /* Red color for visibility */
+}

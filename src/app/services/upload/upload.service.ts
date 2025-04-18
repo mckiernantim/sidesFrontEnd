@@ -8,6 +8,7 @@ import {
   from,
   switchMap,
   timeout,
+  finalize,
 } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
@@ -345,7 +346,13 @@ export class UploadService {
                 timestamp: new Date().toISOString(),
                 error: error,
               });
+              // Reset service state on error
+              this.resetServiceState();
               return throwError(() => error);
+            }),
+            // Reset service state after successful completion
+            finalize(() => {
+              this.resetServiceState();
             })
           );
       })
@@ -501,5 +508,17 @@ export class UploadService {
         return throwError(() => new Error('Failed to delete document: ' + (error.message || 'Unknown error')));
       })
     );
+  }
+
+  // Add this method to reset service state after upload
+  resetServiceState(): void {
+    // Reset any state that might prevent subsequent uploads
+    this.resetHttpOptions();
+    // Clear any other state that might be causing issues
+    this.script = null;
+    this.allLines = null;
+    this.individualPages = null;
+    this.allChars = null;
+    this.title = null;
   }
 }

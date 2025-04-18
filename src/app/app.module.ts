@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { NgModule, APP_INITIALIZER } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -22,6 +22,19 @@ import { ProfileComponent } from './components/profile/profile.component';
 import { TestComponent } from './components/test/test.component';
 import { HttpLogInterceptor } from './services/http-interceptor.service';
 import { HowItWorksComponent } from './components/how-it-works/how-it-works.component';
+import { AuthService } from './services/auth/auth.service';
+
+// Factory function to ensure Firebase is initialized before the app starts
+export function initializeFirebase(authService: AuthService) {
+  return () => new Promise<void>(resolve => {
+    // This will trigger the auth state listener in the service
+    authService.handleRedirectResult().then(() => {
+      console.log('Firebase initialized and redirect handled');
+      resolve();
+    });
+  });
+}
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -53,7 +66,13 @@ import { HowItWorksComponent } from './components/how-it-works/how-it-works.comp
   ],
   providers: [
     DatePipe,
-    { provide: HTTP_INTERCEPTORS, useClass: HttpLogInterceptor, multi: true }
+    { provide: HTTP_INTERCEPTORS, useClass: HttpLogInterceptor, multi: true },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeFirebase,
+      deps: [AuthService],
+      multi: true
+    }
   ],
   bootstrap: [AppComponent]
 })

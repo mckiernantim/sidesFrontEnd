@@ -898,7 +898,7 @@ export class PdfService {
 
   getLastPage = (scene) => {
     
-    return this.allLines[scene.lastLine].page || null;
+    return this.allLines[scene.lastLine]?.page || null;
   };
 
   getPreview(ind) {

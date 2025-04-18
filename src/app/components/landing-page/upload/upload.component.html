@@ -74,7 +74,7 @@
                       <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
                       <p class="text-xs text-gray-500">PDF, Word, or text formats</p>
                     </div>
-                    <input id="file-upload" type="file" class="hidden" (change)="onFileSelected($event)" />
+                    <input id="file-upload" type="file" class="hidden" (change)="onFileSelected($event)" #fileInput />
                   </label>
                 </div>
               </div>
@@ -82,10 +82,8 @@
           </ng-container>
           
           <ng-template #signIn>
-            <button 
-              (click)="this.signIn()"
-              class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-colors">
-              Sign In to Continue
+            <button (click)="this.signIn()" class="btn btn-primary">
+              Sign in with Google
             </button>
           </ng-template>
         </div>

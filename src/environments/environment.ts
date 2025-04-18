@@ -41,7 +41,7 @@ export const environmentProd = {
     storageBucket: "scriptthing-dev.firebasestorage.app",
     messagingSenderId: "401150394674",
     appId: "1:401150394674:web:760ffe3a546b2d01a8d72b",
-    measurementId: "G-1JF7DG5L5H"
+    measurementId: "G-1JF7DG5L5H",
   },
   url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
   password:"NOTEWORTHY"
