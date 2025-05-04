@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  stripe:"pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ",
+  stripe: 'YOUR_NEW_PUBLISHABLE_KEY_HERE',
   // firebaseConfig:{
   //   apiKey: "AIzaSyBXD5kQfAS4lrmSJxYAuEUq8sxvXgWmCio",
   //   authDomain: "scriptthing.firebaseapp.com",

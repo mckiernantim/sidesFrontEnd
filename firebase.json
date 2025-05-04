@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist/sideWays/browser",
+    "public": "dist/sideWays",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -31,6 +31,10 @@
           {
             "key": "Cross-Origin-Opener-Policy",
             "value": "unsafe-none"
+          },
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; img-src 'self' data: https://*.googleapis.com https://*.gstatic.com https://storage.googleapis.com https://*.googleusercontent.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.googleapis.com"
           }
         ]
       },

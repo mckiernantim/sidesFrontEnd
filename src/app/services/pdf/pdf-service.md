@@ -131,6 +131,29 @@ watermarkPages(watermark: string, doc: Document) {
 }
 ```
 
+### 4. Custom Bar Text and Positioning
+```typescript
+// The service now supports custom text and positioning for bar elements:
+// - START bars (scene start indicators)
+// - END bars (scene end indicators)
+// - CONTINUE bars (page continuation indicators)
+// - CONTINUE-TOP bars (page continuation indicators at top of page)
+
+// Custom text properties:
+line.customStartText      // Custom text for START bar
+line.customEndText        // Custom text for END bar
+line.customContinueText   // Custom text for CONTINUE bar
+line.customContinueTopText // Custom text for CONTINUE-TOP bar
+
+// Position offset properties:
+line.startTextOffset      // Horizontal offset for START text
+line.endTextOffset        // Horizontal offset for END text
+line.continueTextOffset   // Horizontal offset for CONTINUE text
+line.continueTopTextOffset // Horizontal offset for CONTINUE-TOP text
+```
+
+These properties allow for customization of the text content and horizontal positioning of bar elements, providing greater flexibility in document layout and annotation.
+
 ## Usage Example
 
 ```typescript

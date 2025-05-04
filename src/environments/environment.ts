@@ -33,7 +33,7 @@ export const environment = {
 // For production - this will be used if environment.prod.ts isn't properly loaded
 export const environmentProd = {
   production: true,
-  stripe: "pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ",
+  stripe: "pk_test_51RJhtgPfZjNtFCgVntmnKxLEbkXUeVlZr5wglNgYmrrXrBM3TUwNDFuTyJhTJAKkO6SJ5Q8eCLTJzCHvI4cfLBqp00Ljc1AZxm",
   firebaseConfig: {
     apiKey: "AIzaSyCr0Gemya880xoOnAYWtTcZWssg5Uc2HY0",
     authDomain: "scriptthing-dev.firebaseapp.com",

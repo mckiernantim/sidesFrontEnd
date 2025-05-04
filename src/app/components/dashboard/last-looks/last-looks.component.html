@@ -1,105 +1,51 @@
-<main [@fadeInOut] class="last-looks-container shadow-lg my-8 bg-white rounded-lg overflow-hidden">
-  <!-- Top Navigation Bar with Search -->
-  <div class="bg-gray-100 p-4 border-b border-gray-200 flex items-center">
-    <!-- Left side: Page navigation -->
-    <div class="flex items-center space-x-4">
-      <button 
-        class="p-2 rounded-full hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        (click)="previousPage()" 
-        [disabled]="currentPageIndex === 0">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-        </svg>
-      </button>
-      
-      <span class="text-sm">Page {{ currentPageIndex + 1 }} of {{ pages.length }}</span>
-      
-      <button 
-        class="p-2 rounded-full hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        (click)="nextPage()" 
-        [disabled]="currentPageIndex === pages.length - 1">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-        </svg>
-      </button>
-    </div>
-    
-    <!-- Center: Search bar -->
-    <div class="flex-1 mx-4">
-      <div class="relative">
-        <input 
-          type="text" 
-          placeholder="Search in document..." 
-          class="w-full py-2 px-4 pr-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-          [(ngModel)]="searchQuery"
-          (input)="onSearch()">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute right-3 top-3 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-        </svg>
+<main [@fadeInOut] class="last-looks-container h-screen">
+  <div class="flex h-full">
+    <!-- Document Viewer (Main Content) -->
+    <div class="w-full flex flex-col overflow-hidden min-w-0 h-full">
+      <!-- Pagination Controls - Moved here -->
+      <div class="bg-white p-4 border-b border-gray-200">
+        <div class="flex justify-between space-x-2">
+          <button 
+            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            (click)="previousPage()" 
+            [disabled]="currentPageIndex === 0">
+            Previous
+          </button>
+          <div class="flex items-center justify-center px-4 text-gray-700 font-medium">
+            Page {{currentPageIndex + 1}} of {{pages?.length || 0}}
+          </div>
+          <button 
+            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            (click)="nextPage()" 
+            [disabled]="currentPageIndex === (pages?.length - 1)">
+            Next
+          </button>
+        </div>
+      </div>
+      <div class="page-container h-full">
+        <app-last-looks-page 
+          [page]="currentPage"
+          [canEditDocument]="canEditDocument"
+          [selectedLine]="selectedLine"
+          [currentPageIndex]="currentPageIndex"
+          [totalPages]="pages.length"
+          [editMode]="editState"
+          (lineChanged)="handleLineChange($event)"
+          (lineSelected)="handleLineSelected($event)"
+          (categoryChanged)="handleCategoryChange($event)"
+          (positionChanged)="handlePositionChange($event)"
+          (pageUpdate)="handlePageUpdate($event)"
+          (proceedToCheckout)="handleProceedToCheckout()"
+          (toggleVisibilityRequest)="handleToggleVisibilityRequest()"
+          (pageChange)="handlePageChange($event)">
+        </app-last-looks-page>
       </div>
     </div>
-    
-    <!-- Right: Edit controls -->
-    <div class="flex items-center space-x-2">
-      <button 
-        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-        (click)="toggleEditMode()"
-        [class.bg-green-600]="editState"
-        [class.hover:bg-green-700]="editState">
-        {{ editState ? 'Save Changes' : 'Edit PDF' }}
-      </button>
-    </div>
   </div>
 
-  <!-- Editing Toolbar (only visible in edit mode) -->
-  <div *ngIf="editState" class="bg-gray-50 p-3 border-b border-gray-200 flex items-center space-x-4">
-    <button 
-      class="px-3 py-1.5 rounded border border-gray-300 hover:bg-gray-100 transition-colors flex items-center"
-      (click)="undoLastChange()"
-      [disabled]="!undoService.canUndo">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-      </svg>
-      Undo
-    </button>
-    
-    <div class="border-r border-gray-300 h-6"></div>
-    
-    <button 
-      class="px-3 py-1.5 rounded border border-gray-300 hover:bg-gray-100 transition-colors flex items-center text-red-600"
-      (click)="resetDocumentToInitialState()"
-      title="Reset document to original state">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
-      </svg>
-      Reset
-    </button>
-  </div>
-
-  <!-- Update the user instructions -->
-  <div *ngIf="editState" class="text-xs text-gray-500 ml-2">
-    <span>Tip: Hold Shift to select a range of lines, or Ctrl/Cmd to select individual lines. Double-click to edit text.</span>
-  </div>
-
-  <!-- Add a selection count indicator -->
-  <div *ngIf="isMultipleSelection" class="text-sm text-blue-600 font-medium ml-2">
-    {{ selectedLines.length }} lines selected
-  </div>
-
-  <!-- Document Viewer -->
-  <div class="page-container bg-gray-100 p-6">
-    <app-last-looks-page 
-      [page]="currentPage"
-      [canEditDocument]="editState"
-      [selectedLine]="selectedLine"
-      [currentPageIndex]="currentPageIndex"
-      (lineChanged)="handleLineChange($event)"
-      (lineSelected)="onLineSelected($event)"
-      (categoryChanged)="handleCategoryChange($event)"
-      (positionChanged)="handlePositionChange($event)"
-      (pageUpdate)="handlePageUpdate($event)"
-      (toggleVisibilityRequest)="toggleVisibility()">
-    </app-last-looks-page>
-  </div>
+  <!-- Help Button -->
+  <button class="help-button" (click)="toggleInstructions()">
+    <i class="fas fa-question"></i>
+  </button>
 </main>
   

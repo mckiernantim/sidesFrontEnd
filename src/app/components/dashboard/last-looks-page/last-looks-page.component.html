@@ -1,3 +1,5 @@
+
+<!-- The rest of your existing page content -->
 <main class="last-looks-container">
     <div class="page shadow-lg border" (click)="showContextMenu && closeContextMenu()">
         <div class="break">
@@ -12,15 +14,20 @@
                     <span class="draft-color-text true">
                         {{ line.draftColorText }}
                     </span>
-                    <span class="page-number-text {{ line.hidden }}"
-                        (blur)="onLineChange(line, lineIndex, $event.target.textContent, 'pageNumberText')">
-                        {{ line.pageNumberText }} {{ line.hidden }}
-                    </span>
+                    <li *ngIf="line.category === 'page-number'" 
+                        class="page-number-text {{line.visible}}"
+                        [style.bottom]="line.calculatedYpos"
+                        [style.right]="line.calculatedXpos">
+                        {{line.text}}
+                    </li>
 
                     <!-- scene number span -->
                     <span *ngIf="line.category === 'scene-header'"
                         [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible"
-                        (blur)="onLineChange(line, lineIndex, $event.target.textContent, 'sceneNumberText')"
+                        [attr.contenteditable]="editingSceneNumber === line.sceneNumberText ? 'true' : 'false'"
+                        (dblclick)="canEditDocument && startEditingSceneNumber(line)"
+                        (blur)="saveSceneNumberEdit(line)"
+                        (keydown)="handleSceneNumberKeyDown($event)"
                         [style.bottom]="line.calculatedYpos" [style.left]="line.calculatedXpos">
                         {{ line.sceneNumberText }}
                     </span>
@@ -28,9 +35,31 @@
                     <!-- Always rendered span with text and style -->
                     <span *ngIf="line.category !== 'page-number' && line.category !== 'page-number-hidden' && line.category !== 'injected-break'"
                         [attr.data-line-id]="line.id" [class]="(line.bar ? line.bar : 'hideBar')"
-                        [style.bottom]="line.calculatedYpos">
-                        <!-- Removed cdkDrag functionality -->
-                        <span class="start-span">START {{ line.sceneNumberText }}</span>
+                        [style.bottom]="line.calculatedYpos"
+                        cdkDrag
+                        [cdkDragDisabled]="!canEditDocument"
+                        (cdkDragStarted)="onStartSpanDragStarted($event, line)"
+                        (cdkDragMoved)="onStartSpanDragMoved($event, line)"
+                        (cdkDragEnded)="onStartSpanDragEnded($event, line, lineIndex)">
+                        <span class="bar-text" 
+                            [style.left.px]="line.startTextOffset || 10"
+                            [style.transform]="'translateX(' + (line.startTextOffset || 0) + 'px)'"
+                            (mousedown)="canEditDocument && startBarTextDrag($event, line, 'start')"
+                            (dblclick)="canEditDocument && onBarTextDoubleClick($event, line, 'start')">
+                            <ng-container *ngIf="barTextEditingId !== line.index || barTextEditingType !== 'start'; else editStartText">
+                                {{ line.customStartText || ('START ' + line.sceneNumberText) }}
+                            </ng-container>
+                            <ng-template #editStartText>
+                                <span 
+                                    id="bar-text-edit-{{line.index}}-start"
+                                    contenteditable="true"
+                                    (input)="onBarTextChange($event, line)"
+                                    (keydown)="handleBarTextKeyDown($event)"
+                                    (blur)="saveBarTextEdit()">
+                                    {{ barTextEditingContent }}
+                                </span>
+                            </ng-template>
+                        </span>
                     </span>
 
                     <!-- Conditionally render li element with drag functionality -->
@@ -43,13 +72,13 @@
                             (cdkDragEnded)="onDragEnded($event, line, lineIndex)"
                             [value]="line.sceneNumber"
                             [class]="line.category + ' ' + line.visible + ' ' + line.hidden"
-                            [class.selected-line]="isLineSelected(line)"
-                            [class.multi-selected]="selectedLineIds.length > 1 && isLineSelected(line)"
+                            [class.selected-line]="canEditDocument && isLineSelected(line)"
+                            [class.multi-selected]="canEditDocument && selectedLineIds.length > 1 && isLineSelected(line)"
                             [class.editing]="editingLine === lineIndex"
                             [class.crossed-out]="line.crossedOut"
                             [ngClass]="{ 'edit-li': canEditDocument }"
-                            (click)="selectLine(line, $event)"
-                            (dblclick)="onDoubleClick(lineIndex, line.text)"
+                            (click)="canEditDocument && selectLine(line, $event)"
+                            (dblclick)="canEditDocument && onDoubleClick(lineIndex, line.text)"
                             [style.bottom]="line.calculatedYpos" 
                             [style.left]="line.calculatedXpos"
                             [attr.contenteditable]="editingLine === lineIndex ? 'true' : 'false'"
@@ -77,28 +106,116 @@
                         *
                     </span>
 
-                    <!-- continue spans -->
-                    <span class="bar-span continue-span" [attr.data-line-id]="line.id"
-                        [class]="(line.cont ? line.cont : 'hideCont') + ' ' + line.hidden"
-                        [style.bottom]="line.calculatedBarY">
-                        ↓↓↓ {{ line.sceneNumberText }} CONTINUED ↓↓↓
+                    <!-- continue-top span (at the top of the page) -->
+                    <span *ngIf="line.cont === 'CONTINUE-TOP'" 
+                        class="bar-span continue-top-span CONTINUE-TOP {{line.hidden}}"
+                        [style.bottom]="line.calculatedBarY"
+                        [attr.data-line-id]="line.id"
+                        cdkDrag
+                        cdkDragBoundary=".page"
+                        [cdkDragDisabled]="!canEditDocument"
+                        (cdkDragStarted)="onContinueTopSpanDragStarted($event, line)"
+                        (cdkDragMoved)="onContinueTopSpanDragMoved($event, line)"
+                        (cdkDragEnded)="onContinueTopSpanDragEnded($event, line, lineIndex)">
+                        <span class="bar-text" 
+                            [style.left.px]="line.continueTopTextOffset || 10"
+                            [style.transform]="'translateX(' + (line.continueTopTextOffset || 0) + 'px)'"
+                            (mousedown)="canEditDocument && startBarTextDrag($event, line, 'continue-top')"
+                            (dblclick)="canEditDocument && onBarTextDoubleClick($event, line, 'continue-top')">
+                            <ng-container *ngIf="barTextEditingId !== line.index || barTextEditingType !== 'continue-top'; else editContinueTopText">
+                                {{ line.customContinueTopText || ('↓↓↓ ' + line.sceneNumberText + ' CONTINUED ↓↓↓') }}
+                            </ng-container>
+                            <ng-template #editContinueTopText>
+                                <span 
+                                    id="bar-text-edit-{{line.index}}-continue-top"
+                                    contenteditable="true"
+                                    (input)="onBarTextChange($event, line)"
+                                    (keydown)="handleBarTextKeyDown($event)"
+                                    (blur)="saveBarTextEdit()">
+                                    {{ barTextEditingContent }}
+                                </span>
+                            </ng-template>
+                        </span>
+                    </span>
+
+                    <!-- continue spans (at the bottom of the page) -->
+                    <span *ngIf="line.cont === 'CONTINUE'"
+                        class="bar-span continue-span CONTINUE {{line.hidden}}"
+                        [style.bottom]="line.calculatedBarY"
+                        [attr.data-line-id]="line.id"
+                        cdkDrag
+                        [cdkDragDisabled]="!canEditDocument"
+                        (cdkDragStarted)="onContinueSpanDragStarted($event, line)"
+                        (cdkDragMoved)="onContinueSpanDragMoved($event, line)"
+                        (cdkDragEnded)="onContinueSpanDragEnded($event, line, lineIndex)">
+                        <span class="bar-text" 
+                            [style.right.px]="line.continueTextOffset || 10"
+                            [style.transform]="'translateX(' + (line.continueTextOffset || 0) + 'px)'"
+                            (mousedown)="canEditDocument && startBarTextDrag($event, line, 'continue')"
+                            (dblclick)="canEditDocument && onBarTextDoubleClick($event, line, 'continue')">
+                            <ng-container *ngIf="barTextEditingId !== line.index || barTextEditingType !== 'continue'; else editContinueText">
+                                {{ line.customContinueText || ('↓↓↓ ' + line.sceneNumberText + ' CONTINUED ↓↓↓') }}
+                            </ng-container>
+                            <ng-template #editContinueText>
+                                <span 
+                                    id="bar-text-edit-{{line.index}}-continue"
+                                    contenteditable="true"
+                                    (input)="onBarTextChange($event, line)"
+                                    (keydown)="handleBarTextKeyDown($event)"
+                                    (blur)="saveBarTextEdit()">
+                                    {{ barTextEditingContent }}
+                                </span>
+                            </ng-template>
+                        </span>
                     </span>
 
                     <!-- end span -->
-                    <span class="bar-span end-span" [attr.data-line-id]="line.id"
+                    <span class="bar-span" [attr.data-line-id]="line.id"
                         [class]="(line.end === 'END' ? 'END' : 'hideEnd') + ' ' + line.hidden"
-                        [style.bottom]="line.calculatedEnd">
-                        <span class="end-span" [class.draggable-end]="canEditDocument"> 
-                            END {{ line.sceneNumberText }} 
+                        [style.bottom]="line.calculatedEnd"
+                        cdkDrag
+                        [cdkDragDisabled]="!canEditDocument"
+                        (cdkDragStarted)="onEndSpanDragStarted($event, line)"
+                        (cdkDragMoved)="onEndSpanDragMoved($event, line)"
+                        (cdkDragEnded)="onEndSpanDragEnded($event, line, lineIndex)">
+                        <span class="bar-text" 
+                            [style.left.px]="line.endTextOffset || 10"
+                            [style.transform]="'translateX(' + (line.endTextOffset || 0) + 'px)'"
+                            (mousedown)="canEditDocument && startBarTextDrag($event, line, 'end')"
+                            (dblclick)="canEditDocument && onBarTextDoubleClick($event, line, 'end')">
+                            <ng-container *ngIf="barTextEditingId !== line.index || barTextEditingType !== 'end'; else editEndText">
+                                {{ line.customEndText || ('END ' + line.sceneNumberText) }} 
+                            </ng-container>
+                            <ng-template #editEndText>
+                                <span 
+                                    id="bar-text-edit-{{line.index}}-end"
+                                    contenteditable="true"
+                                    (input)="onBarTextChange($event, line)"
+                                    (keydown)="handleBarTextKeyDown($event)"
+                                    (blur)="saveBarTextEdit()">
+                                    {{ barTextEditingContent }}
+                                </span>
+                            </ng-template>
                         </span>
                     </span>
 
                     <!-- right scene number span -->
                     <span *ngIf="line.category === 'scene-header'"
                         class="scene-number-right {{ line.trueScene }} {{ line.visible }}"
+                        [attr.contenteditable]="editingSceneNumber === line.sceneNumberText ? 'true' : 'false'"
+                        (dblclick)="canEditDocument && startEditingSceneNumber(line)"
+                        (blur)="saveSceneNumberEdit(line)"
+                        (keydown)="handleSceneNumberKeyDown($event)"
                         [style.bottom]="line.calculatedYpos" [style.right]="line.calculatedXPos">
                         {{ line.sceneNumberText }}
                     </span>
+
+                    <!-- Hide any duplicate page numbers -->
+                    <li *ngIf="line.category === 'page-number-hidden'" 
+                        class="page-number-hidden"
+                        style="display: none !important;">
+                        {{line.text}}
+                    </li>
                 </ng-container>
             </ul>
             <li class="footer">made by Sides-Ways</li>

@@ -2,18 +2,125 @@
 
 
 .page-container {
-    font-family: 'Courier Prime', monospace;
-    display: grid;
-    grid-template-columns: 816px 200px; /* Adjust pixel values as needed */
-    width: 816px; /* Set the total width as per your requirement */
-    height:1056px;
-    margin: 0 auto;
-
-    grid-column: 2; /* Place page container in the second column */
+    flex: 1;
+    overflow: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+    background-color: white;
 }
 
 .pagination-controls {
-  
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-top: 1rem;
+}
+
+.pagination-button {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 6px 12px;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:hover {
+    background-color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.page-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    color: #1f2937;
+    white-space: nowrap;
+}
+
+.editing-instructions {
+    background-color: white;
+    border-left: 4px solid #ef4444;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.editing-instructions h3 {
+    color: #ef4444;
+    margin-top: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.editing-instructions ul {
+    margin: 0.5rem 0 0;
+    padding-left: 1.25rem;
+}
+
+.editing-instructions li {
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: #4b5563;
+}
+
+.editing-instructions kbd {
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 3px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    color: #1f2937;
+    display: inline-block;
+    font-size: 12px;
+    line-height: 1;
+    padding: 2px 5px;
+    margin: 0 2px;
+}
+
+.help-button {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background-color: #ef4444;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 50;
 }
 
 .edit-controls-container {
@@ -24,6 +131,575 @@
 }
 
 .selected {
-    border:2px solid black;
-    background-color: rgb(248, 248, 56);
+    background-color: rgba(248, 248, 56, 0.3);
+    border: 2px solid rgba(0, 0, 0, 0.2);
 }
+
+/* Bar controls styling */
+.bar-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: white;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.bar-controls h4 {
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.bar-controls button {
+  flex: 1;
+  min-width: fit-content;
+  white-space: nowrap;
+}
+
+.bar-controls button:hover {
+  background-color: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.bar-controls button.active {
+  background-color: #dbeafe;
+  border-color: #60a5fa;
+  color: #1e40af;
+}
+
+.bar-controls button svg {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+}
+
+.scene-list-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    overflow-y: auto;
+    height: 100%;
+}
+
+.controls-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+}
+
+.scene-item {
+    padding: 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+}
+
+.scene-item:hover {
+    background-color: #f3f4f6;
+}
+
+.scene-item.selected {
+    background-color: #e5e7eb;
+}
+
+.scene-number {
+  min-width: 3rem;
+  padding: 0.25rem 0.5rem;
+  background-color: #f3f4f6;
+  border-radius: 0.25rem;
+  text-align: center;
+}
+
+.scene-description {
+  min-width: 200px;
+  padding: 0.25rem 0.5rem;
+}
+
+[contenteditable]:focus {
+  outline: 2px solid #60a5fa;
+  border-radius: 0.25rem;
+  padding: 0.25rem;
+  background-color: white;
+}
+
+.scene-details {
+  border-left: 2px solid #e5e7eb;
+}
+
+/* Update the main container layout */
+.last-looks-container {
+    display: flex;
+    height: auto;
+    overflow: hidden;
+    background-color: #f8f9fa;
+    z-index: 5;
+}
+
+/* Scene List Sidebar */
+.scene-list-sidebar {
+  width: 100%;
+  max-width: 300px;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-right: 1px solid #e9ecef;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1023px) {
+  .scene-list-sidebar {
+    max-width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e9ecef;
+    height: auto;
+    max-height: 200px;
+  }
+}
+
+/* Main Content */
+.main-content {
+  width: 70%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  border-right: 1px solid #e9ecef;
+}
+
+/* Add styles for the document viewer */
+app-last-looks-page {
+  display: block;
+  height: auto;
+  overflow-y: auto;
+}
+
+/* Ensure the page content fills the available space */
+.page {
+  min-height: 100%;
+  background: white;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Update screenbox container */
+.screenbox {
+  position: relative;
+  min-height: 100%;
+  width: 100%;
+  padding: 1rem;
+}
+
+/* Bar span base styles */
+.bar-span {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background-color: black;
+  font-size: 14.5px;
+  z-index: 5;
+}
+
+/* Bar text styles */
+.bar-text {
+  position: absolute;
+  font-family: 'Courier Prime', monospace;
+  font-size: 14.5px;
+  line-height: 14.5px;
+  background-color: white;
+  padding: 0 5px;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  left: auto !important;
+  text-align: inherit !important;
+}
+
+.END {
+  display: block;
+  background-color: black;
+}
+
+.hideEnd {
+  display: none;
+}
+
+/* Continue bar styles */
+.continue-span {
+  left: 0;
+  width: 100%;
+}
+
+.CONTINUE, .CONTINUE-TOP {
+  display: block;
+  background-color: black;
+}
+
+.hideCont {
+  display: none;
+}
+
+/* Start bar styles */
+.bar {
+  display: block;
+  background-color: black;
+}
+
+.hideBar {
+  display: none;
+}
+
+/* Update media queries to maintain page dimensions and scrolling */
+@media (max-width: 1200px) {
+    .last-looks-container {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        min-height: calc(100vh - 64px);
+    }
+
+    .main-content-area {
+        order: 1;
+        margin-bottom: 2rem;
+    }
+
+    .right-side-content {
+        order: 2;
+        width: 100%;
+        max-width: none;
+    }
+
+    .scene-list-container {
+        max-height: 300px;
+        width: 100%;
+    }
+
+    .page-container {
+        padding: 1rem;
+        min-width: calc(816px + 2rem);
+    }
+
+    .controls-container {
+        width: 100%;
+    }
+}
+
+/* Small screens */
+@media (max-width: 900px) {
+    .last-looks-container {
+        padding: 0.5rem;
+    }
+
+    .controls-container {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .scene-list-container {
+        max-height: 200px;
+    }
+
+    .page-container {
+        padding: 0.5rem;
+        min-width: calc(816px + 1rem);
+    }
+}
+
+.page-scroll-container {
+    width: 100%;
+    overflow-x: auto;
+    display: flex;
+    justify-content: center;
+    padding: 0 2rem;
+}
+
+.right-side-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 300px;
+    max-width: 400px;
+}
+
+/* Style updates for scene list items */
+.scene-item {
+    padding: 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+}
+
+.scene-item:hover {
+    background-color: #f3f4f6;
+}
+
+.scene-item.selected {
+    background-color: #e5e7eb;
+}
+
+/* Ensure proper button layout */
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    margin: 1rem 0;
+}
+
+.action-button {
+    min-width: 200px;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Scene List Items */
+.scene-item {
+  margin-bottom: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.scene-item:hover {
+  transform: translateX(4px);
+}
+
+.scene-item.active {
+  background-color: #e2e8f0;
+  border-left: 4px solid #ef4444;
+}
+
+/* Scene Description Truncation */
+.scene-description {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Ensure content doesn't overflow on small screens */
+@media (max-width: 640px) {
+  .scene-description {
+    max-width: 150px;
+  }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1023px) {
+  .last-looks-container {
+    flex-direction: column;
+  }
+
+  .main-content,
+  .controls-sidebar {
+    width: 100%;
+    height: 50vh;
+  }
+
+  .main-content {
+    border-right: none;
+    border-bottom: 1px solid #e9ecef;
+  }
+}
+
+/* Toolbar Responsiveness */
+@media (max-width: 768px) {
+  .flex-wrap {
+    gap: 0.5rem;
+  }
+  
+  button {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+  }
+}
+
+/* Controls Sidebar */
+.controls-sidebar {
+  width: 30%;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Control Panels */
+.control-panel {
+  width: 100%;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.control-panel:last-child {
+  border-bottom: none;
+}
+
+.panel-header {
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  color: #374151;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.panel-content {
+  padding: 1rem;
+}
+
+/* Scene List Panel */
+.control-panel.flex-grow {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.control-panel.flex-grow .panel-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.scene-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.page-container {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: white;
+  height: auto;
+}
+
+/* Scene Items */
+.scene-item {
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  margin-bottom: 0.5rem;
+  background-color: #f8f9fa;
+  transition: all 0.2s ease;
+}
+
+.scene-item:hover {
+  transform: translateX(4px);
+  background-color: #f3f4f6;
+}
+
+.scene-item.active {
+  background-color: #e2e8f0;
+  border-left: 4px solid #ef4444;
+}
+
+.scene-description {
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Bar Controls Section */
+.bar-controls-section {
+  background-color: #f8f9fa;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+/* Document Viewer */
+app-last-looks-page {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  background: white;
+}
+
+/* Responsive Layouts */
+@media (max-width: 1023px) {
+  .last-looks-container {
+    flex-direction: column;
+  }
+
+  .controls-sidebar {
+    width: 100%;
+    height: auto;
+    border-left: none;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .control-panel.flex-grow {
+    max-height: 200px;
+  }
+
+  .scene-list {
+    max-height: none;
+  }
+}
+
+/* Bar Styles */
+.bar-span {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background-color: black;
+  z-index: 5;
+}
+
+.bar-text {
+  position: absolute;
+  font-family: 'Courier Prime', monospace;
+  font-size: 14.5px;
+  line-height: 1;
+  background-color: white;
+  padding: 0 5px;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.END, .CONTINUE, .CONTINUE-TOP, .bar {
+  display: block;
+  background-color: black;
+}
+
+.hideEnd, .hideCont, .hideBar {
+  display: none;
+  z-index: 5;
+}
+
+/* Selection Styles */
+.selected {
+  background-color: rgba(248, 248, 56, 0.3);
+  border: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+/* Update responsive layouts */
+@media (max-width: 1500px) {
+  .main-content {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .controls-sidebar {
+    width: 100%;
+  }
+}
+

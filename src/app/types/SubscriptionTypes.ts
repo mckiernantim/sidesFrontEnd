@@ -15,14 +15,39 @@ export interface FirestoreSubscription {
 }
 
 export interface SubscriptionDetails {
-  status: string | null;
-  originalStartDate: string | null;
+  id: string;
+  status: 'active' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'past_due' | 'trialing' | 'unpaid' | 'pending' | null;
+  created: string | null;
   currentPeriodEnd: string | null;
+  currentPeriodStart: string | null;
+  cancelAtPeriodEnd: boolean;
   willAutoRenew: boolean;
+  originalStartDate: string | null;
+  plan: {
+    amount: number;
+    interval: string;
+    nickname?: string;
+  } | null;
 }
 
 export interface SubscriptionUsage {
   pdfsGenerated: number;
+  lastPdfGeneration?: Timestamp;
+  pdfUsageLimit?: number;
+  subscriptionStatus?: 'active' | 'inactive' | 'trial';
+  subscriptionFeatures?: {
+    pdfGeneration: boolean;
+    unlimitedPdfs: boolean;
+    pdfLimit?: number;
+  };
+}
+
+export interface PdfUsage {
+  pdfsGenerated: number;
+  lastGeneration: Timestamp;
+  currentPeriodStart: Timestamp;
+  currentPeriodEnd: Timestamp;
+  usageLimit?: number;
 }
 
 export interface StripeSubscriptionPlan {
@@ -51,8 +76,24 @@ export interface StripeSubscriptionPlan {
 export interface SubscriptionStatus {
   active: boolean;
   subscription: SubscriptionDetails | null;
-  usage: SubscriptionUsage;
-  plan?: StripeSubscriptionPlan | null;
+  usage: {
+    pdfsGenerated: number;
+    lastPdfGeneration: string | null;
+    pdfUsageLimit: number | null;
+    subscriptionStatus: 'active' | 'inactive' | 'trial';
+    subscriptionFeatures: {
+      pdfGeneration: boolean;
+      unlimitedPdfs: boolean;
+      pdfLimit?: number | null;
+    };
+  };
+  plan?: string;
+  price?: number;
+  interval?: string;
+  currentPeriodStart?: string;
+  currentPeriodEnd?: string;
+  cancelAt?: string;
+  status?: 'active' | 'pending' | 'canceled' | 'past_due';
 }
 
 export interface SubscriptionResponse {

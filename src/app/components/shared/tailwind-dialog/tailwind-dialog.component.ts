@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
@@ -8,7 +8,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   standalone: false
 })
 export class TailwindDialogComponent implements OnChanges {
-  @Input() isOpen: boolean = false;
+  @Input() isOpen: boolean = true;
   @Input() title: string = '';
   @Input() content: string = '';
   @Input() showCloseButton: boolean = true;
@@ -16,7 +16,7 @@ export class TailwindDialogComponent implements OnChanges {
   @Input() actions: {label: string, value: any, style: 'primary' | 'secondary' | 'danger'}[] = [];
   @Input() showSpinner: boolean = false;
   @Input() spinnerImage: string = 'assets/icons/logoBot.png';
-  @Input() data: any; // Allow passing any data
+  @Input() data: any;
   
   safeContent: SafeHtml;
   
@@ -26,12 +26,10 @@ export class TailwindDialogComponent implements OnChanges {
   
   constructor(private sanitizer: DomSanitizer) {}
   
-  ngOnChanges() {
-    // Handle content from either direct input or data object
+  ngOnChanges(changes?: SimpleChanges) {
     const contentToSanitize = this.content || (this.data && this.data.content) || '';
     this.safeContent = this.sanitizer.bypassSecurityTrustHtml(contentToSanitize);
     
-    // Apply data properties if provided
     if (this.data) {
       this.title = this.data.title || this.title;
       this.showCloseButton = this.data.showCloseButton !== undefined ? this.data.showCloseButton : this.showCloseButton;
@@ -50,6 +48,7 @@ export class TailwindDialogComponent implements OnChanges {
 
   onConfirm(): void {
     this.confirmed.emit();
+    this.close.emit();
   }
 
   onAction(value: any): void {

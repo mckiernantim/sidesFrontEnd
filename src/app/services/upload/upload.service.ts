@@ -9,6 +9,7 @@ import {
   switchMap,
   timeout,
   finalize,
+  BehaviorSubject,
 } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
@@ -31,12 +32,17 @@ import {
   PdfGenerationResponse,
   DeleteResponse,
 } from 'src/app/types/user';
+import { PdfUsage } from 'src/app/types/PdfUsageTypes';
+import { StripeService } from '../stripe/stripe.service';
+import { Timestamp } from '@angular/fire/firestore';
 
 @Injectable({
   providedIn: 'root',
 })
 export class UploadService {
-  private readonly tokenKey = '';
+  private readonly tokenKey = 'pdfBackupToken';
+  private pdfUsageSubject = new BehaviorSubject<PdfUsage | null>(null);
+  public pdfUsage$ = this.pdfUsageSubject.asObservable();
   _devPdfPath: string = 'MARSHMALLOW_PINK';
   // values from script
   script: string;
@@ -62,7 +68,8 @@ export class UploadService {
     // private firestore: Firestore,
     public httpClient: HttpClient,
     public token: TokenService,
-    public auth: AuthService
+    public auth: AuthService,
+    private stripe: StripeService
   ) {
     // Get config based on production mode
     const config = getConfig(!isDevMode());
@@ -143,7 +150,6 @@ export class UploadService {
   generatePdf(finalDocument: any): Observable<PdfGenerationResponse> {
     console.log('Generating PDF with document:', finalDocument);
     
-    // Get the current user's token
     return from(getAuth().currentUser?.getIdToken() || Promise.reject('No user')).pipe(
       switchMap((token) => {
         console.log('Got auth token, sending request to server');
@@ -155,29 +161,39 @@ export class UploadService {
             name: finalDocument.name,
             email: finalDocument.email,
             callSheet: finalDocument.callSheet,
-            pdfToken: finalDocument.pdfToken,
             userId: finalDocument.userId
           }, 
           {
             headers: {
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json'
-            },
-            withCredentials: true // Important: This ensures cookies are set
+            }
           }
         );
       }),
       tap((response) => {
         console.log('Response received from server:', response);
         
-        // Store the token from the response for backup
-        if (response && response.jwtToken) {
-          localStorage.setItem('pdfBackupToken', response.jwtToken);
+        // Store the token from the response body
+        if (response && response.token) {
+          localStorage.setItem(this.tokenKey, response.token);
           
           // Also store the expiration time
           if (response.expirationTime) {
             localStorage.setItem('pdfTokenExpires', response.expirationTime.toString());
           }
+        }
+
+        // Update PDF usage if available
+        if (response && response.usage) {
+          const pdfUsage: PdfUsage = {
+            pdfsGenerated: response.usage.pdfsGenerated,
+            lastGeneration: Timestamp.fromMillis(response.usage.lastGeneration),
+            currentPeriodStart: Timestamp.fromMillis(response.usage.currentPeriodStart),
+            currentPeriodEnd: Timestamp.fromMillis(response.usage.currentPeriodEnd),
+            usageLimit: response.usage.usageLimit
+          };
+          this.pdfUsageSubject.next(pdfUsage);
         }
       }),
       catchError((error) => {
@@ -202,32 +218,54 @@ export class UploadService {
     pdfToken: string,
     userId?: string
   ): Observable<Blob> {
-    // Create request body with all parameters
-    const requestBody: any = {
-      pdfToken,
-      name,
-      callsheet: callsheet || '',
-    };
-
-    // Only add userId if it exists
-    if (userId) {
-      requestBody.userId = userId;
+    // Get the token from localStorage
+    debugger;
+    const token = localStorage.getItem('pdfBackupToken');
+    if (!token) {
+      return throwError(() => new Error('PDF token not found'));
     }
+
+    // Create request body with name and token
+    const requestBody = {
+      name,
+      pdfToken: token,
+      // Only include userId if it exists
+      ...(userId ? { userId } : {})
+    };
 
     // Log the request for debugging
     console.log('Download PDF request:', {
       endpoint: `${this.url}/complete`,
-      requestBody: { ...requestBody, pdfToken: '***redacted***' }, // Don't log the actual token
+      requestBody,
+      hasToken: !!token
     });
 
     return this.httpClient
       .post(`${this.url}/complete`, requestBody, {
         responseType: 'blob',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       })
       .pipe(
         tap(() => console.log('Download PDF response received')),
         catchError((error) => {
           console.error('Download PDF error:', error);
+          // Handle specific error cases
+          if (error.status === 403) {
+            if (error.error?.error === 'User not found') {
+              // If user not found is the only error, we can still proceed
+              return this.httpClient.post(`${this.url}/complete`, {
+                name,
+                pdfToken: token
+              }, {
+                responseType: 'blob',
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              });
+            }
+          }
           return throwError(() => error);
         })
       );
@@ -327,6 +365,7 @@ export class UploadService {
                 title,
                 firstAndLastLinesOfScenes,
               } = res;
+              
               this.allLines = allLines;
               this.firstAndLastLinesOfScenes = firstAndLastLinesOfScenes;
               this.individualPages = individualPages;

@@ -18,11 +18,17 @@ export interface ApiResponse {
 export interface PdfResponse {
    success: boolean;
    status: string;
-   bigs: string;
-   smalls: string;
-   filenameHash: string;
-   jwtToken: string;
-   expirationTime: number;
+   token?: string;
+   expirationTime?: number;
+   needsSubscription?: boolean;
+   checkoutUrl?: string;
+   usage?: {
+     pdfsGenerated: number;
+     lastGeneration: number;
+     currentPeriodStart: number;
+     currentPeriodEnd: number;
+     usageLimit?: number;
+   };
 }
 
 export interface PdfGenerationResponse {

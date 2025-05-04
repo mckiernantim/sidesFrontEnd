@@ -43,4 +43,23 @@ export interface Line {
   // Add these properties for multiple selection
   multipleSelected?: boolean;
   selectedCount?: number;
+
+  // Add these properties for drag operations
+  _originalPosition?: {
+    x: string;
+    y: string;
+  };
+  _originalText?: string;
+
+  // Add these properties for bar text customization
+  customStartText?: string;
+  customEndText?: string;
+  customContinueText?: string;
+  customContinueTopText?: string;
+  
+  // Add these properties for bar text positioning
+  startTextOffset?: number;
+  endTextOffset?: number;
+  continueTextOffset?: number;
+  continueTopTextOffset?: number;
 }

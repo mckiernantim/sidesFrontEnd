@@ -33,9 +33,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
   ];
   
   // Router subscription
+  
   private routerSubscription: Subscription | null = null;
   private authSubscription: Subscription | null = null;
-  
   constructor(
     private auth: AuthService,
     private stripe: StripeService,
@@ -120,15 +120,21 @@ export class ProfileComponent implements OnInit, OnDestroy {
   
   // Check if subscription is active
   isSubscriptionActive(): boolean {
-    // Consider a subscription active if:
-    // 1. Its status is 'active', OR
-    // 2. It has a future end date (even if it's been canceled)
-    if (this.subscription?.subscription?.status === 'active') {
+    if (!this.subscription) return false;
+    
+    // Check if subscription is active based on status
+    const status = this.subscription.subscription?.status;
+    if (status === 'active' || status === 'trialing' || status === 'pending') {
       return true;
     }
     
-    // Check if the subscription has a future end date
-    if (this.subscription?.subscription?.currentPeriodEnd) {
+    // Check if subscription is past due but still in grace period
+    if (status === 'past_due') {
+      return true;
+    }
+    
+    // Check if subscription is canceled but still in paid period
+    if (status === 'canceled' && this.subscription.subscription?.currentPeriodEnd) {
       const endDate = new Date(this.subscription.subscription.currentPeriodEnd);
       const now = new Date();
       return endDate > now;
@@ -144,25 +150,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
   
   // Check if subscription is active but will be canceled
   isSubscriptionCanceling(): boolean {
-    // It's canceling if:
-    // 1. It's active but won't auto-renew, OR
-    // 2. It has a future end date but status is not 'active'
-    if (this.subscription?.subscription?.status === 'active' && 
-        !this.subscription?.subscription?.willAutoRenew) {
-      return true;
-    }
-    
-    if (this.subscription?.subscription?.currentPeriodEnd) {
-      const endDate = new Date(this.subscription.subscription.currentPeriodEnd);
-      const now = new Date();
-      return endDate > now && this.subscription.subscription.status !== 'active';
-    }
-    
-    return false;
+    return this.subscription?.subscription?.cancelAtPeriodEnd === true;
   }
   
   // Handle new subscription
   handleNewSubscription(): void {
+    debugger
     if (!this.user || !this.user.email) {
       this.error = 'You must be logged in to subscribe';
       return;
@@ -171,24 +164,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
     console.log('Creating new subscription for user:', this.user.uid);
     this.isLoading = true;
     
-    this.stripe.createSubscription(this.user.uid, this.user.email).subscribe({
+    this.stripe.createPortalSession(this.user.uid, this.user.email).subscribe({
       next: (result) => {
-        console.log('Subscription creation result:', result);
+        console.log('Portal session result:', result);
         this.isLoading = false;
         
-        if (result.success && (result.url || result.checkoutUrl)) {
-          // Set return URL to profile page
-          const returnUrl = `${window.location.origin}/profile`;
-          const redirectUrl = result.url || result.checkoutUrl || '';
-          
-          // Add return URL as query parameter if not already present
-          const urlWithReturn = redirectUrl.includes('return_url=') 
-            ? redirectUrl 
-            : `${redirectUrl}${redirectUrl.includes('?') ? '&' : '?'}return_url=${encodeURIComponent(returnUrl)}`;
-          
-          window.location.href = urlWithReturn;
-        } else {
-          this.error = 'Failed to create subscription';
+        if (!result.success) {
+          this.error = result.error || 'Failed to create subscription';
         }
       },
       error: (error) => {
@@ -201,6 +183,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   
   // Manage existing subscription
   manageSubscription(): void {
+    debugger
     if (!this.user || !this.user.email) {
       this.error = 'You must be logged in to manage your subscription';
       return;
@@ -209,18 +192,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
     console.log('Opening portal for user:', this.user.uid);
     this.isLoading = true;
     
-    // Set return URL to profile page
-    const returnUrl = `${window.location.origin}/profile`;
-    
-    this.stripe.createPortalSession(this.user.uid, this.user.email, returnUrl).subscribe({
+    this.stripe.createPortalSession(this.user.uid, this.user.email).subscribe({
       next: (result) => {
-        console.log('Portal creation result:', result);
+        console.log('Portal session result:', result);
         this.isLoading = false;
         
         if (result.success && result.url) {
           window.location.href = result.url;
         } else {
-          this.error = 'Failed to open subscription management';
+          this.error = result.error || 'Failed to open subscription management';
         }
       },
       error: (error) => {
@@ -253,29 +233,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Refresh subscription status
-  refreshSubscriptionStatus(): void {
-    if (!this.user) {
-      return;
-    }
-    
-    console.log('Forcing refresh of subscription status');
-    this.isLoading = true;
-    
-    this.stripe.forceRefreshSubscription(this.user.uid).subscribe({
-      next: (subscription) => {
-        console.log('Forced refresh result:', subscription);
-        this.subscription = subscription;
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error forcing refresh', error);
-        this.error = 'Failed to refresh subscription status';
-        this.isLoading = false;
-      }
-    });
-  }
-
   // Format currency
   formatCurrency(amount: number | undefined): string {
     if (amount === undefined) return '$0.00';
@@ -286,5 +243,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
       style: 'currency',
       currency: 'USD'
     }).format(dollars);
+  }
+
+  refreshSubscriptionStatus(): void {
+    if (this.user) {
+      this.loadSubscriptionData();
+    }
   }
 }

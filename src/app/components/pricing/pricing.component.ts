@@ -54,7 +54,7 @@ export class PricingComponent implements OnInit {
       return;
     }
 
-    this.stripeService.createSubscription(user.uid, user.email).subscribe({
+    this.stripeService.createPortalSession(user.uid, user.email).subscribe({
       next: (response) => {
         if (response.success && response.url) {
           window.location.href = response.url;

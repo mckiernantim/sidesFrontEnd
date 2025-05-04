@@ -3,12 +3,21 @@ import { UploadService } from '../upload/upload.service';
 import { skip } from 'rxjs/operators';
 import { LINE_TYPES} from '../../types/LineTypes'
 import * as scriptData from '../../testingData/pdfServiceData/mockScriptData.json';
+import { Observable, Subject, BehaviorSubject } from 'rxjs';
 
 /*  
   THIS SHOULD BE ITS OWN 4 OR 5 SERVICES ALL IMPORTED INTO THE PARENT SERVICE OF PDF 
   PERHAPPS LINE-SERVICE, SCENE-SERVICE, DOCUMENT-SERVICE ETC  
 */
 import { Line } from 'src/app/types/Line';
+
+// Add this interface at the top of the file, after the imports
+interface SceneBreak {
+  first: number;
+  last: number;
+  scene: string;
+  firstPage: number;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -55,6 +64,7 @@ export class PdfService {
     this.initializeData();
   }
   initializeData() {
+    
     if (this.upload.allLines) {
       this.allLines = this.upload.allLines;
       this.firstAndLastLinesOfScene = this.upload.firstAndLastLinesOfScenes
@@ -94,6 +104,7 @@ export class PdfService {
         let sceneRefInTable = this.scenes[i];
         let sceneInActualScript = this.allLines[sceneRefInTable.index];
         // give scenes extra data for later
+        debugger
         this.setLastLines(i);
 
         this.processSceneHeader(sceneRefInTable, sceneInActualScript);
@@ -259,12 +270,13 @@ export class PdfService {
   
   
 
-  processLines(merged, breaks) {
+  processLines(merged: Line[], breaks: SceneBreak[]) {
     // start with a zeroed index for the currentSceneBreak
     let currentBreakIndex = 0;
     // get the first scene break - where the scene ends
-    // this data arrives from the server
     let currentSceneBreak = breaks[currentBreakIndex];
+    
+    // Process each line
     for (let index = 0; index < merged.length; index++) {
       const line = merged[index];
       if (this.isLineInCurrentBreak(line, currentSceneBreak)) {
@@ -280,6 +292,29 @@ export class PdfService {
         if (!currentSceneBreak) {
           break; // Exit the loop when there are no more scene breaks
         }
+      }
+    }
+
+    // When processing lines, preserve custom bar text and position properties
+    for (let i = 0; i < merged.length; i++) {
+      const line = merged[i];
+      const processedLine = merged[i];
+      
+      // Preserve text offset positions (using left/right instead of padding)
+      if (line.startTextOffset !== undefined) {
+        processedLine.startTextOffset = line.startTextOffset;
+      }
+      
+      if (line.endTextOffset !== undefined) {
+        processedLine.endTextOffset = line.endTextOffset;
+      }
+      
+      if (line.continueTextOffset !== undefined) {
+        processedLine.continueTextOffset = line.continueTextOffset;
+      }
+      
+      if (line.continueTopTextOffset !== undefined) {
+        processedLine.continueTopTextOffset = line.continueTopTextOffset;
       }
     }
 
@@ -436,54 +471,120 @@ export class PdfService {
     return pages;
   }
   processPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
-    
+    console.log('Processing PDF with scenes:', sceneArr);
     this.initializePdfDocument(name, numPages, callSheetPath);
    
+    // Collect all pages needed for the scenes
     let pages = this.collectPageNumbers(sceneArr);
+    console.log('Collected pages:', pages);
 
-    let sceneBreaks = this.recordSceneBreaks(sceneArr,numPages);
+    // Record scene breaks maintaining the provided order
+    let sceneBreaks = this.recordSceneBreaks(sceneArr, numPages);
+    console.log('Recorded scene breaks:', sceneBreaks);
 
+    // Store the original scene order for later use
+    const originalSceneOrder = sceneArr.map(scene => ({
+      sceneNumberText: scene.sceneNumberText,
+      firstLine: scene.firstLine,
+      lastLine: scene.lastLine,
+      page: scene.page,
+      lastPage: scene.lastPage
+    }));
+    console.log('Original scene order:', originalSceneOrder);
+
+    // Construct full pages with all necessary content
     let fullPages = this.constructFullPages(pages);
+    console.log('Constructed full pages:', fullPages.length);
 
+    // Process lines maintaining the scene order
     let processedLines = this.setLinesInSceneToVisible(fullPages, sceneBreaks);
+    console.log('Processed lines:', processedLines.length);
 
+    // Build final pages maintaining order
     let linesAsPages: any[] = this.buildFinalPages(processedLines);
-
+    console.log('Built final pages:', linesAsPages.length);
+    
     this.assignContinueMarkers(linesAsPages);
 
     let sanitizedPages = this.hideExtraPageNumberText(linesAsPages);
-
     sanitizedPages = this.hideExtraDraftVersionText(sanitizedPages);
 
     this.addSceneNumberText(sanitizedPages);
 
-    this.finalDocument.data = sanitizedPages;
+    // Reorder the final pages based on the original scene order
+    const reorderedPages = this.reorderPagesBySceneOrder(sanitizedPages, originalSceneOrder);
+    console.log('Reordered pages:', reorderedPages.length);
+
+    // Store the final document with the maintained order
+    this.finalDocument.data = reorderedPages;
+    this._finalDocumentData$.next(reorderedPages);
+
+    this.updatePageNumberVisibility();
 
     this.finalDocReady = true;
-  
-    return true
+    return true;
+  }
+
+  private reorderPagesBySceneOrder(pages: any[], originalSceneOrder: any[]): any[] {
+    // Create a map of scene numbers to their pages
+    const scenePageMap = new Map<string, any[]>();
+    
+    // Group pages by scene
+    pages.forEach(page => {
+      page.forEach(line => {
+        if (line.category === 'scene-header' && line.visible === 'true') {
+          const sceneNumber = line.sceneNumberText;
+          if (!scenePageMap.has(sceneNumber)) {
+            scenePageMap.set(sceneNumber, []);
+          }
+          scenePageMap.get(sceneNumber).push(page);
+        }
+      });
+    });
+
+    // Reorder pages based on original scene order
+    const reorderedPages: any[] = [];
+    originalSceneOrder.forEach(scene => {
+      const scenePages = scenePageMap.get(scene.sceneNumberText);
+      if (scenePages) {
+        // Add each page for this scene, ensuring no duplicates
+        scenePages.forEach(page => {
+          if (!reorderedPages.includes(page)) {
+            reorderedPages.push(page);
+          }
+        });
+      }
+    });
+
+    // Add any remaining pages that weren't part of scenes
+    pages.forEach(page => {
+      if (!reorderedPages.includes(page)) {
+        reorderedPages.push(page);
+      }
+    });
+
+    return reorderedPages;
   }
 
   collectPageNumbers(sceneArr) {
-    let pages = [];
+    let pages = new Set<number>();
     sceneArr.forEach((scene) => {
+      // Get all pages between first and last page of the scene
       for (let i = scene.page; i <= scene.lastPage; i++) {
-        if (!pages.includes(i)) {
-          pages.push(i);
-        }
+        pages.add(i);
       }
     });
-    return pages;
+    return Array.from(pages).sort((a, b) => a - b);
   }
 
   recordSceneBreaks = (sceneArr, numPages) => {    
     const acceptableTypes = ["dialog", "description", "shot", "short-dialog", "first-description", "parenthetical"];
     let flattenedLines = numPages.flat();
 
+    // Process scenes in the order they are provided
     let scenesWithAdjustedEnds = sceneArr.map(scene => {
-
         let lastLineIndex = scene.lastLine || sceneArr.length;
-        while (lastLineIndex > scene.firstLine && !acceptableTypes.includes(flattenedLines[lastLineIndex].category)) {
+        while (lastLineIndex > scene.firstLine && !acceptableTypes.includes(flattenedLines[lastLineIndex]?.category)) {
             lastLineIndex--;
         }
 
@@ -492,15 +593,18 @@ export class PdfService {
             last: lastLineIndex,
             scene: scene.sceneNumberText,
             firstPage: scene.page,
+            lastPage: scene.lastPage
         };
     });
 
+    console.log('Processed scene breaks:', scenesWithAdjustedEnds);
     return scenesWithAdjustedEnds;
-}
+  }
 
   constructFullPages(pages) {
     return pages.map((page) => {
       let doc = this.allLines.filter((scene) => scene.page === page);
+      // Add a scene break line
       doc.push({
         page: page,
         bar: 'noBar',
@@ -514,8 +618,8 @@ export class PdfService {
     });
   }
 
-  buildFinalPages(processedLines) {
-    let finalPages = {};
+  buildFinalPages(processedLines: Line[]) {
+    let finalPages: { [key: string]: Line[] } = {};
     processedLines.forEach((line) => {
       // Initialize an array for each page number
       if (!finalPages[line.page]) {
@@ -525,8 +629,53 @@ export class PdfService {
       finalPages[line.page].push(line);
     });
 
-    // Convert the object into an array of pages
-    return Object.values(finalPages);
+    // Convert the object into an array of pages with proper typing
+    let finalPagesArray: Line[][] = Object.values(finalPages);
+
+    // When building pages, ensure bar positions are preserved
+    for (const page of finalPagesArray) {
+      for (const line of page) {
+        // Preserve bar positions from edited document
+        if (line.cont === 'CONTINUE' || line.cont === 'CONTINUE-TOP') {
+          // Ensure the calculatedBarY position is preserved
+          if (!line.calculatedBarY && line.barY) {
+            line.calculatedBarY = typeof line.barY === 'number' 
+              ? line.barY + 'px' 
+              : line.barY;
+          }
+        }
+        
+        if (line.end === 'END') {
+          // Ensure the calculatedEnd position is preserved
+          if (!line.calculatedEnd && line.endY) {
+            line.calculatedEnd = typeof line.endY === 'number' 
+              ? line.endY + 'px' 
+              : line.endY;
+          }
+        }
+      }
+    }
+
+    // Ensure only one page number per page
+    for (const pageKey in finalPages) {
+      const page = finalPages[pageKey];
+      let foundPageNumber = false;
+      
+      for (let i = 0; i < page.length; i++) {
+        const line = page[i];
+        
+        if (line.category === 'page-number') {
+          if (foundPageNumber) {
+            // This is a duplicate page number, mark it as hidden
+            line.category = 'page-number-hidden';
+          } else {
+            foundPageNumber = true;
+          }
+        }
+      }
+    }
+
+    return finalPagesArray;
   }
   markEndLines(processedLines, breaks) {
     breaks.forEach((breakInfo) => {
@@ -561,64 +710,77 @@ export class PdfService {
 
     return processedLines;
   }
-  assignContinueMarkers(documentPages) {
-    let currentScene = null;
-    let foundContinue = false;
-
-    documentPages.forEach((currentPage, pageIndex) => {
-      let nextPage = documentPages[pageIndex + 1] || null;
-
-      currentPage.forEach((line, lineIndex) => {
-        // Set current scene if a scene header is encountered
-        if (line.category === 'scene-header' && line.visible === 'true') {
-          if (currentScene && currentScene !== line.scene) {
-            // New scene encountered, break the loop
-            return;
-          }
-          currentScene = line.scene;
+  /**
+   * Assigns continue markers to lines that continue across pages
+   * Only applies to specific line types (character, dialog, shot, action)
+   */
+  assignContinueMarkers(pages: any[]): void {
+    if (!pages || pages.length <= 1) return;
+    
+    // Define categories that can receive continuation markers
+    const continuableCategories = [
+      'character', 
+      'dialog', 
+      'shot', 
+      'action', 
+      'first-description', 
+      'description',
+      'scene-header'
+    ];
+    
+    // Process each page
+    for (let i = 1; i < pages.length; i++) { // Start from second page
+      const currentPage = pages[i];
+      const previousPage = pages[i-1];
+      
+      if (!Array.isArray(currentPage) || !Array.isArray(previousPage)) continue;
+      
+      // Find first visible continuable line on current page
+      let firstVisibleLine = null;
+      for (let j = 0; j < currentPage.length; j++) {
+        const line = currentPage[j];
+        if (line && 
+            line.visible === 'true' && 
+            line.category !== 'injected-break' &&
+            continuableCategories.includes(line.category)) {
+          firstVisibleLine = line;
+          break;
         }
-
-        // Check if the end of the current page is reached
-        if (lineIndex === currentPage.length - 1) {
-          // Iterate backwards to find 'CONTINUE'
-          for (
-            let i = currentPage.length - 1;
-            i >= Math.max(0, currentPage.length - 5);
-            i--
-          ) {
-            let lineToCheck = currentPage[i];
-            if (
-              this.conditions.includes(lineToCheck.category) &&
+      }
+      
+      // If first line isn't a scene header, it's a continuation
+      if (firstVisibleLine && firstVisibleLine.category !== 'scene-header') {
+        // Mark as continuation from previous page
+        firstVisibleLine.cont = 'CONTINUE-TOP';
+        
+        // Set position for continue-top bar
+        const topPosition = Math.max(0, Number(firstVisibleLine.yPos) - 20);
+        firstVisibleLine.barY = topPosition;
+        firstVisibleLine.calculatedBarY = topPosition * 1.3 + 'px';
+        
+        // Find last visible continuable line on previous page - simple backwards iteration
+        for (let j = previousPage.length - 1; j >= 0; j--) {
+          const line = previousPage[j];
+          if (line && 
+              line.visible === 'true' && 
+              line.category !== 'injected-break' &&
+              continuableCategories.includes(line.category)) {
+            // Mark this line as CONTINUE
+            line.cont = 'CONTINUE';
             
-              lineToCheck.visible === 'true' &&
-              !foundContinue
-              ) {
-              if(lineToCheck.finalLineOfScript || lineToCheck.end === "END") {
-                break
-              }
-                foundContinue = true;
-                lineToCheck.cont = 'CONTINUE';
-                break;
-              }
-            }
-            if (foundContinue && nextPage) {
-              for (let j = 0; j < Math.min(5, nextPage.length); j++) {
-                let nextLineToCheck = nextPage[j];
-                if (
-                  nextLineToCheck.scene === currentScene &&
-                  this.conditions.includes(nextLineToCheck.category) &&
-                  nextLineToCheck.category !== 'page-number' &&
-                  nextLineToCheck.visible === 'true'
-                ) {
-                  nextLineToCheck.cont = 'CONTINUE-TOP';
-                  break;
-                }
-              }
-            }
+            // Set a default position for the continue bar - 50px from the bottom
+            const bottomPosition = 50; // Fixed position from bottom
+            line.barY = bottomPosition;
+            line.calculatedBarY = bottomPosition * 1.3 + 'px';
+            
+            // We found our line, no need to continue
+            break;
           }
-        });
-      foundContinue = false;
-    });
+        }
+      }
+    }
+    
+    console.log('Continuation markers assigned');
   }
 
   findTrueSceneHeaderIndexes(pages) {
@@ -869,31 +1031,28 @@ export class PdfService {
   }
 
   setLastLines(i) {
-    let last;
     let currentScene = this.scenes[i];
-    let sceneInd;
     let next = this.scenes[i + 1];
-    if (next || i === this.scenes.length - 1) {
-      if (next) {
-        last = next.index;
-        sceneInd = currentScene.sceneIndex;
-        currentScene.index === 0
-          ? (currentScene.firstLine = 0)
-          : (currentScene.firstLine =
-              this.allLines[currentScene.index - 1].index);
-        currentScene.preview = this.getPreview(i);
-        currentScene.lastPage = this.getLastPage(currentScene);
-      } else {
-        // get first and last lines for last scenes
-        last =
-          this.allLines[this.allLines.length - 1].index ||
-          this.allLines.length - 1;
-        currentScene.firstLine = this.allLines[currentScene.index - 1].index;
-        currentScene.lastLine = last;
-        currentScene.lastPage = this.getLastPage(currentScene);
-        currentScene.preview = this.getPreview(i);
-      }
+    
+    // Set firstLine for all scenes
+    if (currentScene.index === 0) {
+      currentScene.firstLine = 0;
+    } else {
+      currentScene.firstLine = this.allLines[currentScene.index - 1]?.index || currentScene.index - 1;
     }
+    
+    // Set lastLine for all scenes
+    if (next) {
+      // For scenes with a next scene, lastLine is the line before the next scene
+      currentScene.lastLine = next.index - 1;
+    } else {
+      // For the last scene, lastLine is the last line of the script
+      currentScene.lastLine = this.allLines.length - 1;
+    }
+    
+    // Set preview and lastPage
+    currentScene.preview = this.getPreview(i);
+    currentScene.lastPage = this.getLastPage(currentScene);
   }
 
   getLastPage = (scene) => {
@@ -911,12 +1070,285 @@ export class PdfService {
   }
 
   private _selectedScenes: any[] = [];
+  private _sceneNumberUpdated$ = new Subject<{ scene: any, newSceneNumber: string }>();
 
   getSelectedScenes(): any[] {
-    return this._selectedScenes || [];
+    return this._selectedScenes;
   }
 
   setSelectedScenes(scenes: any[]): void {
-    this._selectedScenes = scenes;
+    console.log('Setting scenes in PDF service:', scenes);
+    this._selectedScenes = [...scenes];
+    
+    // If we already have a final document, update it with the new order
+    if (this.finalDocReady && this.finalDocument) {
+      console.log('Updating final document with new scene order');
+      this.processPdf(
+        this._selectedScenes,
+        this.finalDocument.name,
+        this.finalDocument.numPages,
+        this.finalDocument.callSheetPath
+      );
+    }
   }
+
+  // Add this function to check if a page has any visible content besides page numbers
+  private pageHasVisibleContent(page: any[]): boolean {
+    if (!page || page.length === 0) return false;
+    
+    // Check if there's at least one visible element that isn't a page number
+    return page.some(line => 
+      line.visible === 'true' && 
+      line.category !== 'page-number' && 
+      line.category !== 'injected-break'
+    );
+  }
+
+  // Add this to the processPdf function right before returning
+  updatePageNumberVisibility() {
+    if (!this.finalDocument || !this.finalDocument.data) return;
+    
+    const pages = this.finalDocument.data;
+    
+    // First, identify pages with no visible content
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+      const hasVisibleContent = this.pageHasVisibleContent(page);
+      
+      // Update page number visibility based on page content
+      for (const line of page) {
+        if (line.category === 'page-number') {
+          line.visible = hasVisibleContent ? 'true' : 'false';
+        }
+      }
+    }
+    
+    // Then filter out pages that only have page numbers or injected breaks visible
+    this.finalDocument.data = pages.filter(page => {
+      const visibleElements = page.filter(line => line.visible === 'true');
+      return visibleElements.some(line => 
+        line.category !== 'page-number' && 
+        line.category !== 'injected-break'
+      );
+    });
+  }
+
+  processDocument() {
+    // First update page number visibility
+    this.updatePageNumberVisibility();
+    
+    // Then filter out pages that only have page numbers visible
+    this.finalDocument = this.finalDocument.filter(page => this.pageHasVisibleContent(page));
+    
+    return this.finalDocument;
+  }
+
+  // Add a method to save the current document state with all customizations
+  saveDocumentState() {
+    // Create a deep copy of the current document state
+    const savedState = JSON.parse(JSON.stringify(this.finalDocument));
+    
+    // Process each page to ensure all custom properties are preserved
+    for (let pageIndex = 0; pageIndex < savedState.data.length; pageIndex++) {
+      const page = savedState.data[pageIndex];
+      
+      for (let lineIndex = 0; lineIndex < page.length; lineIndex++) {
+        const line = page[lineIndex];
+        
+        // Convert calculated positions back to raw values for storage
+        if (line.calculatedBarY) {
+          // Extract numeric value from pixel string (e.g., "100px" -> 100)
+          const barYValue = parseFloat(line.calculatedBarY);
+          if (!isNaN(barYValue)) {
+            line.barY = barYValue;
+          }
+        }
+        
+        if (line.calculatedEnd) {
+          const endYValue = parseFloat(line.calculatedEnd);
+          if (!isNaN(endYValue)) {
+            line.endY = endYValue;
+          }
+        }
+        
+        if (line.calculatedYpos) {
+          const yPosValue = parseFloat(line.calculatedYpos);
+          if (!isNaN(yPosValue)) {
+            line.yPos = yPosValue;
+          }
+        }
+        
+        // Preserve all custom text and offset properties
+        // These are already in the correct format for storage
+      }
+    }
+    
+    // Store the saved state
+    this.finalDocument = savedState;
+    
+    // Also update the initial state for undo functionality
+    this.initialFinalDocState = JSON.parse(JSON.stringify(savedState));
+    
+    return savedState;
+  }
+
+  // Update the loadDocument method to handle custom properties
+  loadDocument(document: any) {
+    this.finalDocument = document;
+    
+    // Process each page to ensure all custom properties are properly initialized
+    for (let pageIndex = 0; pageIndex < this.finalDocument.data.length; pageIndex++) {
+      const page = this.finalDocument.data[pageIndex];
+      
+      for (let lineIndex = 0; lineIndex < page.length; lineIndex++) {
+        const line = page[lineIndex];
+        
+        // Convert raw values to calculated positions for display
+        if (line.barY !== undefined && !line.calculatedBarY) {
+          line.calculatedBarY = typeof line.barY === 'number' 
+            ? line.barY + 'px' 
+            : line.barY;
+        }
+        
+        if (line.endY !== undefined && !line.calculatedEnd) {
+          line.calculatedEnd = typeof line.endY === 'number' 
+            ? line.endY + 'px' 
+            : line.endY;
+        }
+        
+        if (line.yPos !== undefined && !line.calculatedYpos) {
+          line.calculatedYpos = typeof line.yPos === 'number' 
+            ? line.yPos + 'px' 
+            : line.yPos;
+        }
+        
+        // Custom text and offset properties don't need conversion
+        // They're already in the correct format
+      }
+    }
+    
+    // Store initial state for undo functionality
+    this.initialFinalDocState = JSON.parse(JSON.stringify(this.finalDocument));
+    
+    return this.finalDocument;
+  }
+
+  updateSceneOrder(orderedScenes: any[]): void {
+    // Store the new order
+    this._selectedScenes = orderedScenes;
+    
+    // If we already have a final document, update it with the new order
+    if (this.finalDocReady && this.finalDocument) {
+      this.processPdf(
+        orderedScenes,
+        this.finalDocument.name,
+        this.finalDocument.numPages,
+        this.finalDocument.callSheetPath
+      );
+    }
+  }
+
+  // Add method to get the current document's token
+  getCurrentDocumentToken(): string | null {
+    return localStorage.getItem('pdfToken');
+  }
+
+  // Add method to set the document token
+  setDocumentToken(token: string, expirationTime: number): void {
+    localStorage.setItem('pdfToken', token);
+    localStorage.setItem('pdfTokenExpires', expirationTime.toString());
+  }
+
+  // Add method to check if token is valid
+  isTokenValid(): boolean {
+    const expirationTime = localStorage.getItem('pdfTokenExpires');
+    if (!expirationTime) return false;
+    
+    const currentTime = Date.now();
+    return currentTime < parseInt(expirationTime);
+  }
+
+  updateSceneNumber(scene: any, newSceneNumber: string): Observable<{ success: boolean }> {
+    return new Observable(observer => {
+      try {
+        // Update the scene number in the final document data
+        if (this.finalDocument && this.finalDocument.data) {
+          const updatedData = this.finalDocument.data.map(page => {
+            return page.map(line => {
+              if (line.index === scene.index) {
+                return { ...line, sceneNumberText: newSceneNumber };
+              }
+              return line;
+            });
+          });
+          
+          // Update the final document data
+          this.finalDocument.data = updatedData;
+          
+          // Emit the new state through the BehaviorSubject
+          this._finalDocumentData$.next(updatedData);
+          
+          // Process the PDF to ensure all changes are properly applied
+          this.processPdf(
+            this.getSelectedScenes(),
+            this.finalDocument.name,
+            this.finalDocument.numPages,
+            this.finalDocument.callSheetPath
+          );
+          
+          observer.next({ success: true });
+          observer.complete();
+        } else {
+          observer.next({ success: false });
+          observer.complete();
+        }
+      } catch (error) {
+        console.error('Error updating scene number:', error);
+        observer.next({ success: false });
+        observer.complete();
+      }
+    });
+  }
+
+  updateSceneText(scene: any, newText: string): Observable<{ success: boolean }> {
+    return new Observable(observer => {
+      try {
+        // Update the scene text in the final document data
+        if (this.finalDocument && this.finalDocument.data) {
+          const updatedData = this.finalDocument.data.map(page => {
+            return page.map(line => {
+              if (line.index === scene.index) {
+                return { ...line, text: newText };
+              }
+              return line;
+            });
+          });
+          
+          // Update the final document data
+          this.finalDocument.data = updatedData;
+          
+          // Emit the new state through the BehaviorSubject
+          this._finalDocumentData$.next(updatedData);
+          
+          observer.next({ success: true });
+          observer.complete();
+        } else {
+          observer.next({ success: false });
+          observer.complete();
+        }
+      } catch (error) {
+        console.error('Error updating scene text:', error);
+        observer.next({ success: false });
+        observer.complete();
+      }
+    });
+  }
+
+  // Add a getter for the sceneNumberUpdated$ observable
+  get sceneNumberUpdated$(): Subject<{ scene: any, newSceneNumber: string }> {
+    return this._sceneNumberUpdated$;
+  }
+
+  private _finalDocumentData$: BehaviorSubject<any[]> = new BehaviorSubject<any[]>([]);
+  public finalDocumentData$: Observable<any[]> = this._finalDocumentData$.asObservable();
 }

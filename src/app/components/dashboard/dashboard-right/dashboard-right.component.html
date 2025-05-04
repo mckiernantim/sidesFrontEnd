@@ -1,196 +1,224 @@
-<div class="min-h-screen h-auto px-4 md:px-12 animate-fade-in">
-  <!-- entire page left and right -->
-  <div class="flex flex-col-reverse xl:flex-row justify-center min-h-50 h-auto space-y-8 xl:space-y-0 xl:space-x-8">
-    <ng-container *ngIf="!lastLooksReady; else lastLooks">
-      <!-- LEFT PANEL - Reduced width on larger screens -->
-      <div class="bg-white rounded-lg shadow-md p-6 max-h-[45vh] lg:max-h-full flex flex-col justify-around xl:w-3/5">
-        <h2 class="font-semibold text-2xl m-4">{{ script }} scenes</h2>
-        <div class="scene-selection-container">
-          <div class="filter-container mb-4">
-            <input 
-              type="text" 
-              placeholder="Filter scenes..." 
-              class="w-full p-2 border border-gray-300 rounded-md"
-              (input)="applyFilter($event)">
-          </div>
+<div class="dashboard-right">
+  <div class="dashboard-right-content">
+    <div class="h-auto px-4 md:px-12 animate-fade-in position-relative z-5 flex flex-col">
+      <!-- entire page left and right -->
+      <div class="flex flex-col-reverse xl:flex-row justify-center min-h-50 h-auto space-y-8 xl:space-y-0 xl:space-x-8 flex-grow">
+        <ng-container *ngIf="!lastLooksReady; else lastLooks">
+          <!-- LEFT PANEL - Reduced width on larger screens -->
+          <div class="bg-white rounded-lg shadow-md p-6 lg:max-h-none flex flex-col justify-around w-full xl:w-3/5">
+            <h2 class="font-semibold text-2xl m-4">{{ script }} scenes</h2>
+            <div class="scene-selection-container flex-grow overflow-auto">
+              <div class="filter-container mb-4">
+                <input 
+                  type="text" 
+                  placeholder="Filter scenes..." 
+                  class="w-full p-2 border border-gray-300 rounded-md"
+                  (input)="applyFilter($event)">
+              </div>
 
-          <app-tailwind-table 
-            [data]="dataSource" 
-            [columns]="tableColumns"
-            [selectable]="true"
-            [pagination]="true"
-            [pageSize]="pageSize"
-            [selectedItems]="selected"
-            (selectionChange)="onSelectionChange($event)">
-          </app-tailwind-table>
-        </div>
-      </div>
-    </ng-container>
-
-    <!-- RIGHT PANEL - Increased width on larger screens -->
-    <div class="bg-white rounded-lg shadow-md p-6 flex flex-col justify-start items-center w-full xl:w-2/5 py-12 overflow-auto">
-      <h1 class="text-3xl text-center mb-6">Generating sides for
-        <br>
-        <p class="pt-4 text-xl text-indigo-700 font-medium">{{ script }} - {{ date | date }}</p>
-      </h1>
-      
-      <!-- Selected scenes list with delete option -->
-      <div class="w-full px-4 mb-6">
-        <h3 class="text-xl font-semibold mb-3">Selected Scenes ({{ selected.length }})</h3>
-        <div class="selected-scenes-list">
-          <div *ngFor="let scene of getSortedSelectedScenes()" 
-               class="flex justify-between items-center p-3 mb-2 bg-gray-50 rounded-md border border-gray-200">
-            <div>
-              <span class="font-medium">{{ scene.sceneNumberText }}</span>: 
-              <span>{{ scene.text }}</span>
+              <app-tailwind-table 
+                [data]="dataSource" 
+                [columns]="tableColumns"
+                [selectable]="true"
+                [pagination]="true"
+                [pageSize]="pageSize"
+                [selectedItems]="selected"
+                (selectionChange)="onSelectionChange($event)">
+              </app-tailwind-table>
             </div>
-            <button (click)="removeSelectedScene(scene)" 
-                    class="text-red-500 hover:text-red-700 focus:outline-none">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-              </svg>
-            </button>
-          </div>
-          <div *ngIf="selected.length === 0" class="text-gray-500 italic p-3">
-            No scenes selected. Please select scenes from the table.
-          </div>
-        </div>
-      </div>
-      
-      <!-- Rest of the right panel content -->
-      <div class="flex flex-col md:flex-row justify-between items-center w-full px-4 mb-6">
-        <p class="text-lg mb-2 md:mb-0">
-          @if (callsheetState) {
-            <span class="font-medium">Callsheet:</span> {{ callsheet }}
-          }
-        </p>
-        <p class="text-lg">
-          @if (watermark) {
-            <span class="font-medium">Watermark:</span> {{ watermark}}
-          }
-        </p>
-      </div>
-
-      <!-- Checkout/Auth Section -->
-      @if (lastLooksReady) {
-        <div class="flex flex-col items-center mb-8">
-          <h2 class="p-4 text-xl font-bold text-green-600">Total: FREE </h2>
-          <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            @if (!userData) {
-              <button 
-                (click)="auth.signInWithGoogle()"
-                class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors"
-              >
-                Sign in to continue
-              </button>
-            } @else {
-              <button 
-                (click)="openConfirmPurchaseDialog()"
-                class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors"
-              >
-                Proceed To Checkout {{userData.email}}
-              </button>
-              <button 
-                (click)="handleSignOut()"
-                class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors"
-              >
-                Sign out
-              </button>
-            }
-
-            <button 
-              (click)="toggleLastLooks()" 
-              [disabled]="selected.length === 0"
-              class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Back To Scene Select
-            </button>
-          </div>
-        </div>
-      }
-
-      <!-- Controls Section -->
-      <div class="w-full">
-        <ng-container *ngIf="!lastLooksReady; else lastLooksControls">
-          <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <button 
-              (click)="toggleLastLooks()" 
-              [disabled]="selected.length === 0"
-              class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Get PDF
-            </button>
-            <button 
-              (click)="this.router.navigate(['/'])"
-              class="w-full sm:w-auto bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-colors"
-            >
-              Back To Upload
-            </button>
           </div>
         </ng-container>
 
-        <ng-template #lastLooksControls>
-          <div class="flex flex-wrap justify-center items-center space-y-4 lg:space-y-0 lg:space-x-4">
-            <!-- Callsheet and Watermark controls -->
-            <div class="flex flex-col md:flex-row md:space-x-4 w-full lg:w-auto">
-              <div class="p-2 w-full md:w-1/2 lg:w-auto">
-                <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
+        <!-- RIGHT PANEL - Increased width on larger screens -->
+        <div class="bg-white rounded-lg shadow-md p-6 flex flex-col justify-start items-center w-full xl:w-2/5 py-12 overflow-visible" [class.edit-state]="editState">
+          <h1 class="text-3xl text-center mb-6">Generating sides for
+            <br>
+            <p class="pt-4 text-xl text-indigo-700 font-medium">{{ script }} - {{ date | date }}</p>
+          </h1>
+          
+          <!-- Selected scenes list with delete option -->
+          <div class="w-full px-4 mb-6">
+            <h3 class="text-xl font-semibold mb-3">Selected Scenes ({{ selected.length }})</h3>
+            <div class="selected-scenes-list" cdkDropList (cdkDropListDropped)="onSceneDrop($event)">
+              <div *ngFor="let scene of getSortedSelectedScenes()" 
+                   cdkDrag
+                   [cdkDragDisabled]="editState"
+                   class="flex justify-between items-center p-3 mb-2 bg-gray-50 rounded-md border border-gray-200 cursor-move">
+                <div class="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M7 2a1 1 0 011 1v1h3a1 1 0 110 2H9.578a18.87 18.87 0 01-1.724 4.78c.29.354.596.696.914 1.026a1 1 0 11-1.44 1.389 21.034 21.034 0 01-.554-.6 19.098 19.098 0 01-3.107 3.567 1 1 0 01-1.334-1.49 17.087 17.087 0 003.13-3.733 18.992 18.992 0 01-1.487-2.494 1 1 0 111.79-.89c.234.47.489.928.764 1.372.417-.934.752-1.913.997-2.927H3a1 1 0 110-2h3V3a1 1 0 011-1zm6 6a1 1 0 01.894.553l2.991 5.982a.869.869 0 01.02.037l.99 1.98a1 1 0 11-1.79.895L15.383 16h-4.764l-.724 1.447a1 1 0 11-1.788-.894l.99-1.98.019-.038 2.99-5.982A1 1 0 0113 8zm-1.382 6h2.764L13 11.236 11.618 14z" />
+                  </svg>
+                  <span class="font-medium scene-number" 
+                        [attr.contenteditable]="editState ? 'true' : 'false'"
+                        (dblclick)="startEditingSceneNumber(scene)"
+                        (blur)="saveSceneNumberEdit(scene)"
+                        (keydown)="handleSceneNumberKeyDown($event)"
+                        [class.editing]="editingSceneNumber === scene.sceneNumberText">{{ scene.sceneNumberText }}</span>: 
+                  <span class="scene-text"
+                        [attr.contenteditable]="editState ? 'true' : 'false'"
+                        (dblclick)="startEditingSceneText(scene)"
+                        (blur)="saveSceneTextEdit(scene)"
+                        (keydown)="handleSceneTextKeyDown($event)"
+                        [class.editing]="editingSceneText === scene.text">{{ scene.text }}</span>
+                </div>
+                <button (click)="removeSelectedScene(scene)" 
+                        class="text-red-500 hover:text-red-700 focus:outline-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                  </svg>
+                </button>
               </div>
-              <div class="p-2 w-full md:w-1/2 lg:w-auto">
-                <app-add-watermark (waterMarkUpdate)="addWaterMark($event)"></app-add-watermark>
+              <div *ngIf="selected.length === 0" class="text-gray-500 italic p-3">
+                No scenes selected. Please select scenes from the table.
               </div>
             </div>
+          </div>
+          
+          <!-- Rest of the right panel content -->
+          <div class="flex flex-col md:flex-row justify-between items-center w-full px-4 mb-6">
+            <p class="text-lg mb-2 md:mb-0">
+              @if (callsheetState) {
+                <span class="font-medium">Callsheet:</span> {{ callsheet }}
+              }
+            </p>
+            <p class="text-lg">
+              @if (watermark) {
+                <span class="font-medium">Watermark:</span> {{ watermark}}
+              }
+            </p>
+          </div>
 
-            <!-- Edit PDF button -->
-            <div class="w-full lg:w-auto p-2">
-              <button 
-                class="w-full lg:w-auto bg-gray-400 text-white font-semibold py-2 px-4 rounded-md cursor-not-allowed opacity-60"
-                disabled="true" 
-                (click)="toggleEditStateInLastLooks()"
-              >
-                Edit PDF - coming soon
-              </button>
+          <!-- Checkout/Auth Section -->
+          @if (lastLooksReady) {
+            <div class="flex flex-col items-center mb-8">
+              <h2 class="p-4 text-xl font-bold text-green-600">Total: FREE </h2>
+              <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+                @if (!userData) {
+                  <button 
+                    (click)="auth.signInWithGoogle()"
+                    class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors"
+                  >
+                    Sign in to continue
+                  </button>
+                } @else {
+                  <button 
+                    (click)="openConfirmPurchaseDialog()"
+                    class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors"
+                  >
+                    Proceed To Checkout {{userData.email}}
+                  </button>
+                  <button 
+                    (click)="handleSignOut()"
+                    class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors"
+                  >
+                    Sign out
+                  </button>
+                }
+
+                <button 
+                  (click)="toggleLastLooks()" 
+                  [disabled]="selected.length === 0"
+                  class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Back To Scene Select
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- Controls Section -->
+          <div class="w-full">
+            <ng-container *ngIf="!lastLooksReady; else lastLooksControls">
+              <div class="controls-section" [class.edit-state]="editState">
+                <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                  <button 
+                    (click)="toggleLastLooks()" 
+                    [disabled]="selected.length === 0"
+                    class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Get PDF
+                  </button>
+                  <button 
+                    (click)="this.router.navigate(['/'])"
+                    class="w-full sm:w-auto bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-colors"
+                  >
+                    Back To Upload
+                  </button>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-template #lastLooksControls>
+              <div class="controls-section" [class.edit-state]="editState">
+                <div class="flex flex-wrap justify-center items-center space-y-4 lg:space-y-0 lg:space-x-4">
+                  <!-- Edit PDF button -->
+                  <div class="w-full lg:w-auto p-2">
+                    <button 
+                      class="w-full lg:w-auto bg-red-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-red-700 transition-colors"
+                      (click)="triggerEditMode()"
+                      [class.bg-green-600]="editState"
+                      [class.hover:bg-green-700]="editState">
+                      {{ editState ? 'Save Changes' : 'Edit PDF' }}
+                    </button>
+                  </div>
+
+                  <!-- Callsheet and Watermark controls -->
+                  <div class="flex flex-col md:flex-row md:space-x-4 w-full lg:w-auto">
+                    <div class="p-2 w-full md:w-1/2 lg:w-auto">
+                      <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
+                    </div>
+                    <div class="p-2 w-full md:w-1/2 lg:w-auto">
+                      <app-add-watermark (waterMarkUpdate)="addWaterMark($event)"></app-add-watermark>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </ng-template>
+          </div>
+
+          @if (editLastLooksState) {
+            <ng-container>
+              <div class="flex flex-row w-full mt-6">
+                <app-tool-tip 
+                  class="w-full" 
+                  (buttonAction)="handleToolTipClicked($event)"
+                  [data]="toolTipContent"
+                ></app-tool-tip>
+              </div>
+            </ng-container>
+          }
+
+          <app-scene-selection 
+            [scenes]="scenes" 
+            (sceneSelected)="handleSceneSelection($event)">
+          </app-scene-selection>
+        </div>
+
+        <ng-template #lastLooks>
+          <div class="flex flex-col w-full">
+            <!-- Last Looks Component - Below header -->
+            <div class="flex-1">
+              <app-last-looks
+                [editState]="editLastLooksState"
+                [resetDocState]="resetFinalDocState"
+                [selectedLineState]="selectedLineState"
+                [undoState]="fireUndo"
+                [triggerLastLooksAction]="triggerLastLooksAction"
+                [callsheetPath]="callSheetPath"
+                (pageUpdate)="onPageUpdate($event)">
+              </app-last-looks>
             </div>
           </div>
         </ng-template>
       </div>
 
-      @if (editLastLooksState) {
-        <ng-container>
-          <div class="flex flex-row w-full mt-6">
-            <app-tool-tip 
-              class="w-full" 
-              (buttonAction)="handleToolTipClicked($event)"
-              [data]="toolTipContent"
-            ></app-tool-tip>
-          </div>
-        </ng-container>
-      }
-
-      <app-scene-selection 
-        [scenes]="scenes" 
-        (sceneSelected)="handleSceneSelection($event)">
-      </app-scene-selection>
+      <app-checkout-modal 
+        *ngIf="showCheckoutModal"
+        [selectedScenes]="selected"
+        [userData]="userData"
+        (checkout)="handleCheckout($event)"
+        (close)="closeCheckoutModal()"
+      ></app-checkout-modal>
     </div>
-
-    <ng-template #lastLooks>
-      <div *ngIf="this.pdf.finalDocReady" class="w-full">
-        <app-last-looks 
-          [resetDocState]="resetFinalDocState" 
-          [editState]="editLastLooksState" 
-          [undoState]="fireUndo"
-          [selectedLineState]="false" 
-          (onPageUpdate)="onPageUpdate($event)"
-        ></app-last-looks>
-      </div>
-    </ng-template>
   </div>
-
-  <app-checkout-modal 
-    *ngIf="showCheckoutModal"
-    [selectedScenes]="selected"
-    [userData]="userData"
-    (checkout)="handleCheckout($event)"
-    (close)="closeCheckoutModal()"
-  ></app-checkout-modal>
 </div>

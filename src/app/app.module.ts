@@ -6,6 +6,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule, DatePipe } from '@angular/common';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 
 import { FirebaseModule } from './modules/firebase-module/firebase.module';
 
@@ -62,7 +63,8 @@ export function initializeFirebase(authService: AuthService) {
     UploadModule,
     SharedModule,
     DashboardModule,
-    FirebaseModule.forRoot()
+    FirebaseModule.forRoot(),
+    DragDropModule,
   ],
   providers: [
     DatePipe,

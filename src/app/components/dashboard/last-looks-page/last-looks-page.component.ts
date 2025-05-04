@@ -1,10 +1,11 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, HostListener, OnDestroy } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, HostListener, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CdkDragStart, CdkDragEnd, CdkDragMove } from '@angular/cdk/drag-drop';
 import { Line } from 'src/app/types/Line';
 import { UndoService } from 'src/app/services/edit/undo.service';
 import { UndoStackItem } from 'src/app/services/edit/undo.service';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
+import { PdfService } from 'src/app/services/pdf/pdf.service';
 
 @Component({
   selector: 'app-last-looks-page',
@@ -17,6 +18,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   @Input() canEditDocument: boolean = false;
   @Input() selectedLine: any = null;
   @Input() currentPageIndex: number = 0;
+  @Input() totalPages: number = 0;
+  @Input() editMode: boolean = false;
   @Output() lineChanged = new EventEmitter<any>();
   @Output() lineSelected = new EventEmitter<Line>();
   @Output() categoryChanged = new EventEmitter<any>();
@@ -24,6 +27,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   @Output() pageUpdate = new EventEmitter<any[]>();
   @Output() proceedToCheckout = new EventEmitter<void>();
   @Output() toggleVisibilityRequest = new EventEmitter<void>();
+  @Output() pageChange = new EventEmitter<number>();
 
   showContextMenu: boolean = false;
   contextMenuPosition = { x: 0, y: 0 };
@@ -53,7 +57,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   ];
 
   selectedLineIds: number[] = [];
-
+  changesMade:boolean = false;
   // Replace the drag selection properties with shift-click properties
   lastSelectedIndex: number | null = null;
 
@@ -66,8 +70,317 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   // Add properties for debounced updates
   private dragUpdateSubject = new Subject<{line: Line, newPosition: {x: string, y: string}}>();
   private dragUpdateSubscription: Subscription;
+  private finalDocumentDataSubscription: Subscription;
 
-  constructor(private undoService: UndoService) {
+  // Add these methods to handle end span dragging
+  originalPosition: { x: string; y: string } | null = null;
+
+  // Add these properties to track text editing for bars
+  barTextEditingId: number | null = null;
+  barTextEditingType: 'start' | 'end' | 'continue' | 'continue-top' | null = null;
+  barTextEditingContent: string = '';
+
+  // Add methods to handle text editing for bar spans
+  onBarTextDoubleClick(event: MouseEvent, line: Line, type: 'start' | 'end' | 'continue' | 'continue-top'): void {
+    // Only allow editing in edit mode
+    if (!this.canEditDocument) return;
+    
+    event.stopPropagation();
+    event.preventDefault();
+    
+    // Set editing state
+    this.barTextEditingId = line.index;
+    this.barTextEditingType = type;
+    
+    // Set initial content based on type
+    switch (type) {
+      case 'start':
+        this.barTextEditingContent = `START ${line.sceneNumberText || ''}`;
+        break;
+      case 'end':
+        this.barTextEditingContent = `END ${line.sceneNumberText || ''}`;
+        break;
+      case 'continue':
+        this.barTextEditingContent = `↓↓↓ ${line.sceneNumberText || ''} CONTINUED ↓↓↓`;
+        break;
+      case 'continue-top':
+        this.barTextEditingContent = `↓↓↓ ${line.sceneNumberText || ''} CONTINUED ↓↓↓`;
+        break;
+    }
+    
+    // Force update
+    this.cdRef.detectChanges();
+    
+    // Focus the editable element
+    setTimeout(() => {
+      const editableElement = document.getElementById(`bar-text-edit-${line.index}-${type}`);
+      if (editableElement) {
+        editableElement.focus();
+        // Select all text
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.selectNodeContents(editableElement);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }, 10);
+  }
+
+  // Handle bar text changes
+  onBarTextChange(event: Event, line: Line): void {
+    const target = event.target as HTMLElement;
+    this.barTextEditingContent = target.textContent || '';
+  }
+
+  // Save bar text edits
+  saveBarTextEdit(): void {
+    if (this.barTextEditingId === null || this.barTextEditingType === null) return;
+    
+    // Find the line
+    const lineIndex = this.page.findIndex(line => line.index === this.barTextEditingId);
+    if (lineIndex === -1) return;
+    
+    const line = this.page[lineIndex];
+    
+    // Extract scene number from the edited text
+    let sceneNumber = '';
+    const text = this.barTextEditingContent;
+    
+    // Try to extract scene number based on the bar type
+    if (this.barTextEditingType === 'start' || this.barTextEditingType === 'end') {
+      // For START and END bars, the format is typically "START/END X" where X is the scene number
+      const parts = text.split(' ');
+      if (parts.length > 1) {
+        sceneNumber = parts.slice(1).join(' ').trim();
+      }
+    } else if (this.barTextEditingType === 'continue' || this.barTextEditingType === 'continue-top') {
+      // For CONTINUE bars, the format might be "↓↓↓ X CONTINUED ↓↓↓" where X is the scene number
+      const match = text.match(/↓↓↓\s+(.*?)\s+CONTINUED\s+↓↓↓/);
+      if (match && match[1]) {
+        sceneNumber = match[1].trim();
+      }
+    }
+    
+    // Store the custom text based on type
+    switch (this.barTextEditingType) {
+      case 'start':
+        line.customStartText = text;
+        break;
+      case 'end':
+        line.customEndText = text;
+        break;
+      case 'continue':
+        line.customContinueText = text;
+        break;
+      case 'continue-top':
+        line.customContinueTopText = text;
+        break;
+    }
+    
+    // If we extracted a scene number and it's different from the current one, update it
+    if (sceneNumber && sceneNumber !== line.sceneNumberText) {
+      const oldSceneNumber = line.sceneNumberText;
+      // Update the scene number for this line
+      line.sceneNumberText = sceneNumber;
+      
+      // Find and update all related scene headers with the same scene number
+      this.updateRelatedSceneNumbers(line, sceneNumber);
+      
+      // Emit the change to update the document
+      this.lineChanged.emit({
+        line: line,
+        property: 'sceneNumberText',
+        value: sceneNumber,
+        oldValue: oldSceneNumber // Add old value for updating CONTINUE bars
+      });
+    }
+    
+    // Reset editing state
+    this.barTextEditingId = null;
+    this.barTextEditingType = null;
+    this.barTextEditingContent = '';
+    
+    // Force change detection
+    this.cdRef.detectChanges();
+  }
+
+  // Add a new method to update related scene numbers
+  updateRelatedSceneNumbers(line: Line, newSceneNumber: string): void {
+    // Find the scene header for this line
+    const sceneHeader = this.findSceneHeaderForLine(line);
+    
+    if (sceneHeader) {
+      // Update the scene header's scene number
+      sceneHeader.sceneNumberText = newSceneNumber;
+      
+      // Update all bars in the same scene
+      this.page.forEach(l => {
+        if (l.sceneNumberText === line.sceneNumberText) {
+          l.sceneNumberText = newSceneNumber;
+        }
+      });
+      
+      // Emit the change for the scene header
+      this.lineChanged.emit({
+        line: sceneHeader,
+        property: 'sceneNumberText',
+        value: newSceneNumber
+      });
+    }
+  }
+
+  // Add a helper method to find the scene header for a line
+  findSceneHeaderForLine(line: Line): Line | null {
+    // If this is already a scene header, return it
+    if (line.category === 'scene-header') {
+      return line;
+    }
+    
+    // Find the closest scene header above this line
+    let sceneHeader = null;
+    for (let i = 0; i < this.page.length; i++) {
+      const currentLine = this.page[i];
+      if (currentLine.category === 'scene-header') {
+        sceneHeader = currentLine;
+      }
+      
+      if (currentLine === line) {
+        break;
+      }
+    }
+    
+    return sceneHeader;
+  }
+
+  // Cancel bar text edits
+  cancelBarTextEdit(): void {
+    this.barTextEditingId = null;
+    this.barTextEditingType = null;
+    this.barTextEditingContent = '';
+    
+    // Force update
+    this.cdRef.detectChanges();
+  }
+
+  // Handle key events for bar text editing
+  handleBarTextKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.saveBarTextEdit();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.cancelBarTextEdit();
+    }
+  }
+
+  // Add these properties for horizontal dragging
+  barTextDragging: boolean = false;
+  barTextDragStartX: number = 0;
+  barTextDragLineId: number | null = null;
+  barTextDragType: 'start' | 'end' | 'continue' | 'continue-top' | null = null;
+  barTextInitialOffset: number = 0;
+
+  // Start horizontal dragging of bar text
+  startBarTextDrag(event: MouseEvent, line: Line, type: 'start' | 'end' | 'continue' | 'continue-top'): void {
+    // Only allow dragging in edit mode
+    if (!this.canEditDocument || this.barTextEditingId !== null) return;
+    
+    event.stopPropagation();
+    event.preventDefault();
+    
+    this.barTextDragging = true;
+    this.barTextDragStartX = event.clientX;
+    this.barTextDragLineId = line.index;
+    this.barTextDragType = type;
+    
+    // Get initial offset
+    switch (type) {
+      case 'start':
+        this.barTextInitialOffset = line.startTextOffset || 0;
+        break;
+      case 'end':
+        this.barTextInitialOffset = line.endTextOffset || 0;
+        break;
+      case 'continue':
+        this.barTextInitialOffset = line.continueTextOffset || 0;
+        break;
+      case 'continue-top':
+        this.barTextInitialOffset = line.continueTopTextOffset || 0;
+        break;
+    }
+    
+    // Add event listeners
+    document.addEventListener('mousemove', this.moveBarText);
+    document.addEventListener('mouseup', this.endBarTextDrag);
+    
+    // Add dragging cursor
+    document.body.classList.add('ew-resize-cursor');
+  }
+
+  // Move bar text horizontally
+  moveBarText = (event: MouseEvent): void => {
+    if (!this.barTextDragging) return;
+    
+    const deltaX = event.clientX - this.barTextDragStartX;
+    const newOffset = this.barTextInitialOffset + deltaX;
+    
+    // Find the line
+    const lineIndex = this.page.findIndex(line => line.index === this.barTextDragLineId);
+    if (lineIndex === -1) return;
+    
+    const line = this.page[lineIndex];
+    
+    // Update offset based on type
+    switch (this.barTextDragType) {
+      case 'start':
+        line.startTextOffset = newOffset;
+        break;
+      case 'end':
+        line.endTextOffset = newOffset;
+        break;
+      case 'continue':
+        line.continueTextOffset = newOffset;
+        break;
+      case 'continue-top':
+        line.continueTopTextOffset = newOffset;
+        break;
+    }
+    
+    // Force update
+    this.cdRef.detectChanges();
+  };
+
+  // End bar text dragging
+  endBarTextDrag = (event: MouseEvent): void => {
+    if (!this.barTextDragging) return;
+    
+    // Remove event listeners
+    document.removeEventListener('mousemove', this.moveBarText);
+    document.removeEventListener('mouseup', this.endBarTextDrag);
+    
+    // Remove dragging cursor
+    document.body.classList.remove('ew-resize-cursor');
+    
+    // Find the line
+    const lineIndex = this.page.findIndex(line => line.index === this.barTextDragLineId);
+    if (lineIndex === -1) return;
+    
+    const line = this.page[lineIndex];
+    
+    // Emit the update
+    this.pageUpdate.emit([...this.page]);
+    
+    // Clear dragging state
+    this.barTextDragging = false;
+    this.barTextDragLineId = null;
+    this.barTextDragType = null;
+  };
+
+  constructor(
+    private undoService: UndoService,
+    private cdRef: ChangeDetectorRef,
+    private pdf: PdfService
+  ) {
     // Subscribe to undo changes
     this.undoService.change$.subscribe(change => {
       if (change && change.pageIndex === this.currentPageIndex) {
@@ -76,41 +389,60 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     });
     
     // Set up debounced drag updates
-    this.dragUpdateSubscription = this.dragUpdateSubject.pipe(
-      debounceTime(16) // ~60fps for smooth updates
-    ).subscribe(update => {
-      // Update the line position in the UI
-      update.line.calculatedXpos = update.newPosition.x;
-      update.line.calculatedYpos = update.newPosition.y;
-      
-      // Emit position change for parent components
-      const lineIndex = this.page.findIndex(l => l.index === update.line.index);
-      if (lineIndex !== -1) {
-        this.positionChanged.emit({
-          line: update.line,
-          lineIndex,
-          newPosition: update.newPosition
-        });
+    this.setupDragUpdateDebounce();
+  }
+
+  ngOnInit(): void {
+    if (this.editMode) {
+      this.canEditDocument = true;
+      this.makeEndSceneLinesEditable();
+    }
+
+    // Subscribe to finalDocumentData$ for updates
+    this.finalDocumentDataSubscription = this.pdf.finalDocumentData$.subscribe(data => {
+      if (data && data.length > 0) {
+        console.log('LastLooksPage received document update:', data);
+        // Update the current page if it exists in the new data
+        if (this.currentPageIndex < data.length) {
+          const newPage = data[this.currentPageIndex];
+          // Only update if the page has actually changed
+          if (JSON.stringify(this.page) !== JSON.stringify(newPage)) {
+            this.page = newPage;
+            // Process any necessary updates for the new page
+            this.processPageUpdates(newPage);
+            // Force change detection
+            this.cdRef.detectChanges();
+          }
+        }
       }
     });
   }
 
-  ngOnInit(): void {
-    // Make END scene lines draggable
-    if (this.canEditDocument) {
-      this.makeEndSceneLinesEditable();
-    }
+  private processPageUpdates(newPage: any[]): void {
+    // Update any scene headers in the page
+    newPage.forEach(line => {
+      if (line.category === 'scene-header') {
+        // Find the corresponding line in the current page
+        const currentLine = this.page.find(l => l.index === line.index);
+        if (currentLine) {
+          // Update scene number and text if they've changed
+          if (currentLine.sceneNumberText !== line.sceneNumberText) {
+            currentLine.sceneNumberText = line.sceneNumberText;
+          }
+          if (currentLine.text !== line.text) {
+            currentLine.text = line.text;
+          }
+        }
+      }
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // If canEditDocument changes to true, make END scene lines draggable
-    if (changes.canEditDocument && changes.canEditDocument.currentValue === true) {
-      this.makeEndSceneLinesEditable();
-    }
-    
-    // If page changes, make END scene lines draggable again
-    if (changes.page && this.canEditDocument) {
-      this.makeEndSceneLinesEditable();
+    if (changes['editMode']) {
+      this.canEditDocument = changes['editMode'].currentValue;
+      if (this.canEditDocument) {
+        this.makeEndSceneLinesEditable();
+      }
     }
   }
 
@@ -119,6 +451,13 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     if (this.dragUpdateSubscription) {
       this.dragUpdateSubscription.unsubscribe();
     }
+    if (this.finalDocumentDataSubscription) {
+      this.finalDocumentDataSubscription.unsubscribe();
+    }
+    
+    // Clean up event listeners
+    document.removeEventListener('mousemove', this.moveBarText);
+    document.removeEventListener('mouseup', this.endBarTextDrag);
   }
 
   isSelectedLine(line: any, index: number): boolean {
@@ -253,82 +592,98 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.proceedToCheckout.emit();
   }
 
-  // Update the selectLine method to ensure dragging works with selection
-  selectLine(line: any, event: MouseEvent): void {
-    // Only check if editing is allowed
+  // Update the selectLine method to properly handle shift selection
+  selectLine(line: Line, event: MouseEvent): void {
+    // Only allow selection in edit mode
     if (!this.canEditDocument) {
       return;
     }
     
-    // If this is a drag handle click, don't change selection
-    const target = event.target as HTMLElement;
-    if (target.classList.contains('drag-handle') || target.closest('.drag-handle')) {
-      // Just emit the current line for drag operations
-      this.lineSelected.emit(line);
-      return;
-    }
+    const lineId = line.index;
+    const currentIndex = this.page.findIndex(l => l.index === lineId);
     
-    const lineIndex = this.page.findIndex(l => l.index === line.index);
-    
-    // Handle Ctrl+Click for multiple selection
-    if (event.ctrlKey || event.metaKey) {
-      // Toggle the selected state of this line
-      if (this.selectedLineIds.includes(line.index)) {
-        // Remove from selection
-        this.selectedLineIds = this.selectedLineIds.filter(id => id !== line.index);
-      } else {
-        // Add to selection
-        this.selectedLineIds.push(line.index);
-        this.lastSelectedIndex = lineIndex;
-      }
-    }
-    // Handle Shift+Click for range selection
-    else if (event.shiftKey && this.lastSelectedIndex !== null) {
-      // Clear current selection
+    // Handle shift key for range selection
+    if (event.shiftKey && this.lastSelectedIndex !== null) {
+      // Clear previous selection
       this.selectedLineIds = [];
       
-      // Determine the range to select
-      const startIndex = Math.min(this.lastSelectedIndex, lineIndex);
-      const endIndex = Math.max(this.lastSelectedIndex, lineIndex);
+      // Determine the range boundaries
+      const startIndex = Math.min(this.lastSelectedIndex, currentIndex);
+      const endIndex = Math.max(this.lastSelectedIndex, currentIndex);
       
       // Select all lines in the range
       for (let i = startIndex; i <= endIndex; i++) {
-        if (i >= 0 && i < this.page.length) {
+        if (this.page[i] && this.page[i].index !== undefined) {
           this.selectedLineIds.push(this.page[i].index);
         }
       }
-    }
-    // Regular click (no modifier keys)
+      
+      console.log(`Shift-selected ${this.selectedLineIds.length} lines from index ${startIndex} to ${endIndex}`);
+    } 
+    // Handle ctrl/cmd key for multi-selection
+    else if (event.ctrlKey || event.metaKey) {
+      const index = this.selectedLineIds.indexOf(lineId);
+      if (index === -1) {
+        // Add to selection
+        this.selectedLineIds.push(lineId);
+      } else {
+        // Remove from selection
+        this.selectedLineIds.splice(index, 1);
+      }
+      this.lastSelectedIndex = currentIndex;
+    } 
+    // Regular single selection
     else {
-      // Clear selection and select only this line
-      this.selectedLineIds = [line.index];
-      this.lastSelectedIndex = lineIndex;
+      this.selectedLineIds = [lineId];
+      this.lastSelectedIndex = currentIndex;
     }
     
-    // Emit the selected lines
-    this.emitSelectedLines();
+    // Mark the line as selected for the parent component
+    line.multipleSelected = this.selectedLineIds.length > 1;
     
-    // Also emit the current line for drag operations
-    this.lineSelected.emit(line);
+    // Emit the selected line(s)
+    this.emitSelectedLines();
   }
 
-  // Add a method to clear selection
-  clearSelection(): void {
-    this.selectedLineIds = [];
-    this.lastSelectedIndex = null;
-    this.lineSelected.emit(null);
+  // Improve the emitSelectedLines method
+  private emitSelectedLines() {
+    // If no lines are selected, emit null
+    if (this.selectedLineIds.length === 0) {
+      this.lineSelected.emit(null);
+      return;
+    }
+    
+    // If only one line is selected, emit that line
+    if (this.selectedLineIds.length === 1) {
+      const selectedLine = this.page.find(line => line.index === this.selectedLineIds[0]);
+      this.lineSelected.emit(selectedLine);
+      return;
+    }
+    
+    // If multiple lines are selected, emit the first line with a flag
+    const primaryLine = this.page.find(line => line.index === this.selectedLineIds[0]);
+    if (primaryLine) {
+      primaryLine.multipleSelected = true;
+      primaryLine.selectedCount = this.selectedLineIds.length;
+      this.lineSelected.emit(primaryLine);
+    }
   }
 
-  // Update the isLineSelected method
+  // Update the isLineSelected method to check for edit mode
   isLineSelected(line: Line): boolean {
+    // Only show selection in edit mode
+    if (!this.canEditDocument) {
+      return false;
+    }
+    
     return this.selectedLineIds.includes(line.index);
   }
 
-  // Update the handleUndoChange method to handle batch crossOut changes
+  // Update the handleUndoChange method to handle all types of changes including scene number changes
   private handleUndoChange(change: UndoStackItem): void {
     const { line, type } = change;
     
-    // Handle batch operations
+    // Handle batch crossOut changes
     if ((type as string) === 'batchCrossOut') {
       const originalStates = (change as any).originalStates || [];
       
@@ -343,6 +698,50 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       // Emit the updated page
       this.pageUpdate.emit(this.page);
       return;
+    }
+    
+    // Handle scene number changes
+    if ((type as string) === 'scene-number') {
+      if (change.originalSceneNumber && change.affectedLines) {
+        // Restore the original scene number to all affected lines
+        const originalSceneNumber = change.originalSceneNumber;
+        const newSceneNumber = change.newSceneNumber;
+        
+        this.page.forEach(line => {
+          // Check if this line was affected by the scene number change
+          const wasAffected = change.affectedLines?.some(
+            affectedLine => affectedLine.index === line.index
+          );
+          
+          if (wasAffected) {
+            // Restore the main scene number
+            if (line.sceneNumberText === newSceneNumber) {
+              line.sceneNumberText = originalSceneNumber;
+            }
+            
+            // Restore any custom bar texts that were updated
+            if (line.customStartText && line.customStartText.includes(newSceneNumber)) {
+              line.customStartText = line.customStartText.replace(newSceneNumber, originalSceneNumber);
+            }
+            
+            if (line.customEndText && line.customEndText.includes(newSceneNumber)) {
+              line.customEndText = line.customEndText.replace(newSceneNumber, originalSceneNumber);
+            }
+            
+            if (line.customContinueText && line.customContinueText.includes(newSceneNumber)) {
+              line.customContinueText = line.customContinueText.replace(newSceneNumber, originalSceneNumber);
+            }
+            
+            if (line.customContinueTopText && line.customContinueTopText.includes(newSceneNumber)) {
+              line.customContinueTopText = line.customContinueTopText.replace(newSceneNumber, originalSceneNumber);
+            }
+          }
+        });
+        
+        // Emit the updated page
+        this.pageUpdate.emit(this.page);
+        return;
+      }
     }
     
     // Find the line in the current page
@@ -399,33 +798,6 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     setTimeout(() => {
       // This will trigger change detection
     }, 0);
-  }
-
-  // Update the emitSelectedLines method to use type assertion
-  private emitSelectedLines() {
-    // If no lines are selected, emit null
-    if (this.selectedLineIds.length === 0) {
-      this.lineSelected.emit(null);
-      return;
-    }
-    
-    // If only one line is selected, emit that line
-    if (this.selectedLineIds.length === 1) {
-      const selectedLine = this.page.find(line => line.index === this.selectedLineIds[0]);
-      this.lineSelected.emit(selectedLine);
-      return;
-    }
-    
-    // If multiple lines are selected, emit an array of lines
-    const selectedLines = this.page.filter(line => 
-      this.selectedLineIds.includes(line.index)
-    );
-    
-    // Emit the first line with a special property indicating multiple selection
-    const primaryLine = selectedLines[0];
-    (primaryLine as any).multipleSelected = true;
-    (primaryLine as any).selectedCount = selectedLines.length;
-    this.lineSelected.emit(primaryLine);
   }
 
   // Update the onDoubleClick method to make the line itself editable
@@ -719,8 +1091,6 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     event.preventDefault();
   }
 
-  // Remove the dependency on selectedEditFunction in other methods
-  // For example, update the onMouseDown method
   @HostListener('mousedown', ['$event'])
   onMouseDown(event: MouseEvent): void {
     // Just check if editing is allowed, but don't change modes
@@ -823,7 +1193,6 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.pageUpdate.emit([...this.page]);
   }
 
-  // Update the handleGlobalKeyDown method to emit the specific event
   @HostListener('document:keydown', ['$event'])
   handleGlobalKeyDown(event: KeyboardEvent): void {
     // Only process if we're in edit mode and not currently editing text
@@ -858,6 +1227,576 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
           this.pageUpdate.emit([...this.page]);
         }
       }
+    }
+  }
+
+  // Handle continue span dragging
+  onContinueSpanDragStarted(event: CdkDragStart, line: Line): void {
+    // Store original position for undo
+    line._originalPosition = {
+      x: line.calculatedXpos as string,
+      y: typeof line.calculatedBarY === 'number' 
+        ? line.calculatedBarY.toString() + 'px' 
+        : line.calculatedBarY as string
+    };
+    
+    // Select the line
+    this.lineSelected.emit(line);
+    
+    // Add cursor class
+    document.body.classList.add('grab-cursor');
+  }
+
+  onContinueSpanDragMoved(event: CdkDragMove, line: Line): void {
+    // Get the drag distance
+    const dragY = event.distance.y;
+    
+    // Parse current position (removing 'px')
+    const currentY = parseFloat(line._originalPosition.y);
+    
+    // Calculate new position
+    const newY = (currentY - dragY) + 'px';
+    
+    // Update line position during drag
+    line.calculatedBarY = newY;
+    
+    // Force change detection
+    this.cdRef.detectChanges();
+  }
+
+  onContinueSpanDragEnded(event: CdkDragEnd, line: Line, lineIndex: number): void {
+    // Remove cursor class
+    document.body.classList.remove('grab-cursor');
+    
+    // Get the drag distance
+    const dragY = event.distance.y;
+    
+    // Parse current position (removing 'px')
+    const currentY = parseFloat(line._originalPosition.y);
+    
+    // Calculate new position
+    const newY = (currentY - dragY) + 'px';
+    
+    // Emit position change event
+    this.positionChanged.emit({
+      line,
+      lineIndex,
+      newPosition: { x: line.calculatedXpos, y: newY },
+      originalPosition: line._originalPosition,
+      isContinueSpan: true
+    });
+    
+    // Reset drag transform
+    event.source.reset();
+    
+    // Clean up temporary property
+    delete line._originalPosition;
+  }
+
+  // Handle start span dragging
+  onStartSpanDragStarted(event: CdkDragStart, line: Line): void {
+    // Store original position for undo
+    line._originalPosition = {
+      x: line.calculatedXpos,
+      y: line.calculatedYpos
+    };
+    
+    // Select the line
+    this.lineSelected.emit(line);
+    
+    // Add cursor class
+    document.body.classList.add('grab-cursor');
+  }
+
+  onStartSpanDragMoved(event: CdkDragMove, line: Line): void {
+    // Get the drag distance
+    const dragY = event.distance.y;
+    
+    // Parse current position (removing 'px')
+    const currentY = parseFloat(line._originalPosition.y);
+    
+    // Calculate new position
+    const newY = (currentY - dragY) + 'px';
+    
+    // Update line position during drag
+    line.calculatedYpos = newY;
+    
+    // Force change detection
+    this.cdRef.detectChanges();
+  }
+
+  onStartSpanDragEnded(event: CdkDragEnd, line: Line, lineIndex: number): void {
+    // Remove cursor class
+    document.body.classList.remove('grab-cursor');
+    
+    // Get the drag distance
+    const dragY = event.distance.y;
+    
+    // Parse current position (removing 'px')
+    const currentY = parseFloat(line._originalPosition.y);
+    
+    // Calculate new position
+    const newY = (currentY - dragY) + 'px';
+    
+    // Emit position change event
+    this.positionChanged.emit({
+      line,
+      lineIndex,
+      newPosition: { x: line.calculatedXpos, y: newY },
+      originalPosition: line._originalPosition,
+      isStartSpan: true
+    });
+    
+    // Reset drag transform
+    event.source.reset();
+    
+    // Clean up temporary property
+    delete line._originalPosition;
+  }
+
+  // Handle end span dragging
+  onEndSpanDragStarted(event: CdkDragStart, line: Line): void {
+    // Store original position for undo
+    line._originalPosition = {
+      x: line.calculatedXpos,
+      y: line.calculatedEnd as string
+    };
+    
+    // Select the line
+    this.lineSelected.emit(line);
+    
+    // Add cursor class
+    document.body.classList.add('grab-cursor');
+  }
+
+  onEndSpanDragMoved(event: CdkDragMove, line: Line): void {
+    // Get the drag distance
+    const dragY = event.distance.y;
+    
+    // Parse current position (removing 'px')
+    const currentY = parseFloat(line._originalPosition.y);
+    
+    // Calculate new position
+    const newY = (currentY - dragY) + 'px';
+    
+    // Update line position during drag
+    line.calculatedEnd = newY;
+    
+    // Force change detection
+    this.cdRef.detectChanges();
+  }
+
+  onEndSpanDragEnded(event: CdkDragEnd, line: Line, lineIndex: number): void {
+    // Remove cursor class
+    document.body.classList.remove('grab-cursor');
+    
+    // Get the drag distance
+    const dragY = event.distance.y;
+    
+    // Parse current position (removing 'px')
+    const currentY = parseFloat(line._originalPosition.y);
+    
+    // Calculate new position
+    const newY = (currentY - dragY) + 'px';
+    
+    // Emit position change event
+    this.positionChanged.emit({
+      line,
+      lineIndex,
+      newPosition: { x: line.calculatedXpos, y: newY },
+      originalPosition: line._originalPosition,
+      isEndSpan: true
+    });
+    
+    // Reset drag transform
+    event.source.reset();
+    
+    // Clean up temporary property
+    delete line._originalPosition;
+  }
+
+
+  checkForDuplicateLines(): void {
+    if (!this.page || this.page.length === 0) return;
+    
+    // Use a Set for faster lookups
+    const lineIds = new Set();
+    const duplicates = [];
+    
+    // Find duplicates in a single pass
+    this.page.forEach((line, index) => {
+      if (line && line.index !== undefined) {
+        if (lineIds.has(line.index)) {
+          duplicates.push(index);
+        } else {
+          lineIds.add(line.index);
+        }
+      }
+    });
+    
+    // Remove duplicates if found (in reverse order)
+    if (duplicates.length > 0) {
+      console.warn(`Removing ${duplicates.length} duplicate lines`);
+      for (let i = duplicates.length - 1; i >= 0; i--) {
+        this.page.splice(duplicates[i], 1);
+      }
+      
+      // Emit the updated page
+      this.pageUpdate.emit([...this.page]);
+    }
+  }
+
+  
+  onContinueTopSpanDragStarted(event: CdkDragStart, line: Line): void {
+    // Prevent event propagation to avoid affecting the line
+    event.source.element.nativeElement.style.pointerEvents = 'none';
+    
+    // Store original position for undo
+    line._originalPosition = {
+      x: line.calculatedXpos as string,
+      y: typeof line.calculatedBarY === 'number' 
+        ? line.calculatedBarY.toString() + 'px' 
+        : line.calculatedBarY as string
+    };
+    
+    // Select the line
+    this.lineSelected.emit(line);
+    
+    // Add cursor class
+    document.body.classList.add('grab-cursor');
+  }
+
+  onContinueTopSpanDragMoved(event: CdkDragMove, line: Line): void {
+    // Get the drag distance
+    const dragY = event.distance.y;
+    
+    // Parse current position (removing 'px')
+    const currentY = parseFloat(line._originalPosition.y);
+    
+    // Calculate new position
+    const newY = (currentY - dragY) + 'px';
+    
+    // Update ONLY the bar position, not the line position
+    line.calculatedBarY = newY;
+    
+    // Force change detection
+    this.cdRef.detectChanges();
+  }
+
+  onContinueTopSpanDragEnded(event: CdkDragEnd, line: Line, lineIndex: number): void {
+    // Re-enable pointer events
+    event.source.element.nativeElement.style.pointerEvents = 'auto';
+    
+    // Remove cursor class
+    document.body.classList.remove('grab-cursor');
+    
+    // Get the drag distance
+    const dragY = event.distance.y;
+    
+    // Parse current position (removing 'px')
+    const currentY = parseFloat(line._originalPosition.y);
+    
+    // Calculate new position
+    const newY = (currentY - dragY) + 'px';
+    
+    // Emit position change event
+    this.positionChanged.emit({
+      line,
+      lineIndex,
+      newPosition: { x: line.calculatedXpos, y: newY },
+      originalPosition: line._originalPosition,
+      isContinueTopSpan: true
+    });
+    
+    // Reset drag transform
+    event.source.reset();
+    
+    // Clean up temporary property
+    delete line._originalPosition;
+  }
+
+  // Add a method to clear selection
+  clearSelection(): void {
+    this.selectedLineIds = [];
+    this.lastSelectedIndex = null;
+    this.lineSelected.emit(null);
+  }
+
+  // Add a debounce mechanism for drag operations
+  private setupDragUpdateDebounce() {
+    this.dragUpdateSubscription = this.dragUpdateSubject
+      .pipe(debounceTime(16)) // ~60fps
+      .subscribe(update => {
+        // Process the update
+        const { line, newPosition } = update;
+        
+        // Update the line position
+        if (line && newPosition) {
+          line.calculatedXpos = newPosition.x;
+          line.calculatedYpos = newPosition.y;
+          
+          // Force change detection
+          this.cdRef.detectChanges();
+        }
+      });
+  }
+
+  // Add these methods
+  toggleInstructions(): void {
+    this.showInstructions = !this.showInstructions;
+  }
+
+  previousPage(): void {
+    if (this.currentPageIndex > 0) {
+      this.pageChange.emit(this.currentPageIndex - 1);
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPageIndex < this.totalPages - 1) {
+      this.pageChange.emit(this.currentPageIndex + 1);
+    }
+  }
+
+  toggleBar(line: Line, barType: string): void {
+    // Emit an event to the parent component to handle the bar toggle
+    this.lineChanged.emit({
+      line: line,
+      property: 'toggleBar',
+      value: barType
+    });
+  }
+
+  // Make sure this property is declared
+  showInstructions: boolean = false;
+
+  // Add these properties to your component class
+  editingSceneNumber: string | null = null;
+  originalSceneNumber: string | null = null;
+
+  /**
+   * Start editing a scene number
+   */
+  startEditingSceneNumber(line: any): void {
+    if (!this.canEditDocument) return;
+    
+    this.editingSceneNumber = line.sceneNumberText;
+    this.originalSceneNumber = line.sceneNumberText;
+    
+    // Focus and select all text after a short delay to ensure contenteditable is active
+    setTimeout(() => {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      
+      // Find all elements with this scene number text
+      const elements = document.querySelectorAll('.scene-number-left, .scene-number-right');
+      for (let i = 0; i < elements.length; i++) {
+        const el = elements[i] as HTMLElement;
+        if (el.textContent?.trim() === this.editingSceneNumber) {
+          range.selectNodeContents(el);
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+          break; // Only need to select one of them
+        }
+      }
+    }, 10);
+  }
+
+  /**
+   * Handle keydown events in scene number editing
+   */
+  handleSceneNumberKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      (event.target as HTMLElement).blur();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.cancelSceneNumberEdit();
+    }
+  }
+
+  /**
+   * Cancel scene number editing
+   */
+  cancelSceneNumberEdit(): void {
+    // Reset all elements with this scene number back to original
+    const elements = document.querySelectorAll('.scene-number-left, .scene-number-right');
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i] as HTMLElement;
+      if (el.textContent?.trim() === this.editingSceneNumber) {
+        el.textContent = this.originalSceneNumber;
+      }
+    }
+    
+    this.editingSceneNumber = null;
+    this.originalSceneNumber = null;
+  }
+
+  /**
+   * Save scene number edit and update all related elements
+   */
+  saveSceneNumberEdit(triggerLine: any): void {
+    if (!this.editingSceneNumber) return;
+    
+    // Get the new scene number from one of the edited elements
+    const elements = document.querySelectorAll('.scene-number-left, .scene-number-right');
+    let newSceneNumber = '';
+    
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i] as HTMLElement;
+      if (el.textContent?.trim() === this.editingSceneNumber) {
+        newSceneNumber = el.textContent?.trim() || '';
+        break;
+      }
+    }
+    
+    if (newSceneNumber && newSceneNumber !== this.originalSceneNumber) {
+      // Update all lines in the current page that have this scene number
+      const sceneNumberToUpdate = this.originalSceneNumber;
+      
+      // First, record this change for undo functionality
+      const affectedLines = this.page.filter(line => 
+        line.sceneNumberText === sceneNumberToUpdate || 
+        (line.customStartText && line.customStartText.includes(sceneNumberToUpdate)) ||
+        (line.customEndText && line.customEndText.includes(sceneNumberToUpdate)) ||
+        (line.customContinueText && line.customContinueText.includes(sceneNumberToUpdate)) ||
+        (line.customContinueTopText && line.customContinueTopText.includes(sceneNumberToUpdate))
+      );
+      
+      // Record the change for undo
+      this.undoService.recordSceneNumberChange(
+        this.currentPageIndex,
+        affectedLines,
+        sceneNumberToUpdate,
+        newSceneNumber
+      );
+      
+      // Update all matching lines in the page
+      this.page.forEach(line => {
+        // Update the main scene number
+        if (line.sceneNumberText === sceneNumberToUpdate) {
+          line.sceneNumberText = newSceneNumber;
+        }
+        
+        // Update any custom bar texts that contain the scene number
+        if (line.customStartText && line.customStartText.includes(sceneNumberToUpdate)) {
+          line.customStartText = line.customStartText.replace(sceneNumberToUpdate, newSceneNumber);
+        }
+        
+        if (line.customEndText && line.customEndText.includes(sceneNumberToUpdate)) {
+          line.customEndText = line.customEndText.replace(sceneNumberToUpdate, newSceneNumber);
+        }
+        
+        if (line.customContinueText && line.customContinueText.includes(sceneNumberToUpdate)) {
+          line.customContinueText = line.customContinueText.replace(sceneNumberToUpdate, newSceneNumber);
+        }
+        
+        if (line.customContinueTopText && line.customContinueTopText.includes(sceneNumberToUpdate)) {
+          line.customContinueTopText = line.customContinueTopText.replace(sceneNumberToUpdate, newSceneNumber);
+        }
+      });
+      
+      // Emit page update to parent components first
+      this.pageUpdate.emit([...this.page]);
+      
+      // Notify PDF service of the change
+      this.pdf.updateSceneNumber(triggerLine, newSceneNumber).subscribe({
+        next: (response) => {
+          if (response.success) {
+            // Force a document state update
+            if (this.pdf.finalDocReady && this.pdf.finalDocument) {
+              this.pdf.processPdf(
+                this.pdf.getSelectedScenes(),
+                this.pdf.finalDocument.name,
+                this.pdf.finalDocument.numPages,
+                this.pdf.finalDocument.callSheetPath
+              );
+            }
+            
+            this.changesMade = true;
+            
+            // Force change detection
+            this.cdRef.detectChanges();
+          }
+        },
+        error: (error) => {
+          console.error('Error updating scene number:', error);
+          // Revert changes if PDF service update fails
+          this.page.forEach(line => {
+            if (line.sceneNumberText === newSceneNumber) {
+              line.sceneNumberText = sceneNumberToUpdate;
+            }
+            if (line.customStartText && line.customStartText.includes(newSceneNumber)) {
+              line.customStartText = line.customStartText.replace(newSceneNumber, sceneNumberToUpdate);
+            }
+            if (line.customEndText && line.customEndText.includes(newSceneNumber)) {
+              line.customEndText = line.customEndText.replace(newSceneNumber, sceneNumberToUpdate);
+            }
+            if (line.customContinueText && line.customContinueText.includes(newSceneNumber)) {
+              line.customContinueText = line.customContinueText.replace(newSceneNumber, sceneNumberToUpdate);
+            }
+            if (line.customContinueTopText && line.customContinueTopText.includes(newSceneNumber)) {
+              line.customContinueTopText = line.customContinueTopText.replace(newSceneNumber, sceneNumberToUpdate);
+            }
+          });
+          this.pageUpdate.emit([...this.page]);
+          this.cdRef.detectChanges();
+        }
+      });
+    }
+    
+    // Reset editing state
+    this.editingSceneNumber = null;
+    this.originalSceneNumber = null;
+  }
+
+  // Update the handleUndo method to handle scene number changes
+  handleUndo(): void {
+    const lastChange = this.undoService.pop();
+    if (!lastChange) return;
+    
+    // Handle the different types of changes
+    switch (lastChange.type) {
+      // ... existing cases
+      
+      case 'scene-number':
+        if (lastChange.originalSceneNumber && lastChange.affectedLines) {
+          // Restore the original scene number to all affected lines
+          const originalSceneNumber = lastChange.originalSceneNumber;
+          const newSceneNumber = lastChange.newSceneNumber;
+          
+          this.page.forEach(line => {
+            // Check if this line was affected by the scene number change
+            const wasAffected = lastChange.affectedLines?.some(
+              affectedLine => affectedLine.index === line.index
+            );
+            
+            if (wasAffected) {
+              // Restore the main scene number
+              if (line.sceneNumberText === newSceneNumber) {
+                line.sceneNumberText = originalSceneNumber;
+              }
+              
+              // Restore any custom bar texts that were updated
+              if (line.customStartText && line.customStartText.includes(newSceneNumber)) {
+                line.customStartText = line.customStartText.replace(newSceneNumber, originalSceneNumber);
+              }
+              
+              if (line.customEndText && line.customEndText.includes(newSceneNumber)) {
+                line.customEndText = line.customEndText.replace(newSceneNumber, originalSceneNumber);
+              }
+              
+              if (line.customContinueText && line.customContinueText.includes(newSceneNumber)) {
+                line.customContinueText = line.customContinueText.replace(newSceneNumber, originalSceneNumber);
+              }
+              
+              if (line.customContinueTopText && line.customContinueTopText.includes(newSceneNumber)) {
+                line.customContinueTopText = line.customContinueTopText.replace(newSceneNumber, originalSceneNumber);
+              }
+            }
+          });
+        }
+        break;
     }
   }
 }

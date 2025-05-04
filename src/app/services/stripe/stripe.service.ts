@@ -2,11 +2,18 @@ import { Injectable, isDevMode } from '@angular/core';
 import { loadStripe } from '@stripe/stripe-js';
 import { getConfig } from '../../../environments/environment';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { from, Observable, throwError, BehaviorSubject, of } from 'rxjs';
-import { catchError, map, switchMap, tap } from 'rxjs/operators';
+import { from, Observable, throwError, BehaviorSubject, of, combineLatest } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { SubscriptionStatus, SubscriptionResponse } from 'src/app/types/SubscriptionTypes';
+import { Firestore, doc, getDoc } from '@angular/fire/firestore';
+
+interface StripeError {
+  code: string;
+  message: string;
+  type: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -16,315 +23,263 @@ export class StripeService {
   private stripePromise = loadStripe(this.config.stripe);
   public apiUrl: string = this.config.url;
   
-  // Subscription status as a BehaviorSubject
   private subscriptionStatusSubject = new BehaviorSubject<SubscriptionStatus | null>(null);
   public subscriptionStatus$ = this.subscriptionStatusSubject.asObservable();
 
   constructor(
     private http: HttpClient,
     private router: Router,
-    private auth: AuthService
-  ) {
-  }
+    private auth: AuthService,
+    private firestore: Firestore
+  ) {}
 
-  // Get auth headers for API requests
   private getAuthHeaders(): Observable<HttpHeaders> {
     return from(this.auth.getCurrentUser()?.getIdToken() || Promise.resolve(null)).pipe(
       map(token => {
-        if (!token) throw new Error('No authentication token available');
+        if (!token) {
+          console.error('STRIPE: No authentication token available');
+          throw new Error('No authentication token available');
+        }
         return new HttpHeaders({
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         });
+      }),
+      catchError(error => {
+        console.error('STRIPE: Error getting auth headers', error);
+        return throwError(() => new Error('Failed to get authentication headers'));
       })
     );
   }
 
-  // Get subscription status - returns an Observable
   getSubscriptionStatus(userId: string): Observable<SubscriptionStatus> {
     console.log('STRIPE: Getting subscription for user', userId);
     
-    // Return cached value if available
-    if (this.subscriptionStatusSubject.value) {
-      console.log('STRIPE: Returning cached subscription', this.subscriptionStatusSubject.value);
-      return of(this.subscriptionStatusSubject.value);
-    }
-    
-    // Otherwise fetch fresh data
     return this.getAuthHeaders().pipe(
       switchMap(headers => {
-        return this.http.get<any>(
+        // Get subscription status from API
+        const subscription$ = this.http.get<any>(
           `${this.apiUrl}/stripe/subscription-status/${userId}`,
           { headers, withCredentials: true }
-        ).pipe(
-          map(response => {
-            console.log('STRIPE: Raw subscription response', response);
-            
-            // Handle empty response
-            if (!response || typeof response !== 'object') {
-              console.log('STRIPE: Empty response, returning default status');
+        );
+
+        // Get usage data from Firebase
+        const usage$ = from(getDoc(doc(this.firestore, 'users', userId))).pipe(
+          map(docSnapshot => {
+            if (!docSnapshot.exists()) {
+              return {
+                pdfsGenerated: 0,
+                lastPdfGeneration: null,
+                pdfUsageLimit: null
+              };
+            }
+            const data = docSnapshot.data();
+            return {
+              pdfsGenerated: data['pdfsGenerated'] || 0,
+              lastPdfGeneration: data['lastPdfGeneration'] || null,
+              pdfUsageLimit: data['pdfUsageLimit'] || null
+            };
+          }),
+          catchError(error => {
+            console.error('STRIPE: Error fetching usage from Firebase', error);
+            return of({
+              pdfsGenerated: 0,
+              lastPdfGeneration: null,
+              pdfUsageLimit: null
+            });
+          })
+        );
+
+        // Combine both observables
+        return combineLatest([subscription$, usage$]).pipe(
+          map(([subscriptionResponse, usageData]) => {
+            if (!subscriptionResponse) {
+              console.log('STRIPE: No subscription response, returning default status');
               const emptyStatus = this.createEmptyStatus();
               this.subscriptionStatusSubject.next(emptyStatus);
               return emptyStatus;
             }
-            // Transform response to standard format
+
             const status: SubscriptionStatus = {
-              active: response.subscription?.status === 'active',
-              subscription: {
-                status: response.subscription?.status || null,
-                originalStartDate: response.subscription?.created || null,
-                currentPeriodEnd: response.subscription?.currentPeriodEnd || null,
-                willAutoRenew: response.subscription?.willAutoRenew || false
-              },
+              active: subscriptionResponse.subscription?.status === 'active',
+              subscription: subscriptionResponse.subscription ? {
+                id: subscriptionResponse.subscription.id || '',
+                status: subscriptionResponse.subscription.status || null,
+                created: subscriptionResponse.subscription.created || null,
+                currentPeriodEnd: subscriptionResponse.subscription.currentPeriodEnd || null,
+                currentPeriodStart: subscriptionResponse.subscription.currentPeriodStart || null,
+                cancelAtPeriodEnd: subscriptionResponse.subscription.cancelAtPeriodEnd || false,
+                willAutoRenew: subscriptionResponse.subscription.willAutoRenew || false,
+                originalStartDate: subscriptionResponse.subscription.created || null,
+                plan: subscriptionResponse.subscription.plan ? {
+                  amount: subscriptionResponse.subscription.plan.amount,
+                  interval: subscriptionResponse.subscription.plan.interval,
+                  nickname: subscriptionResponse.subscription.plan.nickname
+                } : null
+              } : null,
               usage: {
-                pdfsGenerated: response.usage?.pdfsGenerated || 0
+                pdfsGenerated: usageData.pdfsGenerated,
+                lastPdfGeneration: usageData.lastPdfGeneration,
+                pdfUsageLimit: usageData.pdfUsageLimit,
+                subscriptionStatus: subscriptionResponse.subscription?.status || 'inactive',
+                subscriptionFeatures: {
+                  pdfGeneration: subscriptionResponse.subscription?.features?.pdfGeneration || false,
+                  unlimitedPdfs: subscriptionResponse.subscription?.features?.unlimitedPdfs || false,
+                  pdfLimit: subscriptionResponse.subscription?.features?.pdfLimit || null
+                }
               },
-              plan: response.subscription?.plan || null
+              plan: subscriptionResponse.subscription?.plan?.nickname || null
             };
             
-            debugger
             this.subscriptionStatusSubject.next(status);
-            console.log('STRIPE: Processed subscription status', status);
-            
             return status;
           }),
           catchError(error => {
-            console.error('STRIPE: Error getting subscription status', error);
-            
-            // For 404, return empty status
-            if (error.status === 404) {
-              console.log('STRIPE: 404 error, returning empty status');
-              const emptyStatus = this.createEmptyStatus();
-              this.subscriptionStatusSubject.next(emptyStatus);
-              return of(emptyStatus);
-            }
-            
-            // For other errors, return empty status but log the error
-            console.error('STRIPE: Unexpected error', error);
-            return of(this.createEmptyStatus());
+            console.error('STRIPE: Error processing subscription status', error);
+            const emptyStatus = this.createEmptyStatus();
+            this.subscriptionStatusSubject.next(emptyStatus);
+            return of(emptyStatus);
           })
         );
       })
     );
   }
-  
 
   private createEmptyStatus(): SubscriptionStatus {
     return {
       active: false,
       subscription: {
+        id: '',
         status: null,
-        originalStartDate: null,
+        created: null,
         currentPeriodEnd: null,
-        willAutoRenew: false
+        currentPeriodStart: null,
+        cancelAtPeriodEnd: false,
+        willAutoRenew: false,
+        originalStartDate: null,
+        plan: null
       },
-      usage: { pdfsGenerated: 0 }
+      usage: {
+        pdfsGenerated: 0,
+        lastPdfGeneration: null,
+        pdfUsageLimit: null,
+        subscriptionStatus: 'inactive',
+        subscriptionFeatures: {
+          pdfGeneration: false,
+          unlimitedPdfs: false,
+          pdfLimit: null
+        }
+      }
     };
   }
 
- 
   clearCache(): void {
     console.log('STRIPE: Clearing subscription cache');
     this.subscriptionStatusSubject.next(null);
   }
 
-  createSubscription(userId: string, userEmail: string): Observable<{ success: boolean; url?: string; checkoutUrl?: string }> {
-    console.log('STRIPE: Creating subscription', { userId, userEmail });
-    return this.getAuthHeaders().pipe(
-      switchMap(headers => {
-        return this.http.post<any>(
-          `${this.apiUrl}/stripe/create-portal-session`,
-          { userId, userEmail },
-          { headers, withCredentials: true }
-        ).pipe(
-          map(response => {
-            
-            console.log('STRIPE: Create subscription response', response);
-            
-            // Check for url in the response
-            if (response?.url) {
-              // Clear cache since subscription status will change
-              this.clearCache();
-              
-              return { 
-                success: true, 
-                url: response.url,
-                checkoutUrl: response.url // Add both properties for backward compatibility
-              };
-            } else if (response?.checkoutUrl) {
-              // Clear cache since subscription status will change
-              this.clearCache();
-              
-              return { 
-                success: true, 
-                url: response.checkoutUrl, // Add both properties for backward compatibility
-                checkoutUrl: response.checkoutUrl
-              };
-            } else {
-              console.error('No URL found in response:', response);
-              return { 
-                success: false 
-              };
-            }
-          }),
-          catchError(error => {
-            console.error('STRIPE: Error creating subscription', error);
-            return of({ 
-              success: false 
-            });
-          })
-        );
-      })
-    );
-  }
-
-  // Open customer portal - returns an Observable
-  createPortalSession(userId: string, userEmail: string, returnUrl?: string): Observable<{ success: boolean; url?: string }> {
+  createPortalSession(userId: string, userEmail: string, returnUrl?: string): Observable<{ success: boolean; url?: string; error?: string; type?: string }> {
     console.log('STRIPE: Creating portal session', { userId, userEmail, returnUrl });
-    
+    debugger
     return this.getAuthHeaders().pipe(
       switchMap(headers => {
-        return this.http.post<{ url: string }>(
+        // Ensure we use http for localhost
+        const baseUrl = window.location.origin;
+        const protocol = baseUrl.includes('localhost') ? 'http' : 'https';
+        const host = baseUrl.replace(/^https?:\/\//, '');
+        const safeReturnUrl = returnUrl || `${protocol}://${host}/profile`;
+        debugger
+
+        const requestBody = {
+          userId,
+          userEmail,
+          returnUrl: safeReturnUrl,
+          locale: 'en-US'
+        };
+
+        console.log('STRIPE: Portal session request body', requestBody);
+
+        return this.http.post<{ 
+          success: boolean; 
+          url: string; 
+          type: 'portal' | 'checkout';
+          message?: string;
+          error?: string;
+        }>(
           `${this.apiUrl}/stripe/create-portal-session`,
-          { 
-            userId,
-            userEmail,
-            returnUrl: returnUrl || `${window.location.origin}/profile`
-          },
+          requestBody,
           { headers, withCredentials: true }
         ).pipe(
           map(response => {
             console.log('STRIPE: Portal session response', response);
             
+            if (!response?.success) {
+              throw new Error(response?.error || 'Failed to create portal session');
+            }
+
             if (!response?.url) {
-              throw new Error('No portal URL received');
+              throw new Error('No portal URL received from server');
+            }
+
+            try {
+              // Log the URL before any manipulation
+              console.log('STRIPE: Raw URL from server:', response.url);
+              
+              // Create a URL object to validate the format
+              const url = new URL(response.url);
+              console.log('STRIPE: Parsed URL:', url.toString());
+              
+              if (!['http:', 'https:'].includes(url.protocol)) {
+                throw new Error('Invalid URL protocol');
+              }
+              
+              // Use the validated URL
+              const finalUrl = url.toString();
+              console.log('STRIPE: Final URL to redirect to:', finalUrl);
+              
+              this.clearCache();
+              window.location.href = finalUrl;
+              
+              return { 
+                success: true, 
+                url: finalUrl,
+                type: response.type,
+                message: response.message
+              };
+            } catch (e) {
+              console.error('STRIPE: URL validation error:', e);
+              console.error('STRIPE: Invalid URL received:', response.url);
+              throw new Error('Invalid URL format received from server');
+            }
+          }),
+          catchError((error: HttpErrorResponse) => {
+            console.error('STRIPE: Error creating portal session', error);
+            
+            let errorMessage = 'An error occurred while creating the portal session';
+            
+            if (error.error?.message) {
+              errorMessage = error.error.message;
+            } else if (error.error?.error) {
+              errorMessage = error.error.error;
+            } else if (error.status === 401) {
+              errorMessage = 'Authentication failed. Please log in again.';
+            } else if (error.status === 403) {
+              errorMessage = 'You do not have permission to perform this action.';
             }
             
-            // Clear cache since subscription status might change in portal
-            this.clearCache();
-            
-            return { 
-              success: true, 
-              url: response.url 
-            };
-          }),
-          catchError(error => {
-            console.error('STRIPE: Error creating portal session', error);
             return of({ 
-              success: false 
+              success: false,
+              error: errorMessage
             });
           })
         );
-      })
-    );
-  }
-
-  // Cancel subscription
-  cancelSubscription(subscriptionId: string): Observable<any> {
-    console.log('STRIPE_CANCEL_CALLED', { subscriptionId });
-    
-    const cancelSub$ = this.getAuthHeaders().pipe(
-      switchMap(headers => {
-        const cancelRequest$ = this.http.post(
-          `${this.apiUrl}/subscriptions/cancel`,
-          { subscriptionId },
-          { headers, withCredentials: true }
-        );
-        
-        return cancelRequest$.pipe(
-          tap(response => console.log('STRIPE_CANCEL_RESPONSE', response)),
-          catchError(error => {
-            console.error('STRIPE_CANCEL_ERROR', error);
-            return this.handleError(error);
-          })
-        );
-      })
-    );
-    
-    return cancelSub$;
-  }
-
-  // Handle payment redirect
-  async handlePaymentRedirect(sessionId: string): Promise<boolean> {
-    console.log('STRIPE_PAYMENT_REDIRECT', { sessionId });
-    
-    try {
-      const headers = await this.getAuthHeaders().toPromise();
-      const response = await this.http.get<{ status: string }>(
-        `${this.apiUrl}/subscriptions/session-status/${sessionId}`,
-        { headers, withCredentials: true }
-      ).toPromise();
-      
-      console.log('STRIPE_REDIRECT_RESPONSE', response);
-      
-      if (response?.status === 'complete') {
-        this.router.navigate(['/dashboard']);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('STRIPE_REDIRECT_ERROR', error);
-      return false;
-    }
-  }
-
-  // Error handler
-  private handleError(error: HttpErrorResponse): Observable<never> {
-    console.error('STRIPE_ERROR_HANDLER', error);
-    return throwError(() => ({
-      message: error.error?.message || error.message || 'Unknown error',
-      statusCode: error.status
-    }));
-  }
-
-  forceRefreshSubscription(userId: string): Observable<SubscriptionStatus> {
-    console.log('STRIPE: Forcing refresh of subscription data');
-    debugger
-    this.clearCache();
-    // Add a cache-busting parameter to the URL
-    const timestamp = new Date().getTime();
-    return this.getAuthHeaders().pipe(
-      switchMap(headers => {
-        return this.http.get<any>(
-          `${this.apiUrl}/stripe/subscription-status/${userId}?_t=${timestamp}`,
-          { headers, withCredentials: true }
-        ).pipe(
-          map(response => {
-            console.log('STRIPE: Forced refresh response', response);
-            
-            // Handle empty response
-            if (!response || typeof response !== 'object') {
-              console.log('STRIPE: Empty response, returning default status');
-              const emptyStatus = this.createEmptyStatus();
-              this.subscriptionStatusSubject.next(emptyStatus);
-              return emptyStatus;
-            }
-            
-            // Transform response to standard format
-            const status: SubscriptionStatus = {
-              active: response.subscription?.status === 'active',
-              subscription: {
-                status: response.subscription?.status || null,
-                originalStartDate: response.subscription?.originalStartDate || null,
-                currentPeriodEnd: response.subscription?.currentPeriodEnd || null,
-                willAutoRenew: response.subscription?.willAutoRenew || false
-              },
-              usage: {
-                pdfsGenerated: response.usage?.pdfsGenerated || 0
-              }
-            };
-            
-            // Cache the result
-            this.subscriptionStatusSubject.next(status);
-            console.log('STRIPE: Processed forced refresh status', status);
-            
-            return status;
-          }),
-          catchError(error => {
-            console.error('STRIPE: Error forcing refresh', error);
-            return of(this.createEmptyStatus());
-          })
-        );
+      }),
+      catchError(error => {
+        console.error('STRIPE: Error in portal session creation flow', error);
+        return of({ 
+          success: false,
+          error: 'Failed to create portal session'
+        });
       })
     );
   }

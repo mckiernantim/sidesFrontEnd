@@ -42,6 +42,7 @@ export class CompleteComponent implements OnInit {
   }
 
   downloadPDF() {
+    debugger
     if (!this.name) {
       this.error = 'Document name not found';
       return;
@@ -51,8 +52,17 @@ export class CompleteComponent implements OnInit {
     this.isDownloading = true;
     this.error = '';
 
-    // Just pass the name - the cookie contains the token
-    this.upload.downloadDocumentById(this.name, this.userId).subscribe({
+    // Get the token from localStorage
+    const pdfToken = localStorage.getItem('pdfBackupToken');
+    if (!pdfToken) {
+      this.error = 'PDF token not found. Please generate a new document.';
+      this.isLoading = false;
+      this.isDownloading = false;
+      return;
+    }
+
+    // Download using the header-based approach
+    this.upload.downloadPdf(this.name, '', pdfToken, this.userId).subscribe({
       next: (blob) => {
         this.isLoading = false;
         this.isDownloading = false;
@@ -77,6 +87,9 @@ export class CompleteComponent implements OnInit {
           this.error = 'Document not found. It may have been deleted';
         } else if (error.status === 401 || error.status === 400) {
           this.error = 'Your download link has expired. Please generate a new document.';
+          // Clear the expired token
+          localStorage.removeItem('pdfToken');
+          localStorage.removeItem('pdfTokenExpires');
           // Redirect to home after a delay
           setTimeout(() => this.router.navigate(['/']), 3000);
         } else {

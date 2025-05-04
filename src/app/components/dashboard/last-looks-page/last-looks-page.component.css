@@ -28,7 +28,9 @@
     height: 1056px;
     width: 816px;
     background-color: white;
-  
+    margin: 0 auto;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 .grab-cursor {
     cursor: grabbing !important;
@@ -40,16 +42,20 @@
 .break {
     page-break-after: always;
     height: 1056px;
-    width: 100%;
+    width: 816px;
     margin: 0 auto;
-    margin-bottom: 50px;
     text-align: left;
-
+    position: relative;
+    overflow: visible;
 }
 .last-looks-container {
-    display:flex;
-    flex-direction: row;
- 
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 1rem;
+    background-color: #f9fafb;
+    min-width: 816px; /* Minimum width of the page */
+    height: 100%;
 }
 
 p {
@@ -57,12 +63,11 @@ p {
 }
 
 .screenbox {
-    margin: 0 auto;
-    margin-bottom: 50px;
+    margin: 0;
     position: relative;
-    break-before: always;
-    width: 95%;
-    height: 100%
+    width: 100%;
+    height: 100%;
+    padding: 0;
 }
 
 li,
@@ -78,14 +83,28 @@ span {
 }
 
 .bar-span {
-
-}
-.page-number-text {
     position: absolute;
-    page-break-before: always;
-    text-align: right;
-    right: 105px;
-    bottom: 975px
+    width: 100%;
+    z-index: 10;
+    pointer-events: auto;
+}
+
+.bar-span.cdk-drag-preview {
+    opacity: 0.9 !important;
+    background-color: white !important;
+    border: 2px solid #3b82f6 !important;
+    border-radius: 3px !important;
+    box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4) !important;
+    z-index: 1001 !important;
+    transform: none !important;
+}
+
+.page-number-text {
+    position: absolute !important;
+    page-break-before: always !important;
+    text-align: right !important;
+    right: 105px !important;
+    bottom: 975px !important;
 }
 
 .draft-text {
@@ -186,32 +205,42 @@ li.page-number {
 }
 
 .END {
-    width: 85%;
-    border-bottom: 2.5px solid black;
-    position: absolute;
-    font-size: 11.5px;
-    padding-left: 4%;
+    width: 85% !important;
+    border-bottom: 2.5px solid black !important;
+    font-size: 11.5px !important;
+    padding-left: 4% !important;
     font-weight: 900 !important;
+    position: absolute !important;
+    z-index: 5;
+    pointer-events: auto;
 }
 
 .CONTINUE {
-    bottom: 45.5px;
-    width: 100%;
-    border-top: 2.5px solid;
-    padding-top: 2.5px;
-    text-align: right;
-    font-size: 16pt;
+    bottom: 45.5px !important;
+    width: 90% !important;
+    border-top: 2.5px solid !important;
+    padding-top: 2.5px !important;
+    text-align: right !important;
+    right: 5px !important;
+    font-size: 16pt !important;
     font-weight: 900 !important;
+    position: absolute !important;
+    z-index: 100;
+    pointer-events: auto;
 }
 
 .CONTINUE-TOP {
-    top: 45.5px;
-    width: 100%;
-    border-top: 2.5px solid;
-    padding-top: 2.5px;
-    text-align: left;
-    font-size: 16pt;
+    top: 45.5px !important;
+    width: 90% !important;
+    border-top: 2.5px solid !important;
+    padding-top: 2.5px !important;
+    text-align: left !important;
+    left: 25px !important;
+    font-size: 16pt !important;
     font-weight: 900 !important;
+    position: absolute !important;
+    z-index: 100;
+    pointer-events: auto;
 }
 
 
@@ -245,14 +274,18 @@ li.page-number {
 }
 
 .start-span {
-    right: 5%;
-    font-size: 16pt;
-
+    left: 1% !important;
+    font-size: 16pt !important;
+    padding-left: 5px !important;
+    padding-right: 5px !important;
 }
 
 .end-span {
-    font-size: 16pt;
-    bottom: -5px;
+    left: -15px !important;
+    font-size: 16pt !important;
+    bottom: -5px !important;
+    padding-left: 5px !important;
+    padding-right: 5px !important;
 }
 
 .notes {
@@ -261,8 +294,6 @@ li.page-number {
     border-bottom: 2px solid;
     font-size: 30px;
     height: 32px;
-
-
 }
 .selected {
     border: 2px solid black;
@@ -321,9 +352,26 @@ li.page-number {
   }
 
 
-  @media (max-width:1200px)  {
+  @media (max-width: 1200px) {
     .last-looks-container {
-        justify-content: center;
+        padding: 0.5rem;
+    }
+    
+    .page {
+        transform-origin: top center;
+        transform: scale(0.9);
+    }
+  }
+
+  @media (max-width: 900px) {
+    .page {
+        transform: scale(0.8);
+    }
+  }
+
+  @media (max-width: 700px) {
+    .page {
+        transform: scale(0.7);
     }
   }
 
@@ -356,10 +404,8 @@ li.page-number {
 }
 
 .cdk-drag-placeholder {
-  opacity: 0.4 !important;
-  background-color: rgba(59, 130, 246, 0.2) !important;
-  border: 2px dashed #3b82f6 !important;
-  border-radius: 3px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 .cdk-drop-list-dragging .cdk-drag {
@@ -500,4 +546,519 @@ li[crossedout="true"],
 li.crossed-out {
   text-decoration: line-through;
   color: #ff0000; /* Red color for visibility */
+}
+
+/* Style for draggable end spans */
+.draggable-end {
+  cursor: move;
+}
+
+.END.cdk-drag-preview {
+  opacity: 0.9 !important;
+  background-color: white !important;
+  border: 2px solid #dc2626 !important; /* Red border for end spans */
+  border-radius: 3px !important;
+  box-shadow: 0 5px 15px rgba(220, 38, 38, 0.4) !important;
+  z-index: 1001 !important;
+  transform: scale(1.05) !important;
+  transition: transform 0.1s ease-in-out !important;
+}
+
+.END.cdk-drag-placeholder {
+  opacity: 0.4 !important;
+  background-color: rgba(220, 38, 38, 0.2) !important;
+  border: 2px dashed #dc2626 !important;
+  border-radius: 3px !important;
+}
+
+/* Add hover effect for end spans in edit mode */
+.edit-mode .END:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  cursor: move;
+}
+
+/* Make sure the spans are visible and draggable */
+.END, .CONTINUE, .CONTINUE-TOP {
+  display: block !important;
+  visibility: visible !important;
+  cursor: move;
+}
+
+/* Add visual feedback when hovering over draggable spans */
+.edit-mode .END:hover,
+.edit-mode .CONTINUE:hover,
+.edit-mode .CONTINUE-TOP:hover {
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Style for draggable start spans */
+.draggable-start {
+  cursor: move;
+}
+
+/* Make sure all spans are visible and draggable */
+.START, .END, .CONTINUE, .CONTINUE-TOP {
+  display: block !important;
+  visibility: visible !important;
+  cursor: move;
+}
+
+/* Add visual feedback when hovering over draggable spans */
+.edit-mode .START:hover,
+.edit-mode .END:hover,
+.edit-mode .CONTINUE:hover,
+.edit-mode .CONTINUE-TOP:hover {
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Only show selection styling in edit mode */
+.selected-line {
+  outline: 2px solid #3b82f6;
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Hide selection when not in edit mode */
+:not(.edit-mode) .selected-line {
+  outline: none !important;
+  background-color: transparent !important;
+}
+
+/* Add these styles to your component CSS */
+.bar-text {
+  display: inline-block;
+  padding: 2px 10px !important; /* Use padding for visual rendering */
+  margin: 0;
+  border-radius: 3px;
+  font-size: 16pt;
+  font-weight: 900 !important;
+}
+
+.edit-mode .bar-text:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.END .bar-text {
+  font-size: 14.5pt;
+  padding-left: 10px !important;
+  padding-right: 5px !important;
+}
+
+.CONTINUE .bar-text {
+  font-size: 16pt;
+  padding-right: 10px !important;
+  padding-left: 5px !important;
+  text-align: right;
+}
+
+.CONTINUE-TOP .bar-text {
+  font-size: 16pt;
+  padding-left: 10px !important;
+  padding-right: 5px !important;
+  text-align: left;
+}
+
+[contenteditable="true"] {
+  outline: none;
+  background-color: rgba(255, 165, 0, 0.2);
+  min-width: 50px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: inherit;
+  font-weight: inherit;
+  font-family: inherit;
+}
+
+.ew-resize-cursor {
+  cursor: ew-resize !important;
+}
+
+.grab-cursor {
+  cursor: grabbing !important;
+}
+
+/* Preserve the cursor styles for draggable elements */
+.edit-mode li,
+.edit-mode .bar-span,
+.edit-mode .END,
+.edit-mode .CONTINUE,
+.edit-mode .CONTINUE-TOP,
+.edit-mode .bar-text {
+  cursor: grab !important;
+}
+
+/* When actively dragging, use the grabbing cursor */
+.edit-mode li:active,
+.edit-mode .bar-span:active,
+.edit-mode .END:active,
+.edit-mode .CONTINUE:active,
+.edit-mode .CONTINUE-TOP:active,
+.edit-mode .bar-text:active,
+.grab-cursor {
+  cursor: grabbing !important;
+}
+
+/* Ensure the text editing cursor is still used when editing text */
+[contenteditable="true"] {
+  cursor: text !important;
+}
+
+/* Use ew-resize cursor for horizontal text dragging */
+.edit-mode .bar-text:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  cursor: ew-resize !important;
+}
+
+/* Fix for continue-top dragging */
+.continue-top-span {
+  position: absolute !important;
+  width: 100%;
+  z-index: 100;
+  pointer-events: auto;
+  /* Ensure it doesn't affect layout */
+  transform: none !important;
+}
+
+/* Ensure the drag preview doesn't affect layout */
+.continue-top-span.cdk-drag-preview {
+  position: absolute !important;
+  transform: none !important;
+  height: auto !important;
+  width: 100% !important;
+  z-index: 1001 !important;
+  pointer-events: none;
+}
+
+/* Prevent the placeholder from affecting layout */
+.continue-top-span.cdk-drag-placeholder {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Ensure drag previews don't affect layout */
+.continue-top-span.cdk-drag-preview,
+.continue-span.cdk-drag-preview,
+.end-span.cdk-drag-preview {
+  position: absolute !important;
+  transform: none !important;
+  height: auto !important;
+  width: 100% !important;
+  z-index: 1001 !important;
+  pointer-events: none !important;
+  opacity: 0.7 !important;
+}
+
+/* Prevent placeholders from affecting layout */
+.cdk-drag-placeholder {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Hide duplicate page numbers */
+li.page-number {
+  display: none !important;
+}
+
+.page-number-hidden,
+.page-number {
+  display: none !important;
+}
+
+/* Fix the bar-text padding with higher specificity */
+.screenbox .bar-span .bar-text,
+.screenbox span.bar-text,
+.edit-mode .bar-span .bar-text,
+.edit-mode span.bar-text,
+.CONTINUE .bar-text,
+.CONTINUE-TOP .bar-text,
+.END .bar-text,
+.bar .bar-text {
+  padding: 2px 5px !important;
+  display: inline-block !important;
+  transition: transform 0.1s ease !important;
+  border-radius: 3px !important;
+}
+
+/* Fix specific bar text styles */
+.start-span {
+  left: 1% !important;
+  font-size: 16pt !important;
+  padding-left: 5px !important;
+  padding-right: 5px !important;
+}
+
+
+
+/* Ensure the bar text is properly positioned */
+.CONTINUE .bar-text {
+  position: relative !important;
+  right: 0 !important;
+  text-align: right !important;
+  font-size: 16pt !important;
+  padding-right: 10px !important;
+}
+
+.CONTINUE-TOP .bar-text {
+  position: relative !important;
+  left: 0 !important;
+  text-align: left !important;
+  font-size: 16pt !important;
+  padding-left: 10px !important;
+}
+
+.END .bar-text {
+  position: relative !important;
+  left: 0 !important;
+  text-align: left !important;
+  font-size: 16pt !important;
+  padding-left: 10px !important;
+  text-align: right !important;
+}
+
+/* Ensure bar spans have the correct styling */
+.bar-span.CONTINUE,
+span.CONTINUE {
+  bottom: 45.5px !important;
+  width: 90% !important;
+  border-top: 2.5px solid !important;
+  padding-top: 2.5px !important;
+  text-align: right !important;
+  right: 5px !important;
+  font-size: 16pt !important;
+  font-weight: 900 !important;
+  position: absolute !important;
+}
+
+.bar-span.CONTINUE-TOP,
+span.CONTINUE-TOP {
+  top: 45.5px !important;
+  width: 90% !important;
+  border-top: 2.5px solid !important;
+  padding-top: 2.5px !important;
+  text-align: left !important;
+  left: 25px !important;
+  font-size: 16pt !important;
+  font-weight: 900 !important;
+  position: absolute !important;
+}
+
+.bar-span.END,
+span.END {
+  width: 95% !important;
+
+  font-size: 11.5px !important;
+  padding-left: 4% !important;
+  font-weight: 900 !important;
+  position: absolute !important;
+  text-align: right !important;
+}
+
+/* Pagination controls */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  margin: 15px 0;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.pagination-button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 16px;
+  margin: 0 5px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:hover {
+  background-color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.page-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 10px;
+  color: #1f2937;
+}
+
+/* Editing instructions */
+.editing-instructions {
+  background-color: rgba(255, 251, 235, 0.95);
+  border-left: 4px solid #f59e0b;
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.editing-instructions h3 {
+  color: #b45309;
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.editing-instructions ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.editing-instructions li {
+  margin-bottom: 8px;
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.editing-instructions kbd {
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  color: #1f2937;
+  display: inline-block;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 5px;
+  margin: 0 2px;
+}
+
+/* Help button */
+.help-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  z-index: 1000;
+}
+
+.help-button:hover {
+  background-color: #2563eb;
+  transform: scale(1.1);
+}
+
+/* Bar controls */
+.bar-controls {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 10px 0;
+}
+
+.bar-controls h4 {
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.bar-controls-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bar-controls button {
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.bar-controls button:hover {
+  background-color: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.bar-controls button.active {
+  background-color: #dbeafe;
+  border-color: #60a5fa;
+  color: #1e40af;
+}
+
+.bar-controls button svg {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+}
+
+/* Update bar text positioning */
+.bar-span.bar .bar-text {
+  position: relative;
+  left: 10px; /* Default left position for START bars */
+  text-align: left;
+}
+
+.bar-span.END .bar-text {
+  position: relative;
+  left: 10px; /* Default left position for END bars */
+  text-align: left;
+}
+
+.CONTINUE .bar-text {
+  position: relative;
+  right: 10px; /* Default right position for CONTINUE bars */
+  left: auto;
+  text-align: right;
+}
+
+.CONTINUE-TOP .bar-text {
+  position: relative;
+  left: 10px; /* Default left position for CONTINUE-TOP bars */
+  right: auto;
+  text-align: left;
+}
+
+/* Add styles for the page wrapper to handle overflow */
+.page-wrapper {
+    overflow: auto;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 1rem;
 }

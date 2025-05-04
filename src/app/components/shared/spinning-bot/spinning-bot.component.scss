@@ -1,0 +1,45 @@
+.spinning-bot-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  padding: 20px;
+}
+
+.spinning-bot-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  max-width: 600px;
+  text-align: center;
+}
+
+.spinning-bot-icon {
+  font-size: 48px;
+  color: #ff4444;
+  animation: spin 2s linear infinite;
+}
+
+.spinning-bot-message {
+  h3 {
+    font-size: 24px;
+    margin-bottom: 16px;
+    color: #333;
+  }
+
+  p {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 8px;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+} 

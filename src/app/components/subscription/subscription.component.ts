@@ -39,9 +39,9 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
     }
 
     try {
-      const response = await firstValueFrom(this.stripeService.createSubscription(user.uid, user.email));
-      if (response.checkoutUrl) {
-        window.location.href = response.checkoutUrl;
+      const response = await firstValueFrom(this.stripeService.createPortalSession(user.uid, user.email));
+      if (response.url) {
+        window.location.href = response.url;
       }
     } catch (error) {
       console.error('Error starting subscription:', error);
