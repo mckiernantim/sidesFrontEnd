@@ -50,6 +50,7 @@ app-dashboard-right {
         overflow: hidden;
         background-color: #f9fafb;
         margin-bottom: 1rem;
+        min-height: 1200px
 }
 
 

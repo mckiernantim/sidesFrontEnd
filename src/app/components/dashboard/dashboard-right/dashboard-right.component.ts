@@ -43,6 +43,7 @@ import { CommonModule } from '@angular/common';
 import { CheckoutModalComponent } from '../checkout-modal/checkout-modal.component';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { LastLooksComponent } from '../last-looks/last-looks.component';
+import { TailwindDialogComponent } from '../../../components/shared/tailwind-dialog/tailwind-dialog.component';
 
 interface toolTipOption {
   title: string;
@@ -503,21 +504,55 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
         return;
       }
 
+      // Check if we have a callsheet from localStorage
+      const callSheetPath = localStorage.getItem('callSheetPath');
+      const hasCallSheet = !!callSheetPath || !!this.callsheet;
+
       // Prepare document with user data
       const documentToSend = {
         ...finalDocument,
         name: this.script,
         email: user.email,
         userId: user.uid,
-        callSheet: this.callsheet || null,
+        callSheetPath: this.callsheet || callSheetPath || null,
+        hasCallSheet: hasCallSheet
       };
+      debugger
+      console.log('Sending document to server:', {
+        ...documentToSend,
+        callSheet: documentToSend.callSheet ? 'Present' : 'Not present' // Log presence without exposing content
+      });
 
-      console.log('Sending document to server:', documentToSend);
+      // Open loading dialog
+      const loadingDialog = this.dialog.open(TailwindDialogComponent, {
+        data: {
+          title: 'Generating Your PDF',
+          content: `
+            <div class="flex flex-col items-center justify-center py-4">
+              <img src="assets/animations/ScriptBot_Animation-BW.gif" alt="Processing..." class="w-64 h-64 mb-4">
+              <div class="text-center">
+                <h3 class="text-lg font-semibold text-indigo-700 mb-2">Please Wait</h3>
+                <p class="text-gray-600 mb-2">We're generating your PDF document.</p>
+                <div class="flex items-center justify-center space-x-2 text-sm text-gray-500">
+                  <span>Processing your scenes${hasCallSheet ? ' and callsheet' : ''}</span>
+                  <svg class="animate-spin h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          `,
+          showCloseButton: false,
+          disableClose: true,
+          showSpinner: true
+        }
+      });
 
       // Generate PDF
       this.upload.generatePdf(documentToSend).subscribe({
         next: (response: any) => {
-          this.dialog.closeAll();
+          loadingDialog.close();
 
           console.log('PDF generation response:', response);
 
@@ -535,6 +570,7 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
 
             this.logAnalyticsEvent('pdf_generation_success', {
               documentName: this.script,
+              includedCallSheet: hasCallSheet
             });
 
             // Store document name
@@ -553,12 +589,13 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          this.dialog.closeAll();
+          loadingDialog.close();
 
           console.error('PDF generation error:', error);
           this.logAnalyticsEvent('pdf_generation_error', {
             documentName: this.script,
             errorMessage: error.message || 'Unknown error',
+            includedCallSheet: hasCallSheet
           });
 
           if (error.status === 403 && error.error?.needsSubscription) {

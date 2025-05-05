@@ -149,7 +149,7 @@ export class UploadService {
 
   generatePdf(finalDocument: any): Observable<PdfGenerationResponse> {
     console.log('Generating PDF with document:', finalDocument);
-    
+    debugger
     return from(getAuth().currentUser?.getIdToken() || Promise.reject('No user')).pipe(
       switchMap((token) => {
         console.log('Got auth token, sending request to server');
@@ -160,7 +160,7 @@ export class UploadService {
             data: finalDocument.data,
             name: finalDocument.name,
             email: finalDocument.email,
-            callSheet: finalDocument.callSheet,
+            callSheetPath: finalDocument.callSheet,
             userId: finalDocument.userId
           }, 
           {

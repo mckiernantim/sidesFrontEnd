@@ -181,6 +181,7 @@ app-last-looks {
     overflow: hidden;
     margin-bottom: 1rem;
     background-color: #f9fafb;
+    min-height: 1300px;
 }
 
 .dashboard-right-content {
@@ -189,6 +190,7 @@ app-last-looks {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    height: auto;
 }
 
 /* Header Section Styles */
