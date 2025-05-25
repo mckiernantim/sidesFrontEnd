@@ -97,7 +97,7 @@
                             [class.selected-line]="isSelectedLine(line, lineIndex)"
                             [style.bottom]="line.calculatedYpos"
                             [style.left]="line.calculatedXpos" 
-                            [textContent]="line.text">
+                            [textContent]="line.text + ' ' + line.docPageIndex + ' ' + line.docPageLineIndex">
                         </li>
                     </ng-template>
 

@@ -5,7 +5,6 @@ import { UndoService } from 'src/app/services/edit/undo.service';
 import { UndoStackItem } from 'src/app/services/edit/undo.service';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
-import { PdfService } from 'src/app/services/pdf/pdf.service';
 
 @Component({
   selector: 'app-last-looks-page',
@@ -378,8 +377,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   constructor(
     private undoService: UndoService,
-    private cdRef: ChangeDetectorRef,
-    private pdf: PdfService
+    private cdRef: ChangeDetectorRef
   ) {
     // Subscribe to undo changes
     this.undoService.change$.subscribe(change => {
@@ -397,28 +395,25 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       this.canEditDocument = true;
       this.makeEndSceneLinesEditable();
     }
+  }
 
-    // Subscribe to finalDocumentData$ for updates
-    this.finalDocumentDataSubscription = this.pdf.finalDocumentData$.subscribe(data => {
-      if (data && data.length > 0) {
-        console.log('LastLooksPage received document update:', data);
-        // Update the current page if it exists in the new data
-        if (this.currentPageIndex < data.length) {
-          const newPage = data[this.currentPageIndex];
-          // Only update if the page has actually changed
-          if (JSON.stringify(this.page) !== JSON.stringify(newPage)) {
-            this.page = newPage;
-            // Process any necessary updates for the new page
-            this.processPageUpdates(newPage);
-            // Force change detection
-            this.cdRef.detectChanges();
-          }
-        }
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['editMode']) {
+      this.canEditDocument = changes['editMode'].currentValue;
+      if (this.canEditDocument) {
+        this.makeEndSceneLinesEditable();
       }
-    });
+    }
+
+    // Handle page changes
+    if (changes['page']) {
+      this.processPageUpdates(changes['page'].currentValue);
+    }
   }
 
   private processPageUpdates(newPage: any[]): void {
+    if (!newPage) return;
+
     // Update any scene headers in the page
     newPage.forEach(line => {
       if (line.category === 'scene-header') {
@@ -435,24 +430,15 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         }
       }
     });
-  }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['editMode']) {
-      this.canEditDocument = changes['editMode'].currentValue;
-      if (this.canEditDocument) {
-        this.makeEndSceneLinesEditable();
-      }
-    }
+    // Force change detection
+    this.cdRef.detectChanges();
   }
 
   ngOnDestroy(): void {
     // Clean up subscriptions
     if (this.dragUpdateSubscription) {
       this.dragUpdateSubscription.unsubscribe();
-    }
-    if (this.finalDocumentDataSubscription) {
-      this.finalDocumentDataSubscription.unsubscribe();
     }
     
     // Clean up event listeners
@@ -1696,53 +1682,22 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         }
       });
       
-      // Emit page update to parent components first
+      // Emit the change to the parent component
+      this.lineChanged.emit({
+        line: triggerLine,
+        property: 'sceneNumberText',
+        value: newSceneNumber,
+        oldValue: sceneNumberToUpdate,
+        affectedLines: affectedLines
+      });
+      
+      // Emit page update to parent components
       this.pageUpdate.emit([...this.page]);
       
-      // Notify PDF service of the change
-      this.pdf.updateSceneNumber(triggerLine, newSceneNumber).subscribe({
-        next: (response) => {
-          if (response.success) {
-            // Force a document state update
-            if (this.pdf.finalDocReady && this.pdf.finalDocument) {
-              this.pdf.processPdf(
-                this.pdf.getSelectedScenes(),
-                this.pdf.finalDocument.name,
-                this.pdf.finalDocument.numPages,
-                this.pdf.finalDocument.callSheetPath
-              );
-            }
-            
-            this.changesMade = true;
-            
-            // Force change detection
-            this.cdRef.detectChanges();
-          }
-        },
-        error: (error) => {
-          console.error('Error updating scene number:', error);
-          // Revert changes if PDF service update fails
-          this.page.forEach(line => {
-            if (line.sceneNumberText === newSceneNumber) {
-              line.sceneNumberText = sceneNumberToUpdate;
-            }
-            if (line.customStartText && line.customStartText.includes(newSceneNumber)) {
-              line.customStartText = line.customStartText.replace(newSceneNumber, sceneNumberToUpdate);
-            }
-            if (line.customEndText && line.customEndText.includes(newSceneNumber)) {
-              line.customEndText = line.customEndText.replace(newSceneNumber, sceneNumberToUpdate);
-            }
-            if (line.customContinueText && line.customContinueText.includes(newSceneNumber)) {
-              line.customContinueText = line.customContinueText.replace(newSceneNumber, sceneNumberToUpdate);
-            }
-            if (line.customContinueTopText && line.customContinueTopText.includes(newSceneNumber)) {
-              line.customContinueTopText = line.customContinueTopText.replace(newSceneNumber, sceneNumberToUpdate);
-            }
-          });
-          this.pageUpdate.emit([...this.page]);
-          this.cdRef.detectChanges();
-        }
-      });
+      this.changesMade = true;
+      
+      // Force change detection
+      this.cdRef.detectChanges();
     }
     
     // Reset editing state

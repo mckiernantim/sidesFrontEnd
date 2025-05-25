@@ -62,4 +62,8 @@ export interface Line {
   endTextOffset?: number;
   continueTextOffset?: number;
   continueTopTextOffset?: number;
+
+  // Add document-wide indexing properties
+  docPageIndex?: number;
+  docPageLineIndex?: number;
 }

@@ -632,6 +632,15 @@ export class PdfService {
     // Convert the object into an array of pages with proper typing
     let finalPagesArray: Line[][] = Object.values(finalPages);
 
+    // Add document-wide indexes to each line
+    finalPagesArray.forEach((page, pageIndex) => {
+      page.forEach((line, lineIndex) => {
+        // Add document-wide indexes
+        line.docPageIndex = pageIndex;
+        line.docPageLineIndex = lineIndex;
+      });
+    });
+
     // When building pages, ensure bar positions are preserved
     for (const page of finalPagesArray) {
       for (const line of page) {
