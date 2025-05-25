@@ -27,6 +27,8 @@ interface LineUpdate {
   index: number;
 }
 
+type BarType = 'end' | 'start' | 'continue' | 'continue-top';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -150,12 +152,20 @@ export class DragDropService {
 
   startDrag(event: any, line: any, index: number, isBarDrag: string | null = null): void {
     if (isBarDrag) {
-      // drag logic
+      this.indexOfLineToUpdate = index;
+      this.initialMouseY = this.getEventYPosition(event.event);
+      // Use calculatedEnd for END bars
+      if (isBarDrag === 'end') {
+        this.initialLineY = parseFloat(line.calculatedEnd);
+      } else {
+        this.initialLineY = parseFloat(line.calculatedYpos);
+      }
+      line.dragging = true;
     } else {
       this.indexOfLineToUpdate = index;
       this.initialMouseY = this.getEventYPosition(event.event);
-      this.initialLineY = parseFloat(line.calculatedYpos); // Assuming 'calculatedYpos' is a string that needs parsing
-      line.dragging = true; // You might want to mark the line as being dragged
+      this.initialLineY = parseFloat(line.calculatedYpos);
+      line.dragging = true;
     }
   }
 
@@ -193,11 +203,14 @@ export class DragDropService {
     } else {
       switch (isBarDrag) {
         case "end":
-          line.calculatedEnd = this.initialLineY - deltaY + "px";
+          // Get current position and calculate new position directly from delta
+          const currentEnd = parseFloat(String(line.calculatedEnd));
+          const newEnd = currentEnd - (deltaY || 0);
+          line.calculatedEnd = newEnd + 'px';
           element.style.bottom = line.calculatedEnd;
           break;
         default:
-          line.calculatedBarY = this.initialLineY - deltaY + "px";
+          line.calculatedBarY = this.initialLineY - (deltaY || 0) + "px";
           element.style.bottom = line.calculatedBarY;
       }
     }
@@ -295,5 +308,28 @@ export class DragDropService {
       this.selectedLine.calculatedXpos = x;
       this.selectedLine.calculatedYpos = y;
     }
+  }
+
+  // Keep only the essential methods needed for undo functionality
+  recordPositionChange(pageIndex: number, line: Line, originalPosition: any, isEndSpan: boolean, isContinueSpan: boolean, isStartSpan: boolean) {
+    this.undo.push({
+      pageIndex,
+      line,
+      type: 'position',
+      originalPosition,
+      isEndSpan,
+      isContinueSpan,
+      isStartSpan
+    });
+  }
+
+  recordBarChange(pageIndex: number, line: Line, originalBarState: any, barType: BarType) {
+    this.undo.push({
+      pageIndex,
+      line,
+      type: 'bar',
+      originalBarState,
+      barType
+    });
   }
 }

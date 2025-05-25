@@ -5,6 +5,19 @@ import { UndoService } from 'src/app/services/edit/undo.service';
 import { UndoStackItem } from 'src/app/services/edit/undo.service';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
+import { PdfService } from 'src/app/services/pdf/pdf.service';
+
+// Add interface for drag reference
+interface DragReference {
+  x: number;
+  y: number;
+}
+
+// Add interface for initial positions
+interface InitialPositions {
+  barY: number;
+  mouseY: number;
+}
 
 @Component({
   selector: 'app-last-looks-page',
@@ -329,6 +342,16 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     
     const line = this.page[lineIndex];
     
+    console.log('Drag state:', {
+      dragging: this.barTextDragging,
+      type: this.barTextDragType,
+      startX: this.barTextDragStartX,
+      currentX: event.clientX,
+      deltaX,
+      initialOffset: this.barTextInitialOffset,
+      newOffset
+    });
+    
     // Update offset based on type
     switch (this.barTextDragType) {
       case 'start':
@@ -336,6 +359,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         break;
       case 'end':
         line.endTextOffset = newOffset;
+        console.log('Updated END text offset:', line.endTextOffset);
         break;
       case 'continue':
         line.continueTextOffset = newOffset;
@@ -347,6 +371,9 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     
     // Force update
     this.cdRef.detectChanges();
+    
+    // Emit page update to ensure changes are persisted
+    this.pageUpdate.emit([...this.page]);
   };
 
   // End bar text dragging
@@ -377,7 +404,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   constructor(
     private undoService: UndoService,
-    private cdRef: ChangeDetectorRef
+    private cdRef: ChangeDetectorRef,
+    private pdfService: PdfService
   ) {
     // Subscribe to undo changes
     this.undoService.change$.subscribe(change => {
@@ -461,11 +489,11 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   // Handle drag start
-  onDragStarted(event: CdkDragStart, line: any): void {
+  onDragStarted(event: CdkDragStart, line: Line): void {
     // Store current position for undo functionality and for drag calculations
     line._originalPosition = {
       x: line.calculatedXpos,
-      y: line.calculatedYpos
+      y: line.end === 'END' ? line.calculatedEnd : line.calculatedYpos
     };
     
     // Select the line if not already selected
@@ -483,7 +511,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   // Handle drag end
-  onDragEnded(event: CdkDragEnd, line: any, lineIndex: number): void {
+  onDragEnded(event: CdkDragEnd, line: Line, lineIndex: number): void {
     // Get the drag distance
     const dragX = event.distance.x;
     const dragY = -event.distance.y; // Invert Y since your coordinate system is bottom-based
@@ -493,33 +521,50 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     const currentY = parseFloat(line._originalPosition.y);
     
     // Calculate new positions
-    const newX = (currentX + dragX) + 'px';
-    const newY = (currentY + dragY) + 'px';
+    const newX = Math.max(0, currentX + dragX); // Ensure we don't go below 0
+    const newY = Math.max(0, currentY + dragY); // Ensure we don't go below 0
+    
+    // Format as pixel values
+    const newXPx = newX + 'px';
+    const newYPx = newY + 'px';
     
     // Record the change for undo
     this.undoService.push({
-      pageIndex: this.currentPageIndex,
-      line: line,
-      type: 'position',
-      originalPosition: {
-        x: line._originalPosition.x,
-        y: line._originalPosition.y
-      }
+        pageIndex: this.currentPageIndex,
+        line: line,
+        type: 'position',
+        originalPosition: {
+            x: line._originalPosition.x,
+            y: line._originalPosition.y
+        }
     });
     
     // Update line positions (final update)
-    line.calculatedXpos = newX;
-    line.calculatedYpos = newY;
+    if (line.end === 'END') {
+      line.calculatedEnd = newYPx;
+      line.endY = parseFloat(newYPx);
+    } else {
+      line.calculatedXpos = newXPx;
+      line.calculatedYpos = newYPx;
+    }
     
-    // Emit position change event
+    // Emit position change event with the final position
     this.positionChanged.emit({
-      line: line,
-      lineIndex,
-      newPosition: { x: newX, y: newY }
+        line,
+        lineIndex,
+        newPosition: { x: newXPx, y: newYPx },
+        originalPosition: line._originalPosition,
+        isEndSpan: line.end === 'END'
     });
+    
+    // Emit page update to ensure changes are persisted
+    this.pageUpdate.emit([...this.page]);
     
     // Clean up temporary property
     delete line._originalPosition;
+    
+    // Force change detection
+    this.cdRef.detectChanges();
   }
 
   // Open context menu
@@ -786,10 +831,12 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     }, 0);
   }
 
-  // Update the onDoubleClick method to make the line itself editable
+  // Update the onDoubleClick method to use the new indexing
   onDoubleClick(index: number, text: string): void {
-    // Store the current line for reference
-    const line = this.page[index];
+    // Find the line using the new indexing properties
+    const line = this.page.find(l => l.docPageLineIndex === index);
+    if (!line) return;
+    
     this.editingLine = index;
     this.editingText = text;
     
@@ -812,9 +859,13 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     }, 10);
   }
 
-  // Update the onEditTextChange method to work with contenteditable
+  // Update the onEditTextChange method to use the new indexing
   onEditTextChange(newText: string): void {
     if (this.editingLine !== null) {
+      // Find the line using the new indexing properties
+      const line = this.page.find(l => l.docPageLineIndex === this.editingLine);
+      if (!line) return;
+      
       // Update the editingText state
       this.editingText = newText;
       
@@ -822,49 +873,23 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       const updatedPage = [...this.page];
       
       // Temporarily update the text for preview
-      const originalText = updatedPage[this.editingLine].text;
-      updatedPage[this.editingLine].text = newText;
+      const originalText = line.text;
+      line.text = newText;
       
       // Store the original text for restoration when saving/canceling
-      if (!updatedPage[this.editingLine]._originalText) {
-        updatedPage[this.editingLine]._originalText = originalText;
+      if (!line._originalText) {
+        line._originalText = originalText;
       }
     }
   }
 
-  // Update the handleEditKeyDown method to handle Enter key
-  handleEditKeyDown(event: KeyboardEvent, line: Line): void {
-    if (event.key === 'Enter') {
-      // Save on Enter
-      event.preventDefault();
-      this.saveEdit();
-    } else if (event.key === 'Escape') {
-      // Cancel on Escape
-      event.preventDefault();
-      this.cancelEdit();
-    }
-  }
-
-  // Improve the document click handler to better detect clicks outside
-  @HostListener('document:click', ['$event'])
-  handleDocumentClick(event: MouseEvent): void {
-    if (this.editingLine !== null) {
-      const clickedElement = event.target as HTMLElement;
-      const isClickOnInput = clickedElement.classList.contains('edit-line-input');
-      const isClickOnContainer = clickedElement.classList.contains('edit-input-container') || 
-                                clickedElement.closest('.edit-input-container');
-      
-      // If the click is outside the input and its container, save and exit edit mode
-      if (!isClickOnInput && !isClickOnContainer) {
-        this.saveEdit();
-      }
-    }
-  }
-
-  // Update the saveEdit method to handle the temporary text changes
+  // Update the saveEdit method to use the new indexing
   saveEdit(): void {
-    if (this.editingLine !== null && this.page && this.page.length > this.editingLine) {
-      const line = this.page[this.editingLine];
+    if (this.editingLine !== null) {
+      // Find the line using the new indexing properties
+      const line = this.page.find(l => l.docPageLineIndex === this.editingLine);
+      if (!line) return;
+      
       const originalText = line._originalText || line.text;
       
       // Only record undo if text actually changed from original
@@ -901,10 +926,12 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
   
-  // Update the cancelEdit method to restore original text
+  // Update the cancelEdit method to use the new indexing
   cancelEdit(): void {
     if (this.editingLine !== null) {
-      const line = this.page[this.editingLine];
+      // Find the line using the new indexing properties
+      const line = this.page.find(l => l.docPageLineIndex === this.editingLine);
+      if (!line) return;
       
       // Restore original text if we have it
       if (line._originalText) {
@@ -921,8 +948,21 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
+  // Update the handleEditKeyDown method to use the new indexing
+  handleEditKeyDown(event: KeyboardEvent, line: Line): void {
+    if (event.key === 'Enter') {
+      // Save on Enter
+      event.preventDefault();
+      this.saveEdit();
+    } else if (event.key === 'Escape') {
+      // Cancel on Escape
+      event.preventDefault();
+      this.cancelEdit();
+    }
+  }
+
   // Improved drag move handler with boundary constraints
-  onDragMoved(event: CdkDragMove, line: any): void {
+  onDragMoved(event: CdkDragMove, line: Line): void {
     // Get page container dimensions and position
     const pageElement = document.querySelector('.page') as HTMLElement;
     if (!pageElement) return;
@@ -948,45 +988,43 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     // Get the line element to determine its dimensions
     const lineElement = document.getElementById(line.index.toString()) as HTMLElement;
     if (lineElement) {
-      const lineRect = lineElement.getBoundingClientRect();
-      const lineWidth = lineRect.width;
-      const lineHeight = lineRect.height;
-      
-      // Calculate the absolute position of the line in the page
-      const absoluteX = pageLeft + newX;
-      const absoluteY = pageBottom - newY; // Convert from bottom-based to top-based
-      
-      // Constrain X position to keep the line within the page
-      if (absoluteX < pageLeft) {
-        newX = 0; // Left edge of page
-      } else if (absoluteX + lineWidth > pageRight) {
-        newX = pageRect.width - lineWidth; // Right edge of page
-      }
-      
-      // Constrain Y position to keep the line within the page
-      if (absoluteY < pageTop) {
-        newY = pageRect.height; // Top edge of page (remember Y is bottom-based)
-      } else if (absoluteY + lineHeight > pageBottom) {
-        newY = lineHeight; // Bottom edge of page
-      }
+        const lineRect = lineElement.getBoundingClientRect();
+        const lineWidth = lineRect.width;
+        const lineHeight = lineRect.height;
+        
+        // Calculate the absolute position of the line in the page
+        const absoluteX = pageLeft + newX;
+        const absoluteY = pageBottom - newY; // Convert from bottom-based to top-based
+        
+        // Constrain X position to keep the line within the page
+        if (absoluteX < pageLeft) {
+            newX = 0; // Left edge of page
+        } else if (absoluteX + lineWidth > pageRight) {
+            newX = pageRect.width - lineWidth; // Right edge of page
+        }
+        
+        // Constrain Y position to keep the line within the page
+        if (absoluteY < pageTop) {
+            newY = pageRect.height; // Top edge of page (remember Y is bottom-based)
+        } else if (absoluteY + lineHeight > pageBottom) {
+            newY = lineHeight; // Bottom edge of page
+        }
     }
     
     // Format as pixel values
     const newXPx = newX + 'px';
     const newYPx = newY + 'px';
     
-    // Update the position directly for immediate visual feedback
-    line.calculatedXpos = newXPx;
-    line.calculatedYpos = newYPx;
+    // Update the position directly for immediate visual feedback only
+    if (line.end === 'END') {
+      line.calculatedEnd = newYPx;
+    } else {
+      line.calculatedXpos = newXPx;
+      line.calculatedYpos = newYPx;
+    }
     
-    // Force change detection by emitting a page update
-    this.pageUpdate.emit([...this.page]);
-    
-    // Also queue the update through the debounced subject for parent components
-    this.dragUpdateSubject.next({
-      line,
-      newPosition: { x: newXPx, y: newYPx }
-    });
+    // Force change detection for this line only
+    this.cdRef.detectChanges();
   }
 
   // Add a method to handle END scene lines
@@ -998,89 +1036,17 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       endSceneSpans.forEach(span => {
         // Add necessary classes and attributes
         span.classList.add('draggable-end');
-        
-        // Add event listeners for dragging
-        span.addEventListener('mousedown', this.startEndSpanDrag.bind(this));
       });
     }, 100);
   }
 
-  // Update the startEndSpanDrag method to work regardless of selectedEditFunction
-  startEndSpanDrag(event: MouseEvent): void {
-    if (!this.canEditDocument) return;
-    
-    const span = event.target as HTMLElement;
-    const lineId = span.closest('.bar-span')?.getAttribute('data-line-id');
-    
-    if (!lineId) return;
-    
-    // Find the corresponding line
-    const line = this.page.find(l => l.id === lineId);
-    if (!line) return;
-    
-    // Store original position
-    const originalY = line.calculatedEnd || '0px';
-    const originalX = '60px'; // Default X position
-    
-    // Set up drag tracking
-    const startX = event.clientX;
-    const startY = event.clientY;
-    
-    // Create move and up handlers
-    const moveHandler = (moveEvent: MouseEvent) => {
-      // Calculate the new position
-      const deltaX = moveEvent.clientX - startX;
-      const deltaY = -(moveEvent.clientY - startY); // Invert Y
-      
-      // Parse original positions
-      const currentY = parseFloat(originalY);
-      
-      // Calculate new position
-      const newY = (currentY + deltaY) + 'px';
-      
-      // Update the position
-      line.calculatedEnd = newY;
-      
-      // Force update
-      this.pageUpdate.emit([...this.page]);
-    };
-    
-    const upHandler = () => {
-      // Clean up event listeners
-      document.removeEventListener('mousemove', moveHandler);
-      document.removeEventListener('mouseup', upHandler);
-      
-      // Record the change for undo
-      this.undoService.push({
-        pageIndex: this.currentPageIndex,
-        line: line,
-        type: 'position',
-        originalPosition: {
-          x: originalX,
-          y: originalY
-        }
-      });
-      
-      // Emit position change
-      this.positionChanged.emit({
-        line,
-        property: 'endPosition',
-        newPosition: { y: line.calculatedEnd }
-      });
-    };
-    
-    // Add event listeners
-    document.addEventListener('mousemove', moveHandler);
-    document.addEventListener('mouseup', upHandler);
-    
-    // Prevent default behavior
-    event.preventDefault();
-  }
-
   @HostListener('mousedown', ['$event'])
-  onMouseDown(event: MouseEvent): void {
-    // Just check if editing is allowed, but don't change modes
-    if (!this.canEditDocument) return;
+  onMouseDown(event: MouseEvent) {
+    // Remove the custom drag handler event listener
+    // const span = event.target as HTMLElement;
+    // if (span.classList.contains('END')) {
+    //   span.addEventListener('mousedown', this.startEndSpanDrag.bind(this));
+    // }
   }
 
   // Fix the crossOutLine method to use type assertions
@@ -1220,10 +1186,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   onContinueSpanDragStarted(event: CdkDragStart, line: Line): void {
     // Store original position for undo
     line._originalPosition = {
-      x: line.calculatedXpos as string,
-      y: typeof line.calculatedBarY === 'number' 
-        ? line.calculatedBarY.toString() + 'px' 
-        : line.calculatedBarY as string
+      x: line.calculatedXpos,
+      y: '900px' // Hardcode initial position
     };
     
     // Select the line
@@ -1241,7 +1205,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     const currentY = parseFloat(line._originalPosition.y);
     
     // Calculate new position
-    const newY = (currentY - dragY) + 'px';
+    const newY = Math.max(0, currentY - dragY) + 'px';
     
     // Update line position during drag
     line.calculatedBarY = newY;
@@ -1260,10 +1224,25 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     // Parse current position (removing 'px')
     const currentY = parseFloat(line._originalPosition.y);
     
-    // Calculate new position
-    const newY = (currentY - dragY) + 'px';
+    // Calculate new position with bounds checking
+    const newY = Math.max(0, currentY - dragY) + 'px';
     
-    // Emit position change event
+    // Record the change for undo
+    this.undoService.push({
+      pageIndex: this.currentPageIndex,
+      line: line,
+      type: 'position',
+      originalPosition: {
+        x: line._originalPosition.x,
+        y: line._originalPosition.y
+      }
+    });
+    
+    // Update the line position
+    line.calculatedBarY = newY;
+    line.barY = parseFloat(newY); // Store the raw value for persistence
+    
+    // Emit position change event with the final position
     this.positionChanged.emit({
       line,
       lineIndex,
@@ -1277,6 +1256,9 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     
     // Clean up temporary property
     delete line._originalPosition;
+    
+    // Force change detection
+    this.cdRef.detectChanges();
   }
 
   // Handle start span dragging
@@ -1284,7 +1266,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     // Store original position for undo
     line._originalPosition = {
       x: line.calculatedXpos,
-      y: line.calculatedYpos
+      y: typeof line.calculatedYpos === 'string' ? line.calculatedYpos : line.calculatedYpos + 'px'
     };
     
     // Select the line
@@ -1302,7 +1284,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     const currentY = parseFloat(line._originalPosition.y);
     
     // Calculate new position
-    const newY = (currentY - dragY) + 'px';
+    const newY = Math.max(0, currentY - dragY) + 'px';
     
     // Update line position during drag
     line.calculatedYpos = newY;
@@ -1321,10 +1303,25 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     // Parse current position (removing 'px')
     const currentY = parseFloat(line._originalPosition.y);
     
-    // Calculate new position
-    const newY = (currentY - dragY) + 'px';
+    // Calculate new position with bounds checking
+    const newY = Math.max(0, currentY - dragY) + 'px';
     
-    // Emit position change event
+    // Record the change for undo
+    this.undoService.push({
+      pageIndex: this.currentPageIndex,
+      line: line,
+      type: 'position',
+      originalPosition: {
+        x: line._originalPosition.x,
+        y: line._originalPosition.y
+      }
+    });
+    
+    // Update the line position
+    line.calculatedYpos = newY;
+    line.yPos = parseFloat(newY); // Store the raw value for persistence
+    
+    // Emit position change event with the final position
     this.positionChanged.emit({
       line,
       lineIndex,
@@ -1338,111 +1335,101 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     
     // Clean up temporary property
     delete line._originalPosition;
+    
+    // Force change detection
+    this.cdRef.detectChanges();
   }
 
   // Handle end span dragging
   onEndSpanDragStarted(event: CdkDragStart, line: Line): void {
-    // Store original position for undo
+    // Store current position for undo functionality and for drag calculations
     line._originalPosition = {
-      x: line.calculatedXpos,
-      y: line.calculatedEnd as string
+        x: line.calculatedXpos,
+        y: String(line.calculatedEnd)  // Convert to string to match type
     };
     
-    // Select the line
+    // Select the line if not already selected
+    if (!this.selectedLineIds.includes(line.index)) {
+        this.selectedLineIds = [line.index];
+        this.lastSelectedIndex = this.page.findIndex(l => l.index === line.index);
+        this.emitSelectedLines();
+    }
+    
+    // Emit the line for drag operations
     this.lineSelected.emit(line);
     
-    // Add cursor class
-    document.body.classList.add('grab-cursor');
+    // Clear any existing drag updates
+    this.dragUpdateSubject.next(null);
   }
 
   onEndSpanDragMoved(event: CdkDragMove, line: Line): void {
-    // Get the drag distance
-    const dragY = event.distance.y;
+    // Get the delta since last move (not cumulative)
+    const deltaY = event.delta.y;
     
     // Parse current position (removing 'px')
     const currentY = parseFloat(line._originalPosition.y);
     
-    // Calculate new position
-    const newY = (currentY - dragY) + 'px';
+    // Calculate new position using delta
+    const newY = Math.max(0, currentY + deltaY);
     
-    // Update line position during drag
-    line.calculatedEnd = newY;
+    // Format as pixel value
+    const newYPx = newY + 'px';
+    
+    // Update the position directly
+    line.calculatedEnd = newYPx;
     
     // Force change detection
     this.cdRef.detectChanges();
   }
 
   onEndSpanDragEnded(event: CdkDragEnd, line: Line, lineIndex: number): void {
-    // Remove cursor class
-    document.body.classList.remove('grab-cursor');
-    
     // Get the drag distance
-    const dragY = event.distance.y;
+    const dragY = -event.distance.y; // Invert Y since coordinate system is bottom-based
     
     // Parse current position (removing 'px')
     const currentY = parseFloat(line._originalPosition.y);
     
-    // Calculate new position
-    const newY = (currentY - dragY) + 'px';
+    // Calculate new position with bounds checking
+    const newY = Math.max(0, currentY + dragY) + 'px';
     
-    // Emit position change event
-    this.positionChanged.emit({
-      line,
-      lineIndex,
-      newPosition: { x: line.calculatedXpos, y: newY },
-      originalPosition: line._originalPosition,
-      isEndSpan: true
+    // Record the change for undo
+    this.undoService.push({
+        pageIndex: this.currentPageIndex,
+        line: line,
+        type: 'position',
+        originalPosition: {
+            x: line._originalPosition.x,
+            y: line._originalPosition.y
+        }
     });
     
-    // Reset drag transform
-    event.source.reset();
+    // Update the line position
+    line.calculatedEnd = newY;
+    line.endY = parseFloat(newY); // Store the raw value for persistence
+    
+    // Emit position change event with the final position
+    this.positionChanged.emit({
+        line,
+        lineIndex,
+        newPosition: { x: line.calculatedXpos, y: newY },
+        originalPosition: line._originalPosition,
+        isEndSpan: true
+    });
     
     // Clean up temporary property
     delete line._originalPosition;
+    
+    // Force change detection
+    this.cdRef.detectChanges();
   }
 
-
-  checkForDuplicateLines(): void {
-    if (!this.page || this.page.length === 0) return;
-    
-    // Use a Set for faster lookups
-    const lineIds = new Set();
-    const duplicates = [];
-    
-    // Find duplicates in a single pass
-    this.page.forEach((line, index) => {
-      if (line && line.index !== undefined) {
-        if (lineIds.has(line.index)) {
-          duplicates.push(index);
-        } else {
-          lineIds.add(line.index);
-        }
-      }
-    });
-    
-    // Remove duplicates if found (in reverse order)
-    if (duplicates.length > 0) {
-      console.warn(`Removing ${duplicates.length} duplicate lines`);
-      for (let i = duplicates.length - 1; i >= 0; i--) {
-        this.page.splice(duplicates[i], 1);
-      }
-      
-      // Emit the updated page
-      this.pageUpdate.emit([...this.page]);
-    }
-  }
-
-  
   onContinueTopSpanDragStarted(event: CdkDragStart, line: Line): void {
-    // Prevent event propagation to avoid affecting the line
-    event.source.element.nativeElement.style.pointerEvents = 'none';
+    if (!this.canEditDocument) return;
     
     // Store original position for undo
     line._originalPosition = {
-      x: line.calculatedXpos as string,
-      y: typeof line.calculatedBarY === 'number' 
-        ? line.calculatedBarY.toString() + 'px' 
-        : line.calculatedBarY as string
+        x: line.calculatedXpos,
+        y: typeof line.calculatedBarY === 'string' ? line.calculatedBarY : line.calculatedBarY + 'px'
     };
     
     // Select the line
@@ -1453,25 +1440,27 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   onContinueTopSpanDragMoved(event: CdkDragMove, line: Line): void {
+    if (!this.canEditDocument) return;
+    
     // Get the drag distance
     const dragY = event.distance.y;
     
     // Parse current position (removing 'px')
     const currentY = parseFloat(line._originalPosition.y);
     
-    // Calculate new position
-    const newY = (currentY - dragY) + 'px';
+    // Calculate new position with bounds checking
+    const newY = Math.max(0, currentY - dragY);
     
-    // Update ONLY the bar position, not the line position
-    line.calculatedBarY = newY;
+    // Update visual position only - don't trigger full document update
+    line.calculatedBarY = newY + 'px';
+    line.barY = newY;
     
     // Force change detection
     this.cdRef.detectChanges();
   }
 
   onContinueTopSpanDragEnded(event: CdkDragEnd, line: Line, lineIndex: number): void {
-    // Re-enable pointer events
-    event.source.element.nativeElement.style.pointerEvents = 'auto';
+    if (!this.canEditDocument) return;
     
     // Remove cursor class
     document.body.classList.remove('grab-cursor');
@@ -1482,16 +1471,33 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     // Parse current position (removing 'px')
     const currentY = parseFloat(line._originalPosition.y);
     
-    // Calculate new position
-    const newY = (currentY - dragY) + 'px';
+    // Calculate new position with bounds checking
+    const newY = Math.max(0, currentY - dragY);
     
-    // Emit position change event
+    // Record the change for undo
+    this.undoService.push({
+        pageIndex: this.currentPageIndex,
+        line: line,
+        type: 'position',
+        originalPosition: {
+            x: line._originalPosition.x,
+            y: line._originalPosition.y
+        }
+    });
+    
+    // Update the line position using updateLine - only at the end of drag
+    this.pdfService.updateLine(line, {
+        calculatedBarY: newY + 'px',
+        barY: newY
+    });
+    
+    // Emit position change event with the final position
     this.positionChanged.emit({
-      line,
-      lineIndex,
-      newPosition: { x: line.calculatedXpos, y: newY },
-      originalPosition: line._originalPosition,
-      isContinueTopSpan: true
+        line,
+        lineIndex,
+        newPosition: { x: line.calculatedXpos, y: newY + 'px' },
+        originalPosition: line._originalPosition,
+        isContinueTopSpan: true
     });
     
     // Reset drag transform
@@ -1499,6 +1505,9 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     
     // Clean up temporary property
     delete line._originalPosition;
+    
+    // Force change detection
+    this.cdRef.detectChanges();
   }
 
   // Add a method to clear selection

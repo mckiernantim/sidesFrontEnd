@@ -472,6 +472,7 @@ export class PdfService {
   }
   processPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
     console.log('Processing PDF with scenes:', sceneArr);
+    alert("pdf firidng")
     this.initializePdfDocument(name, numPages, callSheetPath);
    
     // Collect all pages needed for the scenes
@@ -762,10 +763,12 @@ export class PdfService {
         // Mark as continuation from previous page
         firstVisibleLine.cont = 'CONTINUE-TOP';
         
-        // Set position for continue-top bar
-        const topPosition = Math.max(0, Number(firstVisibleLine.yPos) - 20);
-        firstVisibleLine.barY = topPosition;
-        firstVisibleLine.calculatedBarY = topPosition * 1.3 + 'px';
+        // Only set position if it hasn't been set before
+        if (!firstVisibleLine.barY || !firstVisibleLine.calculatedBarY) {
+          const topPosition = 40; // Default position from top
+          firstVisibleLine.barY = topPosition;
+          firstVisibleLine.calculatedBarY = topPosition + 'px';
+        }
         
         // Find last visible continuable line on previous page - simple backwards iteration
         for (let j = previousPage.length - 1; j >= 0; j--) {
@@ -777,10 +780,12 @@ export class PdfService {
             // Mark this line as CONTINUE
             line.cont = 'CONTINUE';
             
-            // Set a default position for the continue bar - 50px from the bottom
-            const bottomPosition = 50; // Fixed position from bottom
-            line.barY = bottomPosition;
-            line.calculatedBarY = bottomPosition * 1.3 + 'px';
+            // Only set position if it hasn't been set before
+            if (!line.barY || !line.calculatedBarY) {
+              const topPosition = 900; // Default position from top
+              line.barY = topPosition;
+              line.calculatedBarY = topPosition + 'px';
+            }
             
             // We found our line, no need to continue
             break;
@@ -1360,4 +1365,17 @@ export class PdfService {
 
   private _finalDocumentData$: BehaviorSubject<any[]> = new BehaviorSubject<any[]>([]);
   public finalDocumentData$: Observable<any[]> = this._finalDocumentData$.asObservable();
+
+  updateLine(line: any, updates: Partial<any>): void {
+    if (!this.finalDocument?.data || !line.docPageIndex || !line.docPageLineIndex) return;
+    
+    // Directly update the specific line in finalDocument.data
+    this.finalDocument.data[line.docPageIndex][line.docPageLineIndex] = {
+      ...this.finalDocument.data[line.docPageIndex][line.docPageLineIndex],
+      ...updates
+    };
+    
+    // Emit the update
+    this._finalDocumentData$.next(this.finalDocument.data);
+  }
 }

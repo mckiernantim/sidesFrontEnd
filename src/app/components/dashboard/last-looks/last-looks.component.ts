@@ -548,7 +548,7 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   handlePositionChange(event: any): void {
     const { line, lineIndex, newPosition, originalPosition, isEndSpan, isContinueSpan, isStartSpan } = event;
 
-    // Store original values for undo
+    // Store for undo
     this.undoService.recordPositionChange(
       this.currentPageIndex,
       line,
@@ -558,31 +558,16 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       isStartSpan
     );
 
-    // Update position values
-    if (isEndSpan) {
-      line.endY = parseInt(newPosition.y) / 1.3;
-      line.calculatedEnd = newPosition.y;
-    } else if (isContinueSpan) {
-      line.barY = parseInt(newPosition.y) / 1.3;
-      line.calculatedBarY = newPosition.y;
-    } else if (isStartSpan) {
-      line.yPos = parseInt(newPosition.y) / 1.3;
-      line.calculatedYpos = newPosition.y;
-    } else {
-      line.yPos = parseInt(newPosition.y) / 1.3;
-      line.calculatedYpos = newPosition.y;
-      if (newPosition.x) {
-        line.xPos = parseInt(newPosition.x) / 1.3;
-        line.calculatedXpos = newPosition.x;
-      }
-    }
-
-    // Update the page
+    // Update page
     this.pages[this.currentPageIndex][lineIndex] = line;
-    this.pageUpdate.emit([...this.pages[this.currentPageIndex]]);
-
-    // Update the PDF service
-    this.saveChangesToPdfService();
+    
+    // Update PDF service
+    this.pdf.updateLine(line, {
+      calculatedBarY: line.calculatedBarY,
+      calculatedEnd: line.calculatedEnd,
+      barY: line.barY,
+      endY: line.endY
+    });
   }
 
   // Handle category changes from context menu
@@ -821,17 +806,9 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     this.pdf.finalDocument.data = [...this.pages];
     
     // Then call the PDF service's save method
-    const savedState = this.pdf.saveDocumentState();
+    this.pdf.saveDocumentState();
     
-    // Update the document through the PDF service
-    this.pdf.processPdf(
-      this.pdf.getSelectedScenes(),
-      this.pdf.finalDocument.name,
-      this.pdf.finalDocument.numPages,
-      this.pdf.finalDocument.callSheetPath
-    );
-    
-    console.log('Document state saved with custom bar text and positions', savedState);
+    console.log('Document state saved with custom bar text and positions');
   }
 
   // Add a method to save the current page state
@@ -985,8 +962,8 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       
       // Set default position if not already set
       if (!line.calculatedBarY) {
-        line.calculatedBarY = '45.5px'; // Default bottom position
-        line.barY = 35; // Store raw value (45.5 / 1.3)
+        line.calculatedBarY = '900px'; // Default top position
+        line.barY = 900; // Store raw value
       }
       
       // Set default text offset if not already set
@@ -1036,8 +1013,8 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       
       // Set default position if not already set
       if (!line.calculatedBarY) {
-        line.calculatedBarY = '45.5px'; // Default top position
-        line.barY = 35; // Store raw value (45.5 / 1.3)
+        line.calculatedBarY = '40px'; // Default top position
+        line.barY = 40; // Store raw value
       }
       
       // Set default text offset if not already set

@@ -6,23 +6,20 @@
 }
 
 .edit-mode {
-   
     box-shadow:0 0 50px rgba(255, 255, 0, 0.7);
-    background-color: rgba(255, 255, 0, 0.4) ;
-    transition: box-shadow 0.2s ease; 
-        -webkit-touch-callout: none; /* iOS Safari */
-        -webkit-user-select: none; /* Safari */
-        -khtml-user-select: none; /* Konqueror HTML */
-        -moz-user-select: none; /* Old versions of Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-        user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera, and Firefox */
-    
-      
+    background-color: rgba(255, 255, 0, 0.4);
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
+
 .edit-li:hover, .bar-span:hover {
-    transform: scale(1.10);
     cursor: grab;
 }
+
 .page {
     font-family: 'Courier Prime', monospace;
     height: 1056px;
@@ -32,9 +29,11 @@
     position: relative;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
+
 .grab-cursor {
     cursor: grabbing !important;
 }
+
 .last {
     margin-bottom: 0 !important;
 }
@@ -48,13 +47,14 @@
     position: relative;
     overflow: visible;
 }
+
 .last-looks-container {
     display: flex;
     justify-content: center;
     align-items: flex-start;
     padding: 1rem;
     background-color: #f9fafb;
-    min-width: 816px; /* Minimum width of the page */
+    min-width: 816px;
     height: 100%;
 }
 
@@ -72,7 +72,6 @@ p {
 
 li,
 span {
-
     position: absolute;
     list-style-type: none;
     line-height: normal;
@@ -87,16 +86,6 @@ span {
     width: 100%;
     z-index: 10;
     pointer-events: auto;
-}
-
-.bar-span.cdk-drag-preview {
-    opacity: 0.9 !important;
-    background-color: white !important;
-    border: 2px solid #3b82f6 !important;
-    border-radius: 3px !important;
-    box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4) !important;
-    z-index: 1001 !important;
-    transform: none !important;
 }
 
 .page-number-text {
@@ -130,11 +119,10 @@ li.page-number {
 .false {
     text-decoration: line-through;
     text-decoration-thickness: 25%;
-
 }
+
 .legal {
     margin: 1000px 20px 0px 20px;
-    
 }
 
 .true {
@@ -144,7 +132,6 @@ li.page-number {
 
 .scene-header {
     font-weight: 700;
-
 }
 
 .version {
@@ -168,13 +155,11 @@ li.page-number {
 .scene-header {
     font-weight: 900 !important;
     left: 96px !important;
-
 }
 
 .scene-number-left {
     left: 45px !important;
     font-weight: 900 !important;
-
 }
 
 .bar {
@@ -184,9 +169,7 @@ li.page-number {
     font-size: 11.5px;
     padding-left: -5%;
     font-weight: 900 !important;
-
 }
-
 
 .scene-number-right {
     right: 85px !important;
@@ -197,7 +180,6 @@ li.page-number {
 .docTitle {
     font: 42px;
     margin: 0 auto;
-
 }
 
 .hidden {
@@ -216,34 +198,44 @@ li.page-number {
 }
 
 .CONTINUE {
-    bottom: 45.5px !important;
-    width: 90% !important;
-    border-top: 2.5px solid !important;
-    padding-top: 2.5px !important;
-    text-align: right !important;
-    right: 5px !important;
-    font-size: 16pt !important;
-    font-weight: 900 !important;
-    position: absolute !important;
-    z-index: 100;
+    position: absolute;
+    width: 100%;
+    border-top: 1px solid #000;
+    padding-top: 5px;
+    text-align: right;
+    right: 0;
+    font-size: 10px;
+    font-weight: bold;
+    z-index: 1;
     pointer-events: auto;
 }
 
-.CONTINUE-TOP {
-    top: 45.5px !important;
-    width: 90% !important;
-    border-top: 2.5px solid !important;
-    padding-top: 2.5px !important;
-    text-align: left !important;
-    left: 25px !important;
-    font-size: 16pt !important;
-    font-weight: 900 !important;
-    position: absolute !important;
-    z-index: 100;
+.CONTINUE .bar-text {
+    position: relative;
+    width: auto;
+    border: none;
+    padding-right: 10px;
+    text-align: right;
+    font-size: 16pt;
+    font-weight: bold;
+    cursor: move;
     pointer-events: auto;
+    z-index: 2;
+    display: inline-block;
+    margin-left: auto;
 }
 
-
+.bar-span.CONTINUE,
+span.CONTINUE {
+    width: 90%;
+    border-top: 2.5px solid;
+    padding-top: 2.5px;
+    text-align: right;
+    right: 5px;
+    font-size: 16pt;
+    font-weight: 900;
+    position: absolute;
+}
 
 .page-number-hidden {
     display: none !important;
@@ -253,7 +245,6 @@ li.page-number {
     font-size: 6px !important;
     bottom: 15px;
     left: 50px;
-
 }
 
 .cover-sheet-left,
@@ -265,9 +256,8 @@ li.page-number {
     top: 35px;
     font-size: larger;
     font-weight: bold;
-    
-
 }
+
 .classification-option {
     margin-bottom: 10px;
     position: inherit;
@@ -295,10 +285,10 @@ li.page-number {
     font-size: 30px;
     height: 32px;
 }
+
 .selected {
     border: 2px solid black;
     background-color: rgba(255, 255, 0, 0.3);
-    transform: scale(1.05);
     z-index: 1000;
 }
 
@@ -306,8 +296,8 @@ li.page-number {
     display: block !important;
     right: 35px !important
 }
-.continue-span {
 
+.continue-span {
     font-size: 16pt
 }
 
@@ -334,25 +324,24 @@ li.page-number {
     border: 1px solid #ccc;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     z-index: 9999;
-  }
-  
-  .context-menu ul {
+}
+
+.context-menu ul {
     list-style: none;
     padding: 0;
     margin: 0;
-  }
-  
-  .context-menu li {
+}
+
+.context-menu li {
     padding: 8px 12px;
     cursor: pointer;
-  }
-  
-  .context-menu li:hover {
+}
+
+.context-menu li:hover {
     background-color: #f0f0f0;
-  }
+}
 
-
-  @media (max-width: 1200px) {
+@media (max-width: 1200px) {
     .last-looks-container {
         padding: 0.5rem;
     }
@@ -361,21 +350,21 @@ li.page-number {
         transform-origin: top center;
         transform: scale(0.9);
     }
-  }
+}
 
-  @media (max-width: 900px) {
+@media (max-width: 900px) {
     .page {
         transform: scale(0.8);
     }
-  }
+}
 
-  @media (max-width: 700px) {
+@media (max-width: 700px) {
     .page {
         transform: scale(0.7);
     }
-  }
+}
 
-  .callsheet-container {
+.callsheet-container {
     background: white;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
     display: flex;
@@ -383,226 +372,110 @@ li.page-number {
     align-items: center;
     min-height: 11in;
     padding: 1rem;
-  }
-  
-  .callsheet-container img {
+}
+
+.callsheet-container img {
     object-fit: contain;
     max-width: 100%;
     height: auto;
-  }
+}
 
-/* Add these styles for better drag feedback */
+/* Basic drag preview styles */
 .cdk-drag-preview {
-  opacity: 0.9 !important;
-  background-color: white !important;
-  border: 2px solid #3b82f6 !important;
-  border-radius: 3px !important;
-  box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4) !important;
-  z-index: 1001 !important;
-  transform: scale(1.05) !important;
-  transition: transform 0.1s ease-in-out !important;
+    opacity: 0.7;
+    background-color: white;
+    border: 2px solid #3b82f6;
+    border-radius: 3px;
+    box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+    z-index: 1001;
 }
 
 .cdk-drag-placeholder {
-  opacity: 0 !important;
-  pointer-events: none !important;
+    opacity: 0;
 }
 
-.cdk-drop-list-dragging .cdk-drag {
-  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1) !important;
+/* Basic styles for draggable elements */
+.END, .CONTINUE, .CONTINUE-TOP {
+    display: block;
+    visibility: visible;
+    cursor: move;
 }
 
-.cdk-drag-animating {
-  transition: transform 300ms cubic-bezier(0, 0, 0.2, 1) !important;
+/* Basic hover effect */
+.edit-mode .END:hover,
+.edit-mode .CONTINUE:hover,
+.edit-mode .CONTINUE-TOP:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Selected line styling */
+.selected-line, li.selected-line {
+    outline: 2px solid #3b82f6 !important;
+    background-color: rgba(59, 130, 246, 0.2) !important;
+    border-radius: 4px !important;
+    position: absolute !important;
+    z-index: 100 !important;
+    display: block !important;
+    opacity: 1 !important;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5) !important;
 }
 
 /* Context menu styling */
 .context-menu {
-  position: fixed;
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-  z-index: 1000;
-  min-width: 150px;
+    position: fixed;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+    min-width: 150px;
 }
 
 .context-menu ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 .classification-option {
-  padding: 8px 12px;
-  cursor: pointer;
+    padding: 8px 12px;
+    cursor: pointer;
 }
 
 .classification-option:hover {
-  background-color: #f5f5f5;
+    background-color: #f5f5f5;
 }
 
 /* Add a subtle indicator for draggable items */
 .edit-mode li {
-  cursor: move;
-  display: block !important;
+    cursor: move;
+    display: block !important;
 }
 
 .edit-mode li:hover::before {
-  content: "⋮";
-  position: absolute;
-  left: -15px;
-  color: #888;
-}
-
-/* Add this to your component's CSS */
-.selected-line, li.selected-line {
-  outline: 2px solid #3b82f6 !important; /* Blue outline */
-  background-color: rgba(59, 130, 246, 0.2) !important; /* Light blue background */
-  border-radius: 4px !important;
-  position: absolute !important; /* Keep the absolute positioning */
-  z-index: 100 !important; /* Higher z-index to ensure visibility */
-  display: block !important; /* Ensure it's visible */
-  opacity: 1 !important; /* Full opacity */
-  transform: scale(1.05) !important; /* Slightly larger */
-  box-shadow: 0 0 8px rgba(59, 130, 246, 0.5) !important; /* Subtle glow */
-}
-
-/* Add a subtle hover effect for lines in edit mode */
-.line-container:hover {
-  cursor: pointer;
-}
-
-.edit-mode .line-container:hover:not(.selected-line) {
-  background-color: rgba(59, 130, 246, 0.05);
-}
-
-/* Add styles for multiple selection */
-.multi-selected {
-  outline: 2px dashed #3b82f6 !important;
-  background-color: rgba(59, 130, 246, 0.15) !important;
-}
-
-/* Add styles for drag selection */
-.edit-mode {
-  user-select: none; /* Prevent text selection during drag */
-}
-
-/* Style for the drag selection indicator */
-.drag-selecting {
-  background-color: rgba(59, 130, 246, 0.1);
-  position: absolute;
-  border: 1px dashed #3b82f6;
-  pointer-events: none;
-  z-index: 50;
-}
-
-/* Update multi-selected style */
-.multi-selected {
-  outline: 2px dashed #3b82f6 !important;
-  background-color: rgba(59, 130, 246, 0.15) !important;
-}
-
-/* Add cursor styles */
-.edit-mode li {
-  cursor: default;
-}
-
-.edit-mode li.edit-li:hover {
-  cursor: text;
-}
-
-.edit-mode li.edit-li[cdkDragDisabled="false"]:hover {
-  cursor: move;
-}
-
-/* Simplify the editing style - just background and border */
-li.editing {
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  border: 1px solid #3b82f6 !important;
-  border-radius: 3px !important;
-}
-
-/* Remove the blinking cursor and other complex styling */
-li.editing::after {
-  content: none;
-}
-
-/* Make the edit input more visible but keep it simple */
-.edit-line-input {
-  background-color: white !important;
-  border: 1px solid #3b82f6 !important;
-  border-radius: 3px !important;
-  padding: 4px 8px !important;
-  font-family: 'Courier Prime', monospace !important;
-  font-size: 12pt !important;
-  color: #000 !important;
-  min-width: 200px !important;
-  box-shadow: 0 0 5px rgba(59, 130, 246, 0.3) !important;
+    content: "⋮";
+    position: absolute;
+    left: -15px;
+    color: #888;
 }
 
 /* Add this CSS to show crossed-out lines */
 li[crossedout="true"], 
 li.crossed-out {
-  text-decoration: line-through;
-  color: #ff0000; /* Red color for visibility */
+    text-decoration: line-through;
+    color: #ff0000;
 }
 
 /* Style for draggable end spans */
 .draggable-end {
-  cursor: move;
-}
-
-.END.cdk-drag-preview {
-  opacity: 0.9 !important;
-  background-color: white !important;
-  border: 2px solid #dc2626 !important; /* Red border for end spans */
-  border-radius: 3px !important;
-  box-shadow: 0 5px 15px rgba(220, 38, 38, 0.4) !important;
-  z-index: 1001 !important;
-  transform: scale(1.05) !important;
-  transition: transform 0.1s ease-in-out !important;
-}
-
-.END.cdk-drag-placeholder {
-  opacity: 0.4 !important;
-  background-color: rgba(220, 38, 38, 0.2) !important;
-  border: 2px dashed #dc2626 !important;
-  border-radius: 3px !important;
-}
-
-/* Add hover effect for end spans in edit mode */
-.edit-mode .END:hover {
-  transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  cursor: move;
-}
-
-/* Make sure the spans are visible and draggable */
-.END, .CONTINUE, .CONTINUE-TOP {
-  display: block !important;
-  visibility: visible !important;
-  cursor: move;
-}
-
-/* Add visual feedback when hovering over draggable spans */
-.edit-mode .END:hover,
-.edit-mode .CONTINUE:hover,
-.edit-mode .CONTINUE-TOP:hover {
-  transform: scale(1.02);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* Style for draggable start spans */
-.draggable-start {
-  cursor: move;
+    cursor: move;
 }
 
 /* Make sure all spans are visible and draggable */
 .START, .END, .CONTINUE, .CONTINUE-TOP {
-  display: block !important;
-  visibility: visible !important;
-  cursor: move;
+    display: block !important;
+    visibility: visible !important;
+    cursor: move;
 }
 
 /* Add visual feedback when hovering over draggable spans */
@@ -610,73 +483,81 @@ li.crossed-out {
 .edit-mode .END:hover,
 .edit-mode .CONTINUE:hover,
 .edit-mode .CONTINUE-TOP:hover {
-  transform: scale(1.02);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Only show selection styling in edit mode */
 .selected-line {
-  outline: 2px solid #3b82f6;
-  background-color: rgba(59, 130, 246, 0.1);
+    outline: 2px solid #3b82f6;
+    background-color: rgba(59, 130, 246, 0.1);
 }
 
 /* Hide selection when not in edit mode */
 :not(.edit-mode) .selected-line {
-  outline: none !important;
-  background-color: transparent !important;
+    outline: none !important;
+    background-color: transparent !important;
 }
 
 /* Add these styles to your component CSS */
 .bar-text {
-  display: inline-block;
-  padding: 2px 10px !important; /* Use padding for visual rendering */
-  margin: 0;
-  border-radius: 3px;
-  font-size: 16pt;
-  font-weight: 900 !important;
+    display: inline-block;
+    padding: 2px 10px !important;
+    margin: 0;
+    border-radius: 3px;
+    font-size: 16pt;
+    font-weight: 900 !important;
 }
 
 .edit-mode .bar-text:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 .END .bar-text {
-  font-size: 14.5pt;
-  padding-left: 10px !important;
-  padding-right: 5px !important;
+    position: relative;
+    text-align: left;
+    font-size: 14.5pt;
+    padding-left: 10px;
+    padding-right: 5px;
+    cursor: ew-resize;
+    pointer-events: auto;
+    z-index: 100;
 }
 
 .CONTINUE .bar-text {
-  font-size: 16pt;
-  padding-right: 10px !important;
-  padding-left: 5px !important;
-  text-align: right;
+    position: relative;
+    text-align: right;
+    font-size: 16pt;
+    padding-right: 10px;
+    padding-left: 5px;
+    cursor: ew-resize;
+    pointer-events: auto;
+    z-index: 100;
 }
 
 .CONTINUE-TOP .bar-text {
-  font-size: 16pt;
-  padding-left: 10px !important;
-  padding-right: 5px !important;
-  text-align: left;
+    position: relative;
+    text-align: left;
+    font-size: 16pt;
+    padding-left: 10px;
+    padding-right: 5px;
+    cursor: ew-resize;
+    pointer-events: auto;
+    z-index: 100;
 }
 
 [contenteditable="true"] {
-  outline: none;
-  background-color: rgba(255, 165, 0, 0.2);
-  min-width: 50px;
-  padding: 0 4px;
-  border-radius: 3px;
-  font-size: inherit;
-  font-weight: inherit;
-  font-family: inherit;
+    outline: none;
+    background-color: rgba(255, 165, 0, 0.2);
+    min-width: 50px;
+    padding: 0 4px;
+    border-radius: 3px;
+    font-size: inherit;
+    font-weight: inherit;
+    font-family: inherit;
 }
 
 .ew-resize-cursor {
-  cursor: ew-resize !important;
-}
-
-.grab-cursor {
-  cursor: grabbing !important;
+    cursor: ew-resize !important;
 }
 
 /* Preserve the cursor styles for draggable elements */
@@ -686,7 +567,7 @@ li.crossed-out {
 .edit-mode .CONTINUE,
 .edit-mode .CONTINUE-TOP,
 .edit-mode .bar-text {
-  cursor: grab !important;
+    cursor: grab !important;
 }
 
 /* When actively dragging, use the grabbing cursor */
@@ -697,73 +578,36 @@ li.crossed-out {
 .edit-mode .CONTINUE-TOP:active,
 .edit-mode .bar-text:active,
 .grab-cursor {
-  cursor: grabbing !important;
+    cursor: grabbing !important;
 }
 
 /* Ensure the text editing cursor is still used when editing text */
 [contenteditable="true"] {
-  cursor: text !important;
+    cursor: text !important;
 }
 
 /* Use ew-resize cursor for horizontal text dragging */
 .edit-mode .bar-text:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  cursor: ew-resize !important;
+    background-color: rgba(255, 255, 255, 0.2);
+    cursor: ew-resize !important;
 }
 
 /* Fix for continue-top dragging */
 .continue-top-span {
-  position: absolute !important;
-  width: 100%;
-  z-index: 100;
-  pointer-events: auto;
-  /* Ensure it doesn't affect layout */
-  transform: none !important;
-}
-
-/* Ensure the drag preview doesn't affect layout */
-.continue-top-span.cdk-drag-preview {
-  position: absolute !important;
-  transform: none !important;
-  height: auto !important;
-  width: 100% !important;
-  z-index: 1001 !important;
-  pointer-events: none;
-}
-
-/* Prevent the placeholder from affecting layout */
-.continue-top-span.cdk-drag-placeholder {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* Ensure drag previews don't affect layout */
-.continue-top-span.cdk-drag-preview,
-.continue-span.cdk-drag-preview,
-.end-span.cdk-drag-preview {
-  position: absolute !important;
-  transform: none !important;
-  height: auto !important;
-  width: 100% !important;
-  z-index: 1001 !important;
-  pointer-events: none !important;
-  opacity: 0.7 !important;
-}
-
-/* Prevent placeholders from affecting layout */
-.cdk-drag-placeholder {
-  opacity: 0 !important;
-  pointer-events: none !important;
+    position: absolute;
+    width: 100%;
+    z-index: 100;
+    pointer-events: auto;
 }
 
 /* Hide duplicate page numbers */
 li.page-number {
-  display: none !important;
+    display: none !important;
 }
 
 .page-number-hidden,
 .page-number {
-  display: none !important;
+    display: none !important;
 }
 
 /* Fix the bar-text padding with higher specificity */
@@ -775,281 +619,9 @@ li.page-number {
 .CONTINUE-TOP .bar-text,
 .END .bar-text,
 .bar .bar-text {
-  padding: 2px 5px !important;
-  display: inline-block !important;
-  transition: transform 0.1s ease !important;
-  border-radius: 3px !important;
-}
-
-/* Fix specific bar text styles */
-.start-span {
-  left: 1% !important;
-  font-size: 16pt !important;
-  padding-left: 5px !important;
-  padding-right: 5px !important;
-}
-
-
-
-/* Ensure the bar text is properly positioned */
-.CONTINUE .bar-text {
-  position: relative !important;
-  right: 0 !important;
-  text-align: right !important;
-  font-size: 16pt !important;
-  padding-right: 10px !important;
-}
-
-.CONTINUE-TOP .bar-text {
-  position: relative !important;
-  left: 0 !important;
-  text-align: left !important;
-  font-size: 16pt !important;
-  padding-left: 10px !important;
-}
-
-.END .bar-text {
-  position: relative !important;
-  left: 0 !important;
-  text-align: left !important;
-  font-size: 16pt !important;
-  padding-left: 10px !important;
-  text-align: right !important;
-}
-
-/* Ensure bar spans have the correct styling */
-.bar-span.CONTINUE,
-span.CONTINUE {
-  bottom: 45.5px !important;
-  width: 90% !important;
-  border-top: 2.5px solid !important;
-  padding-top: 2.5px !important;
-  text-align: right !important;
-  right: 5px !important;
-  font-size: 16pt !important;
-  font-weight: 900 !important;
-  position: absolute !important;
-}
-
-.bar-span.CONTINUE-TOP,
-span.CONTINUE-TOP {
-  top: 45.5px !important;
-  width: 90% !important;
-  border-top: 2.5px solid !important;
-  padding-top: 2.5px !important;
-  text-align: left !important;
-  left: 25px !important;
-  font-size: 16pt !important;
-  font-weight: 900 !important;
-  position: absolute !important;
-}
-
-.bar-span.END,
-span.END {
-  width: 95% !important;
-
-  font-size: 11.5px !important;
-  padding-left: 4% !important;
-  font-weight: 900 !important;
-  position: absolute !important;
-  text-align: right !important;
-}
-
-/* Pagination controls */
-.pagination-controls {
-  display: flex;
-  justify-content: center;
-  margin: 15px 0;
-  padding: 10px;
-  background-color: rgba(255, 255, 255, 0.9);
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.pagination-button {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 8px 16px;
-  margin: 0 5px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-.pagination-button:hover {
-  background-color: #2563eb;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.pagination-button:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.pagination-button:disabled {
-  background-color: #9ca3af;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.page-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0 10px;
-  color: #1f2937;
-}
-
-/* Editing instructions */
-.editing-instructions {
-  background-color: rgba(255, 251, 235, 0.95);
-  border-left: 4px solid #f59e0b;
-  padding: 15px;
-  margin: 15px 0;
-  border-radius: 6px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.editing-instructions h3 {
-  color: #b45309;
-  margin-top: 0;
-  margin-bottom: 10px;
-  font-size: 18px;
-}
-
-.editing-instructions ul {
-  margin: 0;
-  padding-left: 20px;
-}
-
-.editing-instructions li {
-  margin-bottom: 8px;
-  color: #4b5563;
-  font-size: 14px;
-}
-
-.editing-instructions kbd {
-  background-color: #f3f4f6;
-  border: 1px solid #d1d5db;
-  border-radius: 3px;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-  color: #1f2937;
-  display: inline-block;
-  font-size: 12px;
-  line-height: 1;
-  padding: 2px 5px;
-  margin: 0 2px;
-}
-
-/* Help button */
-.help-button {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  font-size: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  transition: all 0.2s ease;
-  z-index: 1000;
-}
-
-.help-button:hover {
-  background-color: #2563eb;
-  transform: scale(1.1);
-}
-
-/* Bar controls */
-.bar-controls {
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 12px;
-  margin: 10px 0;
-}
-
-.bar-controls h4 {
-  color: #374151;
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.bar-controls-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.bar-controls button {
-  background-color: white;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  padding: 6px 12px;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  transition: all 0.2s;
-}
-
-.bar-controls button:hover {
-  background-color: #eff6ff;
-  border-color: #93c5fd;
-}
-
-.bar-controls button.active {
-  background-color: #dbeafe;
-  border-color: #60a5fa;
-  color: #1e40af;
-}
-
-.bar-controls button svg {
-  width: 16px;
-  height: 16px;
-  margin-right: 6px;
-}
-
-/* Update bar text positioning */
-.bar-span.bar .bar-text {
-  position: relative;
-  left: 10px; /* Default left position for START bars */
-  text-align: left;
-}
-
-.bar-span.END .bar-text {
-  position: relative;
-  left: 10px; /* Default left position for END bars */
-  text-align: left;
-}
-
-.CONTINUE .bar-text {
-  position: relative;
-  right: 10px; /* Default right position for CONTINUE bars */
-  left: auto;
-  text-align: right;
-}
-
-.CONTINUE-TOP .bar-text {
-  position: relative;
-  left: 10px; /* Default left position for CONTINUE-TOP bars */
-  right: auto;
-  text-align: left;
+    padding: 2px 5px !important;
+    display: inline-block !important;
+    border-radius: 3px !important;
 }
 
 /* Add styles for the page wrapper to handle overflow */
@@ -1061,4 +633,174 @@ span.END {
     justify-content: center;
     align-items: flex-start;
     padding: 1rem;
+}
+
+/* Pagination controls */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    margin: 15px 0;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.pagination-button {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 16px;
+    margin: 0 5px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:hover {
+    background-color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.page-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 10px;
+    color: #1f2937;
+}
+
+/* Editing instructions */
+.editing-instructions {
+    background-color: rgba(255, 251, 235, 0.95);
+    border-left: 4px solid #f59e0b;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.editing-instructions h3 {
+    color: #b45309;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.editing-instructions ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.editing-instructions li {
+    margin-bottom: 8px;
+    color: #4b5563;
+    font-size: 14px;
+}
+
+.editing-instructions kbd {
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 3px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    color: #1f2937;
+    display: inline-block;
+    font-size: 12px;
+    line-height: 1;
+    padding: 2px 5px;
+    margin: 0 2px;
+}
+
+/* Help button */
+.help-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+.help-button:hover {
+    background-color: #2563eb;
+    transform: scale(1.1);
+}
+
+/* Bar controls */
+.bar-controls {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 10px 0;
+}
+
+.bar-controls h4 {
+    color: #374151;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.bar-controls-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.bar-controls button {
+    background-color: white;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.bar-controls button:hover {
+    background-color: #eff6ff;
+    border-color: #93c5fd;
+}
+
+.bar-controls button.active {
+    background-color: #dbeafe;
+    border-color: #60a5fa;
+    color: #1e40af;
+}
+
+.bar-controls button svg {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
 }
