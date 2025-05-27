@@ -4,12 +4,14 @@ import { skip } from 'rxjs/operators';
 import { LINE_TYPES} from '../../types/LineTypes'
 import * as scriptData from '../../testingData/pdfServiceData/mockScriptData.json';
 import { Observable, Subject, BehaviorSubject } from 'rxjs';
+import { UndoService, UndoStackItem } from '../edit/undo.service';
 
 /*  
   THIS SHOULD BE ITS OWN 4 OR 5 SERVICES ALL IMPORTED INTO THE PARENT SERVICE OF PDF 
   PERHAPPS LINE-SERVICE, SCENE-SERVICE, DOCUMENT-SERVICE ETC  
 */
 import { Line } from 'src/app/types/Line';
+import { cloneDeep } from 'lodash';
 
 // Add this interface at the top of the file, after the imports
 interface SceneBreak {
@@ -55,10 +57,142 @@ export class PdfService {
   date: number;
   totalLines: any;
 
+  // Add initialDocumentState property
+  private initialDocumentState: any;
+
   // 1/5 WE NEED TO MOVE THIS SO THAT THIS FIRES EVERY TIME THE USER NAVIGATES TO UPLOAD COMPONENT
-  constructor(public upload: UploadService) {
-    this.initializeData();
+  constructor(public upload: UploadService, private undoService: UndoService) {
+  this.initializeData();
+  
+  // Set the PdfService reference in UndoService to avoid circular dependency
+  this.undoService.setPdfService(this);
+  
+  // Subscribe to reset events
+  this.undoService.reset$.subscribe(() => {
+    this.resetToInitialState();
+  });
+
+  // Subscribe to undo/redo stack changes if needed for UI updates
+  // (though components probably don't need this)
+}
+
+updateLine(pageIndex: number, lineIndex: number, updates: Partial<Line> | Line): void {
+  if (!this.finalDocument?.data || 
+      !this.finalDocument.data[pageIndex] || 
+      !this.finalDocument.data[pageIndex][lineIndex]) {
+    console.warn(`[PDF Service] Cannot update line at page ${pageIndex}, line ${lineIndex} - path does not exist`);
+    return;
   }
+
+  // Always use deep cloning for safety
+  const currentLine = cloneDeep(this.finalDocument.data[pageIndex][lineIndex]);
+  const updatedLine = {
+    ...currentLine,
+    ...cloneDeep(updates) // Merge updates (works for both partial and complete updates)
+  };
+  
+  this.finalDocument.data[pageIndex][lineIndex] = updatedLine;
+
+  // Emit the update
+  this._finalDocumentData$.next(this.finalDocument.data);
+
+  console.log(`[PDF Service] Updated line at page ${pageIndex}, line ${lineIndex}`);
+}
+
+/**
+ * Batch update multiple lines efficiently - only emits observable once
+ * @param updates - Array of line updates with their coordinates and changes
+ */
+updateLines(updates: Array<{
+  pageIndex: number;
+  lineIndex: number;
+  updates: Partial<Line> | Line;
+}>): void {
+  if (!this.finalDocument?.data || !updates.length) {
+    console.warn('[PDF Service] Cannot update lines - no data or no updates provided');
+    return;
+  }
+
+  let hasChanges = false;
+  const processedUpdates: string[] = [];
+
+  updates.forEach(({ pageIndex, lineIndex, updates: lineUpdates }) => {
+    if (this.finalDocument.data[pageIndex] && this.finalDocument.data[pageIndex][lineIndex]) {
+      // Deep clone current line
+      const currentLine = cloneDeep(this.finalDocument.data[pageIndex][lineIndex]);
+      
+      // Merge updates safely
+      const updatedLine = {
+        ...currentLine,
+        ...cloneDeep(lineUpdates)
+      };
+
+      // Replace line
+      this.finalDocument.data[pageIndex][lineIndex] = updatedLine;
+      hasChanges = true;
+      processedUpdates.push(`page ${pageIndex}, line ${lineIndex}`);
+    } else {
+      console.warn(`[PDF Service] Skipping invalid line coordinates: page ${pageIndex}, line ${lineIndex}`);
+    }
+  });
+
+  // Only emit once after all updates are complete
+  if (hasChanges) {
+    this._finalDocumentData$.next(this.finalDocument.data);
+    console.log(`[PDF Service] Batch updated ${processedUpdates.length} lines:`, processedUpdates);
+  }
+}
+
+/**
+ * Helper method for backward compatibility with existing component code
+ * Extracts coordinates from line object and calls main updateLine method
+ */
+updateLineFromObject(line: any, updates: Partial<Line>): void {
+  if (line.docPageIndex !== undefined && line.docPageLineIndex !== undefined) {
+    this.updateLine(line.docPageIndex, line.docPageLineIndex, updates);
+  } else {
+    console.warn('[PDF Service] Line object missing docPageIndex or docPageLineIndex');
+  }
+}
+
+/**
+ * Helper method for batch updates from line objects (for existing component code)
+ */
+updateLinesFromObjects(lineUpdates: Array<{ line: any; updates: Partial<Line> }>): void {
+  const batchUpdates = lineUpdates
+    .filter(({ line }) => line.docPageIndex !== undefined && line.docPageLineIndex !== undefined)
+    .map(({ line, updates }) => ({
+      pageIndex: line.docPageIndex,
+      lineIndex: line.docPageLineIndex,
+      updates
+    }));
+
+  if (batchUpdates.length > 0) {
+    this.updateLines(batchUpdates);
+  } else {
+    console.warn('[PDF Service] No valid line objects found for batch update');
+  }
+}
+
+// ADD this helper method to get current line state (useful for undo recording)
+getLineState(pageIndex: number, lineIndex: number): Line | null {
+  if (this.finalDocument?.data && 
+      this.finalDocument.data[pageIndex] && 
+      this.finalDocument.data[pageIndex][lineIndex]) {
+    return this.finalDocument.data[pageIndex][lineIndex];
+  }
+  return null;
+}
+
+// KEEP the resetToInitialState method (called by undo reset)
+resetToInitialState(): void {
+  if (this.initialDocumentState) {
+    this.finalDocument = JSON.parse(JSON.stringify(this.initialDocumentState));
+    this._finalDocumentData$.next(this.finalDocument.data);
+    this.finalDocReady = true;
+  }
+}
+// Add these methods to your PdfService for better undo integration:
 
   resetData() {
     this.initializeData();
@@ -104,7 +238,7 @@ export class PdfService {
         let sceneRefInTable = this.scenes[i];
         let sceneInActualScript = this.allLines[sceneRefInTable.index];
         // give scenes extra data for later
-        debugger
+        
         this.setLastLines(i);
 
         this.processSceneHeader(sceneRefInTable, sceneInActualScript);
@@ -342,6 +476,7 @@ export class PdfService {
     ) {
       // Flags line to show a START bar
       line.bar = 'bar';
+      line.barY = line.yPos + 20; 
     }
   
     // Handle last lines in scenes - this is flagged in the scan
@@ -472,7 +607,7 @@ export class PdfService {
   }
   processPdf(sceneArr, name, numPages, callSheetPath = 'no callsheet') {
     console.log('Processing PDF with scenes:', sceneArr);
-    alert("pdf firidng")
+
     this.initializePdfDocument(name, numPages, callSheetPath);
    
     // Collect all pages needed for the scenes
@@ -520,6 +655,9 @@ export class PdfService {
     this.finalDocument.data = reorderedPages;
     this._finalDocumentData$.next(reorderedPages);
 
+    // Save initial state after document is fully processed
+    this.initialDocumentState = JSON.parse(JSON.stringify(this.finalDocument));
+
     this.updatePageNumberVisibility();
 
     this.finalDocReady = true;
@@ -527,41 +665,62 @@ export class PdfService {
   }
 
   private reorderPagesBySceneOrder(pages: any[], originalSceneOrder: any[]): any[] {
-    // Create a map of scene numbers to their pages
-    const scenePageMap = new Map<string, any[]>();
+    // Create a map of scene numbers to their page ranges
+    const scenePageRanges = new Map<string, { startPage: number, endPage: number }>();
     
-    // Group pages by scene
-    pages.forEach(page => {
-      page.forEach(line => {
-        if (line.category === 'scene-header' && line.visible === 'true') {
-          const sceneNumber = line.sceneNumberText;
-          if (!scenePageMap.has(sceneNumber)) {
-            scenePageMap.set(sceneNumber, []);
-          }
-          scenePageMap.get(sceneNumber).push(page);
-        }
+    // First, identify the page ranges for each scene
+    originalSceneOrder.forEach(scene => {
+      scenePageRanges.set(scene.sceneNumberText, {
+        startPage: scene.page,
+        endPage: scene.lastPage
       });
     });
 
-    // Reorder pages based on original scene order
+    // Create a new array to hold our reordered pages
     const reorderedPages: any[] = [];
+    // Track which pages we've already added
+    const addedPages = new Set<number>();
+    
+    // Add pages in the order specified by originalSceneOrder
     originalSceneOrder.forEach(scene => {
-      const scenePages = scenePageMap.get(scene.sceneNumberText);
-      if (scenePages) {
-        // Add each page for this scene, ensuring no duplicates
-        scenePages.forEach(page => {
-          if (!reorderedPages.includes(page)) {
-            reorderedPages.push(page);
+      const range = scenePageRanges.get(scene.sceneNumberText);
+      if (range) {
+        // Add all pages for this scene in order
+        for (let pageNum = range.startPage; pageNum <= range.endPage; pageNum++) {
+          // Only add the page if we haven't added it before
+          if (!addedPages.has(pageNum)) {
+            const page = pages.find(p => p[0]?.page === pageNum);
+            if (page) {
+              reorderedPages.push(page);
+              addedPages.add(pageNum);
+            }
           }
-        });
+        }
       }
     });
 
     // Add any remaining pages that weren't part of scenes
-    pages.forEach(page => {
-      if (!reorderedPages.includes(page)) {
-        reorderedPages.push(page);
-      }
+    const remainingPages = pages.filter(page => {
+      const pageNum = page[0]?.page;
+      return !addedPages.has(pageNum);
+    });
+
+    // Sort remaining pages by their page number
+    remainingPages.sort((a, b) => a[0]?.page - b[0]?.page);
+    reorderedPages.push(...remainingPages);
+
+    // Reindex all pages and lines
+    reorderedPages.forEach((page, pageIndex) => {
+      page.forEach((line: Line, lineIndex: number) => {
+        // Update document-wide indexes
+        line.docPageIndex = pageIndex;
+        line.docPageLineIndex = lineIndex;
+        
+        // Update page number if it exists
+        if (line.category === 'page-number') {
+          line.text = (pageIndex + 1).toString();
+        }
+      });
     });
 
     return reorderedPages;
@@ -630,8 +789,14 @@ export class PdfService {
       finalPages[line.page].push(line);
     });
 
-    // Convert the object into an array of pages with proper typing
-    let finalPagesArray: Line[][] = Object.values(finalPages);
+    const sortedPageNumbers = Object.keys(finalPages)
+      .map(pageNum => parseInt(pageNum))
+      .sort((a, b) => a - b);
+  
+    let finalPagesArray: Line[][] = sortedPageNumbers.map(pageNum => 
+      finalPages[pageNum.toString()]
+    );
+    
 
     // Add document-wide indexes to each line
     finalPagesArray.forEach((page, pageIndex) => {
@@ -648,6 +813,9 @@ export class PdfService {
         // Preserve bar positions from edited document
         if (line.cont === 'CONTINUE' || line.cont === 'CONTINUE-TOP') {
           // Ensure the calculatedBarY position is preserved
+          if(!line.calculatedBarY && line.cont === 'CONTINUE-TOP') {
+            line.calculatedBarY = 980 + 'px';
+          }
           if (!line.calculatedBarY && line.barY) {
             line.calculatedBarY = typeof line.barY === 'number' 
               ? line.barY + 'px' 
@@ -684,7 +852,32 @@ export class PdfService {
         }
       }
     }
-
+    for (const page of finalPagesArray) {
+      for (const line of page) {
+        // Calculate positions from raw values (like Last-Looks does)
+        if (line.yPos !== undefined) {
+          line.calculatedYpos = line.calculatedYpos || (Number(line.yPos) * 1.3 + 'px');
+        }
+        
+        if (line.xPos !== undefined) {
+          line.calculatedXpos = line.calculatedXpos || (Number(line.xPos) * 1.3 + 'px');
+        }
+        
+        if (line.barY !== undefined) {
+          line.calculatedBarY = line.calculatedBarY || (Number(line.barY) * 1.3) - 30 + 'px';
+        }
+        
+        if (line.endY !== undefined) {
+          line.calculatedEnd = line.calculatedEnd || (Number(line.endY) * 1.3 + 'px');
+        }
+        
+        // Set visibility default
+        if (line.visible === undefined) {
+          line.visible = 'true';
+        }
+      }
+    }
+ 
     return finalPagesArray;
   }
   markEndLines(processedLines, breaks) {
@@ -765,7 +958,7 @@ export class PdfService {
         
         // Only set position if it hasn't been set before
         if (!firstVisibleLine.barY || !firstVisibleLine.calculatedBarY) {
-          const topPosition = 40; // Default position from top
+          const topPosition = 40 ; // Default position from top
           firstVisibleLine.barY = topPosition;
           firstVisibleLine.calculatedBarY = topPosition + 'px';
         }
@@ -782,7 +975,7 @@ export class PdfService {
             
             // Only set position if it hasn't been set before
             if (!line.barY || !line.calculatedBarY) {
-              const topPosition = 900; // Default position from top
+              const topPosition = 90; // Default position from top
               line.barY = topPosition;
               line.calculatedBarY = topPosition + 'px';
             }
@@ -1366,16 +1559,5 @@ export class PdfService {
   private _finalDocumentData$: BehaviorSubject<any[]> = new BehaviorSubject<any[]>([]);
   public finalDocumentData$: Observable<any[]> = this._finalDocumentData$.asObservable();
 
-  updateLine(line: any, updates: Partial<any>): void {
-    if (!this.finalDocument?.data || !line.docPageIndex || !line.docPageLineIndex) return;
-    
-    // Directly update the specific line in finalDocument.data
-    this.finalDocument.data[line.docPageIndex][line.docPageLineIndex] = {
-      ...this.finalDocument.data[line.docPageIndex][line.docPageLineIndex],
-      ...updates
-    };
-    
-    // Emit the update
-    this._finalDocumentData$.next(this.finalDocument.data);
-  }
+
 }

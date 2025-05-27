@@ -1,36 +1,14 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 import { Line } from 'src/app/types/Line';
 import { cloneDeep } from 'lodash';
 
-// Enhanced interface to support different types of changes
 export interface UndoStackItem {
   pageIndex: number;
-  line: Line;
-  type: 'position' | 'category' | 'text' | 'visibility' | 'general' | 'scene-number' | 'bar';
-  originalPosition?: { x: string; y: string };
-  originalCategory?: string;
-  originalText?: string;
-  originalVisibility?: string;
-  isEndSpan?: boolean;
-  isContinueSpan?: boolean;
-  isStartSpan?: boolean;
-  originalSceneNumber?: string;
-  newSceneNumber?: string;
-  affectedLines?: Line[];
-  originalBarState?: {
-    bar?: string;
-    end?: string;
-    cont?: string;
-    calculatedBarY?: string | number;
-    calculatedEnd?: string | number;
-    startTextOffset?: number;
-    endTextOffset?: number;
-    continueTextOffset?: number;
-    continueTopTextOffset?: number;
-  };
-  barType?: 'start' | 'end' | 'continue' | 'continue-top';
-  // Add any other properties you might need to restore
+  lineIndex: number;
+  previousLineState: Line;  // Complete line state before change
+  timestamp: number;
+  changeDescription?: string; // Optional for debugging
 }
 
 @Injectable({
@@ -38,246 +16,294 @@ export interface UndoStackItem {
 })
 export class UndoService {
   private undoStack: UndoStackItem[] = [];
-  private initialDocState: Line[][] = []; // Store initial document state
-  private undoStackSource = new BehaviorSubject<UndoStackItem | null>(null);
-  private changeSubject = new Subject<UndoStackItem>();
+  private redoStack: UndoStackItem[] = [];
   private resetSubject = new Subject<void>();
   
-  // This is set in our last-looks-component
-  public currentPageIndex: number; 
-  
-  // Observables
-  undoStack$ = this.undoStackSource.asObservable();
-  change$ = this.changeSubject.asObservable();
+  // Observable for reset events only
   reset$ = this.resetSubject.asObservable();
 
-  // Add the redoStack property declaration to the UndoService class
-  private redoStack: any[] = [];
+  // We'll inject PdfService to update it directly
+  private pdfService: any; // Will be injected
 
-  // Change the getter to a private property with a public getter/setter
-  private _canUndo: boolean = false;
-  private _canRedo: boolean = false;
+  constructor() {}
 
   /**
-   * Store the initial state of the document
-   * @param docState The initial document state
+   * Set the PDF service reference (called from PdfService constructor)
+   * This avoids circular dependency issues
    */
-  setInitialState(docState: Line[][]) {
-    // Deep clone to avoid reference issues
-    this.initialDocState = cloneDeep(docState);
-    console.log('Initial document state stored', this.initialDocState.length);
+  setPdfService(pdfService: any): void {
+    this.pdfService = pdfService;
   }
 
   /**
-   * Get the initial document state
-   * @returns The initial document state
+   * Record a line change - saves the PREVIOUS state of the line
+   * Call this BEFORE making any changes to a line
+   * 
+   * @param pageIndex - Index of the page in the document
+   * @param lineIndex - Index of the line within the page
+   * @param currentLineState - Current state of the line (before changes)
+   * @param changeDescription - Optional description for debugging
    */
-  getInitialState(): Line[][] {
-    return cloneDeep(this.initialDocState);
-  }
-
-  /**
-   * Push a change to the undo stack
-   * @param item The change to record
-   */
-  push(item: UndoStackItem) {
-    // Create a deep copy to avoid reference issues
-    const changeToRecord = {
-      ...item,
-      line: cloneDeep(item.line)
+  recordLineChange(
+    pageIndex: number, 
+    lineIndex: number, 
+    currentLineState: Line,
+    changeDescription?: string
+  ): void {
+    const undoItem: UndoStackItem = {
+      pageIndex,
+      lineIndex,
+      previousLineState: cloneDeep(currentLineState), // Deep clone to avoid reference issues
+      timestamp: Date.now(),
+      changeDescription
     };
     
-    this.undoStack.push(changeToRecord);
-    console.log('Added to undo stack:', changeToRecord);
+    // Add to undo stack
+    this.undoStack.push(undoItem);
+    
+    // Clear redo stack when new change is made
+    this.redoStack = [];
+    
+    console.log(`[UNDO] Recorded change: Page ${pageIndex}, Line ${lineIndex} - ${changeDescription || 'No description'}`);
   }
 
   /**
-   * Record a visibility change
-   * @param pageIndex The page index
-   * @param line The line being changed
-   * @param originalVisibility The original visibility value
+   * Undo the last change by restoring the previous line state
+   * Updates PdfService directly, which will trigger component updates
+   * 
+   * @returns The undo item that was processed, or null if nothing to undo
    */
-  recordVisibilityChange(pageIndex: number, line: Line, originalVisibility: string) {
-    this.push({
-      pageIndex,
-      line,
-      type: 'visibility',
-      originalVisibility
-    });
+  undo(): UndoStackItem | null {
+    if (this.undoStack.length === 0) {
+      console.log('[UNDO] Nothing to undo');
+      return null;
+    }
+    
+    const undoItem = this.undoStack.pop()!;
+    
+    // Before restoring, save the current state for redo
+    if (this.pdfService && this.pdfService.finalDocument?.data) {
+      const currentPage = this.pdfService.finalDocument.data[undoItem.pageIndex];
+      if (currentPage && currentPage[undoItem.lineIndex]) {
+        const currentLineState = cloneDeep(currentPage[undoItem.lineIndex]);
+        
+        // Add current state to redo stack
+        const redoItem: UndoStackItem = {
+          ...undoItem,
+          previousLineState: currentLineState,
+          timestamp: Date.now()
+        };
+        this.redoStack.push(redoItem);
+      }
+    }
+    
+    // Restore the previous state directly in PdfService
+    this.restoreLineState(undoItem);
+    
+    console.log(`[UNDO] Restored: Page ${undoItem.pageIndex}, Line ${undoItem.lineIndex} - ${undoItem.changeDescription || 'No description'}`);
+    
+    return undoItem;
   }
 
   /**
-   * Pop the last change from the stack and apply it
-   * @returns The item that was undone, or null if stack is empty
+   * Redo the last undone change
+   * Updates PdfService directly, which will trigger component updates
+   * 
+   * @returns The redo item that was processed, or null if nothing to redo
    */
-  pop(): UndoStackItem | null {
-    if (this.undoStack.length === 0) return null;
+  redo(): UndoStackItem | null {
+    if (this.redoStack.length === 0) {
+      console.log('[UNDO] Nothing to redo');
+      return null;
+    }
     
-    const lastChange = this.undoStack.pop();
-    if (!lastChange) return null;
+    const redoItem = this.redoStack.pop()!;
     
-    console.log('Undoing change:', lastChange);
+    // Before redoing, save the current state for undo
+    if (this.pdfService && this.pdfService.finalDocument?.data) {
+      const currentPage = this.pdfService.finalDocument.data[redoItem.pageIndex];
+      if (currentPage && currentPage[redoItem.lineIndex]) {
+        const currentLineState = cloneDeep(currentPage[redoItem.lineIndex]);
+        
+        // Add current state back to undo stack
+        const undoItem: UndoStackItem = {
+          ...redoItem,
+          previousLineState: currentLineState,
+          timestamp: Date.now()
+        };
+        this.undoStack.push(undoItem);
+      }
+    }
     
-    // Notify subscribers about the change
-    this.notifyUndoStackChange(lastChange);
-    this.changeSubject.next(lastChange);
+    // Restore the redo state directly in PdfService
+    this.restoreLineState(redoItem);
     
-    return lastChange;
+    console.log(`[UNDO] Redid: Page ${redoItem.pageIndex}, Line ${redoItem.lineIndex} - ${redoItem.changeDescription || 'No description'}`);
+    
+    return redoItem;
   }
 
   /**
-   * Trigger a document reset
+   * Clear all undo/redo history and reset document to initial state
    */
-  resetDocument() {
+  reset(): void {
+    this.undoStack = [];
+    this.redoStack = [];
+    
+    // Notify components that reset has occurred
     this.resetSubject.next();
+    
+    console.log('[UNDO] History reset');
   }
 
   /**
-   * Get the current size of the undo stack
+   * Clear undo/redo stacks without resetting document
    */
-  get stackSize(): number {
+  clearHistory(): void {
+    this.undoStack = [];
+    this.redoStack = [];
+    console.log('[UNDO] History cleared');
+  }
+
+  /**
+   * Restore a line to its previous state in the PdfService
+   * This will trigger the observable and update all components
+   */
+  private restoreLineState(undoItem: UndoStackItem): void {
+    if (!this.pdfService) {
+      console.error('[UNDO] PdfService not available');
+      return;
+    }
+
+    // Update the line directly in PdfService's finalDocument.data
+    if (this.pdfService.finalDocument?.data) {
+      const page = this.pdfService.finalDocument.data[undoItem.pageIndex];
+      if (page && page[undoItem.lineIndex]) {
+        // Replace the entire line with the previous state
+        this.pdfService.finalDocument.data[undoItem.pageIndex][undoItem.lineIndex] = cloneDeep(undoItem.previousLineState);
+        
+        // Trigger the observable to notify all components
+        this.pdfService._finalDocumentData$.next(this.pdfService.finalDocument.data);
+        
+        console.log(`[UNDO] Line state restored in PdfService`);
+      } else {
+        console.warn(`[UNDO] Could not find line at page ${undoItem.pageIndex}, line ${undoItem.lineIndex}`);
+      }
+    } else {
+      console.warn('[UNDO] No finalDocument.data available in PdfService');
+    }
+  }
+
+  /**
+   * Record multiple line changes at once (for batch operations)
+   */
+  recordBatchChanges(changes: {
+    pageIndex: number;
+    lineIndex: number;
+    currentLineState: Line;
+    changeDescription?: string;
+  }[]): void {
+    changes.forEach(change => {
+      this.recordLineChange(
+        change.pageIndex,
+        change.lineIndex,
+        change.currentLineState,
+        change.changeDescription
+      );
+    });
+    
+    console.log(`[UNDO] Recorded batch of ${changes.length} changes`);
+  }
+
+  // ============= GETTERS AND UTILITY METHODS =============
+
+  /**
+   * Check if undo is available
+   */
+  get canUndo(): boolean {
+    return this.undoStack.length > 0;
+  }
+
+  /**
+   * Check if redo is available
+   */
+  get canRedo(): boolean {
+    return this.redoStack.length > 0;
+  }
+
+  /**
+   * Get the size of the undo stack
+   */
+  get undoStackSize(): number {
     return this.undoStack.length;
   }
 
   /**
-   * Check if the undo stack has items
+   * Get the size of the redo stack
    */
-  get canUndo(): boolean {
-    return this._canUndo;
+  get redoStackSize(): number {
+    return this.redoStack.length;
   }
 
   /**
-   * Check if the redo stack has items
+   * Peek at the last undo item without removing it
    */
-  get canRedo(): boolean {
-    return this._canRedo;
+  peekLastUndo(): UndoStackItem | null {
+    return this.undoStack.length > 0 ? this.undoStack[this.undoStack.length - 1] : null;
   }
 
   /**
-   * Reset the undo stack
+   * Peek at the last redo item without removing it
    */
-  reset() {
-    this.undoStack = [];
-    this.notifyUndoStackChange(null);
+  peekLastRedo(): UndoStackItem | null {
+    return this.redoStack.length > 0 ? this.redoStack[this.redoStack.length - 1] : null;
   }
 
   /**
-   * Notify subscribers about changes to the undo stack
+   * Get a summary of recent changes for debugging
    */
-  private notifyUndoStackChange(val: UndoStackItem | null) {
-    this.undoStackSource.next(val);
-  }
-
-  // Add this method to your UndoService class
-  recordTextChange(pageIndex: number, line: any, originalText: string): void {
-    this.undoStack.push({
-      type: 'text',
-      pageIndex: pageIndex,
-      line: line,
-      originalText: originalText
-    });
+  getRecentChanges(count: number = 5): UndoStackItem[] {
+    return this.undoStack.slice(-count);
   }
 
   /**
-   * Record a position change
-   * @param pageIndex The page index
-   * @param line The line being changed
-   * @param originalPosition The original position
-   * @param isEndSpan Whether this is an end span position change
-   * @param isContinueSpan Whether this is a continue span position change
-   * @param isStartSpan Whether this is a start span position change
+   * Get debug information about the current state
    */
-  recordPositionChange(
-    pageIndex: number, 
-    line: Line, 
-    originalPosition: any, 
-    isEndSpan: boolean = false,
-    isContinueSpan: boolean = false,
-    isStartSpan: boolean = false
-  ) {
-    this.push({
-      pageIndex,
-      line,
-      type: 'position',
-      originalPosition,
-      isEndSpan,
-      isContinueSpan,
-      isStartSpan
-    });
-  }
-
-  // Fix the recordChange method
-  recordChange(change: any): void {
-    // Store the change in the undo stack
-    this.undoStack.push(change);
-    
-    // Reset the redo stack when a new change is made
-    this.redoStack = [];
-    
-    // Update the canUndo property
-    this._canUndo = this.undoStack.length > 0;
-    
-    // Update the canRedo property
-    this._canRedo = this.redoStack.length > 0;
-  }
-
-  // Make sure any methods using redoStack have proper access to it
-  // For example, if there's a method like:
-  clearRedoStack() {
-    this.redoStack = [];
+  getDebugInfo(): {
+    undoStackSize: number;
+    redoStackSize: number;
+    canUndo: boolean;
+    canRedo: boolean;
+    lastUndo?: UndoStackItem;
+    lastRedo?: UndoStackItem;
+  } {
+    return {
+      undoStackSize: this.undoStackSize,
+      redoStackSize: this.redoStackSize,
+      canUndo: this.canUndo,
+      canRedo: this.canRedo,
+      lastUndo: this.peekLastUndo() || undefined,
+      lastRedo: this.peekLastRedo() || undefined
+    };
   }
 
   /**
-   * Record a scene number change that affects multiple lines
-   * @param pageIndex The page index
-   * @param lines The affected lines
-   * @param originalSceneNumber The original scene number
-   * @param newSceneNumber The new scene number
+   * Set maximum stack size to prevent memory issues
    */
-  recordSceneNumberChange(
-    pageIndex: number,
-    lines: any[],
-    originalSceneNumber: string,
-    newSceneNumber: string
-  ): void {
-    // Create a deep copy of the affected lines
-    const affectedLines = cloneDeep(lines);
-    
-    this.push({
-      pageIndex,
-      line: affectedLines[0], // We'll use the first line as a reference
-      type: 'scene-number',
-      originalSceneNumber,
-      newSceneNumber,
-      affectedLines
-    });
-    
-    // Update undo/redo state
-    this._canUndo = this.undoStack.length > 0;
-    this.redoStack = [];
-    this._canRedo = false;
+  private maxStackSize = 50;
+
+  private trimStackIfNeeded(): void {
+    if (this.undoStack.length > this.maxStackSize) {
+      this.undoStack = this.undoStack.slice(-this.maxStackSize);
+      console.log(`[UNDO] Trimmed undo stack to ${this.maxStackSize} items`);
+    }
   }
 
   /**
-   * Record a bar change (START, END, CONTINUE, or CONTINUE-TOP)
-   * @param pageIndex The page index
-   * @param line The line being changed
-   * @param originalState The original bar state
-   * @param barType The type of bar being changed
+   * Set the maximum number of undo operations to keep in memory
    */
-  recordBarChange(
-    pageIndex: number,
-    line: Line,
-    originalState: any,
-    barType: 'start' | 'end' | 'continue' | 'continue-top'
-  ) {
-    this.push({
-      pageIndex,
-      line,
-      type: 'bar',
-      originalBarState: originalState,
-      barType
-    });
+  setMaxStackSize(size: number): void {
+    this.maxStackSize = size;
+    this.trimStackIfNeeded();
   }
 }
-

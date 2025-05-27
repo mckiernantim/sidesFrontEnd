@@ -180,7 +180,7 @@ export class StripeService {
 
   createPortalSession(userId: string, userEmail: string, returnUrl?: string): Observable<{ success: boolean; url?: string; error?: string; type?: string }> {
     console.log('STRIPE: Creating portal session', { userId, userEmail, returnUrl });
-    debugger
+    
     return this.getAuthHeaders().pipe(
       switchMap(headers => {
         // Ensure we use http for localhost
@@ -188,7 +188,7 @@ export class StripeService {
         const protocol = baseUrl.includes('localhost') ? 'http' : 'https';
         const host = baseUrl.replace(/^https?:\/\//, '');
         const safeReturnUrl = returnUrl || `${protocol}://${host}/profile`;
-        debugger
+        
 
         const requestBody = {
           userId,

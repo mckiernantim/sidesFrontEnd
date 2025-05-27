@@ -14,11 +14,11 @@ import { UploadService } from 'src/app/services/upload/upload.service';
 import { StripeService } from 'src/app/services/stripe/stripe.service';
 import { TokenService } from 'src/app/services/token/token.service';
 import { Router } from '@angular/router';
-import { UndoService } from 'src/app/services/edit/undo.service';
 import { Observable, Subscription } from 'rxjs';
 // import { DragDropService } from 'src/app/services/drag-drop/drag-drop.service';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
 import { LastLooksPageComponent } from '../last-looks-page/last-looks-page.component';
+import { UndoService } from 'src/app/services/edit/undo.service';
 
 interface CallsheetPage {
   type: 'callsheet';
@@ -54,11 +54,11 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     private upload: UploadService,
     private stripe: StripeService,
     // public drag: DragDropService,
-    public undoService: UndoService,
     private token: TokenService,
     private router: Router,
     private cdRef: ChangeDetectorRef,
-    public pdf: PdfService
+    public pdf: PdfService,
+    private undoService: UndoService
   ) {
     console.log('LastLooks Component Constructed');
   }
@@ -66,7 +66,7 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   doc: any;
   @Input() editState: boolean = false;
   @Input() resetDocState: boolean = false;
-  @Input() selectedLineState: any = null;
+  @Input() selectedLineState: string = '';
   @Input() undoState: boolean = false;
   @Input() triggerLastLooksAction: string = '';
   @Input() callsheetPath: string = '';
@@ -127,11 +127,7 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       // Process lines for all pages
       this.processLinesForLastLooks(this.pages);
       
-      // Set continue and end values
-      this.setContAndEndVals();
-      
-      // Store the initial state for undo functionality
-      this.undoService.setInitialState(this.pages);
+  
     }
     
     // Subscribe to finalDocumentData$ for updates
@@ -144,10 +140,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
         
         // Process lines for all pages
         this.processLinesForLastLooks(this.pages);
-        
-        // Set continue and end values
-        this.setContAndEndVals();
-        
         // Force change detection
         this.cdRef.detectChanges();
       }
@@ -157,13 +149,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     this.selectedLine = null;
     this.selectedLines = [];
     this.isMultipleSelection = false;
-    
-    // Subscribe to undo service changes
-    this.undoService.change$.subscribe(change => {
-      if (change) {
-        this.handleUndoChange(change);
-      }
-    });
 
     this.sceneBreaks = [];
     if (this.callsheetPath) {
@@ -173,11 +158,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     this.initialDocState = this.doc?.map((page) => [...page]);
     this.establishInitialLineState();
     
-    // Subscribe to reset events from the undo service
-    this.undoService.reset$.subscribe(() => {
-      this.resetDocumentToInitialState();
-    });
-
     // Initialize scenes
     this.initializeScenes();
 
@@ -185,8 +165,12 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     console.log('LastLooks initialized with editState:', this.editState);
   }
   ngOnChanges(changes: SimpleChanges) {
-    if (this.doc && changes.resetDocState) this.resetDocumentToInitialState();
-    if (this.doc && changes.undoState) this.undoService.pop();
+    if (changes['resetDocState'] && changes['resetDocState'].currentValue) {
+      // Reset the document to initial state
+      this.undoService.reset();
+      this.resetDocumentToInitialState();
+    }
+    
     if (!this.canEditDocument) {
       this.selectedLine = null;
     }
@@ -245,14 +229,18 @@ export class LastLooksComponent implements OnInit, OnDestroy {
 
     this.cdRef.markForCheck();
   }
-  // updates the entire page
   handlePageUpdate(updatedPage: any) {
     if (!this.isCallsheetPage(this.pages[this.currentPageIndex])) {
+      // Update the page in our local state
       this.pages[this.currentPageIndex] = updatedPage;
-      this.pageUpdate.emit(updatedPage);
       
       // Update the PDF service
-      this.saveChangesToPdfService();
+      this.pdf.updateLine(this.currentPageIndex, 0, {
+        ...updatedPage[0]
+      });
+      
+      // Force change detection
+      this.cdRef.detectChanges();
     }
   }
   handleWaterMarkUpdate(newWatermark: string) {}
@@ -294,9 +282,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
         }
       });
     });
-    
-    // Set continue and end values
-    this.setContAndEndVals();
   }
   getSceneBreaks(sceneArr) {
     sceneArr.forEach((scene) => {
@@ -324,23 +309,17 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   }
 
   resetDocumentToInitialState() {
-    // Get the initial state from the undo service
-    const initialState = this.undoService.getInitialState();
-    
-    if (initialState && initialState.length > 0) {
+    if (this.initialDocState && this.initialDocState.length > 0) {
       console.log('Resetting document to initial state');
       
       // Create a deep copy of the initial state to avoid reference issues
-      this.pages = JSON.parse(JSON.stringify(initialState));
+      this.pages = JSON.parse(JSON.stringify(this.initialDocState));
       
       // Process the lines to ensure proper positioning
       this.processLinesForLastLooks(this.pages);
       
       // Update the current page reference
       this.currentPage = this.pages[this.currentPageIndex];
-      
-      // Clear the undo stack
-      this.undoService.reset();
       
       // Clear any selected line
       this.selectedLine = null;
@@ -515,54 +494,17 @@ export class LastLooksComponent implements OnInit, OnDestroy {
    * Updates the component to use the PDF service for continuation markers
    * and only handle END markers locally
    */
-  setContAndEndVals() {
-    if (!this.pages || this.pages.length === 0) return;
-    
-    // First, let the PDF service handle all continuation markers
-    this.pdf.assignContinueMarkers(this.pages);
-    
-    // Process each page - only for END markers and scene numbers
-    for (let i = 0; i < this.pages.length; i++) {
-      const currentPage = this.pages[i];
-      if (!currentPage || currentPage.length === 0) continue;
-      
-      // Handle scene numbers and END markers
-      currentPage.forEach(line => {
-        if (line.category === 'scene-header' && line.visible === 'true') {
-          // Preserve scene number display
-          line.sceneNumber = line.sceneNumberText || '';
-        }
-        
-        // Set end position for lines with END marker
-        if (line.end === 'END') {
-          line.endY = line.yPos - 5;
-          line.calculatedEnd = (Number(line.endY) * 1.3) + 'px';
-        }
-      });
-    }
-    
-    console.log('END markers and scene numbers set');
-  }
+  
 
   // Handle position changes from drag operations
   handlePositionChange(event: any): void {
     const { line, lineIndex, newPosition, originalPosition, isEndSpan, isContinueSpan, isStartSpan } = event;
 
-    // Store for undo
-    this.undoService.recordPositionChange(
-      this.currentPageIndex,
-      line,
-      originalPosition,
-      isEndSpan,
-      isContinueSpan,
-      isStartSpan
-    );
-
     // Update page
     this.pages[this.currentPageIndex][lineIndex] = line;
     
     // Update PDF service
-    this.pdf.updateLine(line, {
+    this.pdf.updateLine(this.currentPageIndex, lineIndex, {
       calculatedBarY: line.calculatedBarY,
       calculatedEnd: line.calculatedEnd,
       barY: line.barY,
@@ -582,66 +524,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     this.saveChangesToPdfService();
   }
 
-  undoLastChange(): void {
-    const undoneItem = this.undoService.pop();
-    if (undoneItem && undoneItem.pageIndex !== this.currentPageIndex) {
-      // If the undone item is on a different page, navigate to that page
-      this.currentPageIndex = undoneItem.pageIndex;
-      this.currentPage = this.pages[this.currentPageIndex];
-    }
-  }
-
-  onSearch() {
-    if (!this.searchQuery || this.searchQuery.trim() === '') {
-      return;
-    }
-
-    const query = this.searchQuery.toLowerCase();
-    
-    // Example: Find pages with matching text
-    for (let i = 0; i < this.pages.length; i++) {
-      const page = this.pages[i];
-      for (const line of page) {
-        if (line.text && line.text.toLowerCase().includes(query)) {
-          // Navigate to the page with the match
-          this.currentPageIndex = i;
-          this.updateDisplayedPage();
-          return;
-        }
-      }
-    }
-  }
-
-  // Update the onLineSelected method
-  onLineSelected(line: Line | null) {
-    if (!line) {
-      this.selectedLine = null;
-      this.selectedLines = [];
-      this.isMultipleSelection = false;
-      return;
-    }
-    
-    // Check if this is a multiple selection
-    if (line.multipleSelected) {
-      this.isMultipleSelection = true;
-      
-      // Find all selected lines
-      this.selectedLines = this.currentPage.filter(l => 
-        this.lastLooksPage.selectedLineIds.includes(l.index)
-      );
-      
-      // Set the primary selected line
-      this.selectedLine = line;
-      
-      console.log(`Multiple selection: ${this.selectedLines.length} lines selected`);
-    } else {
-      // Single selection
-      this.isMultipleSelection = false;
-      this.selectedLines = [line];
-      this.selectedLine = line;
-    }
-  }
-
   // Update the toggleVisibility method to force change detection
   toggleVisibility() {
     if (this.isMultipleSelection && this.selectedLines.length > 0) {
@@ -649,16 +531,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       const newVisibility = this.selectedLine?.visible === 'true' ? 'false' : 'true';
       
       this.selectedLines.forEach(line => {
-        // Store the original visibility for undo
-        const originalVisibility = line.visible;
-        
-        // Record the change for undo
-        this.undoService.recordVisibilityChange(
-          this.currentPageIndex,
-          line,
-          originalVisibility
-        );
-        
         // Set the new visibility
         line.visible = newVisibility;
       });
@@ -668,197 +540,22 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       this.cdRef.detectChanges();
     } else if (this.selectedLine) {
       // Handle single line
-      const originalVisibility = this.selectedLine.visible;
+      const newVisibility = this.selectedLine.visible === 'true' ? 'false' : 'true';
       
-      this.undoService.recordVisibilityChange(
-        this.currentPageIndex,
-        this.selectedLine,
-        originalVisibility
-      );
-      
-      this.selectedLine.visible = this.selectedLine.visible === 'true' ? 'false' : 'true';
+      // Toggle visibility
+      this.selectedLine.visible = newVisibility;
       
       // Update the page and force change detection
       this.pageUpdate.emit([...this.pages[this.currentPageIndex]]);
       this.cdRef.detectChanges();
     }
     
-    console.log('Visibility toggled, current page:', this.pages[this.currentPageIndex]);
+    // Save changes to PDF service
+    this.saveChangesToPdfService();
   }
 
-  // Handle undo changes
-  handleUndoChange(change: any): void {
-    if (!change) return;
-
-    switch (change.type) {
-      case 'bar':
-        // Get the line from the current page
-        const line = this.pages[this.currentPageIndex].find(l => l.index === change.line.index);
-        if (!line) return;
-
-        // Restore the original bar state
-        if (change.barType === 'start') {
-          line.bar = change.originalBarState.bar;
-          line.calculatedBarY = change.originalBarState.calculatedBarY;
-          line.startTextOffset = change.originalBarState.startTextOffset;
-        } else if (change.barType === 'end') {
-          line.end = change.originalBarState.end;
-          line.calculatedEnd = change.originalBarState.calculatedEnd;
-          line.endTextOffset = change.originalBarState.endTextOffset;
-        } else if (change.barType === 'continue' || change.barType === 'continue-top') {
-          line.cont = change.originalBarState.cont;
-          line.calculatedBarY = change.originalBarState.calculatedBarY;
-          if (change.barType === 'continue') {
-            line.continueTextOffset = change.originalBarState.continueTextOffset;
-          } else {
-            line.continueTopTextOffset = change.originalBarState.continueTopTextOffset;
-          }
-        }
-
-        // Update the page
-        this.pages[this.currentPageIndex] = [...this.pages[this.currentPageIndex]];
-        
-        // Save to PDF service
-        this.saveChangesToPdfService();
-        break;
-
-      case 'position':
-        // Handle position changes
-        const targetLine = this.pages[change.pageIndex].find(l => l.index === change.line.index);
-        if (!targetLine) return;
-
-        if (change.isEndSpan) {
-          targetLine.endY = change.originalPosition.y;
-          targetLine.calculatedEnd = (Number(change.originalPosition.y) * 1.3) + 'px';
-        } else if (change.isContinueSpan || change.isStartSpan) {
-          targetLine.barY = change.originalPosition.y;
-          targetLine.calculatedBarY = (Number(change.originalPosition.y) * 1.3) + 'px';
-        } else {
-          targetLine.yPos = change.originalPosition.y;
-          targetLine.calculatedYpos = (Number(change.originalPosition.y) * 1.3) + 'px';
-          if (change.originalPosition.x) {
-            targetLine.xPos = change.originalPosition.x;
-            targetLine.calculatedXpos = (Number(change.originalPosition.x) * 1.3) + 'px';
-          }
-        }
-
-        // Update the page
-        this.pages[change.pageIndex] = [...this.pages[change.pageIndex]];
-        
-        // Save to PDF service
-        this.saveChangesToPdfService();
-        break;
-
-      case 'visibility':
-        // Handle visibility changes
-        const visibilityLine = this.pages[change.pageIndex].find(l => l.index === change.line.index);
-        if (!visibilityLine) return;
-
-        visibilityLine.visible = change.originalVisibility;
-        
-        // Update the page
-        this.pages[change.pageIndex] = [...this.pages[change.pageIndex]];
-        
-        // Save to PDF service
-        this.saveChangesToPdfService();
-        break;
-
-      case 'scene-number':
-        // Handle scene number changes
-        if (change.affectedLines) {
-          change.affectedLines.forEach(affectedLine => {
-            const line = this.pages[change.pageIndex].find(l => l.index === affectedLine.index);
-            if (line) {
-              line.sceneNumberText = change.originalSceneNumber;
-              
-              // Update any custom bar texts
-              if (line.customStartText) {
-                line.customStartText = line.customStartText.replace(change.newSceneNumber, change.originalSceneNumber);
-              }
-              if (line.customEndText) {
-                line.customEndText = line.customEndText.replace(change.newSceneNumber, change.originalSceneNumber);
-              }
-              if (line.customContinueText) {
-                line.customContinueText = line.customContinueText.replace(change.newSceneNumber, change.originalSceneNumber);
-              }
-              if (line.customContinueTopText) {
-                line.customContinueTopText = line.customContinueTopText.replace(change.newSceneNumber, change.originalSceneNumber);
-              }
-            }
-          });
-          
-          // Update the page
-          this.pages[change.pageIndex] = [...this.pages[change.pageIndex]];
-          
-          // Save to PDF service
-          this.saveChangesToPdfService();
-        }
-        break;
-    }
-
-    // Force change detection
-    this.cdRef.detectChanges();
-  }
-
-  // Add a method to save changes to the PDF service
-  saveChangesToPdfService(): void {
-    // First, ensure all pages in the document are updated
-    this.pdf.finalDocument.data = [...this.pages];
-    
-    // Then call the PDF service's save method
-    this.pdf.saveDocumentState();
-    
-    console.log('Document state saved with custom bar text and positions');
-  }
-
-  // Add a method to save the current page state
-  saveCurrentPageState() {
-    // Only save if we're in edit mode and have changes
-    if (this.editState && this.currentPage) {
-      // Update the pages array with the current page
-      this.pages[this.currentPageIndex] = [...this.currentPage];
-    }
-  }
-
-  // Ensure we're cleaning up subscriptions
-  ngOnDestroy() {
-    // Clean up any subscriptions
-    if (this.undoQueue) {
-      this.undoQueue.unsubscribe();
-    }
-    
-    if (this.resetSubscription) {
-      this.resetSubscription.unsubscribe();
-    }
-    
-    // Clean up subscriptions
-    if (this.finalDocumentDataSubscription) {
-      this.finalDocumentDataSubscription.unsubscribe();
-    }
-    
-    // Clear large data structures
-    this.pages = null;
-    this.currentPage = null;
-    this.doc = null;
-    this.scenes = [];
-    this.selectedLines = [];
-    this.selectedLine = null;
-  }
-
-  // Add this method to toggle instructions visibility
-  toggleInstructions(): void {
-    this.showInstructions = !this.showInstructions;
-  }
-
-  // Add these methods to toggle bars
+  // Update these methods in last-looks.component.ts
   toggleStartBar(line: Line): void {
-    // Store original state for undo
-    const originalState = {
-      bar: line.bar,
-      calculatedBarY: line.calculatedBarY,
-      startTextOffset: line.startTextOffset
-    };
-
     // Toggle the start bar
     if (line.bar === 'bar') {
       line.bar = 'hideBar';
@@ -877,14 +574,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       line.startTextOffset = 10; // Default left offset
     }
     
-    // Record the change for undo
-    this.undoService.recordBarChange(
-      this.currentPageIndex,
-      line,
-      originalState,
-      'start'
-    );
-    
     // Update the page in pages array
     this.pages[this.currentPageIndex] = [...this.pages[this.currentPageIndex]];
     
@@ -896,13 +585,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   }
 
   toggleEndBar(line: Line): void {
-    // Store original state for undo
-    const originalState = {
-      end: line.end,
-      calculatedEnd: line.calculatedEnd,
-      endTextOffset: line.endTextOffset
-    };
-
     // Toggle the end bar
     if (line.end === 'END') {
       line.end = 'hideEnd';
@@ -921,14 +603,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       line.endTextOffset = 10; // Default right offset
     }
     
-    // Record the change for undo
-    this.undoService.recordBarChange(
-      this.currentPageIndex,
-      line,
-      originalState,
-      'end'
-    );
-    
     // Update the page in pages array
     this.pages[this.currentPageIndex] = [...this.pages[this.currentPageIndex]];
     
@@ -940,13 +614,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   }
 
   toggleContinueBar(line: Line): void {
-    // Store original state for undo
-    const originalState = {
-      cont: line.cont,
-      calculatedBarY: line.calculatedBarY,
-      continueTextOffset: line.continueTextOffset
-    };
-
     // Toggle the continue bar
     if (line.cont === 'CONTINUE') {
       line.cont = 'hideCont';
@@ -960,10 +627,10 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       
       line.cont = 'CONTINUE';
       
-      // Set default position if not already set
+      // Set default position if not already set - CHANGED FROM 900px TO 90px
       if (!line.calculatedBarY) {
-        line.calculatedBarY = '900px'; // Default top position
-        line.barY = 900; // Store raw value
+        line.calculatedBarY = '90px'; // Default bottom position (90px from bottom)
+        line.barY = 90; // Store raw value
       }
       
       // Set default text offset if not already set
@@ -971,14 +638,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
         line.continueTextOffset = 10;
       }
     }
-    
-    // Record the change for undo
-    this.undoService.recordBarChange(
-      this.currentPageIndex,
-      line,
-      originalState,
-      'continue'
-    );
     
     // Update the page in pages array
     this.pages[this.currentPageIndex] = [...this.pages[this.currentPageIndex]];
@@ -991,13 +650,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   }
 
   toggleContinueTopBar(line: Line): void {
-    // Store original state for undo
-    const originalState = {
-      cont: line.cont,
-      calculatedBarY: line.calculatedBarY,
-      continueTopTextOffset: line.continueTopTextOffset
-    };
-
     // Toggle the continue-top bar
     if (line.cont === 'CONTINUE-TOP') {
       line.cont = 'hideCont';
@@ -1013,7 +665,7 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       
       // Set default position if not already set
       if (!line.calculatedBarY) {
-        line.calculatedBarY = '40px'; // Default top position
+        line.calculatedBarY = '40px'; // Default top position (40px from top)
         line.barY = 40; // Store raw value
       }
       
@@ -1022,14 +674,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
         line.continueTopTextOffset = 10;
       }
     }
-    
-    // Record the change for undo
-    this.undoService.recordBarChange(
-      this.currentPageIndex,
-      line,
-      originalState,
-      'continue-top'
-    );
     
     // Update the page in pages array
     this.pages[this.currentPageIndex] = [...this.pages[this.currentPageIndex]];
@@ -1148,14 +792,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
         (line.customContinueTopText && line.customContinueTopText.includes(scene.sceneNumber))
       );
 
-      // Record the change for undo
-      this.undoService.recordSceneNumberChange(
-        scene.pageIndex,
-        affectedLines,
-        scene.sceneNumber,
-        newSceneNumber
-      );
-
       // Update the scene number
       scene.sceneNumber = newSceneNumber;
 
@@ -1246,13 +882,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     if (newDescription !== scene.description) {
       const headerLine = scene.lines.find(line => line.category === 'scene-header');
       if (headerLine) {
-        // Record the change for undo
-        this.undoService.recordTextChange(
-          scene.pageIndex,
-          headerLine,
-          headerLine.text
-        );
-
         // Update the description
         scene.description = newDescription;
         headerLine.text = newDescription;
@@ -1273,15 +902,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
    * Toggle line visibility
    */
   toggleLineVisibility(line: Line): void {
-    const originalVisibility = line.visible;
-    
-    // Record the change for undo
-    this.undoService.recordVisibilityChange(
-      this.currentPageIndex,
-      line,
-      originalVisibility
-    );
-
     // Toggle visibility
     line.visible = line.visible === 'true' ? 'false' : 'true';
 
@@ -1362,16 +982,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Record the change in the undo service
-    if (affectedLines.size > 0) {
-      this.undoService.recordSceneNumberChange(
-        this.currentPageIndex,
-        Array.from(affectedLines),
-        oldSceneNumber,
-        newSceneNumber
-      );
-    }
-
     // Force change detection
     this.cdRef.detectChanges();
   }
@@ -1397,5 +1007,98 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   handlePageChange(pageIndex: number): void {
     this.currentPageIndex = pageIndex;
     this.updateDisplayedPage();
+  }
+
+  // Add a method to save changes to the PDF service
+  saveChangesToPdfService(): void {
+    // First, ensure all pages in the document are updated
+    this.pdf.finalDocument.data = [...this.pages];
+    
+    // Then call the PDF service's save method
+    this.pdf.saveDocumentState();
+    
+    console.log('Document state saved with custom bar text and positions');
+  }
+
+  // Add a method to save the current page state
+  saveCurrentPageState() {
+    // Only save if we're in edit mode and have changes
+    if (this.editState && this.currentPage) {
+      // Update the pages array with the current page
+      this.pages[this.currentPageIndex] = [...this.currentPage];
+    }
+  }
+
+  // Ensure we're cleaning up subscriptions
+  ngOnDestroy() {
+    // Clean up subscriptions
+    if (this.finalDocumentDataSubscription) {
+      this.finalDocumentDataSubscription.unsubscribe();
+    }
+    
+    // Clear large data structures
+    this.pages = null;
+    this.currentPage = null;
+    this.doc = null;
+    this.scenes = [];
+    this.selectedLines = [];
+    this.selectedLine = null;
+  }
+
+  // Add this method to toggle instructions visibility
+  toggleInstructions(): void {
+    this.showInstructions = !this.showInstructions;
+  }
+
+  // Add back the onLineSelected method
+  onLineSelected(line: Line | null) {
+    if (!line) {
+      this.selectedLine = null;
+      this.selectedLines = [];
+      this.isMultipleSelection = false;
+      return;
+    }
+    
+    // Check if this is a multiple selection
+    if (line.multipleSelected) {
+      this.isMultipleSelection = true;
+      
+      // Find all selected lines
+      this.selectedLines = this.currentPage.filter(l => 
+        this.lastLooksPage.selectedLineIds.includes(l.index)
+      );
+      
+      // Set the primary selected line
+      this.selectedLine = line;
+      
+      console.log(`Multiple selection: ${this.selectedLines.length} lines selected`);
+    } else {
+      // Single selection
+      this.isMultipleSelection = false;
+      this.selectedLines = [line];
+      this.selectedLine = line;
+    }
+  }
+
+  // Add back the onSearch method
+  onSearch() {
+    if (!this.searchQuery || this.searchQuery.trim() === '') {
+      return;
+    }
+
+    const query = this.searchQuery.toLowerCase();
+    
+    // Example: Find pages with matching text
+    for (let i = 0; i < this.pages.length; i++) {
+      const page = this.pages[i];
+      for (const line of page) {
+        if (line.text && line.text.toLowerCase().includes(query)) {
+          // Navigate to the page with the match
+          this.currentPageIndex = i;
+          this.updateDisplayedPage();
+          return;
+        }
+      }
+    }
   }
 }

@@ -517,7 +517,7 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
         callSheetPath: this.callsheet || callSheetPath || null,
         hasCallSheet: hasCallSheet
       };
-      debugger
+      
       console.log('Sending document to server:', {
         ...documentToSend,
         callSheet: documentToSend.callSheet ? 'Present' : 'Not present' // Log presence without exposing content
@@ -560,7 +560,7 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
             // Store the new token and expiration time
             if (response.token && response.expirationTime) {
               console.log(response.token, 'token');
-              debugger;
+              ;
               this.token.setToken(response.token, response.expirationTime);
               console.log('Token stored:', {
                 token: response.token,
@@ -712,7 +712,6 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     });
   }
   getLastPage = (scene) => {
-    debugger;
     return this.allLines[scene.lastLine].page || null;
   };
 
@@ -806,6 +805,8 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
   triggerLastLooksAction(str) {
     if (str === 'resetDoc') {
       this.resetFinalDocState = !this.resetFinalDocState;
+      // Trigger the undo service reset
+      this.undoService.reset();
       return;
     }
     if (str === 'undo') {
@@ -816,11 +817,10 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
   handleToolTipClicked(str) {
     switch (true) {
       case str === 'undo':
-        this.undoService.pop();
+        this.undoService.undo();
         break;
       case str === 'resetDoc':
         this.triggerLastLooksAction('resetDoc');
-
         break;
       case str === 'stopEdit':
         this.toggleEditStateInLastLooks();
@@ -975,6 +975,10 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
   }
 
   triggerEditMode() {
+    if (this.editState) {
+      // We're exiting edit mode, save the document state
+      this.pdf.saveDocumentState();
+    }
     this.editState = !this.editState;
     this.editLastLooksState = this.editState;
   }

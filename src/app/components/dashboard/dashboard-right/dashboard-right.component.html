@@ -105,7 +105,7 @@
                     (click)="openConfirmPurchaseDialog()"
                     class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors"
                   >
-                    Proceed To Checkout {{userData.email}}
+                    Get My Sides 
                   </button>
                   <button 
                     (click)="handleSignOut()"
@@ -160,6 +160,17 @@
                       [class.hover:bg-green-700]="editState">
                       {{ editState ? 'Save Changes' : 'Edit PDF' }}
                     </button>
+                    @if (editLastLooksState) {
+                      <ng-container>
+                        <div class="flex flex-row w-full mt-6">
+                          <app-tool-tip 
+                            class="w-full" 
+                            (buttonAction)="handleToolTipClicked($event)"
+                            [data]="toolTipContent"
+                          ></app-tool-tip>
+                        </div>
+                      </ng-container>
+                    }
                   </div>
 
                   <!-- Callsheet and Watermark controls -->
@@ -176,17 +187,6 @@
             </ng-template>
           </div>
 
-          @if (editLastLooksState) {
-            <ng-container>
-              <div class="flex flex-row w-full mt-6">
-                <app-tool-tip 
-                  class="w-full" 
-                  (buttonAction)="handleToolTipClicked($event)"
-                  [data]="toolTipContent"
-                ></app-tool-tip>
-              </div>
-            </ng-container>
-          }
 
           <app-scene-selection 
             [scenes]="scenes" 

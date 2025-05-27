@@ -42,7 +42,7 @@ export class CompleteComponent implements OnInit {
   }
 
   downloadPDF() {
-    debugger
+    
     if (!this.name) {
       this.error = 'Document name not found';
       return;

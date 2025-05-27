@@ -149,7 +149,7 @@ export class UploadService {
 
   generatePdf(finalDocument: any): Observable<PdfGenerationResponse> {
     console.log('Generating PDF with document:', finalDocument);
-    debugger
+    
     return from(getAuth().currentUser?.getIdToken() || Promise.reject('No user')).pipe(
       switchMap((token) => {
         console.log('Got auth token, sending request to server');
@@ -219,7 +219,7 @@ export class UploadService {
     userId?: string
   ): Observable<Blob> {
     // Get the token from localStorage
-    debugger;
+    ;
     const token = localStorage.getItem('pdfBackupToken');
     if (!token) {
       return throwError(() => new Error('PDF token not found'));

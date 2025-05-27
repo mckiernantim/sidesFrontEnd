@@ -155,7 +155,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   
   // Handle new subscription
   handleNewSubscription(): void {
-    debugger
+  
     if (!this.user || !this.user.email) {
       this.error = 'You must be logged in to subscribe';
       return;
@@ -183,7 +183,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   
   // Manage existing subscription
   manageSubscription(): void {
-    debugger
+    
     if (!this.user || !this.user.email) {
       this.error = 'You must be logged in to manage your subscription';
       return;

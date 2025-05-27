@@ -1,11 +1,8 @@
-
 <!-- The rest of your existing page content -->
 <main class="last-looks-container">
     <div class="page shadow-lg border" (click)="showContextMenu && closeContextMenu()">
         <div class="break">
             <ul class="screenbox" [ngClass]="{ 'edit-mode': canEditDocument }">
-                <!-- [attr.contenteditable]="canEditDocument ? 'true' : 'false'" this line will activate easy edit - -->
-
                 <ng-container *ngFor="let line of page; let lineIndex = index">
                     <span class="watermark">{{ line.watermarkText }}</span>
                     <span class="draft-text">{{ line.draftText }}</span>
@@ -28,19 +25,19 @@
                         (dblclick)="canEditDocument && startEditingSceneNumber(line)"
                         (blur)="saveSceneNumberEdit(line)"
                         (keydown)="handleSceneNumberKeyDown($event)"
-                        [style.bottom]="line.calculatedYpos" [style.left]="line.calculatedXpos">
+                        [style.bottom]="line.calculatedYpos" 
+                        [style.left]="line.calculatedXpos">
                         {{ line.sceneNumberText }}
                     </span>
 
-                    <!-- Always rendered span with text and style -->
-                    <span *ngIf="line.category !== 'page-number' && line.category !== 'page-number-hidden' && line.category !== 'injected-break'"
-                        [attr.data-line-id]="line.id" [class]="(line.bar ? line.bar : 'hideBar')"
-                        [style.bottom]="line.calculatedYpos"
-                        cdkDrag
-                        [cdkDragDisabled]="!canEditDocument || barTextDragging"
-                        (cdkDragStarted)="onContinueSpanDragStarted($event, line)"
-                        (cdkDragMoved)="onContinueSpanDragMoved($event, line)"
-                        (cdkDragEnded)="onContinueSpanDragEnded($event, line, lineIndex)">
+                    <!-- START bar span - MOUSE DRAG VERSION -->
+                    <span *ngIf="line.bar === 'bar'" 
+                        [class]="'bar-span ' + line.bar + ' ' + line.hidden"
+                        [style.bottom]="line.calculatedBarY"
+                        [attr.data-line-id]="line.id"
+                        (mousedown)="startLineDrag($event, line, 'continue')"
+                        [class.draggable]="canEditDocument"
+                        [style.cursor]="canEditDocument ? 'grab' : 'default'">
                         <span class="bar-text" 
                             [style.left.px]="line.startTextOffset || 10"
                             (mousedown)="canEditDocument && startBarTextDrag($event, line, 'start')"
@@ -61,14 +58,13 @@
                         </span>
                     </span>
 
-                    <!-- Conditionally render li element with drag functionality -->
+                    <!-- Main line element - MOUSE DRAG VERSION -->
                     <ng-container *ngIf="canEditDocument; else nonEditable">
                         <li id="{{ line.index }}" 
-                            cdkDrag
-                            [cdkDragDisabled]="!canEditDocument"
-                            (cdkDragStarted)="onDragStarted($event, line)"
-                            (cdkDragMoved)="onDragMoved($event, line)"
-                            (cdkDragEnded)="onDragEnded($event, line, lineIndex)"
+                            tabindex="0" 
+                            (mousedown)="startLineDrag($event, line, 'line')"
+                            [class.draggable]="canEditDocument"
+                            [style.cursor]="canEditDocument ? 'grab' : 'default'"
                             [value]="line.sceneNumber"
                             [class]="line.category + ' ' + line.visible + ' ' + line.hidden"
                             [class.selected-line]="canEditDocument && isLineSelected(line)"
@@ -105,17 +101,14 @@
                         *
                     </span>
 
-                    <!-- continue-top span (at the top of the page) -->
+                    <!-- continue-top span (at the top of the page) - MOUSE DRAG VERSION -->
                     <span *ngIf="line.cont === 'CONTINUE-TOP'" 
                         class="bar-span continue-top-span CONTINUE-TOP {{line.hidden}}"
                         [style.top]="line.calculatedBarY"
                         [attr.data-line-id]="line.id"
-                        cdkDrag
-                        [cdkDragDisabled]="!canEditDocument"
-                        (cdkDragStarted)="onContinueTopSpanDragStarted($event, line)"
-                        (cdkDragMoved)="onContinueTopSpanDragMoved($event, line)"
-                        (cdkDragEnded)="onContinueTopSpanDragEnded($event, line, lineIndex)"
-                        [cdkDragBoundary]="'.page'">
+                        (mousedown)="startLineDrag($event, line, 'continue-top')"
+                        [class.draggable]="canEditDocument"
+                        [style.cursor]="canEditDocument ? 'grab' : 'default'">
                         <span class="bar-text" 
                             [style.left.px]="line.continueTopTextOffset || 10"
                             (mousedown)="canEditDocument && startBarTextDrag($event, line, 'continue-top')"
@@ -136,16 +129,14 @@
                         </span>
                     </span>
 
-                    <!-- continue spans (at the bottom of the page) -->
+                    <!-- continue spans (at the bottom of the page) - MOUSE DRAG VERSION -->
                     <span *ngIf="line.cont === 'CONTINUE'"
                         class="bar-span continue-span CONTINUE {{line.hidden}}"
                         [style.bottom]="line.calculatedBarY"
                         [attr.data-line-id]="line.id"
-                        cdkDrag
-                        [cdkDragDisabled]="!canEditDocument"
-                        (cdkDragStarted)="onContinueSpanDragStarted($event, line)"
-                        (cdkDragMoved)="onContinueSpanDragMoved($event, line)"
-                        (cdkDragEnded)="onContinueSpanDragEnded($event, line, lineIndex)">
+                        (mousedown)="startLineDrag($event, line, 'continue')"
+                        [class.draggable]="canEditDocument"
+                        [style.cursor]="canEditDocument ? 'grab' : 'default'">
                         <span class="bar-text" 
                             [style.left.px]="line.continueTextOffset || 10"
                             (mousedown)="canEditDocument && startBarTextDrag($event, line, 'continue')"
@@ -166,17 +157,14 @@
                         </span>
                     </span>
 
-                    <!-- end span -->
+                    <!-- end span - MOUSE DRAG VERSION -->
                     <span *ngIf="line.end === 'END'"
                         class="bar-span END {{line.hidden}}"
                         [style.bottom]="line.calculatedEnd"
                         [attr.data-line-id]="line.id"
-                        cdkDrag
-                        [cdkDragDisabled]="!canEditDocument"
-                        (cdkDragStarted)="onEndSpanDragStarted($event, line)"
-                        (cdkDragMoved)="onEndSpanDragMoved($event, line)"
-                        (cdkDragEnded)="onEndSpanDragEnded($event, line, lineIndex)"
-                        [cdkDragBoundary]="'.page'">
+                        (mousedown)="startLineDrag($event, line, 'end')"
+                        [class.draggable]="canEditDocument"
+                        [style.cursor]="canEditDocument ? 'grab' : 'default'">
                         <span class="bar-text" 
                             [style.left.px]="line.endTextOffset || 10"
                             (mousedown)="canEditDocument && startBarTextDrag($event, line, 'end')"
@@ -204,7 +192,8 @@
                         (dblclick)="canEditDocument && startEditingSceneNumber(line)"
                         (blur)="saveSceneNumberEdit(line)"
                         (keydown)="handleSceneNumberKeyDown($event)"
-                        [style.bottom]="line.calculatedYpos" [style.right]="line.calculatedXPos">
+                        [style.bottom]="line.calculatedYpos" 
+                        [style.right]="line.calculatedXPos">
                         {{ line.sceneNumberText }}
                     </span>
 
