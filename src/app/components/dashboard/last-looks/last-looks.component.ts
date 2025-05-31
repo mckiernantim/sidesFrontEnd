@@ -31,13 +31,33 @@ interface QueueItem {
 import { fadeInOutAnimation } from 'src/app/animations/animations';
 
 interface Scene {
+  id: string;
+  pageIndex:number;
   sceneNumber: string;
-  description: string;
-  expanded: boolean;
+  firstLine: number;
+  lastLine: number;
+  firstPage: number;
+  lastPage: number;
   lines: Line[];
-  startIndex: number;
-  endIndex: number;
-  pageIndex: number;
+  pageRanges: {
+    startPage: number;
+    endPage: number;
+    sharedPages: number[]; // Pages shared with other scenes
+  };
+}
+
+interface Page {
+  pageNumber: number;
+  lines: Line[];
+  sceneIds: string[]; // IDs of scenes that appear on this page
+  isShared: boolean;  // Whether this page contains multiple scenes
+}
+
+interface DocumentState {
+  scenes: Map<string, Scene>;  // Map for quick scene lookup
+  pages: Page[];
+  sceneOrder: string[];       // Array of scene IDs in current order
+  sharedPages: Set<number>;   // Set of page numbers that contain multiple scenes
 }
 
 @Component({
@@ -702,18 +722,25 @@ export class LastLooksComponent implements OnInit, OnDestroy {
 
           // Start a new scene
           currentScene = {
+            id: '',
             sceneNumber: line.sceneNumberText || '',
-            description: line.text || '',
-            expanded: false,
+            pageIndex: pageIndex,
+            firstLine: line.index,
+            lastLine: line.lastLine,
+            firstPage: pageIndex,
+            lastPage: pageIndex,
             lines: [line],
-            startIndex: lineIndex,
-            endIndex: lineIndex,
-            pageIndex: pageIndex
+            pageRanges: {
+              startPage: pageIndex,
+              endPage: pageIndex,
+              sharedPages: []
+            }
           };
         } else if (currentScene) {
           // Add line to current scene
           currentScene.lines.push(line);
-          currentScene.endIndex = lineIndex;
+          currentScene.lastLine = line.index;
+          currentScene.lastPage = pageIndex;
         }
       });
     });
@@ -724,26 +751,7 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Toggle scene expansion
-   */
-  toggleSceneExpanded(index: number): void {
-    this.scenes[index].expanded = !this.scenes[index].expanded;
-  }
 
-  /**
-   * Expand all scenes
-   */
-  expandAllScenes(): void {
-    this.scenes.forEach(scene => scene.expanded = true);
-  }
-
-  /**
-   * Collapse all scenes
-   */
-  collapseAllScenes(): void {
-    this.scenes.forEach(scene => scene.expanded = false);
-  }
 
   /**
    * Navigate to a specific scene
@@ -871,33 +879,7 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Update scene description
-   */
-  updateSceneDescription(event: Event, scene: Scene): void {
-    event.stopPropagation();
-    const element = event.target as HTMLElement;
-    const newDescription = element.textContent?.trim() || '';
-    
-    if (newDescription !== scene.description) {
-      const headerLine = scene.lines.find(line => line.category === 'scene-header');
-      if (headerLine) {
-        // Update the description
-        scene.description = newDescription;
-        headerLine.text = newDescription;
-
-        // Save changes to PDF service immediately
-        this.saveChangesToPdfService();
-
-        // Update the page and force refresh
-        this.pageUpdate.emit(this.pages[scene.pageIndex]);
-        if (this.currentPageIndex === scene.pageIndex) {
-          this.updateDisplayedPage();
-        }
-      }
-    }
-  }
-
+  
   /**
    * Toggle line visibility
    */
