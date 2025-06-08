@@ -76,71 +76,77 @@ export class PdfService {
   // (though components probably don't need this)
 }
 
-updateLine(pageIndex: number, lineIndex: number, updates: Partial<Line> | Line): void {
+// Single source of truth for document updates
+private _finalDocumentData$ = new BehaviorSubject<{
+  docPageIndex: number;
+  docPageLineIndex: number;
+  line: Line;
+} | null>(null);
+
+public finalDocumentData$ = this._finalDocumentData$.asObservable();
+
+updateLine(pageIndex: number, lineIndex: number, updates: Partial<Line>): void {
   if (!this.finalDocument?.data || 
       !this.finalDocument.data[pageIndex] || 
       !this.finalDocument.data[pageIndex][lineIndex]) {
-    console.warn(`[PDF Service] Cannot update line at page ${pageIndex}, line ${lineIndex} - path does not exist`);
     return;
   }
 
-  // Always use deep cloning for safety
-  const currentLine = cloneDeep(this.finalDocument.data[pageIndex][lineIndex]);
-  const updatedLine = {
-    ...currentLine,
-    ...cloneDeep(updates) // Merge updates (works for both partial and complete updates)
-  };
-  
-  this.finalDocument.data[pageIndex][lineIndex] = updatedLine;
+  const line = this.finalDocument.data[pageIndex][lineIndex];
+  Object.assign(line, updates);
 
-  // Emit the update
-  this._finalDocumentData$.next(this.finalDocument.data);
-
-  console.log(`[PDF Service] Updated line at page ${pageIndex}, line ${lineIndex}`);
+  // Emit the updated line
+  this._finalDocumentData$.next({
+    docPageIndex: pageIndex,
+    docPageLineIndex: lineIndex,
+    line: { ...line }
+  });
 }
 
-/**
- * Batch update multiple lines efficiently - only emits observable once
- * @param updates - Array of line updates with their coordinates and changes
- */
 updateLines(updates: Array<{
   pageIndex: number;
   lineIndex: number;
-  updates: Partial<Line> | Line;
+  updates: Partial<Line>;
 }>): void {
-  if (!this.finalDocument?.data || !updates.length) {
-    console.warn('[PDF Service] Cannot update lines - no data or no updates provided');
-    return;
-  }
-
-  let hasChanges = false;
-  const processedUpdates: string[] = [];
+  if (!this.finalDocument?.data || !updates.length) return;
 
   updates.forEach(({ pageIndex, lineIndex, updates: lineUpdates }) => {
-    if (this.finalDocument.data[pageIndex] && this.finalDocument.data[pageIndex][lineIndex]) {
-      // Deep clone current line
-      const currentLine = cloneDeep(this.finalDocument.data[pageIndex][lineIndex]);
-      
-      // Merge updates safely
-      const updatedLine = {
-        ...currentLine,
-        ...cloneDeep(lineUpdates)
-      };
-
-      // Replace line
-      this.finalDocument.data[pageIndex][lineIndex] = updatedLine;
-      hasChanges = true;
-      processedUpdates.push(`page ${pageIndex}, line ${lineIndex}`);
-    } else {
-      console.warn(`[PDF Service] Skipping invalid line coordinates: page ${pageIndex}, line ${lineIndex}`);
+    const line = this.finalDocument.data[pageIndex][lineIndex];
+    if (line) {
+      Object.assign(line, lineUpdates);
+      this._finalDocumentData$.next({
+        docPageIndex: pageIndex,
+        docPageLineIndex: lineIndex,
+        line
+      });
     }
   });
+}
 
-  // Only emit once after all updates are complete
-  if (hasChanges) {
-    this._finalDocumentData$.next(this.finalDocument.data);
-    console.log(`[PDF Service] Batch updated ${processedUpdates.length} lines:`, processedUpdates);
+// Add method to get a specific line
+getLine(pageIndex: number, lineIndex: number): Line | null {
+  if (!this.finalDocument?.data || 
+      !this.finalDocument.data[pageIndex] || 
+      !this.finalDocument.data[pageIndex][lineIndex]) {
+    return null;
   }
+  return this.finalDocument.data[pageIndex][lineIndex];
+}
+
+// Add method to get all lines for a specific page
+getPageLines(pageIndex: number): Line[] | null {
+  if (!this.finalDocument?.data || !this.finalDocument.data[pageIndex]) {
+    return null;
+  }
+  return this.finalDocument.data[pageIndex];
+}
+
+// Add method to get all pages
+getAllPages(): Line[][] | null {
+  if (!this.finalDocument?.data) {
+    return null;
+  }
+  return this.finalDocument.data;
 }
 
 /**
@@ -188,7 +194,7 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
 resetToInitialState(): void {
   if (this.initialDocumentState) {
     this.finalDocument = JSON.parse(JSON.stringify(this.initialDocumentState));
-    this._finalDocumentData$.next(this.finalDocument.data);
+    // Initial state is handled by components
     this.finalDocReady = true;
   }
 }
@@ -653,7 +659,7 @@ resetToInitialState(): void {
 
     // Store the final document with the maintained order
     this.finalDocument.data = reorderedPages;
-    this._finalDocumentData$.next(reorderedPages);
+    // Initial state is handled by components
 
     // Save initial state after document is fully processed
     this.initialDocumentState = JSON.parse(JSON.stringify(this.finalDocument));
@@ -1478,7 +1484,6 @@ resetToInitialState(): void {
   updateSceneNumber(scene: any, newSceneNumber: string): Observable<{ success: boolean }> {
     return new Observable(observer => {
       try {
-        // Update the scene number in the final document data
         if (this.finalDocument && this.finalDocument.data) {
           const updatedData = this.finalDocument.data.map(page => {
             return page.map(line => {
@@ -1489,19 +1494,9 @@ resetToInitialState(): void {
             });
           });
           
-          // Update the final document data
           this.finalDocument.data = updatedData;
           
-          // Emit the new state through the BehaviorSubject
-          this._finalDocumentData$.next(updatedData);
-          
-          // Process the PDF to ensure all changes are properly applied
-          this.processPdf(
-            this.getSelectedScenes(),
-            this.finalDocument.name,
-            this.finalDocument.numPages,
-            this.finalDocument.callSheetPath
-          );
+          // Let components handle the update
           
           observer.next({ success: true });
           observer.complete();
@@ -1520,7 +1515,6 @@ resetToInitialState(): void {
   updateSceneText(scene: any, newText: string): Observable<{ success: boolean }> {
     return new Observable(observer => {
       try {
-        // Update the scene text in the final document data
         if (this.finalDocument && this.finalDocument.data) {
           const updatedData = this.finalDocument.data.map(page => {
             return page.map(line => {
@@ -1531,11 +1525,9 @@ resetToInitialState(): void {
             });
           });
           
-          // Update the final document data
           this.finalDocument.data = updatedData;
           
-          // Emit the new state through the BehaviorSubject
-          this._finalDocumentData$.next(updatedData);
+          // Let components handle the update
           
           observer.next({ success: true });
           observer.complete();
@@ -1555,9 +1547,5 @@ resetToInitialState(): void {
   get sceneNumberUpdated$(): Subject<{ scene: any, newSceneNumber: string }> {
     return this._sceneNumberUpdated$;
   }
-
-  private _finalDocumentData$: BehaviorSubject<any[]> = new BehaviorSubject<any[]>([]);
-  public finalDocumentData$: Observable<any[]> = this._finalDocumentData$.asObservable();
-
 
 }

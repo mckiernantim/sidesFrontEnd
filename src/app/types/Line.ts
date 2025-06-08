@@ -66,4 +66,7 @@ export interface Line {
   // Add document-wide indexing properties
   docPageIndex?: number;
   docPageLineIndex?: number;
+
+  // Add crossed out property
+  crossedOut?: boolean;
 }

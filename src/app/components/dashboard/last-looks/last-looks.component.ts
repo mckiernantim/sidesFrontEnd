@@ -151,19 +151,30 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     }
     
     // Subscribe to finalDocumentData$ for updates
-    this.finalDocumentDataSubscription = this.pdf.finalDocumentData$.subscribe(data => {
-      if (data && data.length > 0) {
-        console.log('LastLooks received document update:', data);
-        this.doc = data;
-        this.pages = data;
-        this.currentPage = this.pages[this.currentPageIndex] || [];
-        
-        // Process lines for all pages
-        this.processLinesForLastLooks(this.pages);
-        // Force change detection
-        this.cdRef.detectChanges();
+    this.finalDocumentDataSubscription = this.pdf.finalDocumentData$.subscribe(
+      (data) => {
+        if (data) {
+          console.log('LastLooks received document update:', data);
+          
+          // Update the specific line in the pages array
+          if (this.pages && this.pages[data.docPageIndex]) {
+            const page = this.pages[data.docPageIndex];
+            const lineIndex = page.findIndex(line => line.docPageLineIndex === data.docPageLineIndex);
+            if (lineIndex !== -1) {
+              page[lineIndex] = data.line;
+              
+              // Update current page if this is the current page
+              if (data.docPageIndex === this.currentPageIndex) {
+                this.currentPage = [...page];
+              }
+              
+              // Force change detection
+              this.cdRef.detectChanges();
+            }
+          }
+        }
       }
-    });
+    );
     
     // Clear any selected lines on initialization
     this.selectedLine = null;
@@ -892,34 +903,28 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   }
 
   handleLineChange(event: any): void {
-    const { line, property, value, oldValue } = event;
+    const { line, lineIndex, property, value } = event;
     
-    if (property === 'toggleBar') {
-      // Handle bar toggle based on the value (barType)
-      switch (value) {
-        case 'start':
-          this.toggleStartBar(line);
-          break;
-        case 'end':
-          this.toggleEndBar(line);
-          break;
-        case 'continue':
-          this.toggleContinueBar(line);
-          break;
-        case 'continue-top':
-          this.toggleContinueTopBar(line);
-          break;
+    // Update the line in our local state
+    if (this.pages && this.pages[this.currentPageIndex]) {
+      const page = this.pages[this.currentPageIndex];
+      const lineIndex = page.findIndex(l => l.docPageLineIndex === line.docPageLineIndex);
+      if (lineIndex !== -1) {
+        // Update the line
+        page[lineIndex] = { ...line };
+        
+        // Update current page if this is the current page
+        if (this.currentPageIndex === this.currentPageIndex) {
+          this.currentPage = [...page];
+        }
+        
+        // Update the PDF service
+        this.pdf.updateLine(this.currentPageIndex, line.docPageLineIndex, line);
+        
+        // Force change detection
+        this.cdRef.detectChanges();
       }
-    } else if (property === 'sceneNumberText' && oldValue) {
-      // Update scene number and related CONTINUE bars
-      this.updateSceneNumberAndContinueBars(line, value, oldValue);
-    } else {
-      // Handle other line changes
-      // ...existing code...
     }
-
-    // After any line change, update the PDF service
-    this.saveChangesToPdfService();
   }
 
   // Add new method to update scene numbers and CONTINUE bars

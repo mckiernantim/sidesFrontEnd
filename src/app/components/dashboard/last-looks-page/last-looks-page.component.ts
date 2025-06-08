@@ -2,7 +2,7 @@ import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChange
 import { Line } from 'src/app/types/Line';
 import { UndoService } from 'src/app/services/edit/undo.service';
 import { Subject, Subscription } from 'rxjs';
-import { debounceTime } from 'rxjs/operators';
+import { debounceTime, filter } from 'rxjs/operators';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
 import { cloneDeep } from 'lodash';
 
@@ -80,11 +80,28 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   // Add initialPageState property
   private initialPageState: any[] = [];
 
+  private subscription: Subscription;
+
   constructor(
     private undoService: UndoService,
     private cdRef: ChangeDetectorRef,
     private pdfService: PdfService
-  ) {}
+  ) {
+    // Subscribe to line updates from the service
+    this.subscription = this.pdfService.finalDocumentData$.pipe(
+      filter(update => update?.docPageIndex === this.currentPageIndex)
+    ).subscribe(update => {
+      if (update) {
+        // Find the line in our page array
+        const lineIndex = this.page.findIndex(l => l.docPageLineIndex === update.docPageLineIndex);
+        if (lineIndex !== -1) {
+          // Update only the specific line that changed
+          this.page[lineIndex] = { ...update.line };
+          this.cdRef.detectChanges();
+        }
+      }
+    });
+  }
 
   ngOnInit(): void {
     if (this.editMode) {
@@ -99,7 +116,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
     // Handle page changes
     if (changes['page']) {
-      this.processPageUpdates(changes['page'].currentValue);
+      this.page = changes['page'].currentValue;
+      
       // Save initial state when page is first loaded
       if (!this.initialPageState.length) {
         this.initialPageState = JSON.parse(JSON.stringify(changes['page'].currentValue));
@@ -117,43 +135,11 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  private processPageUpdates(newPage: any[]): void {
-    if (!newPage) return;
-
-    // Update any scene headers in the page
-    newPage.forEach(line => {
-      if (line.category === 'scene-header') {
-        // Find the corresponding line in the current page
-        const currentLine = this.page.find(l => l.index === line.index);
-        if (currentLine) {
-          // Update scene number and text if they've changed
-          if (currentLine.sceneNumberText !== line.sceneNumberText) {
-            currentLine.sceneNumberText = line.sceneNumberText;
-          }
-          if (currentLine.text !== line.text) {
-            currentLine.text = line.text;
-          }
-        }
-      }
-
-      // Initialize CONTINUE bars at 90px from bottom if not already set
-      if (line.cont === 'CONTINUE' && !line.calculatedBarY) {
-        line.calculatedBarY = '90px';
-        line.barY = 90;
-      }
-
-      // Initialize START bars with calculatedBarY if not already set
-      if (line.bar === 'START' && !line.calculatedBarY) {
-        line.calculatedBarY = '40px';
-        line.barY = 40;
-      }
-    });
-
-    // Force change detection
-    this.cdRef.detectChanges();
-  }
-
   ngOnDestroy(): void {
+    // Clean up subscription
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+    }
     // Clean up event listeners
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
@@ -169,7 +155,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     event.preventDefault();
     event.stopPropagation();
     
-    const lineIndex = this.page.findIndex(l => l.index === line.index);
+    const lineIndex = this.page.findIndex(l => l.docPageLineIndex === line.docPageLineIndex);
     if (lineIndex === -1) return;
 
     // 1. RECORD UNDO STATE BEFORE DRAGGING
@@ -183,7 +169,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.mouseDragging = true;
     this.dragStartX = event.clientX;
     this.dragStartY = event.clientY;
-    this.dragLineId = line.index;
+    this.dragLineId = line.docPageLineIndex;
     this.dragType = type;
     
     // Store INITIAL position based on type
@@ -238,7 +224,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     const newY = this.initialPosition.y - deltaY; // Invert Y for bottom-based coordinates
     
     // Find the line
-    const lineIndex = this.page.findIndex(line => line.index === this.dragLineId);
+    const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.dragLineId);
     if (lineIndex === -1) return;
     
     const line = this.page[lineIndex];
@@ -282,7 +268,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     const finalY = this.initialPosition.y - deltaY;
     
     // Find the line
-    const lineIndex = this.page.findIndex(line => line.index === this.dragLineId);
+    const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.dragLineId);
     if (lineIndex === -1) return;
     
     const line = this.page[lineIndex];
@@ -334,7 +320,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     event.stopPropagation();
     event.preventDefault();
     
-    const lineIndex = this.page.findIndex(l => l.index === line.index);
+    const lineIndex = this.page.findIndex(l => l.docPageLineIndex === line.docPageLineIndex);
     if (lineIndex === -1) return;
 
     // Record undo state before dragging bar text
@@ -347,7 +333,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     
     this.barTextDragging = true;
     this.barTextDragStartX = event.clientX;
-    this.barTextDragLineId = line.index;
+    this.barTextDragLineId = line.docPageLineIndex;
     this.barTextDragType = type;
     
     switch (type) {
@@ -376,7 +362,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     const deltaX = event.clientX - this.barTextDragStartX;
     const newOffset = this.barTextInitialOffset + deltaX;
     
-    const lineIndex = this.page.findIndex(line => line.index === this.barTextDragLineId);
+    const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.barTextDragLineId);
     if (lineIndex === -1) return;
     
     const line = this.page[lineIndex];
@@ -422,7 +408,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     event.stopPropagation();
     event.preventDefault();
     
-    const lineIndex = this.page.findIndex(l => l.index === line.index);
+    const lineIndex = this.page.findIndex(l => l.docPageLineIndex === line.docPageLineIndex);
     if (lineIndex === -1) return;
 
     // Record undo state before editing bar text
@@ -433,7 +419,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       `Edit ${type} bar text`
     );
     
-    this.barTextEditingId = line.index;
+    this.barTextEditingId = line.docPageLineIndex;
     this.barTextEditingType = type;
     
     switch (type) {
@@ -454,7 +440,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.cdRef.detectChanges();
     
     setTimeout(() => {
-      const editableElement = document.getElementById(`bar-text-edit-${line.index}-${type}`);
+      const editableElement = document.getElementById(`bar-text-edit-${line.docPageLineIndex}-${type}`);
       if (editableElement) {
         editableElement.focus();
         const range = document.createRange();
@@ -474,7 +460,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   saveBarTextEdit(): void {
     if (this.barTextEditingId === null || this.barTextEditingType === null) return;
     
-    const lineIndex = this.page.findIndex(line => line.index === this.barTextEditingId);
+    const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.barTextEditingId);
     if (lineIndex === -1) return;
     
     const line = this.page[lineIndex];
@@ -524,8 +510,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   selectLine(line: Line, event: MouseEvent): void {
     if (!this.canEditDocument) return;
     
-    const lineId = line.index;
-    const currentIndex = this.page.findIndex(l => l.index === lineId);
+    const lineId = line.docPageLineIndex;
+    const currentIndex = this.page.findIndex(l => l.docPageLineIndex === lineId);
     
     if (event.shiftKey && this.lastSelectedIndex !== null) {
       this.selectedLineIds = [];
@@ -533,8 +519,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       const endIndex = Math.max(this.lastSelectedIndex, currentIndex);
       
       for (let i = startIndex; i <= endIndex; i++) {
-        if (this.page[i] && this.page[i].index !== undefined) {
-          this.selectedLineIds.push(this.page[i].index);
+        if (this.page[i] && this.page[i].docPageLineIndex !== undefined) {
+          this.selectedLineIds.push(this.page[i].docPageLineIndex);
         }
       }
     } else if (event.ctrlKey || event.metaKey) {
@@ -561,12 +547,12 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     }
     
     if (this.selectedLineIds.length === 1) {
-      const selectedLine = this.page.find(line => line.index === this.selectedLineIds[0]);
+      const selectedLine = this.page.find(line => line.docPageLineIndex === this.selectedLineIds[0]);
       this.lineSelected.emit(selectedLine);
       return;
     }
     
-    const primaryLine = this.page.find(line => line.index === this.selectedLineIds[0]);
+    const primaryLine = this.page.find(line => line.docPageLineIndex === this.selectedLineIds[0]);
     if (primaryLine) {
       primaryLine.multipleSelected = true;
       primaryLine.selectedCount = this.selectedLineIds.length;
@@ -576,12 +562,12 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   isLineSelected(line: Line): boolean {
     if (!this.canEditDocument) return false;
-    return this.selectedLineIds.includes(line.index);
+    return this.selectedLineIds.includes(line.docPageLineIndex);
   }
 
   isSelectedLine(line: any, index: number): boolean {
     if (!this.selectedLine) return false;
-    return this.selectedLine.index === line.index;
+    return this.selectedLine.docPageLineIndex === line.docPageLineIndex;
   }
 
   clearSelection(): void {
@@ -657,7 +643,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     
     // Focus the line element after the UI has updated
     setTimeout(() => {
-      const lineElement = document.getElementById(line.index.toString());
+      const lineElement = document.getElementById(line.docPageLineIndex.toString());
       if (lineElement) {
         lineElement.focus();
         // Place cursor at the end of the text
@@ -696,35 +682,24 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   saveEdit(): void {
     if (this.editingLine !== null) {
-      // Find the line using the new indexing properties
       const line = this.page.find(l => l.docPageLineIndex === this.editingLine);
       if (!line) return;
       
       const originalText = line._originalText || line.text;
       
-      // Only emit change if text actually changed from original (undo already recorded in onDoubleClick)
       if (originalText !== this.editingText) {
-        // Emit change
-        this.lineChanged.emit({
-          line: this.page[this.editingLine],
-          lineIndex: this.editingLine,
-          newText: this.editingText,
-          property: 'text'
-        });
+        // Use the service to update the line
+        this.pdfService.updateLine(
+          this.currentPageIndex,
+          this.editingLine,
+          { ...line, text: this.editingText }
+        );
       }
       
-      // Update the text (already updated in view)
-      line.text = this.editingText;
-      
-      // Clean up temporary property
+      // Clean up editing state
       delete line._originalText;
-      
-      // Clear editing state
       this.editingLine = null;
       this.editingText = '';
-      
-      // Force final update
-      this.pageUpdate.emit([...this.page]);
     }
   }
 
@@ -753,8 +728,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   @HostListener('document:keydown', ['$event'])
   handleGlobalKeyDown(event: KeyboardEvent): void {
+    debugger
     if (!this.canEditDocument) return;
-    
     // Handle Ctrl+Z for undo
     if (event.ctrlKey && event.key === 'z' && !event.shiftKey) {
       event.preventDefault();
@@ -778,7 +753,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       
       // Get all selected lines
       const selectedLines = this.selectedLineIds.map(lineId => {
-        const lineIndex = this.page.findIndex(line => line.index === lineId);
+        const lineIndex = this.page.findIndex(line => line.docPageLineIndex === lineId);
         return lineIndex !== -1 ? { line: this.page[lineIndex], lineIndex } : null;
       }).filter(item => item !== null);
       
@@ -808,30 +783,27 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         const newVisibility = referenceVisibility === 'true' ? 'false' : 'true';
         
         selectedLines.forEach(({ line, lineIndex }) => {
-          line.visible = newVisibility;
-          this.lineChanged.emit({ 
-            line: this.page[lineIndex], 
-            lineIndex, 
-            property: 'visible', 
-            value: line.visible 
-          });
+          // Update the line in the PDF service
+          this.pdfService.updateLine(
+            this.currentPageIndex,
+            line.docPageLineIndex,
+            { ...line, visible: newVisibility }
+          );
         });
       } else {
         // Mixed visibility, make ALL match the first line
         selectedLines.forEach(({ line, lineIndex }) => {
           if (line.visible !== referenceVisibility) {
-            line.visible = referenceVisibility;
-            this.lineChanged.emit({ 
-              line: this.page[lineIndex], 
-              lineIndex, 
-              property: 'visible', 
-              value: line.visible 
-            });
+            // Update the line in the PDF service
+            this.pdfService.updateLine(
+              this.currentPageIndex,
+              line.docPageLineIndex,
+              { ...line, visible: referenceVisibility }
+            );
           }
         });
       }
       
-      this.pageUpdate.emit([...this.page]);
       this.cdRef.detectChanges();
     }
   }
@@ -851,18 +823,16 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   }
   
   handleKeyDown(event: KeyboardEvent, line: Line, lineIndex: number): void {
-    // If we're editing, use the edit-specific handler
     if (this.editingLine === lineIndex) {
+
       this.handleEditKeyDown(event, line);
       return;
     }
-    
-    // Handle X key to cross out the line(s)
+    debugger
     if (event.key === 'x' || event.key === 'X') {
       event.preventDefault();
       event.stopPropagation();
       
-      // Record original state for undo
       this.undoService.recordLineChange(
         this.currentPageIndex,
         lineIndex,
@@ -870,19 +840,12 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         `Toggle visibility: ${line.visible}`
       );
       
-      // Toggle visibility
-      line.visible = line.visible === 'true' ? 'false' : 'true';
-      
-      // Emit the change
-      this.lineChanged.emit({
-        line: this.page[lineIndex],
-        lineIndex,
-        property: 'visible',
-        value: line.visible
-      });
-      
-      // Update the page
-      this.pageUpdate.emit([...this.page]);
+      // Use the service to update visibility
+      this.pdfService.updateLine(
+        this.currentPageIndex,
+        line.docPageLineIndex,
+        { ...line, visible: line.visible === 'true' ? 'false' : 'true' }
+      );
     }
   }
 
@@ -903,7 +866,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   startEditingSceneNumber(line: any): void {
     if (!this.canEditDocument) return;
     
-    const lineIndex = this.page.findIndex(l => l.index === line.index);
+    const lineIndex = this.page.findIndex(l => l.docPageLineIndex === line.docPageLineIndex);
     if (lineIndex === -1) return;
 
     // Record undo state before editing scene number
@@ -957,60 +920,19 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.originalSceneNumber = null;
   }
 
-  saveSceneNumberEdit(triggerLine: any): void {
-    if (!this.editingSceneNumber) return;
+  saveSceneNumberEdit(line: Line, event: FocusEvent): void {
+    if (!this.canEditDocument) return;
     
-    const elements = document.querySelectorAll('.scene-number-left, .scene-number-right');
-    let newSceneNumber = '';
+    const newSceneNumber = (event.target as HTMLElement).textContent?.trim();
     
-    for (let i = 0; i < elements.length; i++) {
-      const el = elements[i] as HTMLElement;
-      if (el.textContent?.trim() === this.editingSceneNumber) {
-        newSceneNumber = el.textContent?.trim() || '';
-        break;
-      }
-    }
-    
-    if (newSceneNumber && newSceneNumber !== this.originalSceneNumber) {
-      const sceneNumberToUpdate = this.originalSceneNumber;
-      
-      // Update all matching lines in the page
-      this.page.forEach((line, index) => {
-        if (line.sceneNumberText === sceneNumberToUpdate) {
-          // Record undo for each affected line
-          this.undoService.recordLineChange(
-            this.currentPageIndex,
-            index,
-            line,
-            `Scene number update: ${sceneNumberToUpdate} → ${newSceneNumber}`
-          );
-
-          line.sceneNumberText = newSceneNumber;
-        }
-        
-        // Update custom bar texts
-        if (line.customStartText && line.customStartText.includes(sceneNumberToUpdate)) {
-          line.customStartText = line.customStartText.replace(sceneNumberToUpdate, newSceneNumber);
-        }
-        
-        if (line.customEndText && line.customEndText.includes(sceneNumberToUpdate)) {
-          line.customEndText = line.customEndText.replace(sceneNumberToUpdate, newSceneNumber);
-        }
-        
-        if (line.customContinueText && line.customContinueText.includes(sceneNumberToUpdate)) {
-          line.customContinueText = line.customContinueText.replace(sceneNumberToUpdate, newSceneNumber);
-        }
-        
-        if (line.customContinueTopText && line.customContinueTopText.includes(sceneNumberToUpdate)) {
-          line.customContinueTopText = line.customContinueTopText.replace(sceneNumberToUpdate, newSceneNumber);
-        }
+    if (newSceneNumber && newSceneNumber !== line.sceneNumberText) {
+      this.pdfService.updateLine(line.docPageIndex, line.docPageLineIndex, {
+        ...line,
+        sceneNumberText: newSceneNumber
       });
-      
-      this.pageUpdate.emit([...this.page]);
     }
     
     this.editingSceneNumber = null;
-    this.originalSceneNumber = null;
   }
 
   // ============= UTILITY METHODS =============

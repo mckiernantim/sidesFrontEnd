@@ -244,41 +244,10 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     this.intizilazeState();
     this.initializeSceneSelectionTable();
 
-    // Subscribe to scene number updates from the PDF service
-    this.pdf.sceneNumberUpdated$.subscribe(({ scene, newSceneNumber }) => {
-      // Update the scene in the data source
-      this.dataSource = this.dataSource.map((s) =>
-        s.index === scene.index ? { ...s, sceneNumberText: newSceneNumber } : s
-      );
-
-      // Update the scenes array
-      this.scenes = this.scenes.map((s) =>
-        s.index === scene.index ? { ...s, sceneNumberText: newSceneNumber } : s
-      );
-
-      // Force change detection
-      this.cdr.detectChanges();
-    });
-
-    this.auth.user$.subscribe((data) => {
-      console.log('Auth state changed:', data);
-      this.userData = data;
-      this.cdr.detectChanges();
-    });
-
-    this.router.events
-      .pipe(filter((event) => event instanceof NavigationEnd))
-      .subscribe((event: NavigationEnd) => {
-        // Check if we're returning from Stripe (check URL pattern)
-        if (event.url.includes('stripe-return')) {
-          this.handleStripeReturn();
-        }
-      });
-
     // Subscribe to finalDocumentData$ for updates
     this.finalDocumentDataSubscription = this.pdf.finalDocumentData$.subscribe(
       (data) => {
-        if (data && data.length > 0) {
+        if (data) {
           console.log('DashboardRight received document update:', data);
 
           // Update the final document data
@@ -295,6 +264,21 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
         }
       }
     );
+
+    this.auth.user$.subscribe((data) => {
+      console.log('Auth state changed:', data);
+      this.userData = data;
+      this.cdr.detectChanges();
+    });
+
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe((event: NavigationEnd) => {
+        // Check if we're returning from Stripe (check URL pattern)
+        if (event.url.includes('stripe-return')) {
+          this.handleStripeReturn();
+        }
+      });
   }
 
   ngAfterViewInit(): void {
@@ -986,59 +970,45 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
   // Scene editing methods
   startEditingSceneNumber(scene: any): void {
     if (!this.editState) return;
-    this.editingSceneNumber = scene.sceneNumberText;
-    this.originalSceneNumber = scene.sceneNumberText;
+    // Only allow editing if it's a scene header
+    if (scene.category === 'scene-header') {
+      this.editingSceneNumber = scene.sceneNumberText;
+    }
   }
 
   handleSceneNumberKeyDown(event: KeyboardEvent): void {
+    debugger
     if (!this.editState) return;
     if (event.key === 'Enter') {
       event.preventDefault();
       (event.target as HTMLElement).blur();
     } else if (event.key === 'Escape') {
       event.preventDefault();
-      this.cancelSceneNumberEdit();
+      this.editingSceneNumber = null;
     }
   }
 
-  saveSceneNumberEdit(scene: any): void {
-    if (!this.editState || !this.editingSceneNumber) return;
+  saveSceneNumberEdit(scene: any, event: FocusEvent): void {
+    if (!this.editState) return;
+    
+    const newSceneNumber = (event.target as HTMLElement).textContent?.trim();
+    
+    if (newSceneNumber && newSceneNumber !== scene.sceneNumberText) {
+      // Find the scene header line in the PDF service's data
+      const sceneHeaderLine = this.pdf.finalDocument.data
+        .flat()
+        .find(line => line.index === scene.index && line.category === 'scene-header');
 
-    const newSceneNumber = this.editingSceneNumber;
-    this.editingSceneNumber = null;
-
-    // Get the scene header line from the PDF service's data
-    const sceneHeaderLine = this.pdf.finalDocument.data
-      .flat()
-      .find(
-        (line) => line.index === scene.index && line.category === 'scene-header'
-      );
-
-    if (!sceneHeaderLine) {
-      console.error('Scene header line not found');
-      return;
+      if (sceneHeaderLine) {
+        // Update through PDF service - this will handle propagating to all related elements
+        this.pdf.updateLine(scene.page, scene.index, {
+          ...sceneHeaderLine,
+          sceneNumberText: newSceneNumber
+        });
+      }
     }
-
-    // Update the scene number through the PDF service
-    this.pdf.updateSceneNumber(sceneHeaderLine, newSceneNumber).subscribe({
-      next: (response) => {
-        if (response.success) {
-          // Update the PDF service's state
-          this.pdf.processPdf(
-            this.selected,
-            this.script,
-            this.individualPages,
-            this.callsheet
-          );
-          console.log('Scene number updated successfully');
-        } else {
-          console.error('Failed to update scene number');
-        }
-      },
-      error: (error) => {
-        console.error('Error updating scene number:', error);
-      },
-    });
+    
+    this.editingSceneNumber = null;
   }
 
   startEditingSceneText(scene: any): void {
