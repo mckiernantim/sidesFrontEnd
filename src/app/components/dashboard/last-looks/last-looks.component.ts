@@ -534,12 +534,18 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     // Update page
     this.pages[this.currentPageIndex][lineIndex] = line;
     
-    // Update PDF service
+    // Update PDF service with all position properties
     this.pdf.updateLine(this.currentPageIndex, lineIndex, {
+      // Bar positions
       calculatedBarY: line.calculatedBarY,
       calculatedEnd: line.calculatedEnd,
       barY: line.barY,
-      endY: line.endY
+      endY: line.endY,
+      // Line positions
+      calculatedXpos: line.calculatedXpos,
+      calculatedYpos: line.calculatedYpos,
+      xPos: line.xPos,
+      yPos: line.yPos
     });
   }
 

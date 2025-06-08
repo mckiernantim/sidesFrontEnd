@@ -1374,21 +1374,24 @@ resetToInitialState(): void {
           // Extract numeric value from pixel string (e.g., "100px" -> 100)
           const barYValue = parseFloat(line.calculatedBarY);
           if (!isNaN(barYValue)) {
-            line.barY = barYValue;
+            // Convert back to raw value by dividing by 1.3
+            line.barY = barYValue / 1.3;
           }
         }
         
         if (line.calculatedEnd) {
           const endYValue = parseFloat(line.calculatedEnd);
           if (!isNaN(endYValue)) {
-            line.endY = endYValue;
+            // Convert back to raw value by dividing by 1.3
+            line.endY = endYValue / 1.3;
           }
         }
         
         if (line.calculatedYpos) {
           const yPosValue = parseFloat(line.calculatedYpos);
           if (!isNaN(yPosValue)) {
-            line.yPos = yPosValue;
+            // Convert back to raw value by dividing by 1.3
+            line.yPos = yPosValue / 1.3;
           }
         }
         
