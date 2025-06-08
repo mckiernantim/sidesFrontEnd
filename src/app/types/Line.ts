@@ -67,6 +67,4 @@ export interface Line {
   docPageIndex?: number;
   docPageLineIndex?: number;
 
-  // Add crossed out property
-  crossedOut?: boolean;
 }

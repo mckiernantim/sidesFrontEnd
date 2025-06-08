@@ -17,7 +17,7 @@
               </div>
 
               <app-tailwind-table 
-                [data]="dataSource" 
+                [data]="scenes" 
                 [columns]="tableColumns"
                 [selectable]="true"
                 [pagination]="true"
@@ -62,7 +62,7 @@
                   <span class="scene-text"
                         [attr.contenteditable]="editState ? 'true' : 'false'"
                         (dblclick)="startEditingSceneText(scene)"
-                        (blur)="saveSceneTextEdit(scene)"
+                        (blur)="saveSceneTextEdit(scene, $event)"
                         (keydown)="handleSceneTextKeyDown($event)"
                         [class.editing]="editingSceneText === scene.text">{{ scene.text }}</span>
                 </div>

@@ -1284,6 +1284,7 @@ resetToInitialState(): void {
 
   private _selectedScenes: any[] = [];
   private _sceneNumberUpdated$ = new Subject<{ scene: any, newSceneNumber: string }>();
+  private _sceneHeaderTextUpdated$ = new Subject<{ scene: any, newText: string }>();
 
   getSelectedScenes(): any[] {
     return this._selectedScenes;
@@ -1487,8 +1488,23 @@ resetToInitialState(): void {
         if (this.finalDocument && this.finalDocument.data) {
           const updatedData = this.finalDocument.data.map(page => {
             return page.map(line => {
+              // If this is the scene header line
               if (line.index === scene.index) {
                 return { ...line, sceneNumberText: newSceneNumber };
+              }
+              
+              // If this line is part of the same scene (based on sceneNumberText)
+              if (line.sceneNumberText === scene.sceneNumberText) {
+                return {
+                  ...line,
+                  sceneNumber: newSceneNumber,
+                  sceneNumberText: newSceneNumber,
+                  // Update text for specific line types
+                  text: line.category === 'scene-header' ? line.text :
+                        line.category === 'end' ? `END ${newSceneNumber}` :
+                        (line.category === 'continue' || line.category === 'continue-top') ? 
+                        `↓↓↓ ${newSceneNumber} CONTINUED ↓↓↓` : line.text
+                };
               }
               return line;
             });
@@ -1496,7 +1512,8 @@ resetToInitialState(): void {
           
           this.finalDocument.data = updatedData;
           
-          // Let components handle the update
+          // Emit the update through the subject
+          this._sceneNumberUpdated$.next({ scene, newSceneNumber });
           
           observer.next({ success: true });
           observer.complete();
@@ -1546,6 +1563,67 @@ resetToInitialState(): void {
   // Add a getter for the sceneNumberUpdated$ observable
   get sceneNumberUpdated$(): Subject<{ scene: any, newSceneNumber: string }> {
     return this._sceneNumberUpdated$;
+  }
+
+  // Add getter for scene header text updates
+  get sceneHeaderTextUpdated$(): Subject<{ scene: any, newText: string }> {
+    return this._sceneHeaderTextUpdated$;
+  }
+
+  updateSceneHeaderText(scene: any, newText: string): Observable<{ success: boolean }> {
+    return new Observable(observer => {
+      try {
+        if (this.finalDocument && this.finalDocument.data) {
+          // Record the change for undo functionality
+          this.undoService.recordLineChange(
+            scene.docPageIndex,
+            scene.docPageLineIndex,
+            scene,
+            `Edit scene text: "${scene.text}" → "${newText}"`
+          );
+
+          const updatedData = this.finalDocument.data.map(page => {
+            return page.map(line => {
+              if (line.index === scene.index) {
+                // Update the scene header text
+                const updatedLine = { ...line, text: newText };
+                
+                // If this is a scene header, update all related lines in the scene
+                if (line.category === 'scene-header') {
+                  // Find all lines in the same scene and update their scene text
+                  const sceneLines = page.filter(l => 
+                    l.sceneNumberText === line.sceneNumberText
+                  );
+                  sceneLines.forEach(l => {
+                    if (l.category === 'scene-header') {
+                      l.text = newText;
+                    }
+                  });
+                }
+                
+                return updatedLine;
+              }
+              return line;
+            });
+          });
+          
+          this.finalDocument.data = updatedData;
+          
+          // Emit the update through the subject
+          this._sceneHeaderTextUpdated$.next({ scene, newText });
+          
+          observer.next({ success: true });
+          observer.complete();
+        } else {
+          observer.next({ success: false });
+          observer.complete();
+        }
+      } catch (error) {
+        console.error('Error updating scene header text:', error);
+        observer.next({ success: false });
+        observer.complete();
+      }
+    });
   }
 
 }

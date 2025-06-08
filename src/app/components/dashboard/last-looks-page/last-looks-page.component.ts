@@ -54,12 +54,12 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   editingText: string = '';
 
   // MOUSE DRAG PROPERTIES
-  private mouseDragging: boolean = false;
-  private dragStartX: number = 0;
-  private dragStartY: number = 0;
-  private dragLineId: number | null = null;
-  private dragType: 'line' | 'end' | 'continue' | 'continue-top' = 'line';
-  private initialPosition: { x: number; y: number } = { x: 0, y: 0 };
+  mouseDragging: boolean = false;
+  dragStartX: number = 0;
+  dragStartY: number = 0;
+  dragLineId: number | null = null;
+  dragType: 'line' | 'end' | 'continue' | 'continue-top' = 'line';
+  initialPosition: { x: number; y: number } = { x: 0, y: 0 };
 
   // Bar text dragging
   barTextDragging: boolean = false;
@@ -76,11 +76,14 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   // Scene number editing
   editingSceneNumber: string | null = null;
   originalSceneNumber: string | null = null;
+  editingSceneText: string | null = null;
+  originalSceneText: string | null = null;
 
   // Add initialPageState property
   private initialPageState: any[] = [];
 
   private subscription: Subscription;
+  private sceneHeaderTextUpdateSubscription: Subscription;
 
   constructor(
     private undoService: UndoService,
@@ -88,19 +91,41 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     private pdfService: PdfService
   ) {
     // Subscribe to line updates from the service
-    this.subscription = this.pdfService.finalDocumentData$.pipe(
-      filter(update => update?.docPageIndex === this.currentPageIndex)
-    ).subscribe(update => {
+    this.subscription = this.pdfService.finalDocumentData$.subscribe(update => {
       if (update) {
-        // Find the line in our page array
-        const lineIndex = this.page.findIndex(l => l.docPageLineIndex === update.docPageLineIndex);
-        if (lineIndex !== -1) {
-          // Update only the specific line that changed
-          this.page[lineIndex] = { ...update.line };
-          this.cdRef.detectChanges();
+        // If the update is for our current page
+        if (update.docPageIndex === this.currentPageIndex) {
+          // Find the line in our page array
+          const lineIndex = this.page.findIndex(l => l.docPageLineIndex === update.docPageLineIndex);
+          if (lineIndex !== -1) {
+            // Update only the specific line that changed
+            this.page[lineIndex] = { ...update.line };
+            this.cdRef.detectChanges();
+          }
         }
       }
     });
+
+    // Subscribe to scene header text updates
+    this.sceneHeaderTextUpdateSubscription = this.pdfService.sceneHeaderTextUpdated$.subscribe(
+      ({ scene, newText }) => {
+        // Update the scene text in the current page
+        const updatedPage = this.page.map(line => {
+          if (line.index === scene.index) {
+            return { ...line, text: newText };
+          }
+          // Also update any lines that reference this scene
+          if (line.sceneNumberText === scene.sceneNumberText && line.category === 'scene-header') {
+            return { ...line, text: newText };
+          }
+          return line;
+        });
+        this.page = updatedPage;
+        
+        // Force change detection
+        this.cdRef.detectChanges();
+      }
+    );
   }
 
   ngOnInit(): void {
@@ -116,12 +141,16 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
     // Handle page changes
     if (changes['page']) {
-      this.page = changes['page'].currentValue;
+      const newPage = changes['page'].currentValue;
+      this.page = [...newPage];
       
       // Save initial state when page is first loaded
       if (!this.initialPageState.length) {
-        this.initialPageState = JSON.parse(JSON.stringify(changes['page'].currentValue));
+        this.initialPageState = JSON.parse(JSON.stringify(newPage));
       }
+
+      // Force change detection
+      this.cdRef.detectChanges();
     }
 
     // Handle reset state
@@ -140,6 +169,9 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     if (this.subscription) {
       this.subscription.unsubscribe();
     }
+    if (this.sceneHeaderTextUpdateSubscription) {
+      this.sceneHeaderTextUpdateSubscription.unsubscribe();
+    }
     // Clean up event listeners
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
@@ -150,21 +182,20 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   // ============= MOUSE DRAG METHODS =============
 
   startLineDrag(event: MouseEvent, line: Line, type: 'line' | 'end' | 'continue' | 'continue-top'): void {
+    // Don't start drag if we're in a double-click situation
+    if (event.detail > 1) {
+        return;
+    }
+
+    // Only check line selection for the main line drag, not for bars
+    if (type === 'line' && !this.isLineSelected(line)) {
+        return;
+    }
+
     if (!this.canEditDocument) return;
     
     event.preventDefault();
     event.stopPropagation();
-    
-    const lineIndex = this.page.findIndex(l => l.docPageLineIndex === line.docPageLineIndex);
-    if (lineIndex === -1) return;
-
-    // 1. RECORD UNDO STATE BEFORE DRAGGING
-    this.undoService.recordLineChange(
-      this.currentPageIndex,
-      lineIndex,
-      line,
-      `Move ${type}: from (${line.calculatedXpos || '0'}, ${line.calculatedYpos || '0'})`
-    );
     
     this.mouseDragging = true;
     this.dragStartX = event.clientX;
@@ -172,43 +203,34 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.dragLineId = line.docPageLineIndex;
     this.dragType = type;
     
-    // Store INITIAL position based on type
-    switch (type) {
-      case 'line':
-        this.initialPosition = {
-          x: parseFloat(String(line.calculatedXpos || '0')),
-          y: parseFloat(String(line.calculatedYpos || '0'))
-        };
-        break;
-      case 'end':
-        this.initialPosition = {
-          x: parseFloat(String(line.calculatedXpos || '0')),
-          y: parseFloat(String(line.calculatedEnd || '0'))
-        };
-        break;
-      case 'continue':
-        this.initialPosition = {
-          x: parseFloat(String(line.calculatedXpos || '0')),
-          y: parseFloat(String(line.calculatedBarY || '90'))
-        };
-        break;
-      case 'continue-top':
-        this.initialPosition = {
-          x: parseFloat(String(line.calculatedXpos || '0')),
-          y: parseFloat(String(line.calculatedBarY || '40'))
-        };
-        break;
-    }
-    
-    // Add event listeners
-    document.addEventListener('mousemove', this.handleMouseMove);
-    document.addEventListener('mouseup', this.handleMouseUp);
-    
-    // Add cursor class
+    // Add grab cursor to body
     document.body.classList.add('grab-cursor');
     
-    // Select the line
-    this.selectLine(line, event);
+    // Store initial position
+    switch (type) {
+        case 'line':
+            this.initialPosition = {
+                x: parseInt(String(line.calculatedXpos || '0')),
+                y: parseInt(String(line.calculatedYpos || '0'))
+            };
+            break;
+        case 'end':
+            this.initialPosition = {
+                x: 0,
+                y: parseInt(String(line.calculatedEnd || '0'))
+            };
+            break;
+        case 'continue':
+        case 'continue-top':
+            this.initialPosition = {
+                x: 0,
+                y: parseInt(String(line.calculatedBarY || '0'))
+            };
+            break;
+    }
+    
+    document.addEventListener('mousemove', this.handleMouseMove);
+    document.addEventListener('mouseup', this.handleMouseUp);
   }
 
   // Handle mouse move
@@ -258,7 +280,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
     
-    // Remove cursor class
+    // Remove grab cursor
     document.body.classList.remove('grab-cursor');
     
     // Calculate final position
@@ -511,12 +533,12 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     if (!this.canEditDocument) return;
     
     const lineId = line.docPageLineIndex;
-    const currentIndex = this.page.findIndex(l => l.docPageLineIndex === lineId);
     
     if (event.shiftKey && this.lastSelectedIndex !== null) {
+      // Shift + click for range selection
       this.selectedLineIds = [];
-      const startIndex = Math.min(this.lastSelectedIndex, currentIndex);
-      const endIndex = Math.max(this.lastSelectedIndex, currentIndex);
+      const startIndex = Math.min(this.lastSelectedIndex, lineId);
+      const endIndex = Math.max(this.lastSelectedIndex, lineId);
       
       for (let i = startIndex; i <= endIndex; i++) {
         if (this.page[i] && this.page[i].docPageLineIndex !== undefined) {
@@ -524,20 +546,27 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         }
       }
     } else if (event.ctrlKey || event.metaKey) {
+      // Ctrl/Cmd + click for multi-selection
       const index = this.selectedLineIds.indexOf(lineId);
       if (index === -1) {
         this.selectedLineIds.push(lineId);
       } else {
         this.selectedLineIds.splice(index, 1);
       }
-      this.lastSelectedIndex = currentIndex;
+      this.lastSelectedIndex = lineId;
     } else {
+      // Single selection
       this.selectedLineIds = [lineId];
-      this.lastSelectedIndex = currentIndex;
+      this.lastSelectedIndex = lineId;
     }
     
-    line.multipleSelected = this.selectedLineIds.length > 1;
+    // Update selection state for all lines
+    this.page.forEach(l => {
+      l.multipleSelected = this.selectedLineIds.length > 1;
+    });
+    
     this.emitSelectedLines();
+    this.cdRef.detectChanges();
   }
 
   private emitSelectedLines() {
@@ -571,20 +600,39 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   clearSelection(): void {
+    // Clear selection state
     this.selectedLineIds = [];
     this.lastSelectedIndex = null;
     this.lineSelected.emit(null);
+
+    // Clear editing state if not currently editing
+    if (this.editingLine === null) {
+      this.editingText = '';
+    }
+
+    // Update selection state for all lines
+    this.page.forEach(l => {
+      l.multipleSelected = false;
+    });
+
+    this.cdRef.detectChanges();
   }
 
   // ============= CONTEXT MENU METHODS =============
 
   openContextMenu(event: MouseEvent, line: any, lineIndex: number): void {
     event.preventDefault();
+    
+    // Only show context menu if we have selected lines
+    if (this.selectedLineIds.length === 0) {
+      this.clearSelection();
+      return;
+    }
+
     this.showContextMenu = true;
     this.contextMenuPosition = { x: event.clientX, y: event.clientY };
     this.selectedLine = line;
     this.selectedLineIndex = lineIndex;
-    this.lineSelected.emit(line);
   }
 
   closeContextMenu(): void {
@@ -595,42 +643,110 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     event.stopPropagation();
     this.showContextMenu = false;
     
-    // Record undo state before changing category
-    this.undoService.recordLineChange(
-      this.currentPageIndex,
-      lineIndex,
-      line,
-      `Change category: ${line.category} → ${category}`
-    );
+    // Get all selected lines
+    const selectedLines = this.selectedLineIds.map(lineId => {
+      const line = this.page[lineId];
+      return { line, lineIndex: lineId };
+    });
+
+    // Record undo state for each selected line
+    selectedLines.forEach(({ line, lineIndex }) => {
+      this.undoService.recordLineChange(
+        this.currentPageIndex,
+        lineIndex,
+        line,
+        `Change category: ${line.category} → ${category}`
+      );
+    });
     
-    line.category = category;
-    
-    if (xPos && category !== 'hidden') {
-      line.calculatedXpos = xPos;
-    }
-    
-    this.categoryChanged.emit({
-      line,
-      lineIndex,
-      category
+    // Update all selected lines
+    selectedLines.forEach(({ line, lineIndex }) => {
+      // Update the line's category
+      line.category = category;
+      
+      // Update xPos if provided and not hiding
+      if (xPos && category !== 'hidden') {
+        line.calculatedXpos = xPos;
+      }
+
+      // For scene headers, ensure we update the scene number text
+      if (category === 'scene-header') {
+        line.sceneNumberText = line.sceneNumberText || '';
+      }
+
+      // For END/CONTINUE lines, ensure proper text formatting
+      if (category === 'end') {
+        line.customEndText = line.customEndText || `END ${line.sceneNumberText || ''}`;
+      } else if (category === 'continue' || category === 'continue-top') {
+        line.customContinueText = line.customContinueText || `↓↓↓ ${line.sceneNumberText || ''} CONTINUED ↓↓↓`;
+      }
+
+      // Update the line in the PDF service with all changes
+      this.pdfService.updateLine(
+        this.currentPageIndex,
+        lineIndex,
+        { 
+          ...line,
+          category,
+          calculatedXpos: xPos && category !== 'hidden' ? xPos : line.calculatedXpos,
+          sceneNumberText: category === 'scene-header' ? (line.sceneNumberText || '') : line.sceneNumberText,
+          customEndText: category === 'end' ? (line.customEndText || `END ${line.sceneNumberText || ''}`) : line.customEndText,
+          customContinueText: (category === 'continue' || category === 'continue-top') ? 
+            (line.customContinueText || `↓↓↓ ${line.sceneNumberText || ''} CONTINUED ↓↓↓`) : line.customContinueText
+        }
+      );
+      
+      this.categoryChanged.emit({
+        line,
+        lineIndex,
+        category
+      });
     });
     
     this.pageUpdate.emit([...this.page]);
   }
 
+  @HostListener('document:contextmenu', ['$event'])
+  onContextMenu(event: MouseEvent): void {
+    // Check if click is on a line element
+    const clickedLine = (event.target as HTMLElement).closest('li');
+    if (!clickedLine) {
+      this.showContextMenu = false;
+      return;
+    }
+
+    // Get the line index from the clicked element
+    const lineId = parseInt(clickedLine.id);
+    const line = this.page[lineId];
+    
+    if (line) {
+      this.openContextMenu(event, line, lineId);
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    // Check if click is outside of any line elements and context menu
+    const clickedLine = (event.target as HTMLElement).closest('li');
+    const clickedContextMenu = (event.target as HTMLElement).closest('.context-menu');
+    
+    if (!clickedLine && !clickedContextMenu) {
+      this.clearSelection();
+      this.showContextMenu = false;
+    }
+  }
+
   // ============= TEXT EDITING METHODS =============
 
   onDoubleClick(index: number, text: string): void {
-    // Find the line using the new indexing properties
-    const line = this.page.find(l => l.docPageLineIndex === index);
-    if (!line) return;
-    
-    const lineIndex = this.page.findIndex(l => l.docPageLineIndex === index);
+    // Find the line using docPageLineIndex
+    const line = this.page[index];
+    if (!line || !this.isLineSelected(line)) return;
     
     // Record undo state before editing
     this.undoService.recordLineChange(
       this.currentPageIndex,
-      lineIndex,
+      index,
       line,
       `Edit line text: "${text}"`
     );
@@ -659,68 +775,62 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   onEditTextChange(newText: string): void {
     if (this.editingLine !== null) {
-      // Find the line using the new indexing properties
-      const line = this.page.find(l => l.docPageLineIndex === this.editingLine);
-      if (!line) return;
-      
-      // Update the editingText state
       this.editingText = newText;
-      
-      // Create a copy of the page
-      const updatedPage = [...this.page];
-      
-      // Temporarily update the text for preview
-      const originalText = line.text;
-      line.text = newText;
-      
-      // Store the original text for restoration when saving/canceling
-      if (!line._originalText) {
-        line._originalText = originalText;
-      }
     }
   }
 
-  saveEdit(): void {
-    if (this.editingLine !== null) {
-      const line = this.page.find(l => l.docPageLineIndex === this.editingLine);
-      if (!line) return;
-      
-      const originalText = line._originalText || line.text;
-      
-      if (originalText !== this.editingText) {
-        // Use the service to update the line
-        this.pdfService.updateLine(
-          this.currentPageIndex,
-          this.editingLine,
-          { ...line, text: this.editingText }
-        );
-      }
-      
-      // Clean up editing state
-      delete line._originalText;
-      this.editingLine = null;
-      this.editingText = '';
+  handleEditKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.saveEdit();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.cancelEdit();
     }
   }
 
   cancelEdit(): void {
+    this.editingLine = null;
+    this.editingText = '';
+    this.cdRef.detectChanges();
+  }
+
+  saveEdit(): void {
     if (this.editingLine !== null) {
-      // Find the line using the new indexing properties
-      const line = this.page.find(l => l.docPageLineIndex === this.editingLine);
+      const line = this.page[this.editingLine];
       if (!line) return;
-      
-      // Restore original text if we have it
-      if (line._originalText) {
-        line.text = line._originalText;
-        delete line._originalText;
+
+      // Record undo state
+      this.undoService.recordLineChange(
+        this.currentPageIndex,
+        this.editingLine,
+        line,
+        `Edit line text: "${line.text}" → "${this.editingText}"`
+      );
+
+      if (line.category === 'scene-header') {
+        // Use updateSceneHeaderText for scene headers
+        this.pdfService.updateSceneHeaderText(line, this.editingText).subscribe(
+          ({ success }) => {
+            if (success) {
+              // Clean up editing state
+              this.editingLine = null;
+              this.editingText = '';
+              this.cdRef.detectChanges();
+            }
+          }
+        );
+      } else {
+        // Use updateLine for other lines
+        this.pdfService.updateLine(this.currentPageIndex, this.editingLine, {
+          ...line,
+          text: this.editingText
+        });
+        
+        // Clean up editing state
+        this.editingLine = null;
+        this.editingText = '';
       }
-      
-      // Clear editing state
-      this.editingLine = null;
-      this.editingText = '';
-      
-      // Force update
-      this.pageUpdate.emit([...this.page]);
     }
   }
 
@@ -728,7 +838,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   @HostListener('document:keydown', ['$event'])
   handleGlobalKeyDown(event: KeyboardEvent): void {
-    debugger
+  
     if (!this.canEditDocument) return;
     // Handle Ctrl+Z for undo
     if (event.ctrlKey && event.key === 'z' && !event.shiftKey) {
@@ -825,7 +935,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   handleKeyDown(event: KeyboardEvent, line: Line, lineIndex: number): void {
     if (this.editingLine === lineIndex) {
 
-      this.handleEditKeyDown(event, line);
+      this.handleEditKeyDown(event);
       return;
     }
     debugger
@@ -846,18 +956,6 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         line.docPageLineIndex,
         { ...line, visible: line.visible === 'true' ? 'false' : 'true' }
       );
-    }
-  }
-
-  handleEditKeyDown(event: KeyboardEvent, line: Line): void {
-    if (event.key === 'Enter') {
-      // Save on Enter
-      event.preventDefault();
-      this.saveEdit();
-    } else if (event.key === 'Escape') {
-      // Cancel on Escape
-      event.preventDefault();
-      this.cancelEdit();
     }
   }
 
@@ -926,13 +1024,155 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     const newSceneNumber = (event.target as HTMLElement).textContent?.trim();
     
     if (newSceneNumber && newSceneNumber !== line.sceneNumberText) {
-      this.pdfService.updateLine(line.docPageIndex, line.docPageLineIndex, {
-        ...line,
-        sceneNumberText: newSceneNumber
-      });
+      // Record undo state before changing scene number
+      this.undoService.recordLineChange(
+        this.currentPageIndex,
+        line.docPageLineIndex,
+        line,
+        `Edit scene number: ${line.sceneNumberText} → ${newSceneNumber}`
+      );
+
+      // Use updateSceneNumber from the PDF service
+      this.pdfService.updateSceneNumber(line, newSceneNumber).subscribe(
+        ({ success }) => {
+          if (success) {
+            // Find the start and end of the scene
+            const sceneStartIndex = this.page.findIndex(l => l.docPageLineIndex === line.docPageLineIndex);
+            let sceneEndIndex = sceneStartIndex;
+            
+            // Find the next scene header or end of page
+            for (let i = sceneStartIndex + 1; i < this.page.length; i++) {
+              if (this.page[i].category === 'scene-header') {
+                break;
+              }
+              sceneEndIndex = i;
+            }
+
+            // Get all lines in this scene
+            const sceneLines = this.page.slice(sceneStartIndex, sceneEndIndex + 1);
+
+            // Update all lines in the scene in our local state
+            sceneLines.forEach(l => {
+              const lineIndex = this.page.findIndex(pageLine => pageLine.docPageLineIndex === l.docPageLineIndex);
+              if (lineIndex !== -1) {
+                this.page[lineIndex] = {
+                  ...this.page[lineIndex],
+                  sceneNumber: newSceneNumber,
+                  sceneNumberText: newSceneNumber,
+                  // Update text for specific line types
+                  text: l.category === 'scene-header' ? l.text :
+                        l.category === 'end' ? `END ${newSceneNumber}` :
+                        (l.category === 'continue' || l.category === 'continue-top') ? 
+                        `↓↓↓ ${newSceneNumber} CONTINUED ↓↓↓` : l.text
+                };
+              }
+            });
+
+            // Emit the page update to ensure Dashboard Right gets the change
+            this.pageUpdate.emit([...this.page]);
+          }
+        }
+      );
     }
     
     this.editingSceneNumber = null;
+    this.cdRef.detectChanges();
+  }
+
+  // ============= SCENE TEXT EDITING METHODS =============
+
+  startEditingSceneText(line: any): void {
+    if (!this.canEditDocument) return;
+    
+    const lineIndex = this.page.findIndex(l => l.docPageLineIndex === line.docPageLineIndex);
+    if (lineIndex === -1) return;
+
+    // Record undo state before editing scene text
+    this.undoService.recordLineChange(
+      this.currentPageIndex,
+      lineIndex,
+      line,
+      `Edit scene text: "${line.text}"`
+    );
+    
+    this.editingSceneText = line.text;
+    this.originalSceneText = line.text;
+    
+    setTimeout(() => {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      
+      const elements = document.querySelectorAll('.scene-text');
+      for (let i = 0; i < elements.length; i++) {
+        const el = elements[i] as HTMLElement;
+        if (el.textContent?.trim() === this.editingSceneText) {
+          range.selectNodeContents(el);
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+          break;
+        }
+      }
+    }, 10);
+  }
+
+  handleSceneTextKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      (event.target as HTMLElement).blur();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.cancelSceneTextEdit();
+    }
+  }
+
+  cancelSceneTextEdit(): void {
+    const elements = document.querySelectorAll('.scene-text');
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i] as HTMLElement;
+      if (el.textContent?.trim() === this.editingSceneText) {
+        el.textContent = this.originalSceneText;
+      }
+    }
+    
+    this.editingSceneText = null;
+    this.originalSceneText = null;
+  }
+
+  saveSceneTextEdit(line: Line, event: FocusEvent): void {
+    if (this.editingSceneText !== null && this.editingSceneText !== this.originalSceneText) {
+      // Record undo state before changing scene text
+      this.undoService.recordLineChange(
+        this.currentPageIndex,
+        line.docPageLineIndex,
+        line,
+        `Edit scene text: "${line.text}" → "${this.editingSceneText}"`
+      );
+
+      this.pdfService.updateSceneHeaderText(line, this.editingSceneText).subscribe(
+        ({ success }) => {
+          if (success) {
+            // Update local state
+            const updatedPage = this.page.map(l => {
+              if (l.index === line.index) {
+                return { ...l, text: this.editingSceneText };
+              }
+              return l;
+            });
+            this.page = updatedPage;
+            
+            // Emit the page update to parent
+            this.pageUpdate.emit(updatedPage);
+            
+            // Reset editing state
+            this.editingSceneText = null;
+            this.originalSceneText = null;
+            this.cdRef.detectChanges();
+          }
+        }
+      );
+    } else {
+      this.cancelSceneTextEdit();
+    }
   }
 
   // ============= UTILITY METHODS =============
