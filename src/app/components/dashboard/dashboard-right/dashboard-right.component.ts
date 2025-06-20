@@ -478,10 +478,45 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  handleCallSheetUpload(callsheet) {
-    this.callsheet = callsheet;
-    this.cdr.detectChanges();
-    this.callsheetState = !this.callsheetState;
+  async handleCallSheetUpload(callsheet: File | string | null) {
+    try {
+      debugger
+      if (!callsheet) {
+        // Handle case where callsheet is removed
+        this.callSheetPath = null;
+        this.callsheetReady = false;
+        return;
+      }
+
+      if (typeof callsheet === 'string') {
+        // If it's a string, it's already been processed and we just need to update the path
+        this.callSheetPath = callsheet;
+        this.callsheetReady = true;
+        return;
+      }
+
+      // If it's a File object, process it
+      if (callsheet instanceof File) {
+        // Wait for the server to process the callsheet
+        const response = await this.upload.postCallSheet(callsheet).toPromise();
+        
+        if (response && response.success && response.filePath) {
+          this.callSheetPath = response.filePath;
+          this.callsheetReady = true;
+          
+          // Only insert the callsheet after successful server response
+          if (this.finalDocument) {
+            this.pdf.insertCallsheetAtStart(response.filePath);
+            this.finalDocReady = true;
+          }
+        } else {
+          console.error('Failed to upload callsheet:', response?.error || 'Unknown error');
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading callsheet:', error);
+      // Handle error appropriately
+    }
   }
 
   applyFilter(event: Event) {
@@ -1002,31 +1037,26 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
 
   onSceneDrop(event: CdkDragDrop<any[]>) {
     if (event.previousContainer === event.container) {
-      console.log('Before reorder:', this.selected);
+      console.log('Before reorder:', this.selected.map(s => s.sceneNumberText));
+      
       moveItemInArray(this.selected, event.previousIndex, event.currentIndex);
-      console.log('After reorder:', this.selected);
-
+      
+      console.log('After reorder:', this.selected.map(s => s.sceneNumberText));
+      
       // Create a new array reference to trigger change detection
       this.selected = [...this.selected];
-
-      // Update the PDF service with the new order
-      this.pdf.setSelectedScenes(this.selected);
-
-      // If we're in last looks mode, reprocess the PDF
-      if (this.lastLooksReady) {
-        this.pdf.processPdf(
-          this.selected,
-          this.script,
-          this.individualPages,
-          this.callsheet
-        );
-      }
-
+      
+      // FIXED: Call reorderScenes and let it handle the document update
+      this.pdf.reorderScenes(this.selected);
+      
+      // FIXED: Don't manually call setSelectedScenes as reorderScenes handles it
+      
       // Force change detection
       this.cdr.detectChanges();
+      
+      console.log('Dashboard-right: Scene reorder complete, LastLooks should reset to page 1');
     }
   }
-
   triggerEditMode() {
     if (this.editState) {
       // We're exiting edit mode, save the document state

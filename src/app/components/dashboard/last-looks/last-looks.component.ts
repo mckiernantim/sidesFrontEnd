@@ -78,12 +78,13 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     private router: Router,
     private cdRef: ChangeDetectorRef,
     public pdf: PdfService,
-    private undoService: UndoService
+    private undoService: UndoService,
   ) {
     console.log('LastLooks Component Constructed');
   }
   // doc is given to our component
   doc: any;
+  private documentRegeneratedSubscription: Subscription;
   @Input() editState: boolean = false;
   @Input() resetDocState: boolean = false;
   @Input() selectedLineState: string = '';
@@ -132,9 +133,10 @@ export class LastLooksComponent implements OnInit, OnDestroy {
 
   private finalDocumentDataSubscription: Subscription;
 
+  // Add showEditTooltip property
+  showEditTooltip: boolean = false;
+  private documentReorderedSubscription: Subscription;
   ngOnInit(): void {
-    console.log('LastLooks Component Initializing');
-    
     // Initialize pages as an empty array by default
     this.pages = [];
     
@@ -146,8 +148,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       
       // Process lines for all pages
       this.processLinesForLastLooks(this.pages);
-      
-  
     }
     
     // Subscribe to finalDocumentData$ for updates
@@ -175,12 +175,21 @@ export class LastLooksComponent implements OnInit, OnDestroy {
         }
       }
     );
+
+    this.documentReorderedSubscription = this.pdf.documentReordered$.subscribe(
+      (reordered) => {
+        if (reordered) {
+          console.log('LastLooks: Document reordered, resetting to first page');
+          this.handleDocumentReorder();
+        }
+      }
+    );
     
     // Clear any selected lines on initialization
     this.selectedLine = null;
     this.selectedLines = [];
     this.isMultipleSelection = false;
-
+  
     this.sceneBreaks = [];
     if (this.callsheetPath) {
       this.insertCallsheetPage(this.callsheetPath);
@@ -191,10 +200,11 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     
     // Initialize scenes
     this.initializeScenes();
-
+  
     this.canEditDocument = this.editState;
     console.log('LastLooks initialized with editState:', this.editState);
   }
+  
   ngOnChanges(changes: SimpleChanges) {
     if (changes['resetDocState'] && changes['resetDocState'].currentValue) {
       // Reset the document to initial state
@@ -206,11 +216,21 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       this.selectedLine = null;
     }
 
-    // Handle callsheet path changes
-    if (changes.callsheetPath && !changes.callsheetPath.firstChange) {
-      const newPath = changes.callsheetPath.currentValue;
-      if (newPath && newPath !== changes.callsheetPath.previousValue) {
-        this.insertCallsheetPage(newPath);
+    if (changes['callsheetPath'] && changes['callsheetPath'].currentValue) {
+      console.log('Callsheet path changed:', changes['callsheetPath'].currentValue);
+      // Insert the callsheet at the start of the document
+      this.insertCallsheetPage(changes['callsheetPath'].currentValue);
+      
+      // Update the document state
+      if (this.pdf.finalDocument?.data) {
+        this.pages = this.pdf.finalDocument.data;
+        this.currentPage = this.pages[this.currentPageIndex] || [];
+        
+        // Process lines for display
+        this.processLinesForLastLooks(this.pages);
+        
+        // Force change detection
+        this.cdRef.detectChanges();
       }
     }
 
@@ -221,11 +241,11 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   }
 
   isCallsheetPage(page: any): boolean {
-    return page && page.type === 'callsheet';
+    return page && page[0] && page[0].category === 'callsheet';
   }
 
   establishInitialLineState() {
-    this.processLinesForLastLooks(this.doc);
+    this.processLinesForLastLooks(this.pages);
     this.updateDisplayedPage();
   }
   findLastLinesOfScenes(pages) {
@@ -240,25 +260,65 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     return lastLinesOfScenes;
   }
   private insertCallsheetPage(imagePath: string) {
-    const callsheetPage: CallsheetPage = {
+    console.log('Inserting callsheet page with path:', imagePath);
+    
+    // Create a new callsheet page
+    const callsheetPage = [{
       type: 'callsheet',
       imagePath: imagePath,
-    };
-
-    // Remove existing callsheet if any
-    this.pages = this.pages.filter(
-      (page) => !(page as any).type || (page as any).type !== 'callsheet'
-    );
-
-    // Add new callsheet at start
-    this.pages.unshift(callsheetPage);
-    this.hasCallsheet = true;
-
-    if (this.currentPageIndex === 0) {
-      this.currentPage = callsheetPage;
+      visible: 'true',
+      docPageIndex: 0,
+      docPageLineIndex: 0
+    }];
+    
+    // Insert at the start of the document
+    if (this.pdf.finalDocument?.data) {
+      this.pdf.finalDocument.data = [callsheetPage, ...this.pdf.finalDocument.data];
+      
+      // Update local state
+      this.pages = this.pdf.finalDocument.data;
+      this.hasCallsheet = true;
+      
+      // Save the document state
+      this.pdf.saveDocumentState();
+      
+      // Force change detection
+      this.cdRef.detectChanges();
+      
+      console.log('Callsheet page inserted successfully');
+    } else {
+      console.error('Cannot insert callsheet: finalDocument.data is undefined');
     }
-
-    this.cdRef.markForCheck();
+  }
+  private handleDocumentReorder(): void {
+    console.log('LastLooks: Document reordered, resetting to first page');
+    
+    if (!this.pdf.finalDocument?.data) {
+      console.error('No document data available');
+      return;
+    }
+  
+    // FIXED: Reset to first page (index 0) as requested
+    this.currentPageIndex = 0;
+    
+    // Update pages with new order from PDF service
+    this.pages = this.pdf.finalDocument.data;
+    
+    // Set current page to first page
+    this.currentPage = this.pages[0] || [];
+    
+    // Re-process lines for the new document order
+    this.processLinesForLastLooks(this.pages);
+    
+    // Clear any selections since we're on a new page order
+    this.selectedLine = null;
+    this.selectedLines = [];
+    this.isMultipleSelection = false;
+    
+    // Force change detection
+    this.cdRef.detectChanges();
+    
+    console.log('LastLooks: Document reorder complete, now on page 1 of', this.pages.length);
   }
   handlePageUpdate(updatedPage: any) {
     if (!this.isCallsheetPage(this.pages[this.currentPageIndex])) {
@@ -369,27 +429,42 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     }
   }
   updateDisplayedPage(forceDeepClone = true): void {
-    if (this.pages && this.pages.length > 0) {
-      // Ensure currentPageIndex is within bounds
-      if (this.currentPageIndex >= this.pages.length) {
-        this.currentPageIndex = this.pages.length - 1;
-      }
-      
-      // Update the current page reference
-      if (forceDeepClone) {
-        this.currentPage = JSON.parse(JSON.stringify(this.pages[this.currentPageIndex]));
-      } else {
-        this.currentPage = this.pages[this.currentPageIndex];
-      }
-      
-      // Update the scene list to reflect any changes
-      this.initializeScenes();
-      
-      // Force change detection
-      this.cdRef.detectChanges();
+    console.log('updateDisplayedPage called with index:', this.currentPageIndex, 'pages length:', this.pages?.length);
+    
+    if (!this.pages || this.pages.length === 0) {
+      console.warn('No pages available for display');
+      return;
     }
+
+    const currentPage = this.pages[this.currentPageIndex];
+    
+    if (!currentPage) {
+      console.warn(`No page found at index ${this.currentPageIndex}`);
+      return;
+    }
+    
+    console.log('Found page at index', this.currentPageIndex, 'with', currentPage.length, 'lines');
+    
+    // Handle callsheet page if present
+    this.handleCallsheetPage(currentPage);
+
+    // Update current page
+    if (forceDeepClone) {
+      this.currentPage = JSON.parse(JSON.stringify(currentPage));
+    } else {
+      this.currentPage = [...currentPage];
+    }
+    
+    // Clear any selections when changing pages
+    this.selectedLine = null;
+    this.selectedLines = [];
+    this.isMultipleSelection = false;
+    
+    console.log('Updated currentPage with', this.currentPage.length, 'lines');
+    this.cdRef.detectChanges();
   }
   previousPage() {
+    console.log('Previous page clicked. Current index:', this.currentPageIndex, 'Total pages:', this.pages?.length);
     if (this.currentPageIndex > 0) {
       // Save current page state if needed
       if (this.editState) {
@@ -397,10 +472,14 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       }
       
       this.currentPageIndex--;
+      console.log('Moving to previous page, new index:', this.currentPageIndex);
       this.updateDisplayedPage(false); // Pass false to avoid deep cloning
+    } else {
+      console.log('Already on first page');
     }
   }
   nextPage() {
+    console.log('Next page clicked. Current index:', this.currentPageIndex, 'Total pages:', this.pages?.length);
     if (this.currentPageIndex < this.pages.length - 1) {
       // Save current page state if needed
       if (this.editState) {
@@ -408,7 +487,10 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       }
       
       this.currentPageIndex++;
+      console.log('Moving to next page, new index:', this.currentPageIndex);
       this.updateDisplayedPage(false); // Pass false to avoid deep cloning
+    } else {
+      console.log('Already on last page');
     }
   }
   adjustLinesForDisplay(pages) {
@@ -794,7 +876,14 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       }, 100);
     }
   }
-
+  public refreshDocument(): void {
+    if (this.pdf.finalDocument?.data) {
+      this.pages = this.pdf.finalDocument.data;
+      this.currentPage = this.pages[this.currentPageIndex] || [];
+      this.processLinesForLastLooks(this.pages);
+      this.cdRef.detectChanges();
+    }
+  }
   /**
    * Update scene number
    */
@@ -1091,6 +1180,49 @@ export class LastLooksComponent implements OnInit, OnDestroy {
           this.updateDisplayedPage();
           return;
         }
+      }
+    }
+  }
+
+  // Add toggleEditTooltip method
+  toggleEditTooltip(): void {
+    this.showEditTooltip = !this.showEditTooltip;
+    this.cdRef.detectChanges();
+  }
+
+  // Add a method to handle scene order changes
+  handleSceneOrderChange(newOrder: any[]): void {
+    // Update the pages with the new scene order
+    this.pages = this.pages.map(page => {
+      // Create a new page reference
+      const newPage = [...page];
+      
+      // Update scene order in the page
+      newPage.sort((a, b) => {
+        const aIndex = newOrder.findIndex(scene => scene.index === a.index);
+        const bIndex = newOrder.findIndex(scene => scene.index === b.index);
+        return aIndex - bIndex;
+      });
+      
+      return newPage;
+    });
+
+    // Force update of the displayed page
+    this.updateDisplayedPage(true);
+  }
+
+  // Add this method to handle callsheet page display
+  private handleCallsheetPage(page: any): void {
+    if (this.isCallsheetPage(page)) {
+      console.log('Handling callsheet page:', page);
+      
+      // Ensure the callsheet is visible
+      if (page[0]) {
+        page[0].visible = 'true';
+        this.hasCallsheet = true;
+        
+        // Force change detection
+        this.cdRef.detectChanges();
       }
     }
   }

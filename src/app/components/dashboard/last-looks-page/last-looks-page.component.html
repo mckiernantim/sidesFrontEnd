@@ -1,7 +1,23 @@
-<!-- The rest of your existing page content -->
+<!-- last-looks-page.component.html -->
 <main class="last-looks-container">
     <div class="page shadow-lg border" (click)="showContextMenu && closeContextMenu(); !$event.target.closest('li') && clearSelection()">
-        <div class="break">
+        <!-- Callsheet display section -->
+        <div *ngIf="currentPageIndex === 0 && isCallsheetPage(page)" class="callsheet-container">
+            <img *ngIf="!page[0].loadError" 
+                 [src]="page[0].imagePath" 
+                 class="callsheet-image"
+                 alt="Callsheet"
+                 (error)="handleCallsheetImageError($event)">
+            
+            <div *ngIf="page[0].loadError" class="callsheet-error">
+                <i class="fas fa-file-image"></i>
+                <p>Unable to display callsheet</p>
+                <p class="text-sm text-gray-500">{{ page[0].loadError }}</p>
+            </div>
+        </div>
+
+        <!-- Regular page content -->
+        <div *ngIf="!(currentPageIndex === 0 && isCallsheetPage(page))" class="break">
             <ul class="screenbox" [ngClass]="{ 'edit-mode': canEditDocument }">
                 <ng-container *ngFor="let line of page; let lineIndex = index">
                     <span class="watermark">{{ line.watermarkText }}</span>
@@ -15,7 +31,7 @@
                         class="page-number-text {{line.visible}}"
                         [style.bottom]="line.calculatedYpos"
                         [style.right]="line.calculatedXpos">
-                        {{line.text}}
+                        {{line.pageNumberText}}
                     </li>
 
                     <!-- scene number span -->
@@ -25,12 +41,11 @@
                         (dblclick)="canEditDocument && startEditingSceneNumber(line)"
                         (blur)="saveSceneNumberEdit(line, $event)"
                         (keydown)="handleSceneNumberKeyDown($event)"
-                        [style.bottom]="line.calculatedYpos" 
-                        >
+                        [style.bottom]="line.calculatedYpos">
                         {{ line.sceneNumberText }}
                     </span>
 
-                    <!-- START bar span - MOUSE DRAG VERSION -->
+                    <!-- START bar span -->
                     <span *ngIf="line.bar === 'bar'" 
                         [class]="'bar-span ' + line.bar + ' ' + line.hidden"
                         [style.bottom]="line.calculatedBarY"
@@ -58,7 +73,7 @@
                         </span>
                     </span>
 
-                    <!-- Main line element - MOUSE DRAG VERSION -->
+                    <!-- Main line element -->
                     <ng-container *ngIf="canEditDocument; else nonEditable">
                         <li id="{{ line.docPageLineIndex }}" 
                             (dblclick)="canEditDocument && onDoubleClick(line.docPageLineIndex, line.text)"
@@ -101,7 +116,7 @@
                         *
                     </span>
 
-                    <!-- continue-top span (at the top of the page) - MOUSE DRAG VERSION -->
+                    <!-- continue-top span (at the top of the page) -->
                     <span *ngIf="line.cont === 'CONTINUE-TOP'" 
                         class="bar-span continue-top-span CONTINUE-TOP {{line.hidden}}"
                         [style.top]="line.calculatedBarY"
@@ -129,7 +144,7 @@
                         </span>
                     </span>
 
-                    <!-- continue spans (at the bottom of the page) - MOUSE DRAG VERSION -->
+                    <!-- continue spans (at the bottom of the page) -->
                     <span *ngIf="line.cont === 'CONTINUE'"
                         class="bar-span continue-span CONTINUE {{line.hidden}}"
                         [style.bottom]="line.calculatedBarY"
@@ -157,7 +172,7 @@
                         </span>
                     </span>
 
-                    <!-- end span - MOUSE DRAG VERSION -->
+                    <!-- end span -->
                     <span *ngIf="line.end === 'END'"
                         class="bar-span END {{line.hidden}}"
                         [style.bottom]="line.calculatedEnd"
@@ -192,8 +207,7 @@
                         (dblclick)="canEditDocument && startEditingSceneNumber(line)"
                         (blur)="saveSceneNumberEdit(line, $event)"
                         (keydown)="handleSceneNumberKeyDown($event)"
-                        [style.bottom]="line.calculatedYpos" 
-                        >
+                        [style.bottom]="line.calculatedYpos">
                         {{ line.sceneNumberText }}
                     </span>
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, HostListener, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, HostListener, OnDestroy, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { Line } from 'src/app/types/Line';
 import { UndoService } from 'src/app/services/edit/undo.service';
 import { Subject, Subscription } from 'rxjs';
@@ -78,6 +78,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   originalSceneNumber: string | null = null;
   editingSceneText: string | null = null;
   originalSceneText: string | null = null;
+  callsheetLoadError: string | null = null;
 
   // Add initialPageState property
   private initialPageState: any[] = [];
@@ -85,9 +86,11 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   private subscription: Subscription;
   private sceneHeaderTextUpdateSubscription: Subscription;
 
+  @ViewChild('pdfViewer') pdfViewer: any;
+
   constructor(
     private undoService: UndoService,
-    private cdRef: ChangeDetectorRef,
+    public cdRef: ChangeDetectorRef,
     private pdfService: PdfService
   ) {
     // Subscribe to line updates from the service
@@ -135,6 +138,47 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    console.log('LastLooksPage ngOnChanges:', Object.keys(changes));
+    
+    if (changes['page']) {
+      console.log('Page input changed. New page has', changes['page'].currentValue?.length, 'lines');
+      // Store initial state when page changes
+      this.callsheetLoadError = null;
+      this.initialPageState = [...this.page];
+      
+      // Reset any editing states
+      this.editingLine = null;
+      this.editingText = '';
+      this.editingSceneNumber = null;
+      this.editingSceneText = null;
+      this.barTextEditingId = null;
+      this.barTextEditingType = null;
+      this.barTextEditingContent = '';
+      
+      // Clear selection when page changes
+      this.clearSelection();
+      
+      // Force change detection
+      this.cdRef.detectChanges();
+    }
+
+    if (changes['editMode']) {
+      // Reset editing states when edit mode changes
+      this.editingLine = null;
+      this.editingText = '';
+      this.editingSceneNumber = null;
+      this.editingSceneText = null;
+      this.barTextEditingId = null;
+      this.barTextEditingType = null;
+      this.barTextEditingContent = '';
+      
+      // Clear selection when edit mode changes
+      this.clearSelection();
+      
+      // Force change detection
+      this.cdRef.detectChanges();
+    }
+
     if (changes['editMode']) {
       this.canEditDocument = changes['editMode'].currentValue;
     }
@@ -177,6 +221,25 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     document.removeEventListener('mouseup', this.handleMouseUp);
     document.removeEventListener('mousemove', this.moveBarText);
     document.removeEventListener('mouseup', this.endBarTextDrag);
+  }
+
+  ngAfterViewInit() {
+    if (this.pdfViewer) {
+      // Disable right-click context menu
+      this.pdfViewer.nativeElement.addEventListener('contextmenu', (e: Event) => {
+        e.preventDefault();
+        return false;
+      });
+
+      // Disable keyboard shortcuts
+      this.pdfViewer.nativeElement.addEventListener('keydown', (e: KeyboardEvent) => {
+        // Prevent common download shortcuts
+        if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+          e.preventDefault();
+          return false;
+        }
+      });
+    }
   }
 
   // ============= MOUSE DRAG METHODS =============
@@ -1207,4 +1270,25 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     const lastRedo = this.undoService.peekLastRedo();
     return lastRedo ? lastRedo.changeDescription || 'Last undone change' : 'No changes to redo';
   }
+
+  isCallsheetPage(page: any[]): boolean {
+    return page && page.length > 0 && page[0].type === 'callsheet';
+  }
+
+  handleCallsheetImageError(event: any): void {
+    console.error('Error loading callsheet image:', event);
+    this.callsheetLoadError = 'Failed to load callsheet image';
+    
+    // Optionally, try to determine the specific error
+    if (event.target && event.target.src) {
+      if (event.target.src.includes('404')) {
+        this.callsheetLoadError = 'Callsheet image not found';
+      } else {
+        this.callsheetLoadError = 'Error loading callsheet image';
+      }
+    }
+    
+    this.cdRef.detectChanges();
+  }
+  
 }

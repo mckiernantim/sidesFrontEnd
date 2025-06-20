@@ -44,8 +44,25 @@
   </div>
 
   <!-- Help Button -->
-  <button class="help-button" (click)="toggleInstructions()">
+  <button class="help-button" (click)="toggleEditTooltip()">
     <i class="fas fa-question"></i>
   </button>
+
+  <!-- Edit Functionality Tooltip -->
+  <div class="edit-tooltip" *ngIf="showEditTooltip">
+    <div class="tooltip-content">
+      <h3 class="text-lg font-bold mb-2">Edit Functionality</h3>
+      <ul class="space-y-2">
+        <li><strong>Selection:</strong> Click to select, Ctrl/Cmd+Click for multi-select, Shift+Click for range</li>
+        <li><strong>Edit Text:</strong> Double-click any line to edit</li>
+        <li><strong>Move Lines:</strong> Click and drag selected lines</li>
+        <li><strong>Change Category:</strong> Right-click for context menu</li>
+        <li><strong>Edit Scene Numbers:</strong> Double-click scene numbers</li>
+        <li><strong>Edit Bar Text:</strong> Double-click START/END/CONTINUE text</li>
+        <li><strong>Toggle Visibility:</strong> Press 'X' key on selected lines</li>
+      </ul>
+      <button class="close-tooltip" (click)="toggleEditTooltip()">×</button>
+    </div>
+  </div>
 </main>
   

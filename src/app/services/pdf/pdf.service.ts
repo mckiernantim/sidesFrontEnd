@@ -59,30 +59,33 @@ export class PdfService {
 
   // Add initialDocumentState property
   private initialDocumentState: any;
-
+  private _documentReordered$ = new BehaviorSubject<boolean>(false);
+  public documentReordered$ = this._documentReordered$.asObservable();
   // 1/5 WE NEED TO MOVE THIS SO THAT THIS FIRES EVERY TIME THE USER NAVIGATES TO UPLOAD COMPONENT
   constructor(public upload: UploadService, private undoService: UndoService) {
-  this.initializeData();
+    this.initializeData();
+    
+    // Set the PdfService reference in UndoService to avoid circular dependency
+    this.undoService.setPdfService(this);
+    
+    // Subscribe to reset events
+    this.undoService.reset$.subscribe(() => {
+      this.resetToInitialState();
+    });
+    
+    // Subscribe to undo/redo stack changes if needed for UI updates
+    // (though components probably don't need this)
+  }
   
-  // Set the PdfService reference in UndoService to avoid circular dependency
-  this.undoService.setPdfService(this);
+  // Single source of truth for document updates
+  private _finalDocumentData$ = new BehaviorSubject<{
+    docPageIndex: number;
+    docPageLineIndex: number;
+    line: Line;
+  } | null>(null);
   
-  // Subscribe to reset events
-  this.undoService.reset$.subscribe(() => {
-    this.resetToInitialState();
-  });
-
-  // Subscribe to undo/redo stack changes if needed for UI updates
-  // (though components probably don't need this)
-}
-
-// Single source of truth for document updates
-private _finalDocumentData$ = new BehaviorSubject<{
-  docPageIndex: number;
-  docPageLineIndex: number;
-  line: Line;
-} | null>(null);
-
+  private _documentRegenerated$ = new BehaviorSubject<boolean>(false);
+  public documentRegenerated$ = this._documentRegenerated$.asObservable();
 public finalDocumentData$ = this._finalDocumentData$.asObservable();
 
 updateLine(pageIndex: number, lineIndex: number, updates: Partial<Line>): void {
@@ -579,7 +582,140 @@ resetToInitialState(): void {
       data: [], // An array to hold PDF data, structured as needed
     };
   }
+  // In pdf.service.ts - REPLACE the existing reorderScenes method with this:
 
+reorderScenes(newSceneOrder: any[]): void {
+  console.log('Reordering scenes:', newSceneOrder.map(s => s.sceneNumberText));
+  
+  if (!this.finalDocument?.data || !this.finalDocReady) {
+    console.warn('Cannot reorder: no document data available');
+    return;
+  }
+
+  // CREATE A MAP OF SCENE NUMBERS TO ALL THEIR PAGE INDEXES (scenes can span multiple pages)
+  const sceneToPageIndexes = new Map<string, number[]>();
+  const pageToPrimaryScene = new Map<number, string>(); // Track which scene "owns" each page
+  
+  // First pass: Find pages with scene headers (primary scene pages)
+  this.finalDocument.data.forEach((page, pageIndex) => {
+    const sceneHeader = page.find(line => 
+      line.category === 'scene-header' && line.visible === 'true'
+    );
+    if (sceneHeader?.sceneNumberText) {
+      const sceneNumber = sceneHeader.sceneNumberText;
+      if (!sceneToPageIndexes.has(sceneNumber)) {
+        sceneToPageIndexes.set(sceneNumber, []);
+      }
+      sceneToPageIndexes.get(sceneNumber)!.push(pageIndex);
+      pageToPrimaryScene.set(pageIndex, sceneNumber);
+    }
+  });
+
+  // Second pass: Find continuation pages and assign them to the appropriate scene
+  this.finalDocument.data.forEach((page, pageIndex) => {
+    // Skip if this page already has a primary scene
+    if (pageToPrimaryScene.has(pageIndex)) {
+      return;
+    }
+    
+    // Find the most relevant scene for this page
+    let primarySceneNumber: string | null = null;
+    let maxSceneLines = 0;
+    
+    page.forEach(line => {
+      if (line.sceneNumberText) {
+        // Count lines for this scene on this page
+        const sceneLines = page.filter(l => l.sceneNumberText === line.sceneNumberText).length;
+        if (sceneLines > maxSceneLines) {
+          maxSceneLines = sceneLines;
+          primarySceneNumber = line.sceneNumberText;
+        }
+      }
+    });
+    
+    if (primarySceneNumber && sceneToPageIndexes.has(primarySceneNumber)) {
+      sceneToPageIndexes.get(primarySceneNumber)!.push(pageIndex);
+      pageToPrimaryScene.set(pageIndex, primarySceneNumber);
+      console.log(`Assigned page ${pageIndex} to scene ${primarySceneNumber} (continuation)`);
+    }
+  });
+
+  // Sort page indexes for each scene to maintain order
+  sceneToPageIndexes.forEach((pageIndexes, sceneNumber) => {
+    pageIndexes.sort((a, b) => a - b);
+  });
+
+  console.log('Scene to page mapping:', Array.from(sceneToPageIndexes.entries()));
+
+  // Create new page order based on scene order
+  const newPageOrder: any[] = [];
+  const usedPageIndexes = new Set<number>();
+
+  // Add ALL pages for each scene in the new order
+  newSceneOrder.forEach(scene => {
+    const pageIndexes = sceneToPageIndexes.get(scene.sceneNumberText);
+    if (pageIndexes) {
+      console.log(`Processing scene ${scene.sceneNumberText} with pages:`, pageIndexes);
+      // Add all pages for this scene in their original order
+      pageIndexes.forEach(pageIndex => {
+        if (!usedPageIndexes.has(pageIndex)) {
+          newPageOrder.push(this.finalDocument.data[pageIndex]);
+          usedPageIndexes.add(pageIndex);
+          console.log(`Added page ${pageIndex} for scene ${scene.sceneNumberText}`);
+        } else {
+          console.log(`Skipping duplicate page ${pageIndex} for scene ${scene.sceneNumberText}`);
+        }
+      });
+    } else {
+      console.log(`No pages found for scene ${scene.sceneNumberText}`);
+    }
+  });
+
+  // Add any remaining pages that weren't part of scenes
+  this.finalDocument.data.forEach((page, pageIndex) => {
+    if (!usedPageIndexes.has(pageIndex)) {
+      newPageOrder.push(page);
+      console.log(`Added remaining page ${pageIndex}`);
+    }
+  });
+
+  console.log(`Reordered from ${this.finalDocument.data.length} to ${newPageOrder.length} pages`);
+  console.log('Final page order indexes:', newPageOrder.map((_, index) => index));
+
+  // Update finalDocument.data with new order
+  this.finalDocument.data = newPageOrder;
+
+  // ONLY update docPageIndex and docPageLineIndex - leave everything else alone
+  this.finalDocument.data.forEach((page, newDocPageIndex) => {
+    page.forEach((line, newDocPageLineIndex) => {
+      line.docPageIndex = newDocPageIndex;
+      line.docPageLineIndex = newDocPageLineIndex;
+    });
+  });
+
+  console.log('Document reordered, new page count:', this.finalDocument.data.length);
+  
+  // Store the new scene order
+  this._selectedScenes = [...newSceneOrder];
+  
+  // FIXED: Emit updates in the correct order and ensure they trigger
+  this._documentReordered$.next(true);
+  // Small delay to ensure document reordered is processed first
+  setTimeout(() => {
+    this._documentRegenerated$.next(true);
+  }, 10);
+}
+    
+  setSelectedScenes(scenes: any[]): void {
+    console.log('Setting scenes in PDF service:', scenes.map(s => s.sceneNumberText));
+    this._selectedScenes = [...scenes];
+    
+    // Don't automatically regenerate here - let reorderScenes handle that
+    // This prevents double regeneration
+  }
+  getCurrentSceneOrder(): any[] {
+    return [...this._selectedScenes];
+  }
   hideExtraDraftVersionText(pages) {
     pages.forEach((page) => {
       const versionLines = page.filter((line) => line.category === 'version');
@@ -667,6 +803,7 @@ resetToInitialState(): void {
     this.updatePageNumberVisibility();
 
     this.finalDocReady = true;
+    this._documentRegenerated$.next(true);
     return true;
   }
 
@@ -1290,21 +1427,7 @@ resetToInitialState(): void {
     return this._selectedScenes;
   }
 
-  setSelectedScenes(scenes: any[]): void {
-    console.log('Setting scenes in PDF service:', scenes);
-    this._selectedScenes = [...scenes];
-    
-    // If we already have a final document, update it with the new order
-    if (this.finalDocReady && this.finalDocument) {
-      console.log('Updating final document with new scene order');
-      this.processPdf(
-        this._selectedScenes,
-        this.finalDocument.name,
-        this.finalDocument.numPages,
-        this.finalDocument.callSheetPath
-      );
-    }
-  }
+
 
   // Add this function to check if a page has any visible content besides page numbers
   private pageHasVisibleContent(page: any[]): boolean {
@@ -1628,5 +1751,87 @@ resetToInitialState(): void {
       }
     });
   }
+
+  // Add method to handle callsheet upload
+  async handleCallSheetUpload(callsheet: File): Promise<boolean> {
+    try {
+      if (!(callsheet instanceof File)) {
+        console.error('Invalid callsheet: must be a File object');
+        return false;
+      }
+
+      // Wait for the server to process the callsheet
+      const response = await this.upload.postCallSheet(callsheet).toPromise();
+      
+      if (response && response.success && response.filePath) {
+        this.callSheetPath = response.filePath;
+        
+        // Only insert the callsheet after successful server response
+        if (this.finalDocument) {
+          this.insertCallsheetAtStart(response.filePath);
+          return true;
+        }
+      } else {
+        console.error('Failed to upload callsheet:', response?.error || 'Unknown error');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error uploading callsheet:', error);
+      return false;
+    }
+  }
+
+// Add this updated method to pdf.service.ts
+
+insertCallsheetAtStart(callsheetPath: string): void {
+  if (!this.finalDocument || !this.finalDocument.data) {
+    console.warn('No document available to insert callsheet');
+    return;
+  }
+
+  // Create a callsheet page object with image display
+  const callsheetPage = [{
+    type: 'callsheet',
+    category: 'callsheet',
+    imagePath: callsheetPath, // This should be the path to the converted image
+    visible: 'true',
+    docPageIndex: 0,
+    docPageLineIndex: 0,
+    // Add calculated positions for consistency
+    calculatedXpos: '0px',
+    calculatedYpos: '0px',
+    // Add these to ensure proper display
+    text: '',
+    index: -1, // Special index for callsheet
+    page: 0
+  }];
+
+  // Insert the callsheet at the beginning of the document
+  this.finalDocument.data.unshift(callsheetPage);
+
+  // Update all subsequent pages
+  for (let i = 1; i < this.finalDocument.data.length; i++) {
+    const page = this.finalDocument.data[i];
+    page.forEach((line, lineIndex) => {
+      // Update page numbers
+      if (line.category === 'page-number') {
+        line.text = i.toString(); // Keep original numbering
+      }
+      // Update document-wide indexes
+      line.docPageIndex = i;
+      line.docPageLineIndex = lineIndex;
+    });
+  }
+
+  // Update the document state
+  this.finalDocument.numPages = this.finalDocument.data.length;
+  this.finalDocument.callSheetPath = callsheetPath;
+
+  // Save the new state
+  this.initialDocumentState = JSON.parse(JSON.stringify(this.finalDocument));
+
+  // Notify subscribers of the document update
+  this._documentRegenerated$.next(true);
+}
 
 }
