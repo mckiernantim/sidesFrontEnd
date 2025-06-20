@@ -63,7 +63,7 @@ export class StripeService {
           { headers, withCredentials: true }
         );
 
-        // Get usage data from Firebase
+        // Get usage data from Firebase - make it optional and handle permissions gracefully
         const usage$ = from(getDoc(doc(this.firestore, 'users', userId))).pipe(
           map(docSnapshot => {
             if (!docSnapshot.exists()) {
@@ -81,7 +81,8 @@ export class StripeService {
             };
           }),
           catchError(error => {
-            console.error('STRIPE: Error fetching usage from Firebase', error);
+            console.warn('STRIPE: Error fetching usage from Firebase (this is expected if user document doesn\'t exist or permissions are restricted):', error.message);
+            // Return default usage data instead of throwing error
             return of({
               pdfsGenerated: 0,
               lastPdfGeneration: null,
@@ -90,7 +91,7 @@ export class StripeService {
           })
         );
 
-        // Combine both observables
+        // Combine both observables, but make Firebase optional
         return combineLatest([subscription$, usage$]).pipe(
           map(([subscriptionResponse, usageData]) => {
             if (!subscriptionResponse) {

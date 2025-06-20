@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { AuthService } from 'src/app/services/auth/auth.service';
 import { StripeService } from 'src/app/services/stripe/stripe.service';
 import { Router, NavigationEnd } from '@angular/router';
@@ -36,6 +36,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
   
   private routerSubscription: Subscription | null = null;
   private authSubscription: Subscription | null = null;
+  
+  @Output() subscriptionActivated = new EventEmitter<void>();
+  
   constructor(
     private auth: AuthService,
     private stripe: StripeService,
@@ -108,6 +111,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
         console.log('Subscription data loaded:', subscription);
         this.subscription = subscription;
         this.isLoading = false;
+        
+        // Emit event if subscription is now active
+        if (this.isSubscriptionActive()) {
+          this.subscriptionActivated.emit();
+        }
       },
       error: (error) => {
         clearTimeout(timeoutId); // Clear the timeout on error

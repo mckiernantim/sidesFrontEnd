@@ -8,6 +8,8 @@ import {
   ChangeDetectorRef,
   inject,
   Input,
+  Output,
+  EventEmitter,
 } from '@angular/core';
 import { UploadService } from '../../services/upload/upload.service';
 
@@ -50,31 +52,67 @@ export class IssueComponent implements OnInit, AfterViewInit {
   confirmDelete: boolean = false;
   data:any;
   errorReason: string = '';
+  showProfileComponent: boolean = false;
+  
+  // Properties that will be set by dialog data
+  title: string = '';
+  message: string = '';
+  isError: boolean = false;
+  loginRequired: boolean = false;
+  isAuthenticated: boolean = false;
+  user: any = null;
+  
+  @Output() close = new EventEmitter<any>();
+
   constructor(
     public upload: UploadService,
-
     public cdr: ChangeDetectorRef,
     private auth:AuthService,
-
   ) {
-   
-    this.isDeleteDialog = this.data?.isDelete || false;
-    this.isDeleteAccountDialog = this.data?.isDeleteAccount || false;
-    this.errorDetails = this.data?.errorDetails || "Unkown Error occured";
-    this.errorReason = this.data?.errorReason || "";
+    // Don't access data properties in constructor - they'll be set by dialog service
   }
 
   ngOnInit(): void {
+    console.log('IssueComponent ngOnInit called');
+    console.log('Initial data:', this.data);
+    console.log('Initial showProfileComponent:', this.showProfileComponent);
+    console.log('Initial title:', this.title);
+    console.log('Initial message:', this.message);
+    
+    // Initialize properties from dialog data (now properly set by dialog service)
+    this.isDeleteDialog = this.data?.isDelete || false;
+    this.isDeleteAccountDialog = this.data?.isDeleteAccount || false;
+    this.errorDetails = this.data?.errorDetails || this.message || "Unknown Error occurred";
+    this.errorReason = this.data?.errorReason || "";
+    
+    // Only set showProfileComponent if it wasn't already set by dialog service
+    if (this.showProfileComponent === false) {
+      this.showProfileComponent = this.data?.showProfileComponent || false;
+    }
+    
+    // Only set title and message if they weren't already set by dialog service
+    if (!this.title) {
+      this.title = this.data?.title || '';
+    }
+    if (!this.message) {
+      this.message = this.data?.message || '';
+    }
+    
+    console.log('After initialization - showProfileComponent:', this.showProfileComponent);
+    console.log('After initialization - title:', this.title);
+    console.log('After initialization - message:', this.message);
+    
     // Check if this is a delete confirmation dialog
     this.auth.user$.subscribe(user => {
       if (user) {
         console.log('User logged in:', user);
         this.userDisplayEmail = user.email;
         this.loggedIn = true;
-        if (this.data.loginRequired) {
-          this.data.loginRequired = false;
-          this.data.isAuthenticated = true;
-          this.data.user = user;
+        // Only access loginRequired if it exists
+        if (this.loginRequired) {
+          this.loginRequired = false;
+          this.isAuthenticated = true;
+          this.user = user;
         }
       } else {
         console.log('No user logged in');
@@ -96,12 +134,14 @@ export class IssueComponent implements OnInit, AfterViewInit {
       this.awaitingData = false;
       this.loggedIn = true;
       this.agreeToTerms = false;
-      this.data.waitingForScript
-        ? (this.waitingForScript = true)
-        : (this.waitingForScript = false);
+      // Only access waitingForScript if data exists
+      if (this.data && this.data.waitingForScript) {
+        this.waitingForScript = true;
+      } else {
+        this.waitingForScript = false;
+      }
 
       if (this.data && this.data.error) {
-       
         this.error = true;
       }
     }
@@ -178,5 +218,19 @@ export class IssueComponent implements OnInit, AfterViewInit {
 
   closeDialog(): void {
     console.log('Dialog close requested');
+    this.close.emit();
+  }
+
+  // Method to handle successful subscription
+  onSubscriptionSuccess(): void {
+    console.log('Subscription successful, closing dialog');
+    // Emit the close event with success result
+    this.close.emit('subscription_success');
+  }
+
+  // Method to manually close the dialog
+  manualClose(): void {
+    console.log('Manual close requested');
+    this.close.emit('manual_close');
   }
 }

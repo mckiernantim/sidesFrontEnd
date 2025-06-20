@@ -32,7 +32,7 @@ export class TailwindDialogService {
   open(componentOrConfig: Type<any> | DialogConfig, config?: DialogConfig): DialogRef {
     let component: Type<any>;
     let finalConfig: DialogConfig = {};
-    
+    debugger;
     if (typeof componentOrConfig === 'function') {
       component = componentOrConfig;
       finalConfig = config || {};
@@ -149,30 +149,59 @@ export class TailwindDialogService {
     // Create close subject
     const afterClosedSubject = new Subject<any>();
     
-    // Handle close event
+    // Handle close event - check for both EventEmitter and Observable
     if (componentRef.instance.close) {
-      componentRef.instance.close.subscribe((result: any) => {
-        afterClosedSubject.next(result || 'close');
-        afterClosedSubject.complete();
-        this.removeFromDOM(componentRef);
-      });
+      if (componentRef.instance.close.emit) {
+        // It's an EventEmitter, convert to Observable
+        componentRef.instance.close.subscribe((result: any) => {
+          afterClosedSubject.next(result || 'close');
+          afterClosedSubject.complete();
+          this.removeFromDOM(componentRef);
+        });
+      } else if (componentRef.instance.close.subscribe) {
+        // It's already an Observable
+        componentRef.instance.close.subscribe((result: any) => {
+          afterClosedSubject.next(result || 'close');
+          afterClosedSubject.complete();
+          this.removeFromDOM(componentRef);
+        });
+      }
     }
     
     // Handle confirmed event if it exists
     if (componentRef.instance.confirmed) {
-      componentRef.instance.confirmed.subscribe((result: any) => {
-        afterClosedSubject.next(result || 'confirm');
-        afterClosedSubject.complete();
-        this.removeFromDOM(componentRef);
-      });
+      if (componentRef.instance.confirmed.emit) {
+        // It's an EventEmitter, convert to Observable
+        componentRef.instance.confirmed.subscribe((result: any) => {
+          afterClosedSubject.next(result || 'confirm');
+          afterClosedSubject.complete();
+          this.removeFromDOM(componentRef);
+        });
+      } else if (componentRef.instance.confirmed.subscribe) {
+        // It's already an Observable
+        componentRef.instance.confirmed.subscribe((result: any) => {
+          afterClosedSubject.next(result || 'confirm');
+          afterClosedSubject.complete();
+          this.removeFromDOM(componentRef);
+        });
+      }
     }
     
     // Handle actionSelected event if it exists
     if (componentRef.instance.actionSelected) {
-      componentRef.instance.actionSelected.subscribe((result: any) => {
-        afterClosedSubject.next(result);
-        // Don't complete or remove - the component will handle this
-      });
+      if (componentRef.instance.actionSelected.emit) {
+        // It's an EventEmitter, convert to Observable
+        componentRef.instance.actionSelected.subscribe((result: any) => {
+          afterClosedSubject.next(result);
+          // Don't complete or remove - the component will handle this
+        });
+      } else if (componentRef.instance.actionSelected.subscribe) {
+        // It's already an Observable
+        componentRef.instance.actionSelected.subscribe((result: any) => {
+          afterClosedSubject.next(result);
+          // Don't complete or remove - the component will handle this
+        });
+      }
     }
     
     // Return dialog reference

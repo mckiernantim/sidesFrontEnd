@@ -45,6 +45,7 @@ import { CheckoutModalComponent } from '../checkout-modal/checkout-modal.compone
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { LastLooksComponent } from '../last-looks/last-looks.component';
 import { TailwindDialogComponent } from '../../../components/shared/tailwind-dialog/tailwind-dialog.component';
+import { SubscriptionModalComponent } from '../../../components/subscription-modal/subscription-modal.component';
 
 interface toolTipOption {
   title: string;
@@ -164,6 +165,7 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
   selectedScenesMap: Map<number, any> = new Map();
 
   showCheckoutModal: boolean = false;
+  isCheckingSubscription: boolean = false;
 
   // Scene editing properties
   editingSceneNumber: string | null = null;
@@ -712,7 +714,50 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
   }
 
   private handleSubscriptionRequired(documentToSend) {
-    // Open subscription dialog
+    console.log('handleSubscriptionRequired called');
+    
+    // Close any existing dialogs
+    this.dialog.closeAll();
+    
+    console.log('Opening subscription modal with SubscriptionModalComponent');
+    
+    // Show subscription modal with profile component
+    const subscriptionDialog = this.dialog.open(SubscriptionModalComponent, {
+      width: '90vw',
+      height: '90vh'
+    });
+
+    console.log('Subscription dialog opened:', subscriptionDialog);
+
+    // Listen for subscription success
+    subscriptionDialog.afterClosed().subscribe((result) => {
+      console.log('Subscription dialog closed with result:', result);
+      if (result === 'subscription_success') {
+        // User successfully subscribed, proceed with checkout
+        this.showCheckoutModal = true;
+      }
+      clearInterval(subscriptionCheck);
+    });
+
+    // Listen for subscription status changes
+    const subscriptionCheck = setInterval(() => {
+      if (this.userData?.uid) {
+        this.stripe.getSubscriptionStatus(this.userData.uid).subscribe({
+          next: (subscriptionStatus) => {
+            if (subscriptionStatus.active) {
+              // User now has active subscription, close modal and proceed
+              console.log('Subscription became active, closing modal and proceeding with checkout');
+              clearInterval(subscriptionCheck);
+              subscriptionDialog.close();
+              this.showCheckoutModal = true;
+            }
+          },
+          error: (error) => {
+            console.error('Error checking subscription status:', error);
+          }
+        });
+      }
+    }, 5000); // Check every 5 seconds
   }
 
   private handleError(title: string, message: string) {
@@ -858,7 +903,51 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
   }
 
   openConfirmPurchaseDialog(): void {
-    this.showCheckoutModal = true;
+    console.log('openConfirmPurchaseDialog called');
+    
+    // Prevent multiple clicks
+    if (this.isCheckingSubscription) {
+      console.log('Already checking subscription, returning');
+      return;
+    }
+
+    // Check if user has an active subscription before allowing checkout
+    if (!this.userData?.uid) {
+      console.log('No user data, showing authentication error');
+      this.handleError(
+        'Authentication Required',
+        'Please sign in to continue'
+      );
+      return;
+    }
+
+    console.log('User authenticated, checking subscription status for:', this.userData.uid);
+    this.isCheckingSubscription = true;
+
+    // Check subscription status before allowing checkout
+    this.stripe.getSubscriptionStatus(this.userData.uid).subscribe({
+      next: (subscriptionStatus) => {
+        console.log('Subscription status received:', subscriptionStatus);
+        this.isCheckingSubscription = false;
+        if (subscriptionStatus.active) {
+          console.log('User has active subscription, proceeding with checkout');
+          // User has active subscription, proceed with checkout
+          this.showCheckoutModal = true;
+        } else {
+          console.log('User does not have active subscription, showing subscription required dialog');
+          // User doesn't have active subscription, redirect to subscription
+          this.handleSubscriptionRequired(null);
+        }
+      },
+      error: (error) => {
+        console.error('Error checking subscription status:', error);
+        this.isCheckingSubscription = false;
+        this.handleError(
+          'Subscription Check Failed',
+          'Unable to verify your subscription status. Please try again.'
+        );
+      }
+    });
   }
 
   handleCheckout(confirmed: boolean): void {
