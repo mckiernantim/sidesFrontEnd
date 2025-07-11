@@ -6,6 +6,7 @@ import { debounceTime, filter } from 'rxjs/operators';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
 import { cloneDeep } from 'lodash';
 
+
 @Component({
   selector: 'app-last-looks-page',
   templateUrl: './last-looks-page.component.html',
@@ -86,7 +87,34 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   private subscription: Subscription;
   private sceneHeaderTextUpdateSubscription: Subscription;
 
+  
+
   @ViewChild('pdfViewer') pdfViewer: any;
+
+  // Temporary workaround to convert GCS URL to Firebase Storage URL
+  public convertToFirebaseUrl(gcsUrl: string): string {
+    console.log('convertToFirebaseUrl called with:', gcsUrl);
+    
+    if (!gcsUrl || !gcsUrl.includes('storage.googleapis.com')) {
+      console.log('URL is not a Firebase Storage URL, returning as-is:', gcsUrl);
+      return gcsUrl;
+    }
+    
+    // Extract bucket and path from GCS URL
+    const url = new URL(gcsUrl);
+    const pathParts = url.pathname.split('/');
+    const bucket = pathParts[1];
+    const path = pathParts.slice(2).join('/');
+    
+    // Decode the path first to avoid double-encoding
+    const decodedPath = decodeURIComponent(path);
+    
+    // Convert to Firebase Storage download URL
+    const firebaseUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(decodedPath)}?alt=media`;
+    console.log('Converted Firebase URL:', firebaseUrl);
+    
+    return firebaseUrl;
+  }
 
   constructor(
     private undoService: UndoService,
@@ -136,17 +164,39 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       this.canEditDocument = true;
     }
   }
-
+  
   ngOnChanges(changes: SimpleChanges): void {
     console.log('LastLooksPage ngOnChanges:', Object.keys(changes));
     
     if (changes['page']) {
-      console.log('Page input changed. New page has', changes['page'].currentValue?.length, 'lines');
+      const newPage = changes['page'].currentValue;
+      console.log('Page input changed. New page has', newPage?.length, 'lines');
+      
       // Store initial state when page changes
       this.callsheetLoadError = null;
       this.initialPageState = [...this.page];
       
-      // Reset any editing states
+      // Special handling for callsheet pages
+      if (this.isCallsheetPage(newPage)) {
+        console.log('New page is a callsheet page:', {
+          imagePath: newPage[0]?.imagePath,
+          type: newPage[0]?.type,
+          category: newPage[0]?.category,
+          hasLoadError: !!newPage[0]?.loadError
+        });
+        
+        // Validate the image path
+        if (!newPage[0]?.imagePath) {
+          console.error('Callsheet page has no image path');
+          if (newPage[0]) {
+            newPage[0].loadError = 'No image path provided';
+          }
+        } else {
+          console.log('Callsheet page has valid image path:', newPage[0].imagePath);
+        }
+      }
+      
+      // Reset editing states
       this.editingLine = null;
       this.editingText = '';
       this.editingSceneNumber = null;
@@ -161,45 +211,14 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       // Force change detection
       this.cdRef.detectChanges();
     }
-
-    if (changes['editMode']) {
-      // Reset editing states when edit mode changes
-      this.editingLine = null;
-      this.editingText = '';
-      this.editingSceneNumber = null;
-      this.editingSceneText = null;
-      this.barTextEditingId = null;
-      this.barTextEditingType = null;
-      this.barTextEditingContent = '';
-      
-      // Clear selection when edit mode changes
-      this.clearSelection();
-      
-      // Force change detection
-      this.cdRef.detectChanges();
-    }
-
+  
+    // Handle other changes as before...
     if (changes['editMode']) {
       this.canEditDocument = changes['editMode'].currentValue;
+      console.log('LastLooks editState changed to:', this.canEditDocument);
     }
-
-    // Handle page changes
-    if (changes['page']) {
-      const newPage = changes['page'].currentValue;
-      this.page = [...newPage];
-      
-      // Save initial state when page is first loaded
-      if (!this.initialPageState.length) {
-        this.initialPageState = JSON.parse(JSON.stringify(newPage));
-      }
-
-      // Force change detection
-      this.cdRef.detectChanges();
-    }
-
-    // Handle reset state
+  
     if (changes['resetDocState'] && changes['resetDocState'].currentValue) {
-      // Reset the page to its initial state
       this.page = JSON.parse(JSON.stringify(this.initialPageState));
       this.selectedLineIds = [];
       this.lastSelectedIndex = null;
@@ -207,6 +226,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       this.pageUpdate.emit(this.page);
     }
   }
+
 
   ngOnDestroy(): void {
     // Clean up subscription
@@ -896,7 +916,84 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       }
     }
   }
-
+  handleCallsheetImageError(event: any): void {
+    console.error('Error loading callsheet image:', event);
+    
+    const img = event.target as HTMLImageElement;
+    const src = img.src;
+    
+    let errorMessage = 'Failed to load callsheet image';
+    
+    // Determine specific error type
+    if (!src || src.trim() === '') {
+      errorMessage = 'No image path provided';
+    } else if (src.includes('blob:')) {
+      errorMessage = 'Blob URL expired or invalid';
+    } else if (src.startsWith('data:')) {
+      errorMessage = 'Invalid image data';
+    } else if (src.includes('404') || event.type === 'error') {
+      errorMessage = 'Image not found on server';
+    } else if (src.includes('CORS')) {
+      errorMessage = 'CORS error - image blocked by server';
+    }
+    
+    // Update the page state with error information
+    if (this.page && this.page[0]) {
+      this.page[0].loadError = errorMessage;
+      console.error('Callsheet load error details:', {
+        src: src,
+        error: errorMessage,
+        event: event
+      });
+    }
+    
+    this.cdRef.detectChanges();
+  }
+  
+  onCallsheetImageLoad(event: any): void {
+    console.log('Callsheet image loaded successfully:', event.target?.src);
+    
+    // Clear any previous error state
+    if (this.page && this.page[0]) {
+      this.page[0].loadError = null;
+    }
+    
+    this.cdRef.detectChanges();
+  }
+  
+  retryCallsheetLoad(): void {
+    console.log('Retrying callsheet load');
+    
+    if (this.page && this.page[0]) {
+      // Clear the error state
+      this.page[0].loadError = null;
+      
+      // Get the original path and add cache busting
+      const originalPath = this.page[0].imagePath;
+      if (originalPath) {
+        // Add cache-busting parameter
+        const separator = originalPath.includes('?') ? '&' : '?';
+        this.page[0].imagePath = originalPath + separator + 'cb=' + Date.now();
+        
+        console.log('Retrying with cache-busted path:', this.page[0].imagePath);
+      }
+    }
+    
+    this.cdRef.detectChanges();
+  }
+  
+  // Enhanced callsheet page detection
+  isCallsheetPage(page: any[]): boolean {
+    if (!page || !Array.isArray(page) || page.length === 0) {
+      return false;
+    }
+    
+    const firstLine = page[0];
+    return firstLine && 
+           (firstLine.type === 'callsheet' || firstLine.category === 'callsheet') &&
+           firstLine.imagePath;
+  }
+  
   // ============= KEYBOARD HANDLERS =============
 
   @HostListener('document:keydown', ['$event'])
@@ -1271,24 +1368,6 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     return lastRedo ? lastRedo.changeDescription || 'Last undone change' : 'No changes to redo';
   }
 
-  isCallsheetPage(page: any[]): boolean {
-    return page && page.length > 0 && page[0].type === 'callsheet';
-  }
-
-  handleCallsheetImageError(event: any): void {
-    console.error('Error loading callsheet image:', event);
-    this.callsheetLoadError = 'Failed to load callsheet image';
-    
-    // Optionally, try to determine the specific error
-    if (event.target && event.target.src) {
-      if (event.target.src.includes('404')) {
-        this.callsheetLoadError = 'Callsheet image not found';
-      } else {
-        this.callsheetLoadError = 'Error loading callsheet image';
-      }
-    }
-    
-    this.cdRef.detectChanges();
-  }
+ 
   
 }

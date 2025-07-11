@@ -46,11 +46,24 @@ import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { LastLooksComponent } from '../last-looks/last-looks.component';
 import { TailwindDialogComponent } from '../../../components/shared/tailwind-dialog/tailwind-dialog.component';
 import { SubscriptionModalComponent } from '../../../components/subscription-modal/subscription-modal.component';
+import { CdkDropList } from '@angular/cdk/drag-drop';
 
 interface toolTipOption {
   title: string;
   text: string;
   ind: number;
+}
+interface CallsheetData {
+  success: boolean;
+  callSheetReady: boolean;
+  filePath: string;        // Firebase Storage path for PDF processing
+  previewUrl: string;      // Firebase Storage URL for preview display
+  imageUrl: string;        // Firebase Storage URL for image display
+  fileType: string;
+  fileName: string;
+  fileSize?: number;
+  uploadTime?: string;
+  userId?: string;
 }
 @Component({
   selector: 'app-dashboard-right',
@@ -70,6 +83,7 @@ interface toolTipOption {
 export class DashboardRightComponent implements OnInit, OnDestroy {
   @ViewChild('input') input: ElementRef;
   @ViewChild(LastLooksComponent) lastLooksComponent: LastLooksComponent;
+  @ViewChild('dropList') dropList!: CdkDropList;
 
   // STATE BOOLEANS
   userData: any;
@@ -179,10 +193,15 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
   private finalDocumentDataSubscription: Subscription;
   private tokenExpiredSubscription: Subscription;
   private sceneHeaderTextUpdateSubscription: Subscription;
+  private documentRegeneratedSubscription: Subscription;
+  private undoServiceSubscription: Subscription;
+  private undoResetSubscription: Subscription;
+  private sceneOrderUpdatedSubscription: Subscription;
 
   // Add new properties for document state management
   private initialPageState: any[] = [];
   page: any[] = []; // Add page property for document state management
+  private initialSceneOrder: any[] = []; // Store initial scene order for reset
 
   constructor(
     public cdr: ChangeDetectorRef,
@@ -272,6 +291,29 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
           // Create new array reference to ensure change detection
           this.scenes = [...this.scenes];
           
+          // Also update the selected array if this scene is selected
+          const selectedIndex = this.selected.findIndex(s => 
+            s.index === update.line.index || 
+            s.sceneNumberText === update.line.sceneNumberText
+          );
+          
+          if (selectedIndex !== -1) {
+            console.log('Updating selected scene in dashboard-right');
+            this.selected[selectedIndex] = {
+              ...this.selected[selectedIndex],
+              ...update.line,
+              // Preserve any dashboard-specific properties
+              preview: this.selected[selectedIndex].preview,
+              lastPage: this.selected[selectedIndex].lastPage
+            };
+            
+            // Create new array reference to ensure change detection
+            this.selected = [...this.selected];
+            
+            // Update the selectedScenesMap
+            this.selectedScenesMap.set(update.line.docPageIndex, this.selected[selectedIndex]);
+          }
+          
           // Force change detection
           this.cdr.detectChanges();
 
@@ -310,6 +352,31 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     );
+
+    // Subscribe to document regeneration for undo/redo operations
+    this.documentRegeneratedSubscription = this.pdf.documentRegenerated$.subscribe(
+      (regenerated) => {
+        if (regenerated) {
+          console.log('Dashboard-right: Document regenerated, syncing scene data');
+          // Small delay to ensure PDF service has fully updated
+          setTimeout(() => {
+            this.syncSceneDataAfterUndo();
+          }, 100);
+        }
+      }
+    );
+
+    // Subscribe to undo service to handle all undo/redo operations
+    this.undoServiceSubscription = this.undoService.undoRedo$.subscribe(({ type, item }) => {
+      console.log(`Dashboard-right: ${type} operation triggered:`, item.changeDescription);
+      // The actual scene order sync is handled by sceneOrderUpdated$ observable
+    });
+
+    // Subscribe to undo reset event
+    this.undoResetSubscription = this.undoService.reset$.subscribe(() => {
+      console.log('Dashboard-right: Undo reset event triggered');
+      this.resetSceneOrderToInitial();
+    });
   }
 
   ngOnInit(): void {
@@ -326,6 +393,13 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
 
     this.intizilazeState();
     this.initializeSceneSelectionTable();
+
+    // Subscribe to scene order updated
+    this.sceneOrderUpdatedSubscription = this.pdf.sceneOrderUpdated$.subscribe((sceneOrder) => {
+      debugger
+      console.log('Dashboard-right: Scene order updated:', sceneOrder.map(s => s.sceneNumberText));
+      this.syncSceneDataWithOrder(sceneOrder);
+    });
 
     this.auth.user$.subscribe((data) => {
       console.log('Auth state changed:', data);
@@ -480,45 +554,184 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  async handleCallSheetUpload(callsheet: File | string | null) {
+  async handleCallSheetUpload(callsheetData: CallsheetData | null) {
     try {
-      debugger
-      if (!callsheet) {
+      console.log('handleCallSheetUpload called with:', callsheetData);
+  
+      if (!callsheetData) {
         // Handle case where callsheet is removed
+        console.log('Removing callsheet from document');
         this.callSheetPath = null;
         this.callsheetReady = false;
-        return;
-      }
-
-      if (typeof callsheet === 'string') {
-        // If it's a string, it's already been processed and we just need to update the path
-        this.callSheetPath = callsheet;
-        this.callsheetReady = true;
-        return;
-      }
-
-      // If it's a File object, process it
-      if (callsheet instanceof File) {
-        // Wait for the server to process the callsheet
-        const response = await this.upload.postCallSheet(callsheet).toPromise();
         
-        if (response && response.success && response.filePath) {
-          this.callSheetPath = response.filePath;
-          this.callsheetReady = true;
-          
-          // Only insert the callsheet after successful server response
-          if (this.finalDocument) {
-            this.pdf.insertCallsheetAtStart(response.filePath);
-            this.finalDocReady = true;
-          }
-        } else {
-          console.error('Failed to upload callsheet:', response?.error || 'Unknown error');
+        // Remove callsheet from document if it exists
+        if (this.pdf.finalDocument?.data) {
+          this.pdf.removeCallsheetFromStart();
         }
+        
+        // Clear localStorage
+        localStorage.removeItem('callSheetPath');
+        localStorage.removeItem('callsheetData');
+        
+        // Force change detection to update last-looks component
+        this.cdr.detectChanges();
+        return;
       }
+  
+      // Store callsheet information
+      this.callSheetPath = callsheetData.filePath; // Store Firebase Storage path for PDF processing
+      this.callsheetReady = callsheetData.callSheetReady;
+      
+      console.log('Callsheet data received from backend:', {
+        success: callsheetData.success,
+        callSheetReady: callsheetData.callSheetReady,
+        filePath: callsheetData.filePath,
+        previewUrl: callsheetData.previewUrl,
+        imageUrl: callsheetData.imageUrl,
+        fileType: callsheetData.fileType,
+        fileName: callsheetData.fileName,
+        fileSize: callsheetData.fileSize,
+        uploadTime: callsheetData.uploadTime
+      });
+      
+      // Store in localStorage for persistence across page reloads
+      localStorage.setItem('callSheetPath', callsheetData.filePath);
+      localStorage.setItem('callsheetData', JSON.stringify(callsheetData));
+      
+      // Insert callsheet into document if document exists
+      if (this.pdf.finalDocument?.data) {
+        // Validate the image URL before inserting (prefer imageUrl, fallback to previewUrl)
+        let displayUrl = callsheetData.imageUrl || callsheetData.previewUrl;
+        if (!displayUrl) {
+          console.error('No display URL provided for callsheet');
+          this.dialog.open(IssueComponent, {
+            width: '400px',
+            data: {
+              title: 'Callsheet Error',
+              message: 'No display URL available. Please try uploading again.',
+              isError: true,
+            },
+          });
+          return;
+        }
+        
+        console.log('Original display URL:', displayUrl);
+        
+        // Check if the URL is a PDF file (which we can't display as image)
+        if (displayUrl.includes('.pdf') && !displayUrl.includes('/previews/')) {
+          console.error('Server returned PDF file URL instead of image URL:', displayUrl);
+          this.dialog.open(IssueComponent, {
+            width: '400px',
+            data: {
+              title: 'Callsheet Error',
+              message: 'Server returned a PDF file instead of an image. The backend should convert PDFs to preview images.',
+              isError: true,
+            },
+          });
+          return;
+        }
+        
+        // Backend now sends proper Firebase Storage URLs - no conversion needed
+        
+        console.log('Display URL from backend:', displayUrl);
+        
+        // Use the appropriate URL for display in the document preview
+        this.pdf.insertCallsheetAtStart(displayUrl);
+        
+        // Store metadata for later use
+        this.pdf.finalDocument.callsheetMetadata = {
+          originalPath: callsheetData.filePath,  // Firebase Storage path for PDF processing
+          previewUrl: callsheetData.previewUrl,  // Firebase Storage URL for preview
+          imageUrl: callsheetData.imageUrl,      // Firebase Storage URL for image display
+          fileType: callsheetData.fileType,
+          fileName: callsheetData.fileName,
+          fileSize: callsheetData.fileSize,
+          uploadTime: callsheetData.uploadTime,
+          userId: callsheetData.userId
+        };
+        
+        console.log('Callsheet successfully integrated into document from Firebase Storage');
+      }
+      
+      // Force change detection to update last-looks component
+      this.cdr.detectChanges();
+      
     } catch (error) {
-      console.error('Error uploading callsheet:', error);
-      // Handle error appropriately
+      console.error('Error in handleCallSheetUpload:', error);
+      
+      // Show user-friendly error message
+      this.dialog.open(IssueComponent, {
+        width: '400px',
+        data: {
+          title: 'Callsheet Error',
+          message: 'Error processing callsheet. Please try uploading again.',
+          isError: true,
+        },
+      });
     }
+  }
+
+  // Helper method to fix malformed Firebase Storage URLs
+  private fixFirebaseStorageUrl(url: string): string {
+    if (!url) return url;
+    
+    console.log('Fixing Firebase Storage URL:', url);
+    
+    // Fix URLs that have extra gs:// prefix
+    // From: https://storage.googleapis.com/gs://bucket-name/path
+    // To:   https://storage.googleapis.com/bucket-name/path
+    if (url.includes('/gs://')) {
+      const fixedUrl = url.replace('/gs://', '/');
+      console.log('Fixed Firebase Storage URL:', { original: url, fixed: fixedUrl });
+      return fixedUrl;
+    }
+    
+    // Handle correct Firebase Storage URLs with tokens
+    // Format: https://firebasestorage.googleapis.com/v0/b/bucket/o/path?alt=media&token=...
+    if (url.includes('firebasestorage.googleapis.com') && url.includes('alt=media')) {
+      console.log('Valid Firebase Storage URL with token detected:', url);
+      return url;
+    }
+    
+    // For the specific URL format you're getting, we need to add the Firebase Storage API path
+    // From: https://storage.googleapis.com/scriptthing-dev.firebasestorage.app/callsheets/...
+    // To: https://firebasestorage.googleapis.com/v0/b/scriptthing-dev.firebasestorage.app/o/callsheets/...?alt=media
+    if (url.includes('storage.googleapis.com') && url.includes('scriptthing-dev.firebasestorage.app')) {
+      try {
+        const urlObj = new URL(url);
+        const pathParts = urlObj.pathname.split('/').filter(part => part);
+        
+        console.log('URL path parts:', pathParts);
+        
+        if (pathParts.length >= 2) {
+          const bucketName = pathParts[0]; // scriptthing-dev.firebasestorage.app
+          const filePath = pathParts.slice(1).join('/'); // callsheets/images/... or callsheets/...
+          
+          console.log('Bucket name:', bucketName);
+          console.log('File path:', filePath);
+          
+          // The filePath is already URL-encoded from the original URL, so we need to decode it first
+          const decodedPath = decodeURIComponent(filePath);
+          // Then encode it properly for Firebase Storage
+          const encodedPath = encodeURIComponent(decodedPath);
+          
+          const firebaseUrl = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodedPath}?alt=media`;
+          console.log('Converted to Firebase Storage format:', { 
+            original: url, 
+            converted: firebaseUrl,
+            bucketName: bucketName,
+            originalPath: filePath,
+            decodedPath: decodedPath,
+            encodedPath: encodedPath
+          });
+          return firebaseUrl;
+        }
+      } catch (error) {
+        console.warn('Failed to convert storage URL:', error);
+      }
+    }
+    
+    return url;
   }
 
   applyFilter(event: Event) {
@@ -579,139 +792,178 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
       });
     });
   }
-  async sendFinalDocumentToServer(finalDocument) {
-    // Check token validity before proceeding
+// Complete sendFinalDocumentToServer method for dashboard-right.component.ts
 
-    try {
-      this.logAnalyticsEvent('pdf_generation_started', {
-        documentName: this.script,
-        hasCallsheet: !!this.callsheet,
-        sceneCount: this.selected.length,
-      });
+async sendFinalDocumentToServer(finalDocument) {
+  try {
+    this.logAnalyticsEvent('pdf_generation_started', {
+      documentName: this.script,
+      hasCallsheet: !!this.callSheetPath,
+      sceneCount: this.selected.length,
+    });
 
-      const user = await firstValueFrom(this.auth.user$);
-      if (!user) {
-        this.handleError(
-          'Authentication required',
-          'Please sign in to generate a PDF'
-        );
-        return;
+    const user = await firstValueFrom(this.auth.user$);
+    if (!user) {
+      this.handleError(
+        'Authentication required',
+        'Please sign in to generate a PDF'
+      );
+      return;
+    }
+
+    // Get callsheet data from localStorage
+    const callsheetData = localStorage.getItem('callsheetData');
+    let parsedCallsheetData = null;
+    
+    if (callsheetData) {
+      try {
+        parsedCallsheetData = JSON.parse(callsheetData);
+        console.log('Parsed callsheet data from localStorage:', parsedCallsheetData);
+      } catch (e) {
+        console.warn('Failed to parse callsheet data from localStorage:', e);
       }
+    }
 
-      // Check if we have a callsheet from localStorage
-      const callSheetPath = localStorage.getItem('callSheetPath');
-      const hasCallSheet = !!callSheetPath || !!this.callsheet;
+    // Determine callsheet path - prioritize parsed data, then fallback to legacy
+    let callSheetPathToSend = null;
+    let hasCallSheet = false;
 
-      // Prepare document with user data
-      const documentToSend = {
-        ...finalDocument,
-        name: this.script,
-        email: user.email,
-        userId: user.uid,
-        callSheetPath: this.callsheet || callSheetPath || null,
-        hasCallSheet: hasCallSheet
-      };
-      
-      console.log('Sending document to server:', {
-        ...documentToSend,
-        callSheet: documentToSend.callSheet ? 'Present' : 'Not present' // Log presence without exposing content
-      });
+    if (parsedCallsheetData?.filePath) {
+      // Use the Firebase Storage path for PDF processing
+      callSheetPathToSend = parsedCallsheetData.filePath;
+      hasCallSheet = true;
+      console.log('Using Firebase Storage callsheet path from parsed data:', callSheetPathToSend);
+    } else if (this.callSheetPath) {
+      // Fallback to legacy callsheet path
+      callSheetPathToSend = this.callSheetPath;
+      hasCallSheet = true;
+      console.log('Using legacy callsheet path:', callSheetPathToSend);
+    } else {
+      // Check legacy localStorage
+      const legacyCallSheetPath = localStorage.getItem('callSheetPath');
+      if (legacyCallSheetPath) {
+        callSheetPathToSend = legacyCallSheetPath;
+        hasCallSheet = true;
+        console.log('Using legacy callsheet path from localStorage:', callSheetPathToSend);
+      }
+    }
 
-      // Open loading dialog
-      const loadingDialog = this.dialog.open(TailwindDialogComponent, {
-        data: {
-          title: 'Generating Your PDF',
-          content: `
-            <div class="flex flex-col items-center justify-center py-4">
-              <img src="assets/animations/ScriptBot_Animation-BW.gif" alt="Processing..." class="w-64 h-64 mb-4">
-              <div class="text-center">
-                <h3 class="text-lg font-semibold text-indigo-700 mb-2">Please Wait</h3>
-                <p class="text-gray-600 mb-2">We're generating your PDF document.</p>
-                <div class="flex items-center justify-center space-x-2 text-sm text-gray-500">
-                  <span>Processing your scenes${hasCallSheet ? ' and callsheet' : ''}</span>
-                  <svg class="animate-spin h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </div>
+    // Prepare document with user data
+    const documentToSend = {
+      ...finalDocument,
+      name: this.script,
+      email: user.email,
+      userId: user.uid,
+      callSheetPath: callSheetPathToSend,  // IMPORTANT: Original path for PDF processing
+      hasCallSheet: hasCallSheet
+    };
+    
+    console.log('Sending document to server:', {
+      documentName: this.script,
+      userId: user.uid,
+      callSheetPath: callSheetPathToSend,
+      hasCallSheet: hasCallSheet,
+      sceneCount: this.selected.length,
+      // Don't log the actual document data as it's large
+      hasDocumentData: !!finalDocument?.data
+    });
+
+    // Open loading dialog
+    const loadingDialog = this.dialog.open(TailwindDialogComponent, {
+      data: {
+        title: 'Generating Your PDF',
+        content: `
+          <div class="flex flex-col items-center justify-center py-4">
+            <img src="assets/animations/ScriptBot_Animation-BW.gif" alt="Processing..." class="w-64 h-64 mb-4">
+            <div class="text-center">
+              <h3 class="text-lg font-semibold text-indigo-700 mb-2">Please Wait</h3>
+              <p class="text-gray-600 mb-2">We're generating your PDF document.</p>
+              <div class="flex items-center justify-center space-x-2 text-sm text-gray-500">
+                <span>Processing your scenes${hasCallSheet ? ' and callsheet' : ''}</span>
+                <svg class="animate-spin h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
               </div>
             </div>
-          `,
-          showCloseButton: false,
-          disableClose: true,
-          showSpinner: true
-        }
-      });
+          </div>
+        `,
+        showCloseButton: false,
+        disableClose: true,
+        showSpinner: true
+      }
+    });
 
-      // Generate PDF
-      this.upload.generatePdf(documentToSend).subscribe({
-        next: (response: any) => {
-          loadingDialog.close();
+    // Generate PDF
+    this.upload.generatePdf(documentToSend).subscribe({
+      next: (response: any) => {
+        loadingDialog.close();
 
-          console.log('PDF generation response:', response);
+        console.log('PDF generation response:', response);
 
-          if (response && response.status === 'complete') {
-            // Store the new token and expiration time
-            if (response.token && response.expirationTime) {
-              console.log(response.token, 'token');
-              ;
-              this.token.setToken(response.token, response.expirationTime);
-              console.log('Token stored:', {
-                token: response.token,
-                expires: new Date(response.expirationTime).toISOString(),
-              });
-            }
-
-            this.logAnalyticsEvent('pdf_generation_success', {
-              documentName: this.script,
-              includedCallSheet: hasCallSheet
+        if (response && response.status === 'complete') {
+          // Store the new token and expiration time
+          if (response.token && response.expirationTime) {
+            console.log('Storing PDF token:', response.token);
+            this.token.setToken(response.token, response.expirationTime);
+            console.log('Token stored:', {
+              token: response.token,
+              expires: new Date(response.expirationTime).toISOString(),
             });
-
-            // Store document name
-            localStorage.setItem('name', this.script);
-
-            // Navigate to complete page
-            this.router.navigate(['/complete']);
-          } else if (response && response.needsSubscription) {
-            this.handleSubscriptionRequired(documentToSend);
-          } else {
-            console.error('Unexpected response format:', response);
-            this.handleError(
-              'PDF Generation Failed',
-              'Received an invalid response from the server'
-            );
           }
-        },
-        error: (error) => {
-          loadingDialog.close();
 
-          console.error('PDF generation error:', error);
-          this.logAnalyticsEvent('pdf_generation_error', {
+          this.logAnalyticsEvent('pdf_generation_success', {
             documentName: this.script,
-            errorMessage: error.message || 'Unknown error',
-            includedCallSheet: hasCallSheet
+            includedCallSheet: hasCallSheet,
+            callsheetType: parsedCallsheetData?.fileType || 'unknown'
           });
 
-          if (error.status === 403 && error.error?.needsSubscription) {
-            this.handleSubscriptionRequired(documentToSend);
-          } else {
-            this.handleError(
-              'PDF Generation Failed',
-              error.message ||
-                'An error occurred while generating your PDF. Please try again.'
-            );
-          }
-        },
-      });
-    } catch (error) {
-      this.dialog.closeAll();
-      console.error('Error in sendFinalDocumentToServer:', error);
-      this.handleError(
-        'PDF Generation Failed',
-        error.message || 'An unexpected error occurred'
-      );
-    }
+          // Store document name
+          localStorage.setItem('name', this.script);
+
+          // Navigate to complete page
+          this.router.navigate(['/complete']);
+        } else if (response && response.needsSubscription) {
+          this.handleSubscriptionRequired(documentToSend);
+        } else {
+          console.error('Unexpected response format:', response);
+          this.handleError(
+            'PDF Generation Failed',
+            'Received an invalid response from the server'
+          );
+        }
+      },
+      error: (error) => {
+        loadingDialog.close();
+
+        console.error('PDF generation error:', error);
+        this.logAnalyticsEvent('pdf_generation_error', {
+          documentName: this.script,
+          errorMessage: error.message || 'Unknown error',
+          includedCallSheet: hasCallSheet,
+          callsheetType: parsedCallsheetData?.fileType || 'unknown'
+        });
+
+        if (error.status === 403 && error.error?.needsSubscription) {
+          this.handleSubscriptionRequired(documentToSend);
+        } else {
+          this.handleError(
+            'PDF Generation Failed',
+            error.message ||
+              'An error occurred while generating your PDF. Please try again.'
+          );
+        }
+      },
+    });
+  } catch (error) {
+    this.dialog.closeAll();
+    console.error('Error in sendFinalDocumentToServer:', error);
+    this.handleError(
+      'PDF Generation Failed',
+      error.message || 'An unexpected error occurred'
+    );
   }
+}
 
   private handleSubscriptionRequired(documentToSend) {
     console.log('handleSubscriptionRequired called');
@@ -871,6 +1123,9 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
       this.callsheet = localStorage.getItem('callSheetPath');
       this.waitingForScript = true;
 
+      // Store the initial scene order for reset functionality
+      this.initialSceneOrder = [...this.selected];
+
       // Ensure we're using the current order of selected scenes
       this.pdf.setSelectedScenes(this.selected);
 
@@ -988,6 +1243,7 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
       this.resetFinalDocState = !this.resetFinalDocState;
       // Trigger the undo service reset
       this.undoService.reset();
+      
       return;
     }
     if (str === 'undo') {
@@ -1047,10 +1303,10 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
 
   onRowClick(scene: any): void {
     // Toggle selection using the map
-    if (this.selectedScenesMap.has(scene.index)) {
-      this.selectedScenesMap.delete(scene.index);
+    if (this.selectedScenesMap.has(scene.docPageIndex)) {
+      this.selectedScenesMap.delete(scene.docPageIndex);
     } else {
-      this.selectedScenesMap.set(scene.index, scene);
+      this.selectedScenesMap.set(scene.docPageIndex, scene);
     }
 
     // Update the selected array from the map values
@@ -1113,7 +1369,7 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
 
   // Update this method to properly check if a scene is selected
   isSceneSelected(scene: any): boolean {
-    return this.selectedScenesMap.has(scene.index);
+    return this.selectedScenesMap.has(scene.docPageIndex);
   }
 
   // Helper method to generate a random ID
@@ -1128,6 +1384,14 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     if (event.previousContainer === event.container) {
       console.log('Before reorder:', this.selected.map(s => s.sceneNumberText));
       
+      // RECORD THE CURRENT STATE BEFORE CHANGING - COMBINED EVENT
+      const currentDocumentState = JSON.parse(JSON.stringify(this.pdf.finalDocument));
+      this.undoService.recordSceneReorderChange(
+        [...this.selected], // Current scene order before reordering
+        currentDocumentState, // Current document state before reordering
+        `Reorder scenes: ${this.selected[event.previousIndex].sceneNumberText} moved to position ${event.currentIndex + 1}`
+      );
+      
       moveItemInArray(this.selected, event.previousIndex, event.currentIndex);
       
       console.log('After reorder:', this.selected.map(s => s.sceneNumberText));
@@ -1135,10 +1399,8 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
       // Create a new array reference to trigger change detection
       this.selected = [...this.selected];
       
-      // FIXED: Call reorderScenes and let it handle the document update
+      // Call reorderScenes and let it handle the document update
       this.pdf.reorderScenes(this.selected);
-      
-      // FIXED: Don't manually call setSelectedScenes as reorderScenes handles it
       
       // Force change detection
       this.cdr.detectChanges();
@@ -1382,6 +1644,22 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     if (this.sceneHeaderTextUpdateSubscription) {
       this.sceneHeaderTextUpdateSubscription.unsubscribe();
     }
+
+    if (this.documentRegeneratedSubscription) {
+      this.documentRegeneratedSubscription.unsubscribe();
+    }
+
+    if (this.undoServiceSubscription) {
+      this.undoServiceSubscription.unsubscribe();
+    }
+
+    if (this.undoResetSubscription) {
+      this.undoResetSubscription.unsubscribe();
+    }
+
+    if (this.sceneOrderUpdatedSubscription) {
+      this.sceneOrderUpdatedSubscription.unsubscribe();
+    }
   }
 
   logAnalyticsEvent(eventName: string, params?: Record<string, any>) {
@@ -1404,5 +1682,141 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
         isError: true,
       },
     });
+  }
+
+  /**
+   * Sync scene data after undo/redo operations that affect the entire document
+   * This ensures the dashboard-right component stays in sync with the PDF service
+   */
+  private syncSceneDataAfterUndo(): void {
+    console.log('Dashboard-right: Syncing scene data after undo/redo');
+    
+    // Get the current scene order from the PDF service
+    const currentSceneOrder = this.pdf.getSelectedScenes();
+    
+    if (currentSceneOrder && currentSceneOrder.length > 0) {
+      console.log('Dashboard-right: Updating selected scenes from PDF service:', 
+        currentSceneOrder.map(s => s.sceneNumberText));
+      
+      // Update the selected array to match the PDF service
+      this.selected = currentSceneOrder.map(scene => {
+        // Find the corresponding scene in our scenes array to preserve any dashboard-specific properties
+        const existingScene = this.scenes.find(s => s.index === scene.index);
+        if (existingScene) {
+          return {
+            ...existingScene,
+            ...scene, // Override with updated data from PDF service
+            // Preserve dashboard-specific properties
+            preview: existingScene.preview,
+            lastPage: existingScene.lastPage
+          };
+        }
+        return scene;
+      });
+      
+      // Update the selectedScenesMap to match
+      this.selectedScenesMap.clear();
+      this.selected.forEach(scene => {
+        this.selectedScenesMap.set(scene.docPageIndex, scene);
+      });
+      
+      // Force change detection
+      this.cdr.detectChanges();
+      
+      console.log('Dashboard-right: Scene data synced successfully. New order:', 
+        this.selected.map(s => s.sceneNumberText));
+    } else {
+      console.warn('Dashboard-right: No scene order available from PDF service');
+    }
+  }
+
+  /**
+   * Reset the scene order to the initial order when reset document is triggered
+   */
+  private resetSceneOrderToInitial(): void {
+    console.log('Dashboard-right: Resetting scene order to initial state');
+    
+    if (this.initialSceneOrder && this.initialSceneOrder.length > 0) {
+      // Reset the selected array to the initial order
+      this.selected = this.initialSceneOrder.map(scene => {
+        const existingScene = this.scenes.find(s => s.index === scene.index);
+        if (existingScene) {
+          return {
+            ...existingScene,
+            ...scene,
+            preview: existingScene.preview,
+            lastPage: existingScene.lastPage
+          };
+        }
+        return scene;
+      });
+      
+      // Update the selectedScenesMap to match
+      this.selectedScenesMap.clear();
+      this.selected.forEach(scene => {
+        this.selectedScenesMap.set(scene.docPageIndex, scene);
+      });
+      
+      // Force change detection
+      this.cdr.detectChanges();
+      
+      console.log('Dashboard-right: Scene order reset to initial state successfully');
+    }
+  }
+
+  /**
+   * TrackBy function for CDK drag and drop to force re-render when scene order changes
+   */
+  trackBySceneIndex(index: number, scene: any): number {
+    return scene.docPageIndex;
+  }
+
+  /**
+   * Sync scene data with a specific scene order (for undo/redo operations)
+   * This ensures the dashboard-right component stays in sync with the provided scene order
+   */
+  private syncSceneDataWithOrder(sceneOrder: any[]): void {
+    console.log('🔄 Dashboard-right: Starting syncSceneDataWithOrder');
+    console.log('🔄 Provided scene order:', sceneOrder?.map(s => s.sceneNumberText));
+    console.log('🔄 Current selected array before sync:', this.selected?.map(s => s.sceneNumberText));
+    
+    if (sceneOrder && sceneOrder.length > 0) {
+      // Update the selected array to match the provided scene order
+      const newSelected = sceneOrder.map(scene => {
+        // Find the corresponding scene in our scenes array to preserve any dashboard-specific properties
+        const existingScene = this.scenes.find(s => s.index === scene.index);
+        if (existingScene) {
+          return {
+            ...existingScene,
+            ...scene, // Override with provided data
+            // Preserve dashboard-specific properties
+            preview: existingScene.preview,
+            lastPage: existingScene.lastPage
+          };
+        }
+        return scene;
+      });
+      
+      console.log('🔄 New selected array created:', newSelected.map(s => s.sceneNumberText));
+      
+      // Update the selected array with new reference
+      this.selected = newSelected;
+      
+      console.log('🔄 Selected array after assignment:', this.selected.map(s => s.sceneNumberText));
+      
+      // Update the selectedScenesMap to match
+      this.selectedScenesMap.clear();
+      this.selected.forEach(scene => {
+        this.selectedScenesMap.set(scene.docPageIndex, scene);
+      });
+      
+      // Force change detection
+      this.cdr.detectChanges();
+      
+      console.log('🔄 Dashboard-right: Scene data synced successfully with provided order:', 
+        this.selected.map(s => s.sceneNumberText));
+    } else {
+      console.warn('🔄 Dashboard-right: No scene order provided for sync');
+    }
   }
 }

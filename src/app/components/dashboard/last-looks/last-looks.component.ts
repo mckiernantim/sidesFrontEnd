@@ -132,10 +132,8 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   @Output() lineSelected = new EventEmitter<Line>();
 
   private finalDocumentDataSubscription: Subscription;
-
-  // Add showEditTooltip property
-  showEditTooltip: boolean = false;
   private documentReorderedSubscription: Subscription;
+
   ngOnInit(): void {
     // Initialize pages as an empty array by default
     this.pages = [];
@@ -185,13 +183,39 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       }
     );
     
+    // Subscribe to document regeneration for undo/redo operations
+    this.documentRegeneratedSubscription = this.pdf.documentRegenerated$.subscribe(
+      (regenerated) => {
+        if (regenerated) {
+          console.log('LastLooks: Document regenerated, updating display');
+          this.refreshDocument();
+        }
+      }
+    );
+    
     // Clear any selected lines on initialization
     this.selectedLine = null;
     this.selectedLines = [];
     this.isMultipleSelection = false;
   
     this.sceneBreaks = [];
-    if (this.callsheetPath) {
+    
+    // Check for existing callsheet data and insert it if available
+    const callsheetData = localStorage.getItem('callsheetData');
+    if (callsheetData) {
+      try {
+        const parsedData = JSON.parse(callsheetData);
+        const displayUrl = parsedData.imageUrl || parsedData.previewUrl;
+        
+        if (displayUrl && this.pdf.finalDocument?.data) {
+          console.log('Loading existing callsheet from localStorage:', displayUrl);
+          this.insertCallsheetPage(displayUrl);
+        }
+      } catch (error) {
+        console.error('Error loading callsheet data from localStorage:', error);
+      }
+    } else if (this.callsheetPath) {
+      // Fallback to callsheetPath input if no localStorage data
       this.insertCallsheetPage(this.callsheetPath);
     }
     
@@ -206,6 +230,8 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   }
   
   ngOnChanges(changes: SimpleChanges) {
+    console.log('LastLooks ngOnChanges called with changes:', Object.keys(changes));
+    
     if (changes['resetDocState'] && changes['resetDocState'].currentValue) {
       // Reset the document to initial state
       this.undoService.reset();
@@ -216,21 +242,69 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       this.selectedLine = null;
     }
 
-    if (changes['callsheetPath'] && changes['callsheetPath'].currentValue) {
-      console.log('Callsheet path changed:', changes['callsheetPath'].currentValue);
-      // Insert the callsheet at the start of the document
-      this.insertCallsheetPage(changes['callsheetPath'].currentValue);
+    if (changes['callsheetPath']) {
+      const newCallsheetPath = changes['callsheetPath'].currentValue;
+      const previousCallsheetPath = changes['callsheetPath'].previousValue;
       
-      // Update the document state
-      if (this.pdf.finalDocument?.data) {
-        this.pages = this.pdf.finalDocument.data;
-        this.currentPage = this.pages[this.currentPageIndex] || [];
-        
-        // Process lines for display
-        this.processLinesForLastLooks(this.pages);
-        
-        // Force change detection
-        this.cdRef.detectChanges();
+      console.log('Callsheet path changed:', {
+        new: newCallsheetPath,
+        previous: previousCallsheetPath,
+        isFirstChange: changes['callsheetPath'].firstChange
+      });
+      
+      if (newCallsheetPath) {
+        // Get the callsheet data from localStorage
+        const callsheetData = localStorage.getItem('callsheetData');
+        if (callsheetData) {
+          try {
+            const parsedData = JSON.parse(callsheetData);
+            const displayUrl = parsedData.imageUrl || parsedData.previewUrl;
+            
+            if (displayUrl) {
+              console.log('Using callsheet display URL from localStorage:', displayUrl);
+              // Insert the callsheet at the start of the document
+              this.insertCallsheetPage(displayUrl);
+              
+              // Update the document state
+              if (this.pdf.finalDocument?.data) {
+                this.pages = this.pdf.finalDocument.data;
+                this.currentPage = this.pages[this.currentPageIndex] || [];
+                
+                // Process lines for display
+                this.processLinesForLastLooks(this.pages);
+                
+                // Force change detection
+                this.cdRef.detectChanges();
+                
+                console.log('Callsheet successfully inserted and document updated');
+              }
+            } else {
+              console.error('No display URL found in callsheet data');
+            }
+          } catch (error) {
+            console.error('Error parsing callsheet data:', error);
+          }
+        } else {
+          console.log('No callsheet data found in localStorage, using path directly');
+          // Fallback to using the path directly
+          this.insertCallsheetPage(newCallsheetPath);
+          
+          // Update the document state
+          if (this.pdf.finalDocument?.data) {
+            this.pages = this.pdf.finalDocument.data;
+            this.currentPage = this.pages[this.currentPageIndex] || [];
+            
+            // Process lines for display
+            this.processLinesForLastLooks(this.pages);
+            
+            // Force change detection
+            this.cdRef.detectChanges();
+          }
+        }
+      } else if (newCallsheetPath === null && previousCallsheetPath) {
+        // Callsheet was removed
+        console.log('Callsheet removed, cleaning up document');
+        this.removeCallsheetFromDocument();
       }
     }
 
@@ -241,7 +315,20 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   }
 
   isCallsheetPage(page: any): boolean {
-    return page && page[0] && page[0].category === 'callsheet';
+    const isCallsheet = page && page[0] && (
+      page[0].type === 'callsheet' || 
+      page[0].category === 'callsheet'
+    );
+    
+    console.log('isCallsheetPage check:', {
+      page: page,
+      firstElement: page?.[0],
+      type: page?.[0]?.type,
+      category: page?.[0]?.category,
+      isCallsheet: isCallsheet
+    });
+    
+    return isCallsheet;
   }
 
   establishInitialLineState() {
@@ -262,30 +349,75 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   private insertCallsheetPage(imagePath: string) {
     console.log('Inserting callsheet page with path:', imagePath);
     
-    // Create a new callsheet page
+    // Create a new callsheet page with proper structure
     const callsheetPage = [{
       type: 'callsheet',
+      category: 'callsheet',
       imagePath: imagePath,
       visible: 'true',
       docPageIndex: 0,
-      docPageLineIndex: 0
+      docPageLineIndex: 0,
+      // Ensure consistent positioning
+      calculatedXpos: '0px',
+      calculatedYpos: '0px',
+      xPos: 0,
+      yPos: 0,
+      // Required properties for line consistency
+      text: 'CALLSHEET',
+      index: -1, // Special index for callsheet
+      page: 0,
+      // Error handling
+      loadError: null,
+      // Prevent any bars or markers
+      bar: 'hideBar',
+      cont: 'hideCont',
+      end: 'hideEnd',
+      hidden: '',
+      trueScene: ''
     }];
+    
+    console.log('Created callsheet page object:', callsheetPage);
     
     // Insert at the start of the document
     if (this.pdf.finalDocument?.data) {
+      console.log('Document data exists, inserting callsheet');
+      
+      // Remove any existing callsheet page first
+      this.pdf.finalDocument.data = this.pdf.finalDocument.data.filter(page => 
+        !(page[0] && (page[0].type === 'callsheet' || page[0].category === 'callsheet'))
+      );
+      
+      // Insert the new callsheet page at the beginning
       this.pdf.finalDocument.data = [callsheetPage, ...this.pdf.finalDocument.data];
       
       // Update local state
       this.pages = this.pdf.finalDocument.data;
       this.hasCallsheet = true;
       
+      // Reset to first page to show the callsheet
+      this.currentPageIndex = 0;
+      this.currentPage = this.pages[0] || [];
+      
+      console.log('Updated pages array:', this.pages);
+      console.log('Current page index:', this.currentPageIndex);
+      console.log('Current page:', this.currentPage);
+      console.log('Is current page a callsheet?', this.isCallsheetPage(this.currentPage));
+      
       // Save the document state
       this.pdf.saveDocumentState();
       
-      // Force change detection
+      // Force change detection on this component
       this.cdRef.detectChanges();
       
-      console.log('Callsheet page inserted successfully');
+      // Force change detection on child component if available
+      if (this.lastLooksPage) {
+        this.lastLooksPage.cdRef.detectChanges();
+      }
+      
+      // Emit page update to parent
+      this.pageUpdate.emit(this.currentPage);
+      
+      console.log('Callsheet page inserted successfully at index 0');
     } else {
       console.error('Cannot insert callsheet: finalDocument.data is undefined');
     }
@@ -1111,6 +1243,44 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Add this method to handle callsheet removal
+  private removeCallsheetFromDocument(): void {
+    console.log('Removing callsheet from document');
+    
+    if (this.pdf.finalDocument?.data) {
+      // Remove any callsheet pages
+      this.pdf.finalDocument.data = this.pdf.finalDocument.data.filter(page => 
+        !(page[0] && (page[0].type === 'callsheet' || page[0].category === 'callsheet'))
+      );
+      
+      // Update local state
+      this.pages = this.pdf.finalDocument.data;
+      this.hasCallsheet = false;
+      
+      // Reset to first page if we were on the callsheet page
+      if (this.currentPageIndex === 0 && this.isCallsheetPage(this.currentPage)) {
+        this.currentPageIndex = 0;
+        this.currentPage = this.pages[0] || [];
+      }
+      
+      // Save the document state
+      this.pdf.saveDocumentState();
+      
+      // Force change detection
+      this.cdRef.detectChanges();
+      
+      // Force change detection on child component if available
+      if (this.lastLooksPage) {
+        this.lastLooksPage.cdRef.detectChanges();
+      }
+      
+      // Emit page update to parent
+      this.pageUpdate.emit(this.currentPage);
+      
+      console.log('Callsheet removed from document successfully');
+    }
+  }
+
   // Ensure we're cleaning up subscriptions
   ngOnDestroy() {
     // Clean up subscriptions
@@ -1184,12 +1354,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Add toggleEditTooltip method
-  toggleEditTooltip(): void {
-    this.showEditTooltip = !this.showEditTooltip;
-    this.cdRef.detectChanges();
-  }
-
   // Add a method to handle scene order changes
   handleSceneOrderChange(newOrder: any[]): void {
     // Update the pages with the new scene order
@@ -1220,6 +1384,14 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       if (page[0]) {
         page[0].visible = 'true';
         this.hasCallsheet = true;
+        
+        // Ensure proper positioning
+        if (!page[0].calculatedXpos) {
+          page[0].calculatedXpos = '0px';
+        }
+        if (!page[0].calculatedYpos) {
+          page[0].calculatedYpos = '0px';
+        }
         
         // Force change detection
         this.cdRef.detectChanges();

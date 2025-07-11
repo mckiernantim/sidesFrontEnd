@@ -107,35 +107,6 @@
     margin: 0 2px;
 }
 
-.help-button {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #ef4444;
-    color: white;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
-}
-
-.help-button:hover {
-    background-color: #dc2626;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.help-button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
 .edit-controls-container {
     display: flex;
     flex-direction: column; /* Align buttons vertically */
@@ -708,71 +679,5 @@ app-last-looks-page {
   .controls-sidebar {
     width: 100%;
   }
-}
-
-/* Edit Tooltip Styles */
-.edit-tooltip {
-  position: fixed;
-  bottom: 80px;
-  right: 20px;
-  z-index: 1000;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
-  max-width: 400px;
-  width: 90%;
-}
-
-.tooltip-content {
-  padding: 1.5rem;
-  position: relative;
-}
-
-.tooltip-content h3 {
-  color: #1f2937;
-  margin-bottom: 1rem;
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.tooltip-content ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-}
-
-.tooltip-content li {
-  margin-bottom: 0.75rem;
-  color: #4b5563;
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
-
-.tooltip-content li:last-child {
-  margin-bottom: 0;
-}
-
-.tooltip-content strong {
-  color: #1f2937;
-  font-weight: 600;
-}
-
-.close-tooltip {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: none;
-  border: none;
-  color: #6b7280;
-  font-size: 1.25rem;
-  cursor: pointer;
-  padding: 0.25rem;
-  line-height: 1;
-  border-radius: 0.25rem;
-}
-
-.close-tooltip:hover {
-  background-color: #f3f4f6;
-  color: #1f2937;
 }
 

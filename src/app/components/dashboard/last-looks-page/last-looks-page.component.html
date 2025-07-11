@@ -3,17 +3,9 @@
     <div class="page shadow-lg border" (click)="showContextMenu && closeContextMenu(); !$event.target.closest('li') && clearSelection()">
         <!-- Callsheet display section -->
         <div *ngIf="currentPageIndex === 0 && isCallsheetPage(page)" class="callsheet-container">
-            <img *ngIf="!page[0].loadError" 
-                 [src]="page[0].imagePath" 
+            <img [src]="page[0].imagePath" 
                  class="callsheet-image"
-                 alt="Callsheet"
-                 (error)="handleCallsheetImageError($event)">
-            
-            <div *ngIf="page[0].loadError" class="callsheet-error">
-                <i class="fas fa-file-image"></i>
-                <p>Unable to display callsheet</p>
-                <p class="text-sm text-gray-500">{{ page[0].loadError }}</p>
-            </div>
+                 alt="Callsheet">
         </div>
 
         <!-- Regular page content -->

@@ -39,9 +39,10 @@
           <!-- Selected scenes list with delete option -->
           <div class="selected-scenes-list" 
           cdkDropList 
+          #dropList
           (cdkDropListDropped)="onSceneDrop($event)"
           [cdkDropListDisabled]="!editState">
-       <div *ngFor="let scene of getSortedSelectedScenes(); let i = index" 
+       <div *ngFor="let scene of getSortedSelectedScenes(); let i = index; trackBy: trackBySceneIndex" 
             cdkDrag
             [cdkDragDisabled]="!editState"
             class="flex justify-between items-center p-3 mb-2 bg-gray-50 rounded-md border border-gray-200"
@@ -141,12 +142,6 @@
                       Get My Sides
                     }
                   </button>
-                  <button 
-                    (click)="handleSignOut()"
-                    class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors"
-                  >
-                    Sign out
-                  </button>
                 }
 
                 <button 
@@ -185,31 +180,10 @@
             <ng-template #lastLooksControls>
               <div class="controls-section" [class.edit-state]="editState">
                 <div class="flex flex-wrap justify-center items-center space-y-4 lg:space-y-0 lg:space-x-4">
-                  <!-- Edit PDF button -->
-                  <div class="w-full lg:w-auto p-2">
-                    <button 
-                      class="w-full lg:w-auto bg-red-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-red-700 transition-colors"
-                      (click)="triggerEditMode()"
-                      [class.bg-green-600]="editState"
-                      [class.hover:bg-green-700]="editState">
-                      {{ editState ? 'Save Changes' : 'Edit PDF' }}
-                    </button>
-                    @if (editLastLooksState) {
-                      <ng-container>
-                        <div class="flex flex-row w-full mt-6">
-                          <app-tool-tip 
-                            class="w-full" 
-                            (buttonAction)="handleToolTipClicked($event)"
-                            [data]="toolTipContent"
-                          ></app-tool-tip>
-                        </div>
-                      </ng-container>
-                    }
-                  </div>
-
                   <!-- Callsheet and Watermark controls -->
                   <div class="flex flex-col md:flex-row md:space-x-4 w-full lg:w-auto">
                     <div class="p-2 w-full md:w-1/2 lg:w-auto">
+                      <!-- Updated callsheet component call -->
                       <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
                     </div>
                     <div class="p-2 w-full md:w-1/2 lg:w-auto">
@@ -217,10 +191,86 @@
                     </div>
                   </div>
                 </div>
+                
+                <!-- Callsheet Status Display (Optional) -->
+                <div *ngIf="callsheetReady && callSheetPath" class="mt-4 text-center">
+                  <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    Callsheet Ready
+                  </div>
+                </div>
+                
+                <!-- Watermark Status Display (Optional) -->
+                <div *ngIf="watermark" class="mt-2 text-center">
+                  <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+                    </svg>
+                    Watermark: {{ watermark }}
+                  </div>
+                </div>
               </div>
             </ng-template>
           </div>
 
+          <!-- Sticky Edit Button and Help Tooltip -->
+          @if (lastLooksReady) {
+            <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end space-y-4">
+              <!-- Edit Controls - Only visible in edit mode -->
+              @if (editState) {
+                <div class="flex flex-col space-y-2">
+                  <!-- Undo Button -->
+                  <button 
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 flex items-center space-x-2"
+                    (click)="handleToolTipClicked('undo')">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                    </svg>
+                    <span>Undo</span>
+                  </button>
+                  
+                  <!-- Reset Document Button -->
+                  <button 
+                    class="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 flex items-center space-x-2"
+                    (click)="handleToolTipClicked('resetDoc')">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Reset Document</span>
+                  </button>
+                </div>
+              }
+              
+              <!-- Edit Button -->
+              <button 
+                class="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
+                (click)="triggerEditMode()"
+                [class.bg-green-600]="editState"
+                [class.hover:bg-green-700]="editState">
+                {{ editState ? 'Save Changes' : 'Edit PDF' }}
+              </button>
+              
+              <!-- Help Tooltip - Always visible in edit mode -->
+              @if (editState) {
+                <div class="bg-white rounded-lg shadow-xl border border-gray-200 max-w-sm w-80">
+                  <div class="p-4">
+                    <h3 class="text-lg font-bold mb-3 text-gray-800">Edit Functionality</h3>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                      <li><strong>Selection:</strong> Click to select, Ctrl/Cmd+Click for multi-select, Shift+Click for range</li>
+                      <li><strong>Edit Text:</strong> Double-click any line to edit</li>
+                      <li><strong>Move Lines:</strong> Click and drag selected lines</li>
+                      <li><strong>Change Category:</strong> Right-click for context menu</li>
+                      <li><strong>Edit Scene Numbers:</strong> Double-click scene numbers</li>
+                      <li><strong>Edit Bar Text:</strong> Double-click START/END/CONTINUE text</li>
+                      <li><strong>Toggle Visibility:</strong> Press 'X' key on selected lines</li>
+                    </ul>
+                  </div>
+                </div>
+              }
+            </div>
+          }
 
           <app-scene-selection 
             [scenes]="scenes" 
