@@ -32,7 +32,6 @@ export class TailwindDialogService {
   open(componentOrConfig: Type<any> | DialogConfig, config?: DialogConfig): DialogRef {
     let component: Type<any>;
     let finalConfig: DialogConfig = {};
-    debugger;
     if (typeof componentOrConfig === 'function') {
       component = componentOrConfig;
       finalConfig = config || {};

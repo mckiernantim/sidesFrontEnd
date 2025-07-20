@@ -207,14 +207,14 @@ export class LastLooksComponent implements OnInit, OnDestroy {
         const parsedData = JSON.parse(callsheetData);
         const displayUrl = parsedData.imageUrl || parsedData.previewUrl;
         
-        if (displayUrl && this.pdf.finalDocument?.data) {
+        if (displayUrl && this.pdf.finalDocument?.data && !this.pdf.isProcessingForServer()) {
           console.log('Loading existing callsheet from localStorage:', displayUrl);
           this.insertCallsheetPage(displayUrl);
         }
       } catch (error) {
         console.error('Error loading callsheet data from localStorage:', error);
       }
-    } else if (this.callsheetPath) {
+    } else if (this.callsheetPath && !this.pdf.isProcessingForServer()) {
       // Fallback to callsheetPath input if no localStorage data
       this.insertCallsheetPage(this.callsheetPath);
     }
@@ -249,8 +249,15 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       console.log('Callsheet path changed:', {
         new: newCallsheetPath,
         previous: previousCallsheetPath,
-        isFirstChange: changes['callsheetPath'].firstChange
+        isFirstChange: changes['callsheetPath'].firstChange,
+        isProcessingForServer: this.pdf.isProcessingForServer()
       });
+      
+      // Skip callsheet insertion if processing for server
+      if (this.pdf.isProcessingForServer()) {
+        console.log('Skipping callsheet path change handling - processing for server');
+        return;
+      }
       
       if (newCallsheetPath) {
         // Get the callsheet data from localStorage
@@ -348,6 +355,12 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   }
   private insertCallsheetPage(imagePath: string) {
     console.log('Inserting callsheet page with path:', imagePath);
+    
+    // Check if we're processing for server - if so, don't insert callsheet
+    if (this.pdf.isProcessingForServer()) {
+      console.log('Skipping callsheet insertion - processing for server');
+      return;
+    }
     
     // Create a new callsheet page with proper structure
     const callsheetPage = [{

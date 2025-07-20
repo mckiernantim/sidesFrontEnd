@@ -86,6 +86,9 @@ export class PdfService {
   
   private _documentRegenerated$ = new BehaviorSubject<boolean>(false);
   public documentRegenerated$ = this._documentRegenerated$.asObservable();
+  
+  // Flag to prevent callsheet re-insertion during server processing
+  private _isProcessingForServer = false;
 public finalDocumentData$ = this._finalDocumentData$.asObservable();
 
 updateLine(pageIndex: number, lineIndex: number, updates: Partial<Line>): void {
@@ -1390,10 +1393,7 @@ resetToInitialState(): void {
     return finalDocument;
   }
 
-  sendFinalDocumentToServer(finalDocument) {
-    // Implementation of sendFinalDocumentToServer
-    // Adjust the implementation to fit the service context
-  }
+ 
   processSceneHeader(lineInDataTable, lineInScript) {
     // 86B-86COMITTED86B-86C  < --- strangest example we have founnd
     // reged for any numbers followed by any ammount of letters and a possible . and then the same thing
@@ -2086,6 +2086,155 @@ resetToInitialState(): void {
   // Helper method to get callsheet metadata
   getCallsheetMetadata(): any {
     return this.finalDocument?.callsheetMetadata || null;
+  }
+
+  /**
+   * Creates a copy of the document data without the callsheet for server processing.
+   * This ensures that the callsheet appears in the UI preview but is not included
+   * in the document data sent to the server, preventing it from appearing as the
+   * first page in the generated PDF.
+   * 
+   * @param document - The original document with callsheet included
+   * @returns A new document object with callsheet removed from data array
+   */
+  createDocumentCopyWithoutCallsheet(document: any): any {
+    if (!document || !document.data) {
+      console.log('No document or document data available for callsheet removal');
+      return document;
+    }
+
+    console.log('=== CREATING DOCUMENT COPY WITHOUT CALLSHEET ===');
+    this.debugDocumentStructure(document, 'Original document');
+    console.log('Instance hasCallsheet:', this.hasCallsheet());
+
+    // Check if the passed document has a callsheet (not the instance variable)
+    const hasCallsheetInDocument = this.documentHasCallsheet(document);
+    console.log('Has callsheet in passed document:', hasCallsheetInDocument);
+    
+    if (!hasCallsheetInDocument) {
+      console.log('No callsheet found in document, returning as-is');
+      return document;
+    }
+
+    console.log('Creating document copy without callsheet for server processing');
+    console.log('Original document pages:', document.data.length);
+    
+    // Create a deep copy of the document data without the callsheet
+    const documentDataWithoutCallsheet = JSON.parse(JSON.stringify(document.data)).slice(1);
+    
+    console.log('Document pages after callsheet removal:', documentDataWithoutCallsheet.length);
+    console.log('First page after removal:', {
+      type: documentDataWithoutCallsheet[0]?.[0]?.type,
+      category: documentDataWithoutCallsheet[0]?.[0]?.category,
+      text: documentDataWithoutCallsheet[0]?.[0]?.text?.substring(0, 50)
+    });
+    
+    // Reindex the remaining pages
+    for (let i = 0; i < documentDataWithoutCallsheet.length; i++) {
+      const page = documentDataWithoutCallsheet[i];
+      if (Array.isArray(page)) {
+        page.forEach((line, lineIndex) => {
+          if (line) {
+            // Update document-wide indexes
+            line.docPageIndex = i;
+            line.docPageLineIndex = lineIndex;
+            
+            // Update page numbers
+            if (line.category === 'page-number') {
+              line.text = (i + 1).toString();
+            }
+          }
+        });
+      }
+    }
+
+    // Return a new document object with the callsheet removed
+    const result = {
+      ...document,
+      data: documentDataWithoutCallsheet,
+      numPages: documentDataWithoutCallsheet.length
+    };
+    
+    console.log('=== DOCUMENT COPY CREATED SUCCESSFULLY ===');
+    this.debugDocumentStructure(result, 'Final document copy');
+    console.log('Document metadata:', {
+      callSheetPath: result.callSheetPath,
+      hasCallSheet: result.hasCallSheet
+    });
+    
+    return result;
+  }
+
+  /**
+   * Helper method to check if a specific document has a callsheet
+   * @param document - The document to check
+   * @returns boolean - True if the document has a callsheet as the first page
+   */
+  private documentHasCallsheet(document: any): boolean {
+    if (!document?.data || document.data.length === 0) {
+      return false;
+    }
+    
+    const firstPage = document.data[0];
+    return Array.isArray(firstPage) && 
+           firstPage.length > 0 && 
+           firstPage[0] && 
+           firstPage[0].type === 'callsheet';
+  }
+
+  /**
+   * Set the server processing flag to prevent callsheet re-insertion
+   * @param isProcessing - Whether we're currently processing for server
+   */
+  setServerProcessingFlag(isProcessing: boolean): void {
+    this._isProcessingForServer = isProcessing;
+    console.log('Server processing flag set to:', isProcessing);
+  }
+
+  /**
+   * Check if we're currently processing for server
+   * @returns boolean - True if processing for server
+   */
+  isProcessingForServer(): boolean {
+    return this._isProcessingForServer;
+  }
+
+  /**
+   * Debug method to log document structure
+   * @param document - The document to log
+   * @param label - Label for the log
+   */
+  debugDocumentStructure(document: any, label: string = 'Document'): void {
+    if (!document?.data) {
+      console.log(`${label}: No document data`);
+      return;
+    }
+    
+    console.log(`${label} structure:`, {
+      totalPages: document.data.length,
+      firstPageType: document.data[0]?.[0]?.type,
+      firstPageCategory: document.data[0]?.[0]?.category,
+      firstPageText: document.data[0]?.[0]?.text?.substring(0, 50),
+      hasCallsheet: this.documentHasCallsheet(document),
+      callSheetPath: document.callSheetPath,
+      callSheet: document.callSheet,
+      hasCallSheet: document.hasCallSheet
+    });
+  }
+
+  /**
+   * Debug method to log callsheet path information
+   * @param document - The document to check
+   * @param label - Label for the log
+   */
+  debugCallsheetPath(document: any, label: string = 'Document'): void {
+    console.log(`${label} callsheet path debug:`, {
+      callSheetPath: document?.callSheetPath,
+      callSheet: document?.callSheet,
+      hasCallSheet: document?.hasCallSheet,
+      localStorageCallSheetPath: localStorage.getItem('callSheetPath'),
+      localStorageCallsheetData: localStorage.getItem('callsheetData')
+    });
   }
 
 }

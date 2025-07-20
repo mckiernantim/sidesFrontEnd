@@ -1098,7 +1098,6 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       this.handleEditKeyDown(event);
       return;
     }
-    debugger
     if (event.key === 'x' || event.key === 'X') {
       event.preventDefault();
       event.stopPropagation();

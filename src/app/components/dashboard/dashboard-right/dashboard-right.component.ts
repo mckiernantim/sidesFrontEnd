@@ -396,7 +396,6 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
 
     // Subscribe to scene order updated
     this.sceneOrderUpdatedSubscription = this.pdf.sceneOrderUpdated$.subscribe((sceneOrder) => {
-      debugger
       console.log('Dashboard-right: Scene order updated:', sceneOrder.map(s => s.sceneNumberText));
       this.syncSceneDataWithOrder(sceneOrder);
     });
@@ -823,14 +822,13 @@ async sendFinalDocumentToServer(finalDocument) {
         console.warn('Failed to parse callsheet data from localStorage:', e);
       }
     }
-
     // Determine callsheet path - prioritize parsed data, then fallback to legacy
     let callSheetPathToSend = null;
     let hasCallSheet = false;
 
-    if (parsedCallsheetData?.filePath) {
+    if (parsedCallsheetData?.imageUrl) {
       // Use the Firebase Storage path for PDF processing
-      callSheetPathToSend = parsedCallsheetData.filePath;
+      callSheetPathToSend = parsedCallsheetData.imageUrl;
       hasCallSheet = true;
       console.log('Using Firebase Storage callsheet path from parsed data:', callSheetPathToSend);
     } else if (this.callSheetPath) {
@@ -848,15 +846,31 @@ async sendFinalDocumentToServer(finalDocument) {
       }
     }
 
-    // Prepare document with user data
-    const documentToSend = {
-      ...finalDocument,
-      name: this.script,
-      email: user.email,
-      userId: user.uid,
-      callSheetPath: callSheetPathToSend,  // IMPORTANT: Original path for PDF processing
-      hasCallSheet: hasCallSheet
-    };
+    // Set flag to prevent callsheet re-insertion during server processing
+    this.pdf.setServerProcessingFlag(true);
+    
+    // Create a copy of the document without the callsheet for server processing
+    // This ensures the callsheet appears in UI preview but not in the generated PDF
+    console.log('=== PREPARING DOCUMENT FOR SERVER ===');
+    this.pdf.debugDocumentStructure(finalDocument, 'Original finalDocument');
+    
+    const documentToSend = this.pdf.createDocumentCopyWithoutCallsheet(finalDocument);
+    
+    // Add user data to the document
+    documentToSend.name = this.script;
+    documentToSend.email = user.email;
+    documentToSend.userId = user.uid;
+    debugger
+    documentToSend.callSheetPath = callSheetPathToSend;  // IMPORTANT: Original path for PDF processing
+    documentToSend.hasCallSheet = hasCallSheet;
+    
+    console.log('=== FINAL DOCUMENT READY FOR SERVER ===');
+    this.pdf.debugDocumentStructure(documentToSend, 'Document to send');
+    this.pdf.debugCallsheetPath(documentToSend, 'Document to send');
+    console.log('Document metadata:', {
+      callSheetPath: documentToSend.callSheetPath,
+      hasCallSheet: documentToSend.hasCallSheet
+    });
     
     console.log('Sending document to server:', {
       documentName: this.script,
@@ -864,6 +878,8 @@ async sendFinalDocumentToServer(finalDocument) {
       callSheetPath: callSheetPathToSend,
       hasCallSheet: hasCallSheet,
       sceneCount: this.selected.length,
+      originalDocumentPages: finalDocument?.data?.length || 0,
+      documentPagesWithoutCallsheet: documentToSend?.data?.length || 0,
       // Don't log the actual document data as it's large
       hasDocumentData: !!finalDocument?.data
     });
@@ -898,6 +914,9 @@ async sendFinalDocumentToServer(finalDocument) {
     this.upload.generatePdf(documentToSend).subscribe({
       next: (response: any) => {
         loadingDialog.close();
+        
+        // Reset server processing flag
+        this.pdf.setServerProcessingFlag(false);
 
         console.log('PDF generation response:', response);
 
@@ -935,6 +954,9 @@ async sendFinalDocumentToServer(finalDocument) {
       },
       error: (error) => {
         loadingDialog.close();
+        
+        // Reset server processing flag
+        this.pdf.setServerProcessingFlag(false);
 
         console.error('PDF generation error:', error);
         this.logAnalyticsEvent('pdf_generation_error', {
@@ -957,6 +979,10 @@ async sendFinalDocumentToServer(finalDocument) {
     });
   } catch (error) {
     this.dialog.closeAll();
+    
+    // Reset server processing flag
+    this.pdf.setServerProcessingFlag(false);
+    
     console.error('Error in sendFinalDocumentToServer:', error);
     this.handleError(
       'PDF Generation Failed',
@@ -1147,12 +1173,53 @@ async sendFinalDocumentToServer(finalDocument) {
   }
 
   prepFinalDocument(addCallSheet: boolean) {
-    this.pdf.finalDocument.callSheet = addCallSheet
-      ? localStorage.getItem('callSheetPath')
-      : '';
-    this.pdf.finalDocument.callSheetPath = addCallSheet
-      ? localStorage.getItem('callSheetPath')
-      : '';
+    // Use the same logic as sendFinalDocumentToServer to ensure consistency
+    let callSheetPathToSet = null;
+    
+    if (addCallSheet) {
+      // Get callsheet data from localStorage
+      const callsheetData = localStorage.getItem('callsheetData');
+      let parsedCallsheetData = null;
+      
+      if (callsheetData) {
+        try {
+          parsedCallsheetData = JSON.parse(callsheetData);
+          console.log('Parsed callsheet data for prepFinalDocument:', parsedCallsheetData);
+        } catch (e) {
+          console.warn('Failed to parse callsheet data from localStorage:', e);
+        }
+      }
+
+      // Determine callsheet path - prioritize parsed data, then fallback to legacy
+      if (parsedCallsheetData?.filePath) {
+        // Use the Firebase Storage path for PDF processing
+        callSheetPathToSet = parsedCallsheetData.filePath;
+        console.log('Using Firebase Storage callsheet path from parsed data:', callSheetPathToSet);
+      } else if (this.callSheetPath) {
+        // Fallback to legacy callsheet path
+        callSheetPathToSet = this.callSheetPath;
+        console.log('Using legacy callsheet path:', callSheetPathToSet);
+      } else {
+        // Check legacy localStorage
+        const legacyCallSheetPath = localStorage.getItem('callSheetPath');
+        if (legacyCallSheetPath) {
+          callSheetPathToSet = legacyCallSheetPath;
+          console.log('Using legacy callsheet path from localStorage:', callSheetPathToSet);
+        }
+      }
+    }
+    
+    // Set both legacy and new properties for compatibility
+    this.pdf.finalDocument.callSheet = callSheetPathToSet || '';
+    this.pdf.finalDocument.callSheetPath = callSheetPathToSet || '';
+    
+    console.log('prepFinalDocument completed:', {
+      addCallSheet,
+      callSheetPathToSet,
+      callSheet: this.pdf.finalDocument.callSheet,
+      callSheetPath: this.pdf.finalDocument.callSheetPath
+    });
+    
     this.finalDocReady = true;
     this.waitingForScript = true;
   }

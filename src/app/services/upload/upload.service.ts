@@ -149,21 +149,34 @@ export class UploadService {
   }
 
   generatePdf(finalDocument: any): Observable<PdfGenerationResponse> {
-    console.log('Generating PDF with document:', finalDocument);
+    console.log('=== UPLOAD SERVICE: GENERATING PDF ===');
+    console.log('Document structure:', {
+      name: finalDocument.name,
+      email: finalDocument.email,
+      userId: finalDocument.userId,
+      callSheetPath: finalDocument.callSheetPath,
+      callSheet: finalDocument.callSheet, // Legacy property
+      hasCallSheet: finalDocument.hasCallSheet,
+      dataLength: finalDocument.data?.length || 0
+    });
     
     return from(getAuth().currentUser?.getIdToken() || Promise.reject('No user')).pipe(
       switchMap((token) => {
         console.log('Got auth token, sending request to server');
         
+        const requestBody = {
+          data: finalDocument.data,
+          name: finalDocument.name,
+          email: finalDocument.email,
+          callSheetPath: finalDocument.callSheetPath, // Fixed: use callSheetPath instead of callSheet
+          userId: finalDocument.userId
+        };
+        
+        console.log('Request body being sent to server:', requestBody);
+        
         return this.httpClient.post<PdfResponse>(
           this.url + '/pdf', 
-          {
-            data: finalDocument.data,
-            name: finalDocument.name,
-            email: finalDocument.email,
-            callSheetPath: finalDocument.callSheet,
-            userId: finalDocument.userId
-          }, 
+          requestBody,
           {
             headers: {
               Authorization: `Bearer ${token}`,
