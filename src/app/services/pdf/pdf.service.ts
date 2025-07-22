@@ -2237,4 +2237,72 @@ resetToInitialState(): void {
     });
   }
 
+  /**
+   * Comprehensive reset method for when users navigate back to upload flow
+   * This resets all document state, scene selections, and related data
+   */
+  resetDocumentState(): void {
+    console.log('PdfService: Resetting all document state');
+    
+    // Reset all document data
+    this.finalPdfData = null;
+    this.callsheet = null;
+    this.selected = [];
+    this.watermark = null;
+    this.script = null;
+    this.finalDocument = null;
+    this.initialFinalDocState = null;
+    this.allLines = [];
+    this.firstAndLastLinesOfScene = [];
+    this.individualPages = [];
+    this.finalDocReady = false;
+    this.scenes = [];
+    this.initialSelection = [];
+    this.pages = [];
+    this.characters = null;
+    this.charactersCount = 0;
+    this.scenesCount = 0;
+    this.textToTest = [];
+    this.modalData = [];
+    this.selectedOB = null;
+    this.pageLengths = [];
+    this.length = 0;
+    this.callSheetPath = null;
+    this.scriptLength = 0;
+    this.date = 0;
+    this.totalLines = null;
+    
+    // Reset document state observables
+    this._documentReordered$.next(false);
+    this._documentRegenerated$.next(false);
+    this._finalDocumentData$.next(null);
+    
+    // Reset scene-related state
+    this._selectedScenes = [];
+    this._sceneNumberUpdated$.next({ scene: null, newSceneNumber: '' });
+    this._sceneHeaderTextUpdated$.next({ scene: null, newText: '' });
+    this._sceneOrderUpdated$.next([]);
+    
+    // Reset processing flags
+    this._isProcessingForServer = false;
+    
+    // Reset initial states
+    this.initialDocumentState = null;
+    
+    // Clear localStorage items related to document state
+    localStorage.removeItem('name');
+    localStorage.removeItem('callSheetPath');
+    localStorage.removeItem('callsheetData');
+    localStorage.removeItem('pdfBackupToken');
+    localStorage.removeItem('pdfTokenExpires');
+    localStorage.removeItem('sessionExpires');
+    
+    // Reset undo service state
+    if (this.undoService) {
+      this.undoService.reset();
+    }
+    
+    console.log('PdfService: Document state reset complete');
+  }
+
 }

@@ -1886,4 +1886,91 @@ async sendFinalDocumentToServer(finalDocument) {
       console.warn('🔄 Dashboard-right: No scene order provided for sync');
     }
   }
+
+  /**
+   * Reset all document state when navigating back to upload flow
+   */
+  resetDocumentState(): void {
+    console.log('DashboardRightComponent: Resetting document state');
+    
+    // Reset component state
+    this.dataReady = false;
+    this.waitingForScript = true;
+    this.finalDocReady = false;
+    this.lastLooksReady = false;
+    this.callsheetReady = false;
+    this.finalPdfData = {};
+    this.linesReady = false;
+    this.waterMarkState = false;
+    this.callsheetState = false;
+    this.selectedLineState = '';
+    this.editLastLooksState = false;
+    this.editState = false;
+    
+    // Reset document data
+    this.allLines = null;
+    this.scenes = [];
+    this.initialSelection = [];
+    this.selected = [];
+    this.pages = [];
+    this.characters = null;
+    this.charactersCount = 0;
+    this.scenesCount = 0;
+    this.textToTest = [];
+    this.modalData = [];
+    this.selectedOB = null;
+    this.pageLengths = [];
+    this.length = 0;
+    this.individualPages = null;
+    this.callSheetPath = null;
+    this.scriptLength = 0;
+    this.date = 0;
+    this.totalLines = null;
+    this.finalDocument = null;
+    this.resetFinalDocState = false;
+    this.fireUndo = false;
+    this.initialFinalDocState = [];
+    this.callsheet = null;
+    this.watermark = null;
+    this.currentPage = 0;
+    this.script = null;
+    
+    // Reset scene selection state
+    this.selectedScenesMap.clear();
+    this.showCheckoutModal = false;
+    this.isCheckingSubscription = false;
+    this.editingSceneNumber = null;
+    this.editingSceneText = null;
+    this.originalSceneNumber = null;
+    this.originalSceneText = null;
+    this.currentPageIndex = 0;
+    
+    // Reset initial states
+    this.initialPageState = [];
+    this.page = [];
+    this.initialSceneOrder = [];
+    
+    // Clear localStorage items
+    localStorage.removeItem('name');
+    localStorage.removeItem('callSheetPath');
+    localStorage.removeItem('callsheetData');
+    localStorage.removeItem('pdfBackupToken');
+    localStorage.removeItem('pdfTokenExpires');
+    localStorage.removeItem('sessionExpires');
+    
+    console.log('DashboardRightComponent: Document state reset complete');
+  }
+
+  /**
+   * Navigate back to upload page with proper state reset
+   */
+  navigateBackToUpload(): void {
+    console.log('DashboardRightComponent: Navigating back to upload');
+    
+    // Reset component state before navigation
+    this.resetDocumentState();
+    
+    // Navigate to upload page
+    this.router.navigate(['/']);
+  }
 }

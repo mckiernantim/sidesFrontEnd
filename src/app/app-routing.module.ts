@@ -8,6 +8,7 @@ import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { UploadComponent } from './components/landing-page/upload/upload.component'
 import { TokenGuard } from './guards/token/token.guard';
+import { DocumentResetGuard } from './guards/document-reset.guard';
 import { PaymentSuccessComponent } from './components/payment-success/payment-success.component';
 import { ProfileComponent } from './components/profile/profile.component';
 
@@ -31,8 +32,8 @@ const routes: Routes = [
   },
   { path: 'About', component: AboutComponent },
   { path: 'Donate', component: DonateComponent },
-  { path: '', component: UploadComponent },
-  { path: 'Home', component: UploadComponent },
+  { path: '', component: UploadComponent, canActivate: [DocumentResetGuard] },
+  { path: 'Home', component: UploadComponent, canActivate: [DocumentResetGuard] },
   { path: 'payment-success', component: PaymentSuccessComponent },
   { path: 'Checkout', component: CheckoutComponent },
   { path: 'profile-loader', component: ProfileLoaderComponent },

@@ -2,6 +2,8 @@ import { Component, Output, EventEmitter, OnInit } from '@angular/core';
 import { UploadService } from 'src/app/services/upload/upload.service';
 import { catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
+import * as pdfjsLib from 'pdfjs-dist';
+
 
 // Interface for the backend response
 interface CallsheetUploadResponse {
@@ -47,45 +49,86 @@ export class AddCallsheetComponent implements OnInit {
 
 
 
-    ngOnInit(): void {
-        // Check if we have saved callsheet data from previous session
-        this.loadSavedCallsheet();
+// Alternative approach - set worker in ngOnInit and add error handling:
+
+ngOnInit(): void {
+    // Set up PDF.js worker with fallback options
+    this.setupPdfWorker();
+    
+    // Check if we have saved callsheet data from previous session
+    this.testPdfSetup();
+    this.loadSavedCallsheet();
+}
+
+private setupPdfWorker(): void {
+    try {
+        // Copy the worker file to your assets
+        // Run this command first: cp node_modules/pdfjs-dist/build/pdf.worker.min.js src/assets/
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/pdf.worker.min.js';
+        console.log('PDF.js worker set to local file:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+    } catch (error) {
+        console.error('Error setting up PDF worker:', error);
     }
-
-    handleFileInput(files: any): void {
+}
+// Add this method to test if PDF.js is working:
+private async testPdfSetup(): Promise<boolean> {
+    try {
+        // Create a minimal test PDF
+        const testArrayBuffer = new ArrayBuffer(8);
+        await pdfjsLib.getDocument(testArrayBuffer).promise;
+        return true;
+    } catch (error) {
+        console.error('PDF.js setup test failed:', error);
+        return false;
+    }
+}
+    async handleFileInput(files: any): Promise<void> {
         const file: File = files.item(0);
-
+    
         if (!file) {
             return;
         }
-
+    
         console.log('Callsheet file selected:', {
             name: file.name,
             type: file.type,
             size: file.size
         });
-
+    
         // Handle special case
         if (file.name === 'no callsheet') {
             this.resetCallsheet();
             return;
         }
-
-        // Validate file type - accept both PDFs and images since backend handles conversion
+    
+        // Validate file type
         const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
         if (!validTypes.includes(file.type)) {
             this.uploadError = 'Invalid file type. Please upload a PDF or image file (JPEG, PNG).';
             return;
         }
-
+    
         // Validate file size (max 10MB)
         const maxSize = 10 * 1024 * 1024;
         if (file.size > maxSize) {
             this.uploadError = 'File too large. Please upload a file smaller than 10MB.';
             return;
         }
-
-        this.startUpload(file);
+    
+        // If PDF, convert to PNG first, otherwise upload as-is
+        let fileToUpload = file;
+        if (file.type === 'application/pdf') {
+            try {
+                const pngBlob = await this.convertPdfToPng(file);
+                fileToUpload = new File([pngBlob], file.name.replace('.pdf', '.png'), { type: 'image/png' });
+            } catch (error) {
+                console.error('PDF conversion failed:', error);
+                this.uploadError = 'Failed to convert PDF. Please try again.';
+                return;
+            }
+        }
+    
+        this.startUpload(fileToUpload);
     }
 
     private startUpload(file: File): void {
@@ -135,7 +178,7 @@ export class AddCallsheetComponent implements OnInit {
             imageUrl: response.imageUrl,
             fileType: response.fileType
         });
-
+debugger
         if (response && response.success) {
             // Convert URLs to Firebase Storage format if needed
             const imageUrl = this.convertToFirebaseUrl(response.imageUrl);
@@ -230,6 +273,33 @@ export class AddCallsheetComponent implements OnInit {
         }
     }
 
+    /**
+     * Reset all callsheet state when navigating back to upload flow
+     */
+    resetDocumentState(): void {
+        console.log('AddCallsheetComponent: Resetting callsheet state');
+        
+        // Reset component state
+        this.callsheetReady = false;
+        this.callsheet = null;
+        this.callsheetPreview = null;
+        this.isUploading = false;
+        this.uploadError = null;
+        this.imageLoadError = false;
+        
+        // Clear localStorage items
+        localStorage.removeItem('callSheetPath');
+        localStorage.removeItem('callsheetData');
+        
+        // Reset file input if it exists
+        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+        if (fileInput) {
+          fileInput.value = '';
+        }
+        
+        console.log('AddCallsheetComponent: Callsheet state reset complete');
+    }
+
     // Helper methods for template
     getCallsheetDisplayName(): string {
         return this.callsheet?.fileName || 'Callsheet';
@@ -271,4 +341,41 @@ export class AddCallsheetComponent implements OnInit {
         this.callsheet = newCallsheet;
         this.imageLoadError = false;
     }
+    // Add this new method to your component:
+private async convertPdfToPng(pdfFile: File): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+        const fileReader = new FileReader();
+        
+        fileReader.onload = async () => {
+            try {
+                const typedArray = new Uint8Array(fileReader.result as ArrayBuffer);
+                const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                const page = await pdf.getPage(1);
+                
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d')!;
+                const viewport = page.getViewport({ scale: 1.5 });
+                
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+                
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        resolve(blob);
+                    } else {
+                        reject(new Error('Failed to create blob'));
+                    }
+                }, 'image/png');
+                
+            } catch (error) {
+                reject(error);
+            }
+        };
+        
+        fileReader.onerror = () => reject(new Error('Failed to read file'));
+        fileReader.readAsArrayBuffer(pdfFile);
+    });
+}
 }
