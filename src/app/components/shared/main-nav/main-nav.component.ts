@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Observable } from 'rxjs';
 import { AuthService } from '../../../services/auth/auth.service';
 import { Router } from '@angular/router';
@@ -9,10 +9,9 @@ import { Router } from '@angular/router';
   styleUrls: ['./main-nav.component.css'],
   standalone: false
 })
-export class MainNavComponent implements OnInit {
+export class MainNavComponent implements OnInit, OnDestroy {
   user$: Observable<any>;
   displayClock = false;
-  countdownClock = '';
   isLoggedIn = false;
   username = '';
   userAvatar = '';
@@ -34,6 +33,10 @@ export class MainNavComponent implements OnInit {
         this.userAvatar = user.photoURL || '';
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    // No documentDeleteInterval to clear
   }
 
   signIn() {

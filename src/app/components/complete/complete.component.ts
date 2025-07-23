@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { UploadService } from '../../services/upload/upload.service';
 import { AuthService } from 'src/app/services/auth/auth.service';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -11,7 +11,7 @@ import { throwError } from 'rxjs';
   styleUrls: ['./complete.component.css'],
   standalone: false
 })
-export class CompleteComponent implements OnInit {
+export class CompleteComponent implements OnInit, OnDestroy {
   name: string = localStorage.getItem('name') || '';
   documentHash: string = '';
   isLoading: boolean = false;
@@ -19,26 +19,113 @@ export class CompleteComponent implements OnInit {
   isDownloading: boolean = false;
   userId: string = '';
 
+  // Countdown timer state
+  documentDeleteInterval: any = null;
+  documentDeleteExpires: number = null;
+  documentDeleteActive: boolean = false;
+  countdownClock: string = '';
+
   constructor(
     private upload: UploadService,
     private auth: AuthService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
     this.name = localStorage.getItem('name') || '';
+    const pdfToken = localStorage.getItem('pdfBackupToken');
+    const pdfTokenExpires = localStorage.getItem('pdfTokenExpires');
+    if (!this.name || !pdfToken || !pdfTokenExpires) {
+      this.error = 'No valid document session found. Please generate a new document.';
+      setTimeout(() => this.router.navigate(['/']), 2000);
+      return;
+    }
+    // Start the countdown timer
+    this.initDocumentDeleteCountdown();
     // Get userId from the current user object
     const currentUser = this.auth.getCurrentUser();
     this.userId = currentUser?.uid || '';
-    
-    if (!this.name) {
-      this.error = 'Document information not found';
-      return;
-    }
-    
     // No need to check token validity - the server will handle that
     this.downloadPDF();
+  }
+
+  ngOnDestroy(): void {
+    if (this.documentDeleteInterval) {
+      clearInterval(this.documentDeleteInterval);
+    }
+  }
+
+  /**
+   * Initialize countdown timer for document deletion
+   */
+  private initDocumentDeleteCountdown(): void {
+    const expires = localStorage.getItem('pdfTokenExpires');
+    if (expires) {
+      this.documentDeleteExpires = parseInt(expires, 10);
+      this.documentDeleteActive = true;
+      this.updateCountdownClock();
+      this.documentDeleteInterval = setInterval(() => {
+        this.updateCountdownClock();
+        this.cdr.detectChanges();
+      }, 1000);
+    } else {
+      this.documentDeleteActive = false;
+      this.countdownClock = '';
+    }
+  }
+
+  /**
+   * Update the countdown clock and handle expiration
+   */
+  private updateCountdownClock(): void {
+    if (!this.documentDeleteExpires) {
+      this.countdownClock = '';
+      this.documentDeleteActive = false;
+      return;
+    }
+    const now = Date.now();
+    const diff = this.documentDeleteExpires - now;
+    if (diff <= 0) {
+      this.countdownClock = '00:00:00';
+      this.documentDeleteActive = false;
+      clearInterval(this.documentDeleteInterval);
+      this.handleDocumentExpired();
+      return;
+    }
+    // Format as HH:MM:SS
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    this.countdownClock = `${hours.toString().padStart(2, '0')}:${minutes
+      .toString()
+      .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * Handle document expiration: alert user, show message, clear state, and reroute
+   */
+  private handleDocumentExpired(): void {
+    // Remove document-related localStorage items
+    localStorage.removeItem('pdfBackupToken');
+    localStorage.removeItem('pdfTokenExpires');
+    localStorage.removeItem('name');
+    // Show message before rerouting
+    alert('Your document has been automatically deleted for your privacy. You will be redirected to upload a new document.');
+    // Reroute to upload page
+    this.router.navigate(['/']);
+  }
+
+  /**
+   * For testing or user-initiated delete: Confirm, then delete the token and trigger expiration logic
+   */
+  deleteTokenForTest(): void {
+    if (confirm('Are you sure? This process is final.')) {
+      localStorage.removeItem('pdfBackupToken');
+      localStorage.removeItem('pdfTokenExpires');
+      this.handleDocumentExpired();
+    }
   }
 
   downloadPDF() {
@@ -103,19 +190,29 @@ export class CompleteComponent implements OnInit {
   }
 
   handleDeleteDocument() {
-    if (confirm('Are you sure you want to delete this document?')) {
-      // No need to pass any ID - the cookie has the token
-      this.upload.deleteDocumentById().subscribe({
-        next: () => {
-          localStorage.removeItem('name');
-          this.router.navigate(['/']);
-        },
-        error: (err) => {
-          console.error('Delete error:', err);
-          this.error = 'Failed to delete document';
-        }
-      });
+    if (!confirm('Are you sure? This process is final.')) {
+      return;
     }
+    const pdfToken = localStorage.getItem('pdfBackupToken');
+
+    if (!pdfToken) {
+      this.error = 'No PDF token found for deletion.';
+      return;
+    }
+    // Remove the token from localStorage before making the request
+    localStorage.removeItem('pdfBackupToken');
+    localStorage.removeItem('pdfTokenExpires');
+    this.upload.deleteFinalDocument(pdfToken).subscribe({
+      next: () => {
+        localStorage.removeItem('name');
+        alert('Your document has been deleted. You will be redirected to upload a new document.');
+        this.router.navigate(['/']);
+      },
+      error: (err) => {
+        console.error('Delete error:', err);
+        this.error = 'Failed to delete document';
+      }
+    });
   }
 
   navigateToProfile() {

@@ -11,23 +11,20 @@ export class TokenGuard implements CanActivate {
   canActivate(
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
-    
     // Check if the document name exists in localStorage
     const documentName = localStorage.getItem('name');
-    if (!documentName) {
-      this.showErrorAndRedirect('No document information found.');
+    const pdfToken = localStorage.getItem('pdfBackupToken');
+    const pdfTokenExpires = localStorage.getItem('pdfTokenExpires');
+    
+    if (!documentName || !pdfToken || !pdfTokenExpires) {
+      this.showErrorAndRedirect('No valid document session found.');
       return false;
     }
     
-    // Check for session cookie
-    // Since we can't directly access HttpOnly cookies from JavaScript,
-    // we'll rely on the presence of the document name in localStorage
-    // as an indicator that a valid session was established
-    
-    // You could also add an expiration time in localStorage when setting up the session
-    const sessionExpires = localStorage.getItem('sessionExpires');
-    if (sessionExpires && +sessionExpires < Date.now()) {
-      this.showErrorAndRedirect('Your document session has expired.');
+    // Check for token expiration
+    const expires = parseInt(pdfTokenExpires, 10);
+    if (isNaN(expires) || expires < Date.now()) {
+      this.showErrorAndRedirect('Your document session has expired and your document has been deleted for your privacy.');
       return false;
     }
     
@@ -37,6 +34,8 @@ export class TokenGuard implements CanActivate {
   private showErrorAndRedirect(message: string): void {
     alert(message + ' You will be redirected to the upload page.');
     localStorage.removeItem('name');
+    localStorage.removeItem('pdfBackupToken');
+    localStorage.removeItem('pdfTokenExpires');
     localStorage.removeItem('sessionExpires');
     this.router.navigate(['/']);
   }
