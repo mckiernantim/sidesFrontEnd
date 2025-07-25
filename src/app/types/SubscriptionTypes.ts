@@ -1,134 +1,196 @@
-import { Timestamp } from "@angular/fire/firestore";
+// src/app/types/SubscriptionTypes.ts
 
-
-
-export interface FirestoreSubscription {
-  userId: string;
-  stripeCustomerId: string;
-  stripeSubscriptionId: string;
-  status: 'pending' | 'active' | 'canceled' | 'past_due';
-  currentPeriodStart: Timestamp;
-  currentPeriodEnd: Timestamp;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  canceledAt?: Timestamp;
+export interface SubscriptionPlan {
+  id: string;
+  nickname: string;
+  amount: number;
+  interval: string
 }
 
 export interface SubscriptionDetails {
   id: string;
-  status: 'active' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'past_due' | 'trialing' | 'unpaid' | 'pending' | null;
+  status: string | null;
   created: string | null;
   currentPeriodEnd: string | null;
   currentPeriodStart: string | null;
   cancelAtPeriodEnd: boolean;
   willAutoRenew: boolean;
   originalStartDate: string | null;
-  plan: {
-    amount: number;
-    interval: string;
-    nickname?: string;
-  } | null;
+  plan: SubscriptionPlan | null;
 }
 
-export interface SubscriptionUsage {
+export interface UsageFeatures {
+  pdfGeneration: boolean;
+  unlimitedPdfs: boolean;
+  pdfLimit: number | null;
+}
+
+export interface UsageInfo {
   pdfsGenerated: number;
-  lastPdfGeneration?: Timestamp;
-  pdfUsageLimit?: number;
-  subscriptionStatus?: 'active' | 'inactive' | 'trial';
-  subscriptionFeatures?: {
-    pdfGeneration: boolean;
-    unlimitedPdfs: boolean;
-    pdfLimit?: number;
-  };
+  lastPdfGeneration: string | null;
+  pdfUsageLimit: number;
+  subscriptionStatus: string;
+  subscriptionFeatures: UsageFeatures;
+  resetDate: string | null;
+  remainingPdfs: number;
 }
 
-export interface PdfUsage {
-  pdfsGenerated: number;
-  lastGeneration: Timestamp;
-  currentPeriodStart: Timestamp;
-  currentPeriodEnd: Timestamp;
-  usageLimit?: number;
-}
-
-export interface StripeSubscriptionPlan {
-  id: string;
-  object: string;
-  active: boolean;
-  aggregate_usage: any;
+export interface PaymentInfo {
+  status: 'succeeded' | 'failed' | 'pending';
   amount: number;
-  amount_decimal: string;
-  billing_scheme: string;
-  created: number;
-  currency: string;
-  interval: string;
-  interval_count: number;
-  livemode: boolean;
-  metadata: Record<string, any>;
-  meter: any;
-  nickname: string | null;
-  product: string;
-  tiers_mode: any;
-  transform_usage: any;
-  trial_period_days: any;
-  usage_type: string;
+  date: string | null;
 }
 
 export interface SubscriptionStatus {
   active: boolean;
   subscription: SubscriptionDetails | null;
+  usage: UsageInfo;
+  plan: string | null;
+  lastPayment?: PaymentInfo | null;
+}
+
+// Backend response interface (what your API returns)
+export interface BackendSubscriptionResponse {
+  active: boolean;
+  subscription: {
+    status: string;
+    subscriptionId: string | null;
+    currentPeriodStart: string | null;
+    currentPeriodEnd: string | null;
+    cancelAtPeriodEnd: boolean;
+    plan: {
+      id: string;
+      nickname: string;
+      amount: number;
+      interval: string;
+    } | null;
+    createdAt: string | null;
+    lastUpdated: string;
+    lastPaymentStatus?: string;
+    lastPaymentAmount?: number;
+    lastPaymentDate?: string;
+  };
   usage: {
     pdfsGenerated: number;
     lastPdfGeneration: string | null;
-    pdfUsageLimit: number | null;
-    subscriptionStatus: 'active' | 'inactive' | 'trial';
-    subscriptionFeatures: {
-      pdfGeneration: boolean;
-      unlimitedPdfs: boolean;
-      pdfLimit?: number | null;
-    };
+    monthlyLimit: number;
+    resetDate: string | null;
   };
-  plan?: string;
-  price?: number;
-  interval?: string;
-  currentPeriodStart?: string;
-  currentPeriodEnd?: string;
-  cancelAt?: string;
-  status?: 'active' | 'pending' | 'canceled' | 'past_due';
 }
 
+// Legacy interface for backward compatibility (if needed)
 export interface SubscriptionResponse {
   success: boolean;
-  url?: string;
-  checkoutUrl?: string;
+  data?: SubscriptionStatus;
+  error?: string;
 }
 
-export type SubscriptionStatusType = 'active' | 'expiring' | 'canceled' | 'none';
-
-export interface SubscriptionStatusDisplay {
-  color: string;
-  icon: string;
-  text: string;
+// Utility types for component use
+export interface UsageSummary {
+  used: number;
+  limit: number;
+  remaining: number;
+  resetDate: string | null;
+  canGenerate: boolean;
+  percentage: number;
 }
 
-export const SUBSCRIPTION_STATUS_DISPLAY: Record<SubscriptionStatusType, SubscriptionStatusDisplay> = {
-  active: {
-    color: 'bg-green-100 text-green-800 border-green-200',
-    icon: 'autorenew',
-    text: 'Active (Auto-renews)'
-  },
-  expiring: {
-    color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    icon: 'timer',
-    text: 'Active (Will not renew)'
-  },
-  canceled: {
-    color: 'bg-red-100 text-red-800 border-red-200',
-    icon: 'cancel',
-    text: 'Canceled'
-  },
-  none: {
-    color: 'bg-gray-100 text-gray-800 border-gray-200',
-    icon: 'help_outline',
-    text: 'No subscription'
+export interface SubscriptionActions {
+  canUpgrade: boolean;
+  canCancel: boolean;
+  canReactivate: boolean;
+  showBillingPortal: boolean;
+}
+
+// Helper functions for components
+export function getUsageSummary(subscriptionStatus: SubscriptionStatus): UsageSummary {
+  const usage = subscriptionStatus.usage;
+  const used = usage.pdfsGenerated;
+  const limit = usage.pdfUsageLimit || 0;
+  const remaining = Math.max(0, limit - used);
+  const percentage = limit > 0 ? (used / limit) * 100 : 0;
+  
+  return {
+    used,
+    limit,
+    remaining,
+    resetDate: usage.resetDate,
+    canGenerate: subscriptionStatus.active && (usage.subscriptionFeatures.unlimitedPdfs || remaining > 0),
+    percentage: Math.min(100, percentage)
+  };
+}
+
+export function getSubscriptionActions(subscriptionStatus: SubscriptionStatus): SubscriptionActions {
+  const isActive = subscriptionStatus.active;
+  const subscription = subscriptionStatus.subscription;
+  
+  return {
+    canUpgrade: isActive && subscription?.plan?.interval === 'week', // Can upgrade from weekly to monthly
+    canCancel: isActive && !subscription?.cancelAtPeriodEnd,
+    canReactivate: !isActive || (subscription?.cancelAtPeriodEnd === true),
+    showBillingPortal: isActive || subscription?.status === 'canceled'
+  };
+}
+
+export function formatSubscriptionStatus(status: string | null): string {
+  if (!status) return 'Inactive';
+  
+  switch (status.toLowerCase()) {
+    case 'active':
+      return 'Active';
+    case 'trialing':
+      return 'Trial';
+    case 'pending':
+      return 'Pending';
+    case 'past_due':
+      return 'Past Due';
+    case 'canceled':
+      return 'Canceled';
+    case 'active_until_period_end':
+      return 'Canceling';
+    case 'inactive':
+      return 'Inactive';
+    default:
+      return status.charAt(0).toUpperCase() + status.slice(1);
   }
-};
+}
+
+export function formatPlanName(plan: SubscriptionPlan | null): string {
+  if (!plan) return 'No Plan';
+  
+  return plan.nickname || `$${(plan.amount / 100).toFixed(2)}/${plan.interval}`;
+}
+
+export function formatAmount(amountInCents: number): string {
+  return `$${(amountInCents / 100).toFixed(2)}`;
+}
+
+export function isSubscriptionActive(status: SubscriptionStatus): boolean {
+  return status.active;
+}
+
+export function canUserGeneratePdf(status: SubscriptionStatus): boolean {
+  if (!status.active) return false;
+  
+  const usage = status.usage;
+  if (usage.subscriptionFeatures.unlimitedPdfs) return true;
+  
+  return usage.remainingPdfs > 0;
+}
+
+export function getNextResetDate(status: SubscriptionStatus): Date | null {
+  if (!status.usage.resetDate) return null;
+  
+  return new Date(status.usage.resetDate);
+}
+
+export function getDaysUntilReset(status: SubscriptionStatus): number | null {
+  const resetDate = getNextResetDate(status);
+  if (!resetDate) return null;
+  
+  const now = new Date();
+  const diffTime = resetDate.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return Math.max(0, diffDays);
+}

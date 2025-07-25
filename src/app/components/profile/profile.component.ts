@@ -3,7 +3,15 @@ import { AuthService } from 'src/app/services/auth/auth.service';
 import { StripeService } from 'src/app/services/stripe/stripe.service';
 import { Router, NavigationEnd } from '@angular/router';
 import { User } from '@angular/fire/auth';
-import { SubscriptionStatus } from 'src/app/types/SubscriptionTypes';
+import { 
+  SubscriptionStatus, 
+  getUsageSummary, 
+  getSubscriptionActions, 
+  formatSubscriptionStatus,
+  formatPlanName,
+  formatAmount,
+  getDaysUntilReset
+} from 'src/app/types/SubscriptionTypes';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
@@ -17,7 +25,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   // User data
   user: User | null = null;
   
-  // Subscription data
+  // Subscription data - now contains everything from the consolidated API
   subscription: SubscriptionStatus | null = null;
   
   // UI state
@@ -33,7 +41,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   ];
   
   // Router subscription
-  
   private routerSubscription: Subscription | null = null;
   private authSubscription: Subscription | null = null;
   
@@ -84,7 +91,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
   
-  // Load subscription data
+  // Load subscription data - now gets everything in one call
   loadSubscriptionData(): void {
     if (!this.user) {
       this.isLoading = false;
@@ -94,7 +101,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.error = null;
     
-    console.log('Loading subscription data for user:', this.user.uid);
+    console.log('Loading consolidated subscription data for user:', this.user.uid);
     
     // Set a timeout to handle server downtime
     const timeoutId = setTimeout(() => {
@@ -106,10 +113,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }, 10000); // 10 seconds timeout
     
     this.stripe.getSubscriptionStatus(this.user.uid).subscribe({
-      next: (subscription) => {
+      next: (subscriptionData) => {
         clearTimeout(timeoutId); // Clear the timeout on success
-        console.log('Subscription data loaded:', subscription);
-        this.subscription = subscription;
+        console.log('Consolidated subscription data loaded:', subscriptionData);
+        this.subscription = subscriptionData;
         this.isLoading = false;
         
         // Emit event if subscription is now active
@@ -126,29 +133,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
     });
   }
   
-  // Check if subscription is active
+  // Check if subscription is active - now uses the consolidated active flag
   isSubscriptionActive(): boolean {
     if (!this.subscription) return false;
     
-    // Check if subscription is active based on status
-    const status = this.subscription.subscription?.status;
-    if (status === 'active' || status === 'trialing' || status === 'pending') {
-      return true;
-    }
-    
-    // Check if subscription is past due but still in grace period
-    if (status === 'past_due') {
-      return true;
-    }
-    
-    // Check if subscription is canceled but still in paid period
-    if (status === 'canceled' && this.subscription.subscription?.currentPeriodEnd) {
-      const endDate = new Date(this.subscription.subscription.currentPeriodEnd);
-      const now = new Date();
-      return endDate > now;
-    }
-    
-    return false;
+    // Use the consolidated active flag from the backend
+    return this.subscription.active;
   }
   
   // Check if subscription is pending
@@ -161,9 +151,64 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return this.subscription?.subscription?.cancelAtPeriodEnd === true;
   }
   
+  // Check if subscription is in grace period after cancellation
+  isInGracePeriod(): boolean {
+    const status = this.subscription?.subscription?.status;
+    return status === 'active_until_period_end';
+  }
+  
+  // Get usage summary using the new utility function
+  getUsageSummary() {
+    if (!this.subscription) return null;
+    return getUsageSummary(this.subscription);
+  }
+  
+  // Get subscription actions using the new utility function
+  getSubscriptionActions() {
+    if (!this.subscription) return null;
+    return getSubscriptionActions(this.subscription);
+  }
+  
+  // Check if user can generate PDFs
+  canGeneratePdf(): boolean {
+    if (!this.subscription) return false;
+    return this.stripe.canGeneratePdf(this.subscription);
+  }
+  
+  // Get formatted subscription status
+  getFormattedStatus(): string {
+    const status = this.subscription?.subscription?.status;
+    return formatSubscriptionStatus(status);
+  }
+  
+  // Get formatted plan name
+  getFormattedPlan(): string {
+    const plan = this.subscription?.subscription?.plan;
+    return formatPlanName(plan);
+  }
+  
+  // Get days until usage reset
+  getDaysUntilReset(): number | null {
+    if (!this.subscription) return null;
+    return getDaysUntilReset(this.subscription);
+  }
+  
+  // Get usage percentage for progress bars
+  getUsagePercentage(): number {
+    const usage = this.getUsageSummary();
+    if (!usage || usage.limit === 0) return 0;
+    return Math.min(100, (usage.used / usage.limit) * 100);
+  }
+  
+  // Check if usage is near limit (for warnings)
+  isUsageNearLimit(): boolean {
+    const usage = this.getUsageSummary();
+    if (!usage || usage.limit === 0) return false;
+    return usage.remaining <= 1; // Warning when 1 or fewer PDFs remain
+  }
+  
   // Handle new subscription
   handleNewSubscription(): void {
-  
     if (!this.user || !this.user.email) {
       this.error = 'You must be logged in to subscribe';
       return;
@@ -180,6 +225,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         if (!result.success) {
           this.error = result.error || 'Failed to create subscription';
         }
+        // Note: On success, user will be redirected to Stripe
       },
       error: (error) => {
         console.error('Error creating subscription', error);
@@ -191,7 +237,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   
   // Manage existing subscription
   manageSubscription(): void {
-    
     if (!this.user || !this.user.email) {
       this.error = 'You must be logged in to manage your subscription';
       return;
@@ -206,7 +251,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.isLoading = false;
         
         if (result.success && result.url) {
-          window.location.href = result.url;
+          // User will be redirected to Stripe portal
         } else {
           this.error = result.error || 'Failed to open subscription management';
         }
@@ -229,7 +274,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.auth.signOut();
   }
 
-  // Format dates
+  // Format dates - enhanced for the new structure
   formatDate(dateString: string | null): string {
     if (!dateString) return 'N/A';
     
@@ -241,9 +286,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Format currency
+  // Format currency - works with the new amount structure
   formatCurrency(amount: number | undefined): string {
-    if (amount === undefined) return '$0.00';
+    if (amount === undefined || amount === null) return '$0.00';
     
     // Convert cents to dollars
     const dollars = amount / 100;
@@ -252,10 +297,69 @@ export class ProfileComponent implements OnInit, OnDestroy {
       currency: 'USD'
     }).format(dollars);
   }
+  
+  // Format relative date (e.g., "in 5 days", "2 days ago")
+  formatRelativeDate(dateString: string | null): string {
+    if (!dateString) return 'N/A';
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = date.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Tomorrow';
+    if (diffDays === -1) return 'Yesterday';
+    if (diffDays > 1) return `in ${diffDays} days`;
+    if (diffDays < -1) return `${Math.abs(diffDays)} days ago`;
+    
+    return this.formatDate(dateString);
+  }
 
+  // Refresh subscription status
   refreshSubscriptionStatus(): void {
     if (this.user) {
+      console.log('Manually refreshing subscription status');
+      this.stripe.clearCache();
       this.loadSubscriptionData();
     }
+  }
+  
+  // Get subscription period info
+  getSubscriptionPeriodInfo(): string | null {
+    if (!this.subscription?.subscription) return null;
+    
+    const sub = this.subscription.subscription;
+    const plan = sub.plan;
+    
+    if (!plan) return null;
+    
+    const start = this.formatDate(sub.currentPeriodStart);
+    const end = this.formatDate(sub.currentPeriodEnd);
+    
+    return `${start} - ${end}`;
+  }
+  
+  // Get next billing date
+  getNextBillingDate(): string | null {
+    if (!this.subscription?.subscription?.currentPeriodEnd) return null;
+    
+    if (this.subscription.subscription.cancelAtPeriodEnd) {
+      return `Subscription ends on ${this.formatDate(this.subscription.subscription.currentPeriodEnd)}`;
+    }
+    
+    return `Next billing: ${this.formatDate(this.subscription.subscription.currentPeriodEnd)}`;
+  }
+  
+  // Get payment status info
+  getLastPaymentInfo(): string | null {
+    const payment = this.subscription?.lastPayment;
+    if (!payment) return null;
+    
+    const status = payment.status === 'succeeded' ? 'successful' : payment.status;
+    const amount = payment.amount ? this.formatCurrency(payment.amount) : '';
+    const date = payment.date ? this.formatDate(payment.date) : '';
+    
+    return `Last payment ${status}: ${amount} on ${date}`;
   }
 }

@@ -2,17 +2,45 @@ import { Injectable, isDevMode } from '@angular/core';
 import { loadStripe } from '@stripe/stripe-js';
 import { getConfig } from '../../../environments/environment';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { from, Observable, throwError, BehaviorSubject, of, combineLatest } from 'rxjs';
+import { from, Observable, throwError, BehaviorSubject, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
-import { SubscriptionStatus, SubscriptionResponse } from 'src/app/types/SubscriptionTypes';
-import { Firestore, doc, getDoc } from '@angular/fire/firestore';
+import { SubscriptionStatus } from 'src/app/types/SubscriptionTypes';
 
 interface StripeError {
   code: string;
   message: string;
   type: string;
+}
+
+// Backend response interface - matches the new consolidated structure
+interface BackendSubscriptionResponse {
+  active: boolean;
+  subscription: {
+    status: string;
+    subscriptionId: string | null;
+    currentPeriodStart: string | null;
+    currentPeriodEnd: string | null;
+    cancelAtPeriodEnd: boolean;
+    plan: {
+      id: string;
+      nickname: string;
+      amount: number;
+      interval: string; // Allow any string interval from Stripe
+    } | null;
+    createdAt: string | null;
+    lastUpdated: string;
+    lastPaymentStatus?: 'succeeded' | 'failed' | 'pending';
+    lastPaymentAmount?: number;
+    lastPaymentDate?: string;
+  };
+  usage: {
+    pdfsGenerated: number;
+    lastPdfGeneration: string | null;
+    monthlyLimit: number;
+    resetDate: string | null;
+  };
 }
 
 @Injectable({
@@ -29,8 +57,8 @@ export class StripeService {
   constructor(
     private http: HttpClient,
     private router: Router,
-    private auth: AuthService,
-    private firestore: Firestore
+    private auth: AuthService
+    // Removed Firestore dependency - no longer needed!
   ) {}
 
   private getAuthHeaders(): Observable<HttpHeaders> {
@@ -53,95 +81,91 @@ export class StripeService {
   }
 
   getSubscriptionStatus(userId: string): Observable<SubscriptionStatus> {
-    console.log('STRIPE: Getting subscription for user', userId);
+    console.log('STRIPE: Getting consolidated subscription data for user', userId);
     
     return this.getAuthHeaders().pipe(
       switchMap(headers => {
-        // Get subscription status from API
-        const subscription$ = this.http.get<any>(
+        // Single API call - everything comes from the consolidated backend
+        return this.http.get<BackendSubscriptionResponse>(
           `${this.apiUrl}/stripe/subscription-status/${userId}`,
           { headers, withCredentials: true }
-        );
-
-        // Get usage data from Firebase - make it optional and handle permissions gracefully
-        const usage$ = from(getDoc(doc(this.firestore, 'users', userId))).pipe(
-          map(docSnapshot => {
-            if (!docSnapshot.exists()) {
-              return {
-                pdfsGenerated: 0,
-                lastPdfGeneration: null,
-                pdfUsageLimit: null
-              };
-            }
-            const data = docSnapshot.data();
-            return {
-              pdfsGenerated: data['pdfsGenerated'] || 0,
-              lastPdfGeneration: data['lastPdfGeneration'] || null,
-              pdfUsageLimit: data['pdfUsageLimit'] || null
-            };
-          }),
-          catchError(error => {
-            console.warn('STRIPE: Error fetching usage from Firebase (this is expected if user document doesn\'t exist or permissions are restricted):', error.message);
-            // Return default usage data instead of throwing error
-            return of({
-              pdfsGenerated: 0,
-              lastPdfGeneration: null,
-              pdfUsageLimit: null
-            });
-          })
-        );
-
-        // Combine both observables, but make Firebase optional
-        return combineLatest([subscription$, usage$]).pipe(
-          map(([subscriptionResponse, usageData]) => {
-            if (!subscriptionResponse) {
-              console.log('STRIPE: No subscription response, returning default status');
+        ).pipe(
+          map(response => {
+            console.log('STRIPE: Backend response:', response);
+            
+            if (!response) {
+              console.log('STRIPE: No response, returning default status');
               const emptyStatus = this.createEmptyStatus();
               this.subscriptionStatusSubject.next(emptyStatus);
               return emptyStatus;
             }
 
+            // Map the consolidated backend response to frontend format
             const status: SubscriptionStatus = {
-              active: subscriptionResponse.subscription?.status === 'active',
-              subscription: subscriptionResponse.subscription ? {
-                id: subscriptionResponse.subscription.id || '',
-                status: subscriptionResponse.subscription.status || null,
-                created: subscriptionResponse.subscription.created || null,
-                currentPeriodEnd: subscriptionResponse.subscription.currentPeriodEnd || null,
-                currentPeriodStart: subscriptionResponse.subscription.currentPeriodStart || null,
-                cancelAtPeriodEnd: subscriptionResponse.subscription.cancelAtPeriodEnd || false,
-                willAutoRenew: subscriptionResponse.subscription.willAutoRenew || false,
-                originalStartDate: subscriptionResponse.subscription.created || null,
-                plan: subscriptionResponse.subscription.plan ? {
-                  amount: subscriptionResponse.subscription.plan.amount,
-                  interval: subscriptionResponse.subscription.plan.interval,
-                  nickname: subscriptionResponse.subscription.plan.nickname
+              active: response.active,
+              subscription: response.subscription ? {
+                id: response.subscription.subscriptionId || '',
+                status: response.subscription.status,
+                created: response.subscription.createdAt,
+                currentPeriodEnd: response.subscription.currentPeriodEnd,
+                currentPeriodStart: response.subscription.currentPeriodStart,
+                cancelAtPeriodEnd: response.subscription.cancelAtPeriodEnd,
+                willAutoRenew: response.subscription.status === 'active' && !response.subscription.cancelAtPeriodEnd,
+                originalStartDate: response.subscription.createdAt,
+                plan: response.subscription.plan ? {
+                  id: response.subscription.plan.id,
+                  amount: response.subscription.plan.amount,
+                  interval: response.subscription.plan.interval,
+                  nickname: response.subscription.plan.nickname
                 } : null
               } : null,
               usage: {
-                pdfsGenerated: usageData.pdfsGenerated,
-                lastPdfGeneration: usageData.lastPdfGeneration,
-                pdfUsageLimit: usageData.pdfUsageLimit,
-                subscriptionStatus: subscriptionResponse.subscription?.status || 'inactive',
+                pdfsGenerated: response.usage.pdfsGenerated,
+                lastPdfGeneration: response.usage.lastPdfGeneration,
+                pdfUsageLimit: response.usage.monthlyLimit,
+                subscriptionStatus: response.subscription?.status || 'inactive',
                 subscriptionFeatures: {
-                  pdfGeneration: subscriptionResponse.subscription?.features?.pdfGeneration || false,
-                  unlimitedPdfs: subscriptionResponse.subscription?.features?.unlimitedPdfs || false,
-                  pdfLimit: subscriptionResponse.subscription?.features?.pdfLimit || null
-                }
+                  pdfGeneration: response.active,
+                  unlimitedPdfs: false, // Set based on your business logic
+                  pdfLimit: response.usage.monthlyLimit
+                },
+                resetDate: response.usage.resetDate,
+                remainingPdfs: Math.max(0, response.usage.monthlyLimit - response.usage.pdfsGenerated)
               },
-              plan: subscriptionResponse.subscription?.plan?.nickname || null
+              plan: response.subscription?.plan?.nickname || null,
+              // Additional fields from new backend
+              lastPayment: response.subscription?.lastPaymentStatus ? {
+                status: response.subscription.lastPaymentStatus as 'succeeded' | 'failed' | 'pending',
+                amount: response.subscription.lastPaymentAmount || 0,
+                date: response.subscription.lastPaymentDate || null
+              } : null
             };
             
+            console.log('STRIPE: Processed consolidated status:', status);
             this.subscriptionStatusSubject.next(status);
             return status;
           }),
           catchError(error => {
-            console.error('STRIPE: Error processing subscription status', error);
+            console.error('STRIPE: Error fetching subscription status', error);
+            
+            // Handle specific error cases
+            if (error.status === 401) {
+              console.error('STRIPE: Authentication failed');
+            } else if (error.status === 404) {
+              console.warn('STRIPE: User not found, returning empty status');
+            }
+            
             const emptyStatus = this.createEmptyStatus();
             this.subscriptionStatusSubject.next(emptyStatus);
             return of(emptyStatus);
           })
         );
+      }),
+      catchError(error => {
+        console.error('STRIPE: Error in subscription status flow', error);
+        const emptyStatus = this.createEmptyStatus();
+        this.subscriptionStatusSubject.next(emptyStatus);
+        return of(emptyStatus);
       })
     );
   }
@@ -163,14 +187,58 @@ export class StripeService {
       usage: {
         pdfsGenerated: 0,
         lastPdfGeneration: null,
-        pdfUsageLimit: null,
+        pdfUsageLimit: 0,
         subscriptionStatus: 'inactive',
         subscriptionFeatures: {
           pdfGeneration: false,
           unlimitedPdfs: false,
-          pdfLimit: null
-        }
-      }
+          pdfLimit: 0
+        },
+        resetDate: null,
+        remainingPdfs: 0
+      },
+      plan: null,
+      lastPayment: null
+    };
+  }
+
+  // Method to refresh subscription status (useful after subscription changes)
+  refreshSubscriptionStatus(userId: string): Observable<SubscriptionStatus> {
+    console.log('STRIPE: Refreshing subscription status for user', userId);
+    this.clearCache();
+    return this.getSubscriptionStatus(userId);
+  }
+
+  // Method to check if user can generate PDFs
+  canGeneratePdf(subscriptionStatus: SubscriptionStatus): boolean {
+    if (!subscriptionStatus.active) {
+      return false;
+    }
+    
+    const usage = subscriptionStatus.usage;
+    if (usage.subscriptionFeatures.unlimitedPdfs) {
+      return true;
+    }
+    
+    return (usage.remainingPdfs || 0) > 0;
+  }
+
+  // Method to get user's PDF usage info
+  getUsageInfo(subscriptionStatus: SubscriptionStatus): {
+    used: number;
+    limit: number;
+    remaining: number;
+    resetDate: string | null;
+    canGenerate: boolean;
+  } {
+    const usage = subscriptionStatus.usage;
+    
+    return {
+      used: usage.pdfsGenerated,
+      limit: usage.pdfUsageLimit || 0,
+      remaining: usage.remainingPdfs || 0,
+      resetDate: usage.resetDate,
+      canGenerate: this.canGeneratePdf(subscriptionStatus)
     };
   }
 
@@ -190,7 +258,6 @@ export class StripeService {
         const host = baseUrl.replace(/^https?:\/\//, '');
         const safeReturnUrl = returnUrl || `${protocol}://${host}/profile`;
         
-
         const requestBody = {
           userId,
           userEmail,
@@ -238,6 +305,7 @@ export class StripeService {
               const finalUrl = url.toString();
               console.log('STRIPE: Final URL to redirect to:', finalUrl);
               
+              // Clear cache since subscription might change
               this.clearCache();
               window.location.href = finalUrl;
               
