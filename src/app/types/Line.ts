@@ -30,7 +30,14 @@ export interface Line {
 
   trueScene?:string,
   hideCont?:string,
-  watermarkText?:string,
+    watermarkText?:string,
+  watermarkData?: {
+    actorName: string;
+    timestamp: string;
+    pattern: string;
+    fullText: string;
+    isActive: boolean;
+  },
   draftColorText?:string
   pageNumberText?:string,
   calculatedLeft?:string | number

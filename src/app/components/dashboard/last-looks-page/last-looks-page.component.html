@@ -10,6 +10,38 @@
 
         <!-- Regular page content -->
         <div *ngIf="!(currentPageIndex === 0 && isCallsheetPage(page))" class="break">
+            <div *ngIf="page[0]?.watermarkData?.isActive" class="watermark-overlay">
+                <div class="watermark-repeating-container">
+                    <!-- Multiple timestamp rows above the actor name -->
+                    <div class="watermark-timestamp-rows-above">
+                        <ng-container *ngFor="let row of getWatermarkBlocks(1)">
+                            <div class="watermark-timestamp-row">
+                                <ng-container *ngFor="let block of getWatermarkBlocks(page[0].watermarkData.repetitions)">
+                                    <div class="watermark-timestamp-block">{{ page[0].watermarkData.timestamp }}</div>
+                                </ng-container>
+                            </div>
+                        </ng-container>
+                    </div>
+                    
+                    <!-- Actor name row -->
+                    <div class="watermark-actor-row">
+                        <ng-container *ngFor="let block of getWatermarkBlocks(page[0].watermarkData.repetitions)">
+                            <div class="watermark-actor-block">{{ page[0].watermarkData.actorName }}</div>
+                        </ng-container>
+                    </div>
+                    
+                    <!-- Multiple timestamp rows below the actor name -->
+                    <div class="watermark-timestamp-rows-below">
+                        <ng-container *ngFor="let row of getWatermarkBlocks(1)">
+                            <div class="watermark-timestamp-row">
+                                <ng-container *ngFor="let block of getWatermarkBlocks(page[0].watermarkData.repetitions)">
+                                    <div class="watermark-timestamp-block">{{ page[0].watermarkData.timestamp }}</div>
+                                </ng-container>
+                            </div>
+                        </ng-container>
+                    </div>
+                </div>
+            </div>
             <ul class="screenbox" [ngClass]="{ 'edit-mode': canEditDocument }">
                 <ng-container *ngFor="let line of page; let lineIndex = index">
                     <span class="watermark">{{ line.watermarkText }}</span>
@@ -166,7 +198,7 @@
 
                     <!-- end span -->
                     <span *ngIf="line.end === 'END'"
-                        class="bar-span END {{line.hidden}}"
+                        class="bar-span END  {{line.hidden}}"
                         [style.bottom]="line.calculatedEnd"
                         [attr.data-line-id]="line.id"
                         (mousedown)="startLineDrag($event, line, 'end')"

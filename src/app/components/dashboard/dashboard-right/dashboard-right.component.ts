@@ -500,8 +500,14 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
   // create preview text for table
   addWaterMark(line) {
     this.watermark = line;
-    alert(line + ' has been recorded as watermark');
-    this.waterMarkPages(this.watermark, this.pdf.finalDocument.data);
+    console.log('Dashboard: Watermark added:', line);
+    this.pdf.watermarkPages(this.watermark, this.pdf.finalDocument.data);
+  }
+
+  removeWatermark() {
+    this.watermark = null;
+    console.log('Dashboard: Watermark removed');
+    this.pdf.removeWatermark(this.pdf.finalDocument.data);
   }
   getPreview(ind) {
     return (this.scenes[ind].preview =

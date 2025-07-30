@@ -1367,6 +1367,22 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     return lastRedo ? lastRedo.changeDescription || 'Last undone change' : 'No changes to redo';
   }
 
- 
+  getWatermarkBlocks(blockCount: number): number[] {
+    return Array(blockCount || 30).fill(0).map((_, i) => i);
+  }
+  
+  /**
+   * Check if current page has an active watermark
+   */
+  hasWatermark(page: any[]): boolean {
+    return page && page[0] && page[0].watermarkData && page[0].watermarkData.isActive;
+  }
+  
+  /**
+   * Get watermark data for current page
+   */
+  getWatermarkData(page: any[]): any {
+    return page && page[0] && page[0].watermarkData ? page[0].watermarkData : null;
+  }
   
 }

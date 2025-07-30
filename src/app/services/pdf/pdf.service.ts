@@ -61,6 +61,7 @@ export class PdfService {
   private initialDocumentState: any;
   private _documentReordered$ = new BehaviorSubject<boolean>(false);
   public documentReordered$ = this._documentReordered$.asObservable();
+  private _watermarkUpdated$ = new Subject<{ watermark: string | null, action: 'add' | 'remove' }>();
   // 1/5 WE NEED TO MOVE THIS SO THAT THIS FIRES EVERY TIME THE USER NAVIGATES TO UPLOAD COMPONENT
   constructor(public upload: UploadService, private undoService: UndoService) {
     this.initializeData();
@@ -1414,12 +1415,6 @@ resetToInitialState(): void {
     }
   }
 
-  watermarkPages(watermark, doc) {
-    doc.forEach((page) => {
-      page[0].watermarkText = watermark;
-    });
-  }
-
   makePages(scenes) {
     let pageNums = scenes.map((scene) => scene.page).sort((a, b) => a - b);
     return pageNums;
@@ -2305,4 +2300,61 @@ resetToInitialState(): void {
     console.log('PdfService: Document state reset complete');
   }
 
+  get watermarkUpdated$(): Subject<{ watermark: string | null, action: 'add' | 'remove' }> {
+    return this._watermarkUpdated$;
+  }
+  
+  watermarkPages(watermark: string, doc: any[]) {
+    console.log('PDF Service: Adding watermark:', watermark);
+    
+    // Generate human-readable timestamp
+    const now = new Date();
+    const timestamp = now.toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+    
+    // Create the watermark data structure with repetition count
+    const watermarkData = {
+      actorName: watermark,
+      timestamp: timestamp,
+      isActive: true,
+      repetitions: 30 // Number of watermark blocks to repeat across diagonal
+    };
+    
+    doc.forEach((page) => {
+      // Store watermark data in the first line of each page
+      if (page && page[0]) {
+        page[0].watermarkData = watermarkData;
+      }
+    });
+    
+    // Emit watermark update
+    this._watermarkUpdated$.next({ watermark, action: 'add' });
+    
+    // Trigger document regeneration to update the preview
+    this._documentRegenerated$.next(true);
+    console.log('PDF Service: Watermark added and document regeneration triggered');
+  }
+  
+  removeWatermark(doc: any[]) {
+    console.log('PDF Service: Removing watermark');
+    doc.forEach((page) => {
+      if (page && page[0]) {
+        page[0].watermarkData = null;
+      }
+    });
+    
+    // Emit watermark removal
+    this._watermarkUpdated$.next({ watermark: null, action: 'remove' });
+    
+    // Trigger document regeneration to update the preview FIXED: Remove old watermarkPages method and replace with this updated version
+    this._documentRegenerated$.next(true);
+    console.log('PDF Service: Watermark removed and document regeneration triggered');
+  }
 }

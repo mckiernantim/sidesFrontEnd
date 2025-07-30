@@ -304,21 +304,96 @@ span.CONTINUE {
     font-size: 16pt;
 }
 
-.watermark {
-    z-index: 2;
-    font-size: 66px;
-    transform: rotateY(0deg) rotate(315deg);
+/* Hollywood Script Repeating Watermark System */
+.watermark-overlay {
     position: absolute;
-    bottom: 35%;
-    opacity: .4;
-    bottom: 50%;
-    text-align: center;
-    width: 90%;
-    text-align: color;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+}
+
+.watermark-repeating-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    white-space: nowrap;
+    width: 400%;
+    height: 400%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.watermark-timestamp-rows-above,
+.watermark-timestamp-rows-below {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.watermark-timestamp-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    margin: 2px 0;
+}
+
+.watermark-actor-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    margin: 10px 0;
+}
+
+.watermark-timestamp-block {
+    font-size: 15px;
+    color: #666;
+    opacity: 0.25;
+    font-weight: 400;
+    letter-spacing: 1px;
+    font-family: 'Arial', sans-serif;
+    margin: 0 15px; /* Reduced spacing between blocks */
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.watermark-actor-block {
+    font-size: 45px;
+    color: #666;
+    opacity: 0.25;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'Arial', sans-serif;
+    margin: 0 15px; /* Reduced spacing between blocks */
+    white-space: nowrap;
+    display: inline-block;
+}
+
+/* Ensure watermark doesn't interfere with content */
+.watermark-overlay * {
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .footer {
     display: none;
+}
+
+.end-bar-text {
+    right: 20px;
 }
 
 .context-menu {
