@@ -303,8 +303,6 @@ span.CONTINUE {
 .continue-span {
     font-size: 16pt;
 }
-
-/* Hollywood Script Repeating Watermark System */
 .watermark-overlay {
     position: absolute;
     top: 0;
@@ -325,15 +323,29 @@ span.CONTINUE {
     width: 300%;
     height: 300%;
     display: flex;
+    flex-direction: column; /* Changed to column for three rows */
     align-items: center;
     justify-content: center;
+    gap: 20px; /* Space between rows */
 }
 
-.watermark-repeating-line {
+/* Individual row styling */
+.watermark-timestamp-rows-above,
+.watermark-actor-row,
+.watermark-timestamp-rows-below {
     display: flex;
     align-items: center;
     justify-content: center;
     flex-wrap: nowrap;
+    width: 100%;
+}
+
+.watermark-timestamp-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    width: 100%;
 }
 
 .watermark-timestamp-block {
@@ -343,7 +355,7 @@ span.CONTINUE {
     font-weight: 400;
     letter-spacing: 1px;
     font-family: 'Arial', sans-serif;
-    margin: 0 15px; /* Reduced spacing between blocks */
+    margin: 0 15px;
     white-space: nowrap;
     display: inline-block;
 }
@@ -356,7 +368,7 @@ span.CONTINUE {
     letter-spacing: 2px;
     text-transform: uppercase;
     font-family: 'Arial', sans-serif;
-    margin: 0 15px; /* Reduced spacing between blocks */
+    margin: 0 15px;
     white-space: nowrap;
     display: inline-block;
 }
@@ -369,7 +381,6 @@ span.CONTINUE {
     -moz-user-select: none;
     -ms-user-select: none;
 }
-
 .footer {
     display: none;
 }

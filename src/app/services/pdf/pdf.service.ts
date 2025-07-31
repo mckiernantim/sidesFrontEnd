@@ -2319,12 +2319,12 @@ resetToInitialState(): void {
       hour12: true
     });
     
-    // Create the watermark data structure with repetition count
+    // Create the watermark data structure with ONLY 10 repetitions
     const watermarkData = {
       actorName: watermark,
       timestamp: timestamp,
       isActive: true,
-      repetitions: 30 // Number of watermark blocks to repeat across diagonal
+      repetitions: 10 // Reduced from 30 to 10
     };
     
     doc.forEach((page) => {

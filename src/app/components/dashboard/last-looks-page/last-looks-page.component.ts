@@ -1366,9 +1366,12 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     const lastRedo = this.undoService.peekLastRedo();
     return lastRedo ? lastRedo.changeDescription || 'Last undone change' : 'No changes to redo';
   }
-
   getWatermarkBlocks(blockCount: number): number[] {
-    return Array(blockCount || 30).fill(0).map((_, i) => i);
+    debugger
+    if (!blockCount || blockCount <= 0) {
+      return [];
+    }
+    return Array.from({ length: blockCount }, (_, i) => i);
   }
   
   /**
