@@ -322,36 +322,18 @@ span.CONTINUE {
     left: 50%;
     transform: translate(-50%, -50%) rotate(-45deg);
     white-space: nowrap;
-    width: 400%;
-    height: 400%;
+    width: 300%;
+    height: 300%;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
 }
 
-.watermark-timestamp-rows-above,
-.watermark-timestamp-rows-below {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.watermark-timestamp-row {
+.watermark-repeating-line {
     display: flex;
     align-items: center;
     justify-content: center;
     flex-wrap: nowrap;
-    margin: 2px 0;
-}
-
-.watermark-actor-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: nowrap;
-    margin: 10px 0;
 }
 
 .watermark-timestamp-block {
@@ -526,10 +508,10 @@ li.crossed-out {
 
 .END .bar-text {
     position: relative;
-    text-align: left;
+    text-align: right;
     font-size: 16pt;
-    padding-left: 10px;
-    padding-right: 5px;
+    padding-left: 5px;
+    padding-right: 10px;
     cursor: ew-resize;
     pointer-events: auto;
     z-index: 100;
@@ -1027,10 +1009,10 @@ li.crossed-out {
 
 .END .bar-text {
     position: relative;
-    text-align: left;
+    text-align: right;
     font-size: 16pt;
-    padding-left: 10px;
-    padding-right: 5px;
+    padding-left: 5px;
+    padding-right: 10px;
     cursor: ew-resize;
     pointer-events: auto;
     z-index: 100;

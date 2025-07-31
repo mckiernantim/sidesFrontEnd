@@ -1010,7 +1010,7 @@ resetToInitialState(): void {
           }
           if (!line.calculatedBarY && line.barY) {
             line.calculatedBarY = typeof line.barY === 'number' 
-              ? line.barY + 'px' 
+              ? line.barY - 15 + 'px' 
               : line.barY;
           }
         }
@@ -1019,7 +1019,7 @@ resetToInitialState(): void {
           // Ensure the calculatedEnd position is preserved
           if (!line.calculatedEnd && line.endY) {
             line.calculatedEnd = typeof line.endY === 'number' 
-              ? line.endY + 'px' 
+              ? line.endY -15 + 'px' 
               : line.endY;
           }
         }
@@ -2331,6 +2331,12 @@ resetToInitialState(): void {
       // Store watermark data in the first line of each page
       if (page && page[0]) {
         page[0].watermarkData = watermarkData;
+        console.log('Watermark data set for page:', {
+          actorName: watermarkData.actorName,
+          timestamp: watermarkData.timestamp,
+          isActive: watermarkData.isActive,
+          repetitions: watermarkData.repetitions
+        });
       }
     });
     
