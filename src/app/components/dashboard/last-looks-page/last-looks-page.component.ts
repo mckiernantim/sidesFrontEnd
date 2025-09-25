@@ -1367,7 +1367,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     return lastRedo ? lastRedo.changeDescription || 'Last undone change' : 'No changes to redo';
   }
   getWatermarkBlocks(blockCount: number): number[] {
-    debugger
+  
     if (!blockCount || blockCount <= 0) {
       return [];
     }

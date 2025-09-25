@@ -866,7 +866,7 @@ async sendFinalDocumentToServer(finalDocument) {
     documentToSend.name = this.script;
     documentToSend.email = user.email;
     documentToSend.userId = user.uid;
-    debugger
+
     documentToSend.callSheetPath = callSheetPathToSend;  // IMPORTANT: Original path for PDF processing
     documentToSend.hasCallSheet = hasCallSheet;
     

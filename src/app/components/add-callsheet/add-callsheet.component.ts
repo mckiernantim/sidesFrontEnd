@@ -178,7 +178,6 @@ private async testPdfSetup(): Promise<boolean> {
             imageUrl: response.imageUrl,
             fileType: response.fileType
         });
-debugger
         if (response && response.success) {
             // Convert URLs to Firebase Storage format if needed
             const imageUrl = this.convertToFirebaseUrl(response.imageUrl);
