@@ -8,3 +8,6 @@ development_utils
 app/*.json
 app/testingData
 */*.pdf
+
+# User data - sensitive information
+users.json
