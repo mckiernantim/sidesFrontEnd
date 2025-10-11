@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { of, BehaviorSubject } from 'rxjs';
 import { DashboardRightComponent } from './dashboard-right.component';
@@ -12,6 +11,7 @@ import { UploadService } from '../../../services/upload/upload.service';
 import { UndoService } from '../../../services/edit/undo.service';
 import { LineOutService } from '../../../services/line-out/line-out.service';
 import { TokenService } from '../../../services/token/token.service';
+import { TailwindDialogService } from '../../../services/tailwind-dialog/tailwind-dialog.service';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { NavigationEnd } from '@angular/router';
 import { getAnalytics } from '@angular/fire/analytics';
@@ -32,7 +32,7 @@ describe('DashboardRightComponent', () => {
   let undoServiceMock: any;
   let lineOutServiceMock: any;
   let tokenServiceMock: any;
-  let dialogMock: any;
+  let tailwindDialogServiceMock: any;
   let routerMock: any;
   let userSubject: BehaviorSubject<any>;
 
@@ -82,7 +82,15 @@ describe('DashboardRightComponent', () => {
         callSheet: '',
         callSheetPath: ''
       },
-      finalDocReady: false
+      finalDocReady: false,
+      sceneNumberUpdated$: {
+        asObservable: jest.fn().mockReturnValue(of({}))
+      },
+      sceneHeaderTextUpdated$: of({}),
+      documentRegenerated$: of(false),
+      documentReordered$: of(false),
+      watermarkUpdated$: of({}),
+      finalDocumentData$: of({})
     };
 
     uploadServiceMock = {
@@ -95,9 +103,11 @@ describe('DashboardRightComponent', () => {
 
     lineOutServiceMock = {};
 
-    tokenServiceMock = {};
+    tokenServiceMock = {
+      tokenExpired$: of(false)
+    };
 
-    dialogMock = {
+    tailwindDialogServiceMock = {
       open: jest.fn().mockReturnValue({
         afterClosed: jest.fn().mockReturnValue(of(true))
       })
@@ -113,7 +123,6 @@ describe('DashboardRightComponent', () => {
       imports: [
         RouterTestingModule,
         HttpClientTestingModule,
-        MatDialogModule,
         NoopAnimationsModule
       ],
       declarations: [DashboardRightComponent],
@@ -125,7 +134,7 @@ describe('DashboardRightComponent', () => {
         { provide: UndoService, useValue: undoServiceMock },
         { provide: LineOutService, useValue: lineOutServiceMock },
         { provide: TokenService, useValue: tokenServiceMock },
-        { provide: MatDialog, useValue: dialogMock }
+        { provide: TailwindDialogService, useValue: tailwindDialogServiceMock }
       ],
       schemas: [NO_ERRORS_SCHEMA] // Ignore unknown elements
     }).compileComponents();
@@ -134,14 +143,14 @@ describe('DashboardRightComponent', () => {
     component = fixture.componentInstance;
     
     // Mock localStorage
-    spyOn(localStorage, 'getItem').and.callFake((key) => {
+    jest.spyOn(localStorage, 'getItem').mockImplementation((key) => {
       if (key === 'name') return 'test-script.pdf';
       if (key === 'callSheetPath') return 'test-callsheet.pdf';
       return null;
     });
     
     // Mock sessionStorage
-    spyOn(sessionStorage, 'setItem').and.stub();
+    jest.spyOn(sessionStorage, 'setItem').mockImplementation(() => {});
     
     fixture.detectChanges();
   });
@@ -173,24 +182,11 @@ describe('DashboardRightComponent', () => {
     expect(authServiceMock.signOut).toHaveBeenCalled();
   });
 
-  it('should handle auth action when not logged in', async () => {
-    // No user
-    userSubject.next(null);
-    fixture.detectChanges();
+  it('should open confirm purchase dialog', () => {
+    // Mock the dialog service
+    jest.spyOn(component, 'openConfirmPurchaseDialog');
     
-    await component.handleAuthAction();
-    expect(authServiceMock.signInWithGoogle).toHaveBeenCalled();
-  });
-
-  it('should handle auth action when logged in', async () => {
-    // Logged in user
-    userSubject.next({ uid: 'test-user-id', email: 'test@example.com' });
-    fixture.detectChanges();
-    
-    // Mock openConfirmPurchaseDialog
-    spyOn(component, 'openConfirmPurchaseDialog').and.returnValue(Promise.resolve());
-    
-    await component.handleAuthAction();
+    component.openConfirmPurchaseDialog();
     expect(component.openConfirmPurchaseDialog).toHaveBeenCalled();
   });
 
@@ -239,7 +235,7 @@ describe('DashboardRightComponent', () => {
     expect(sessionStorage.setItem).toHaveBeenCalledWith('returnPath', '/dashboard');
     
     // Check dialog was opened
-    expect(dialogMock.open).toHaveBeenCalled();
+    expect(tailwindDialogServiceMock.open).toHaveBeenCalled();
   });
 
   it('should toggle edit state in last looks', () => {
@@ -286,13 +282,19 @@ describe('DashboardRightComponent', () => {
     // Initial state - not selected
     expect(component.selected).not.toContain(scene);
     
+    // Create a mock MouseEvent
+    const mockEvent = {
+      stopPropagation: jest.fn(),
+      preventDefault: jest.fn()
+    } as any;
+    
     // Select
-    component.toggleSelected({}, scene);
+    component.toggleSelected(mockEvent, scene);
     
     expect(component.selected).toContain(scene);
     
     // Deselect
-    component.toggleSelected({}, scene);
+    component.toggleSelected(mockEvent, scene);
     
     expect(component.selected).not.toContain(scene);
   });

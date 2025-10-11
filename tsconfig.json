@@ -45,6 +45,7 @@
   ],
   "exclude": [
     "**/*.spec.ts", 
-    "**/testingData/**/*"  
+    "**/testingData/**/*",
+    "src/app/testing/**/*"
   ]
 }

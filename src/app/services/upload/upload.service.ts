@@ -378,7 +378,7 @@ export class UploadService {
                 individualPages,
                 title,
                 firstAndLastLinesOfScenes,
-              } = res;
+              } = res.data;
               
               this.allLines = allLines;
               this.firstAndLastLinesOfScenes = firstAndLastLinesOfScenes;
@@ -389,7 +389,7 @@ export class UploadService {
               this.individualPages.forEach((page) => {
                 this.lineCount.push(page.filter((item) => item.totalLines));
               });
-
+              debugger
               return res;
             }),
             catchError((error) => {
