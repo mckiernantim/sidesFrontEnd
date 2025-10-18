@@ -166,7 +166,7 @@
                     <!-- continue spans (at the bottom of the page) -->
                     <span *ngIf="line.cont === 'CONTINUE'"
                         class="bar-span continue-span CONTINUE {{line.hidden}}"
-                        [style.bottom]="line.calculatedBarY"
+                        [style.bottom]="getContinueBarPosition(line)"
                         [attr.data-line-id]="line.id"
                         (mousedown)="startLineDrag($event, line, 'continue')"
                         [class.draggable]="canEditDocument"

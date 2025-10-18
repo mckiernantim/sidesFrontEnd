@@ -1388,4 +1388,33 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     return page && page[0] && page[0].watermarkData ? page[0].watermarkData : null;
   }
   
+  getContinueBarPosition(line: Line): string {
+    // If manually positioned, keep custom position
+    if (line.calculatedBarY && line.calculatedBarY !== '90px' && parseInt(String(line.calculatedBarY)) !== 90) {
+      return String(line.calculatedBarY);
+    }
+    
+    // Find lowest Y position (closest to bottom) of visible text lines
+    let lowestYPos = 0;
+    for (const pageLine of this.page) {
+      if (pageLine.docPageLineIndex !== line.docPageLineIndex && 
+          pageLine.visible === 'true' && 
+          pageLine.category !== 'page-number' && 
+          pageLine.category !== 'injected-break' &&
+          pageLine.category !== 'callsheet') {
+        const yPos = parseInt(String(pageLine.calculatedYpos || pageLine.yPos || '0'));
+        if (yPos > 0 && (yPos < lowestYPos || lowestYPos === 0)) {
+          lowestYPos = yPos;
+        }
+      }
+    }
+    
+    // Position CONTINUE bar 55px below last line
+    if (lowestYPos > 0) {
+      return Math.max(20, lowestYPos - 75) + 'px';
+    }
+    
+    return '90px';
+  }
+  
 }
