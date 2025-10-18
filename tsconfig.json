@@ -5,12 +5,11 @@
     "baseUrl": "./",
     "outDir": "./dist/out-tsc",
     "sourceMap": true,
+    "esModuleInterop": true,
     "declaration": false,
-    "downlevelIteration": true,
     "experimentalDecorators": true,
     "resolveJsonModule": true,
     "module": "esnext",
-    "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "importHelpers": true,
     "target": "ES2022",
@@ -46,6 +45,7 @@
   ],
   "exclude": [
     "**/*.spec.ts", 
-    "**/testingData/**/*"  
+    "**/testingData/**/*",
+    "src/app/testing/**/*"
   ]
 }

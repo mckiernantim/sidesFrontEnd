@@ -1,6 +1,8 @@
-import { NgModule } from '@angular/core';
+import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 
 import { DashboardComponent } from '../../components/dashboard/dashboard.component';
 import { DashboardRightComponent } from '../../components/dashboard/dashboard-right/dashboard-right.component';
@@ -10,8 +12,9 @@ import { AddCallsheetComponent } from '../../components/add-callsheet/add-callsh
 import { ToolTipComponent } from '../../components/shared/tool-tip/tool-tip.component';
 import { AddWatermarkComponent } from '../../components/add-watermark/add-watermark.component';
 import { SharedModule } from '../shared-module/shared.module';
-import { MaterialModule } from '../material-module/material.module';
 import { CheckoutComponent } from 'src/app/components/checkout/checkout.component';
+import { SceneSelectionComponent } from '../../components/dashboard/scene-selection/scene-selection.component';
+import { CheckoutModalComponent } from '../../components/dashboard/checkout-modal/checkout-modal.component';
 
 @NgModule({
   declarations: [
@@ -22,13 +25,26 @@ import { CheckoutComponent } from 'src/app/components/checkout/checkout.componen
     AddCallsheetComponent,
     ToolTipComponent,
     AddWatermarkComponent,
-    CheckoutComponent
+    CheckoutComponent,
+    SceneSelectionComponent,
+    CheckoutModalComponent
   ],
   imports: [
     CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    RouterModule,
     SharedModule,
-    MaterialModule
+    DragDropModule
   ],
- 
+  exports: [
+    DashboardComponent,
+    DashboardRightComponent,
+    LastLooksComponent,
+    LastLooksPageComponent,
+    SceneSelectionComponent,
+    CheckoutModalComponent
+  ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DashboardModule { }

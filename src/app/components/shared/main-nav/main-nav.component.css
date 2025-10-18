@@ -13,6 +13,21 @@ mat-sidenav-content {
   background: inherit;
 }
 
+.mat-icon-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mat-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+mat-icon {
+  margin-right: 8px;
+}
 .mat-toolbar{
   position: sticky;
   top: 0;
@@ -50,6 +65,20 @@ span {
   font-size:1.8em;
   width: 20%;
 }
+
+button[mat-icon-button] {
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button[mat-icon-button] img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .user-login{
   display: flex;
   display: flex;

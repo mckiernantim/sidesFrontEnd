@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'app-about-item-grid',
-  templateUrl: './about-item-grid.component.html',
-  styleUrls: ['./about-item-grid.component.css'],
+    selector: 'app-about-item-grid',
+    templateUrl: './about-item-grid.component.html',
+    styleUrls: ['./about-item-grid.component.css'],
+    standalone: false
 })
 export class AboutItemGridComponent {
   titles: string[] = [`Scan Securely`, ` Select Scenes`, `Last Looks`];

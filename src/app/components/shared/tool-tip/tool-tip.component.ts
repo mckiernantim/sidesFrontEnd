@@ -13,9 +13,10 @@ interface toolTipOption {
 }
 
 @Component({
-  selector: 'app-tool-tip',
-  templateUrl: './tool-tip.component.html',
-  styleUrls: ['./tool-tip.component.css'],
+    selector: 'app-tool-tip',
+    templateUrl: './tool-tip.component.html',
+    styleUrls: ['./tool-tip.component.css'],
+    standalone: false
 })
 export class ToolTipComponent {
   windowWidth: number;

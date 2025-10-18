@@ -1,36 +1,66 @@
-import { NgModule } from '@angular/core';
+import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router'; // Import RouterModule
-import { MatDialogModule } from '@angular/material/dialog'; // If you use Angular Material Dialog
+import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 
 // Import your shared components
-import { MainNavComponent } from 'src/app/components/shared/main-nav/main-nav.component';
+import { MainNavComponent } from '../../components/shared/main-nav/main-nav.component';
 import { NavComponent } from 'src/app/components/shared/nav/nav.component';
-import { FooterComponent } from 'src/app/components/shared/footer/footer.component';
+import { FooterComponent } from '../../components/shared/footer/footer.component';
 import { SpinningBotComponent } from 'src/app/components/shared/spinning-bot/spinning-bot.component';
-import { MaterialModule } from '../material-module/material.module';
+import { AboutItemGridComponent } from 'src/app/components/landing-page/about/about-item-grid/about-item-grid.component';
+import { TailwindTableColumnDirective } from 'src/app/components/shared/tailwind-table/tailwind-table-column.directive';
+import { DatePipe, AsyncPipe } from '@angular/common';
+import { DateFormatPipe } from 'src/app/pipes/date-format.pipe';
+import { TailwindDialogComponent } from 'src/app/components/shared/tailwind-dialog/tailwind-dialog.component';
+import { ErrorDialogComponent } from 'src/app/components/shared/error-dialog/error-dialog.component';
+import { SpinnerDialogComponent } from 'src/app/components/shared/spinner-dialog/spinner-dialog.component';
+import { TailwindTableComponent } from '../../components/shared/tailwind-table/tailwind-table.component';
+import { SpinnerComponent } from '../../components/shared/spinner/spinner.component';
+
 
 @NgModule({
   declarations: [
-    MainNavComponent,
     NavComponent,
     FooterComponent,
-    SpinningBotComponent
+    SpinningBotComponent,
+    MainNavComponent,
+    AboutItemGridComponent,
+    DateFormatPipe,
+    TailwindDialogComponent,
+    ErrorDialogComponent,
+    SpinnerDialogComponent,
+    TailwindTableComponent,
+    TailwindTableColumnDirective,
+    SpinnerComponent,
+
+    
   ],
   imports: [
     CommonModule,
     RouterModule,
-    MatDialogModule, // If needed for SpinningBotComponent
-    MaterialModule
+    FormsModule,
+    ReactiveFormsModule
   ],
   exports: [
-    MainNavComponent,
     NavComponent,
     FooterComponent,
     SpinningBotComponent,
+    AboutItemGridComponent,
     CommonModule,
     RouterModule,
-    MatDialogModule // Export if needed by other modules
-  ]
+    FormsModule,
+    MainNavComponent,
+    DateFormatPipe,
+    TailwindDialogComponent,
+    ErrorDialogComponent,
+    SpinnerDialogComponent,
+    TailwindTableComponent,
+    TailwindTableColumnDirective,
+    SpinnerComponent,
+  ],
+  providers: [DatePipe, AsyncPipe, DateFormatPipe],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class SharedModule { }

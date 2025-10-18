@@ -1,91 +1,127 @@
-@import 'tailwindcss/utilities';
-@import "https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css";
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-
-
-
-:root {
-    --white: rgb(238, 234, 234);
-    --blue: #3f51b5;
-    --dark-blue: #001D3D;
-    --black: rgb(0, 0, 0);
-    --pink: #e6605c;
-    --grey: #9e9e9e;
-    --orange:#fc130f;
-    --blue:#3f51b5
-  }
-  .warning-button {
-    background-color:var(--orange);/* This is $my-orange  from theme - may inject at bootstrap*/
-    color: white ;
-  }
-  
-  .warning-button:hover {
-    background-color: darken(#fc1c18, 5%); /* Slightly darker on hover */
-  }
-  
-  .warning-button:focus {
-    background-color: darken(#fc1c18, 5%); 
-  }
-  
-  .warning-button:active {
-    background-color: darken(#fc1c18, 10%); 
-  }
-  
-
-.red-rectangle {
-    position: relative;
-    display:inline-block;
-    width: 300px; 
-    height: 50px; 
-    transform:  translate(-50%, -50%) skew(-10deg);
-    width: 200px;
-  
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* Basic reset */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Roboto', sans-serif;
 }
+
 body {
-    
-    background-color: white;
+  background-color: #f5f5f5;
+}
+
+/* Custom variables */
+:root {
+  --white: rgb(238, 234, 234);
+  --blue: #3f51b5;
+  --dark-blue: #001D3D;
+  --black: rgb(0, 0, 0);
+  --pink: #e6605c;
+  --grey: #9e9e9e;
+  --orange: #fc130f;
+  --teal: #20c997;
+  --light-gray: #d3d3d3;
+  --off-white: #f9f9f9;
+  --text-color: #343a40;
+}
+
+/* Custom utility classes */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.section {
+  margin-bottom: 2rem;
+  padding: 1rem 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+}
+
+/* Simple utility classes */
+.spacer {
+  flex: 1 1 auto;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+/* Global styles */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* Any additional global styles that don't conflict with the theme */
+
+.bg-my-blue {
+  background: linear-gradient(45deg, #0c69d7 20%, #3500ff) !important;
 }
 
 .mat-table {
-    background-color: var(--grey)
-  }
-    .mat-row {
-    background-color: var(--grey)
-  }
-  
-  .mat-mdc-dialog-container .mdc-dialog__surface {
-   background-color: transparent !important;
-   box-shadow: none !important;
-
+  background-color: var(--grey)
 }
-  .mat-header-row {
-    background-color: var(--grey)
-  }
 
+.mat-row {
+  background-color: var(--grey)
+}
 
-  .mat-header-cell {
-    background-color: var(--grey)
-  }
-  .mat-mdc-cell {
-    color:var(--black)
-  }
-  .mat-dialog-container {
-    border:2px solod purple;
-    background-color: transparent !important; 
-    box-shadow: none; 
-  }
+.mat-mdc-dialog-container .mdc-dialog__surface {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
 
-  button.mat-raised-button.custom-button {
-    color: white;
-    padding: 2rem 3rem; 
-    border-radius: 0.375rem; 
-    margin-bottom: 1rem; 
-  }
-@import 'https://fonts.googleapis.com/icon?family=Material+Icons';
+.mat-header-row {
+  background-color: var(--grey)
+}
+
+.mat-header-cell {
+  background-color: var(--grey)
+}
+
+.mat-mdc-cell {
+  color:var(--black)
+}
+
+.mat-dialog-container {
+  border:2px solod purple;
+  background-color: transparent !important; 
+  box-shadow: none; 
+}
+
+button.mat-raised-button.custom-button {
+  color: white;
+  padding: 2rem 3rem; 
+  border-radius: 0.375rem; 
+  margin-bottom: 1rem; 
+}
 
 .material-icons{
-    font-family: 'Material Icons' 
+  font-family: 'Material Icons' 
 }
 
 .custom-dialog-container .mat-dialog-container {
@@ -93,9 +129,6 @@ body {
   box-shadow: none; 
   padding: 0;
 }
-
-
-
 
 .relative-position {
   position: relative;
@@ -160,7 +193,6 @@ body {
 
 /* Spinning bot */
 .spinning-bot {
- 
   height: auto;
   animation: spin 1.5s linear infinite;
 }
@@ -175,7 +207,6 @@ body {
   }
 }
 
-
 @media (max-width: 1500px) {
   .blob-1::before {
     top: -1vw;
@@ -184,7 +215,6 @@ body {
     height: 20vw;
     border:2px solid orange;
     overflow:  hidden;
-
   }
   .blob-2::before {
     top: 20vw;
@@ -192,14 +222,12 @@ body {
     width: 30vw;
     height: 30vw;
   }
-
   .blob-3::before {
     bottom: -50vw;
     right: -5vw;
     width: 20vw;
     height: 20vw;
   }
-
   .blob-4::before {
     top: 10vw;
     left: -5vw;
@@ -216,21 +244,18 @@ body {
     width: 20vw;
     height: 20vw;
   }
-
   .blob-2::before {
     top: 500px;
     left: -200px;
     width: 30vw;
     height: 30vw;
   }
-
   .blob-3::before {
     bottom: -700px;
     right: -200px;
     width: 20vw;
     height: 20vw;
   }
-
   .blob-4::before {
     top: 180px;
     left: -200px;
@@ -247,9 +272,6 @@ body {
   }
 }
   
-
-
-
 @media (max-width: 640px) {
   .container {
       flex-direction: column-reverse;
@@ -264,5 +286,141 @@ body {
     }
   }
     
+/* Force Material styling */
+.mat-mdc-button {
+  background-color: var(--blue) !important;
+  color: white !important;
+}
+
+.mat-mdc-raised-button {
+  color: white !important;
+}
+
+.mat-mdc-raised-button.mat-primary {
+  background-color: var(--blue) !important;
+}
+
+.mat-mdc-raised-button.mat-accent {
+  background-color: var(--teal) !important;
+}
+
+.mat-mdc-raised-button.mat-warn {
+  background-color: var(--orange) !important;
+}
+    
+/* More specific selectors */
+body .mat-mdc-raised-button.mat-primary {
+  background-color: var(--blue) !important;
+  color: white !important;
+}
+
+html body .mat-mdc-toolbar.mat-primary {
+  background-color: var(--blue) !important;
+  color: white !important;
+}
+    
+/* Add these animations for the blob effects */
+@keyframes blob {
+  0% {
+    transform: scale(1);
+  }
+  33% {
+    transform: scale(1.1);
+  }
+  66% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Custom button styles */
+.btn-primary {
+  @apply bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors;
+}
+
+.btn-secondary {
+  @apply bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors;
+}
+
+.btn-danger {
+  @apply bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors;
+}
+    
+/* Add these styles for better image handling */
+.img-responsive {
+  max-width: 100%;
+  height: auto;
+}
+
+.img-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-shadow {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.card-shadow:hover {
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+/* Section spacing */
+.section {
+  margin-bottom: 2rem;
+  padding: 1rem 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+  
+  h1 {
+    font-size: 2.5rem !important;
+  }
+  
+  h2 {
+    font-size: 1.8rem !important;
+  }
+}
+    
+/* Backward compatibility for mat- selectors */
+mat-card {
+  display: block;
+}
+
+mat-card-header, mat-card-content, mat-card-actions {
+  display: block;
+}
+    
+/* Compatibility layer for legacy Material selectors */
+mat-card { display: block; }
+mat-card-header { display: block; }
+mat-card-title { display: block; font-size: 20px; font-weight: 500; }
+mat-card-subtitle { display: block; font-size: 14px; }
+mat-card-content { display: block; padding: 16px; }
+mat-card-actions { display: flex; padding: 8px; }
+
+mat-toolbar { display: flex; padding: 0 16px; }
+
+mat-form-field { display: block; }
     
     

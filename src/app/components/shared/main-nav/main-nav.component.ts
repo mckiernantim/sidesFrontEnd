@@ -1,68 +1,70 @@
-import { Component, OnInit } from '@angular/core';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Observable } from 'rxjs';
-import { map, shareReplay } from 'rxjs/operators';
-import { TokenService } from 'src/app/services/token/token.service';
-import { Router, ActivatedRoute } from '@angular/router';
+import { AuthService } from '../../../services/auth/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-main-nav',
   templateUrl: './main-nav.component.html',
-  styleUrls: ['./main-nav.component.css']
+  styleUrls: ['./main-nav.component.css'],
+  standalone: false
 })
-export class MainNavComponent implements OnInit {
-  countdown:number = Date.now() + 5000;
-  countdownClock: string | null = null;
-  displayClock: boolean = true;
-  isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
-    .pipe(
-      map(result => result.matches),
-      shareReplay()
-    );
+export class MainNavComponent implements OnInit, OnDestroy {
+  user$: Observable<any>;
+  displayClock = false;
+  isLoggedIn = false;
+  username = '';
+  userAvatar = '';
+  isUserMenuOpen = false;
+  isMobileMenuOpen = false;
 
   constructor(
-    private breakpointObserver: BreakpointObserver, 
-    private token: TokenService,
-    private router:Router,
-    private route: ActivatedRoute,
-  ) {}
+    private authService: AuthService,
+    private router: Router
+  ) {
+    this.user$ = this.authService.user$;
+  }
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe(params => {
-      console.log(params)
-      this.countdown = Number(params.expires)
-      this.token.initializeCountdown(this.countdown)
-      this.token.countdown$.subscribe(countdown => {
-        if(!countdown) {
-          this.displayClock = false
-          // this.router.navigate(["/"])
-        }
-        this.countdownClock = this.formatTime(countdown) as string
-        console.log("countdown: " + this.countdownClock)
-      })
-    })
-  } 
-  formatTime(milliseconds) {
-    try {
-      if(milliseconds) {
-        if(!this.displayClock) this.displayClock = true;
-        let seconds:string|number = Math.floor(milliseconds / 1000);
-        let minutes:string|number = Math.floor(seconds / 60);
-        let hours:string|number = Math.floor(minutes / 60);
-      
-        seconds = seconds % 60; // remainder of seconds divided by 60
-        minutes = minutes % 60; // remainder of minutes divided by 60
-      
-        // Padding numbers to make sure there are always two digits
-        hours = String(hours).padStart(2, '0');
-        minutes = String(minutes).padStart(2, '0');
-        seconds = String(seconds).padStart(2, '0');
-      
-        return `${hours}:${minutes}:${seconds}`;
+    this.authService.user$.subscribe(user => {
+      this.isLoggedIn = !!user;
+      if (user) {
+        this.username = user.displayName || user.email || 'User';
+        this.userAvatar = user.photoURL || '';
       }
-    } catch (err) {
-      console.error(err)
-    }
+    });
+  }
+
+  ngOnDestroy(): void {
+    // No documentDeleteInterval to clear
+  }
+
+  signIn() {
+    this.authService.signInWithGoogle();
+  }
+
+  signOut() {
+    this.authService.signOut().then(() => {
+      this.router.navigate(['/']);
+    });
+  }
+
+  toggleUserMenu(): void {
+    this.isUserMenuOpen = !this.isUserMenuOpen;
+  }
+
+  closeUserMenu(): void {
+    this.isUserMenuOpen = false;
+  }
+
+  toggleMobileMenu(): void {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+  }
+
+  logout(): void {
+    this.authService.signOut().then(() => {
+      this.router.navigate(['/']);
+    });
   }
 }
 

@@ -1,276 +1,221 @@
-import { saveAs } from 'file-saver';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { UploadService } from '../../services/upload/upload.service';
-import { AfterViewInit, Component, OnInit, OnDestroy } from '@angular/core';
-import { TokenService } from 'src/app/services/token/token.service';
-import { catchError, subscribeOn } from 'rxjs/operators';
-import { throwError, of, Subscription, Observable, switchMap } from 'rxjs';
-import { ActivatedRoute, Router } from '@angular/router';
-import { HttpErrorResponse } from '@angular/common/http';
-import { MatDialog } from '@angular/material/dialog';
-import { IssueComponent } from '../issue/issue.component';
-import { Analytics, logEvent } from '@angular/fire/analytics';
-import { FirebaseError } from 'firebase/app';
-import { getAnalytics } from "firebase/analytics";
-
+import { AuthService } from 'src/app/services/auth/auth.service';
+import { Router, ActivatedRoute } from '@angular/router';
+import { switchMap, catchError } from 'rxjs/operators';
+import { throwError } from 'rxjs';
 
 @Component({
   selector: 'app-complete',
   templateUrl: './complete.component.html',
   styleUrls: ['./complete.component.css'],
+  standalone: false
 })
-export class CompleteComponent implements OnInit, OnDestroy, AfterViewInit {
+export class CompleteComponent implements OnInit, OnDestroy {
   name: string = localStorage.getItem('name') || '';
-  layout: string = localStorage.getItem('layout') || '';
-  callsheet: string = localStorage.getItem('callsheet') || '';
-  downloadTimeRemaining: number = Infinity;
-  countdownSubscription: Subscription;
-  pdfToken: string = '';
-  downloadToken: number = 0;
-  expires: number;
-  private navigationState: any;
-  downloadSessionValid: boolean = true;
-  documentHasBeenDownloaded: boolean = false;
-  private readonly ERROR_MESSAGES = {
-    401: 'Your session has expired. Please try again.',
-    403: 'You don\'t have permission to access this document.',
-    404: 'Document not found. It may have been deleted.',
-    413: 'The document is too large to process.',
-    429: 'Too many requests. Please wait a moment.',
-    500: 'Server error. Please try again later.',
-    default: 'An unexpected error occurred. Please try again.'
-  };
+  documentHash: string = '';
+  isLoading: boolean = false;
+  error: string = '';
+  isDownloading: boolean = false;
+  userId: string = '';
+
+  // Countdown timer state
+  documentDeleteInterval: any = null;
+  documentDeleteExpires: number = null;
+  documentDeleteActive: boolean = false;
+  countdownClock: string = '';
 
   constructor(
-    public upload: UploadService,
-    public token: TokenService,
-    public dialog: MatDialog,
-    public router: Router,
-    public route: ActivatedRoute,
-    private analytics: Analytics
+    private upload: UploadService,
+    private auth: AuthService,
+    private router: Router,
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
-    this.route.queryParams.subscribe(params => {
-      this.pdfToken = params['pdfToken'];
-      this.expires = +params['expires'];
-      
-      logEvent(this.analytics, 'complete_params_received', {
-        has_token: !!this.pdfToken,
-        has_expires: !!this.expires,
-        timestamp: new Date().toISOString()
-      });
-      
-      if (!this.pdfToken || !this.expires) {
-        this.logErrorAndRedirect('Invalid URL parameters');
-        return;
-      }
-      
-      this.token.initializeCountdown(this.expires);
-    });
-  }
-
-  ngAfterViewInit(): void {
-    console.log('Token state:', this.token.getTokenDebugInfo()); // Add this to debug
-    if (this.token.isTokenValid()) {
-      logEvent(this.analytics, 'initiating_download', {
-        pdf_token: this.pdfToken,
-        timestamp: new Date().toISOString()
-      });
-  
-      this.downloadPDF(this.name, this.callsheet, this.pdfToken);
-    } else {
-      this.handleExpiredToken();
-    }
-    
-    this.countdownSubscription = this.token.countdown$.subscribe(
-      (timeRemaining) => {
-        this.downloadTimeRemaining = timeRemaining;
-        if (this.downloadTimeRemaining <= 0) {
-          this.handleExpiredToken();
-        }
-      }
-    );
-  }
-
-  private handleError(error: HttpErrorResponse): Observable<never> {
-    const errorDetails = {
-      error_type: error.name,
-      message: error.message,
-      status: error.status,
-      url: error.url,
-      timestamp: new Date().toISOString(),
-      pdf_token: this.pdfToken,
-      user_data: {
-        has_name: !!this.name,
-        has_layout: !!this.layout,
-        has_callsheet: !!this.callsheet
-      }
-    };
-
-    // Log to Firebase Analytics
-    logEvent(this.analytics, 'http_error', errorDetails);
-    
-    // Handle Blob errors
-    if (error.error instanceof Blob && error.error.type === 'application/json') {
-      return new Observable((observer) => {
-        const reader = new FileReader();
-        reader.onload = (e: ProgressEvent<FileReader>) => {
-          try {
-            const parsedError = JSON.parse(e.target?.result as string);
-            observer.error(parsedError);
-          } catch (parseError) {
-            observer.error(error);
-          }
-          observer.complete();
-        };
-        reader.onerror = (e) => {
-          observer.error(e);
-          observer.complete();
-        };
-        reader.readAsText(error.error);
-      });
-    }
-
-    // Log specific error types
-    if (error instanceof FirebaseError) {
-      logEvent(this.analytics, 'firebase_error', {
-        ...errorDetails,
-        firebase_error_code: error.code
-      });
-    }
-
-    const errorMessage = this.ERROR_MESSAGES[error.status] || this.ERROR_MESSAGES.default;
-    return throwError(() => ({ ...error, userMessage: errorMessage }));
-  }
-
-  private logErrorAndRedirect(message: string) {
-    logEvent(this.analytics, 'navigation_error', {
-      message,
-      timestamp: new Date().toISOString(),
-      current_route: this.router.url
-    });
-    this.router.navigate(['/']);
-  }
-  
-
-
-
-  downloadPDF(name: string, callsheet: string, pdfToken: string) {
-    if (!name ||!pdfToken) {
-      this.logErrorAndRedirect('Missing required parameters for download');
+    this.name = localStorage.getItem('name') || '';
+    const pdfToken = localStorage.getItem('pdfBackupToken');
+    const pdfTokenExpires = localStorage.getItem('pdfTokenExpires');
+    if (!this.name || !pdfToken || !pdfTokenExpires) {
+      this.error = 'No valid document session found. Please generate a new document.';
+      setTimeout(() => this.router.navigate(['/']), 2000);
       return;
     }
-    const startTime = Date.now();
-
-    
-    this.upload
-      .getPDF(name, callsheet, pdfToken)
-      .pipe(
-        switchMap((blob) => {
-          const endTime = Date.now();
-          const downloadDuration = endTime - startTime;
-
-          try {
-            const url = window.URL.createObjectURL(blob);
-            const anchor = document.createElement('a');
-            anchor.href = url;
-            anchor.download = `${name}-Sides-Ways.zip`;
-            anchor.click();
-            window.URL.revokeObjectURL(url);
-
-            logEvent(this.analytics, 'pdf_download_success', {
-              pdf_name: `${name}-Sides-Ways.zip`,
-              duration_ms: downloadDuration,
-              file_size_bytes: blob.size,
-              pdf_token: this.pdfToken
-            });
-
-            return of(null);
-          } catch (error) {
-            throw new Error('Failed to process download');
-          }
-        }),
-        catchError((error) => {
-          logEvent(this.analytics, 'pdf_download_error', {
-            error_message: error.message || 'An unknown error occurred',
-            pdf_name: `${name}-Sides-Ways.zip`,
-            error_type: error.name || 'Unknown',
-            status: error.status || 'N/A',
-            duration_ms: Date.now() - startTime,
-            pdf_token: this.pdfToken
-          });
-  
-          return this.handleError(error);
-        })
-      )
-      .subscribe({
-        next: () => {
-          this.documentHasBeenDownloaded = true;
-        },
-        error: (error) => {
-          console.error('Download failed:', error);
-          // Show user-friendly error message
-          alert(error.userMessage || this.ERROR_MESSAGES.default);
-        }
-      });
+    // Start the countdown timer
+    this.initDocumentDeleteCountdown();
+    // Get userId from the current user object
+    const currentUser = this.auth.getCurrentUser();
+    this.userId = currentUser?.uid || '';
+    // No need to check token validity - the server will handle that
+    this.downloadPDF();
   }
 
-  handleExpiredToken() {
-    logEvent(this.analytics, 'token_expired', {
-      pdf_token: this.pdfToken,
-      timestamp: new Date().toISOString()
-    });
-    alert('Your session has expired. Please start a new session.');
+  ngOnDestroy(): void {
+    if (this.documentDeleteInterval) {
+      clearInterval(this.documentDeleteInterval);
+    }
+  }
+
+  /**
+   * Initialize countdown timer for document deletion
+   */
+  private initDocumentDeleteCountdown(): void {
+    const expires = localStorage.getItem('pdfTokenExpires');
+    if (expires) {
+      this.documentDeleteExpires = parseInt(expires, 10);
+      this.documentDeleteActive = true;
+      this.updateCountdownClock();
+      this.documentDeleteInterval = setInterval(() => {
+        this.updateCountdownClock();
+        this.cdr.detectChanges();
+      }, 1000);
+    } else {
+      this.documentDeleteActive = false;
+      this.countdownClock = '';
+    }
+  }
+
+  /**
+   * Update the countdown clock and handle expiration
+   */
+  private updateCountdownClock(): void {
+    if (!this.documentDeleteExpires) {
+      this.countdownClock = '';
+      this.documentDeleteActive = false;
+      return;
+    }
+    const now = Date.now();
+    const diff = this.documentDeleteExpires - now;
+    if (diff <= 0) {
+      this.countdownClock = '00:00:00';
+      this.documentDeleteActive = false;
+      clearInterval(this.documentDeleteInterval);
+      this.handleDocumentExpired();
+      return;
+    }
+    // Format as HH:MM:SS
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    this.countdownClock = `${hours.toString().padStart(2, '0')}:${minutes
+      .toString()
+      .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * Handle document expiration: alert user, show message, clear state, and reroute
+   */
+  private handleDocumentExpired(): void {
+    // Remove document-related localStorage items
+    localStorage.removeItem('pdfBackupToken');
+    localStorage.removeItem('pdfTokenExpires');
+    localStorage.removeItem('name');
+    // Show message before rerouting
+    alert('Your document has been automatically deleted for your privacy. You will be redirected to upload a new document.');
+    // Reroute to upload page
     this.router.navigate(['/']);
   }
 
-  ngOnDestroy() {
-    if (this.countdownSubscription) {
-      this.countdownSubscription.unsubscribe();
+  /**
+   * For testing or user-initiated delete: Confirm, then delete the token and trigger expiration logic
+   */
+  deleteTokenForTest(): void {
+    if (confirm('Are you sure? This process is final.')) {
+      localStorage.removeItem('pdfBackupToken');
+      localStorage.removeItem('pdfTokenExpires');
+      this.handleDocumentExpired();
     }
   }
-  
-  handleDeleteClick() {
-    const dialogRef = this.dialog.open(IssueComponent, {
-      width: '500px',
-      data: {isDelete: true}
-    });
 
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        this.upload.deleteFinalDocument(this.pdfToken).subscribe({
-          next: (data) => {
-            if (data) {
-              this.token.removeToken();
-              logEvent(this.analytics, 'document_deleted', {
-                pdf_token: this.pdfToken,
-                success: true,
-                timestamp: new Date().toISOString()
-              });
-              
-              // Clear local storage
-              localStorage.removeItem('name');
-              localStorage.removeItem('layout');
-              localStorage.removeItem('callsheet');
-              
-              this.router.navigate(['/']);
-            }
-          },
-          error: (error) => {
-            logEvent(this.analytics, 'document_deletion_error', {
-              pdf_token: this.pdfToken,
-              error_message: error.message || 'Unknown error',
-              timestamp: new Date().toISOString()
-            });
-            alert('Failed to delete document. Please try again.');
-          }
-        });
-      } else {
-        logEvent(this.analytics, 'delete_dialog_cancelled', {
-          pdf_token: this.pdfToken,
-          timestamp: new Date().toISOString()
-        });
+  downloadPDF() {
+    
+    if (!this.name) {
+      this.error = 'Document name not found';
+      return;
+    }
+
+    this.isLoading = true;
+    this.isDownloading = true;
+    this.error = '';
+
+    // Get the token from localStorage
+    const pdfToken = localStorage.getItem('pdfBackupToken');
+    if (!pdfToken) {
+      this.error = 'PDF token not found. Please generate a new document.';
+      this.isLoading = false;
+      this.isDownloading = false;
+      return;
+    }
+
+    // Download using the header-based approach
+    this.upload.downloadPdf(this.name, '', pdfToken, this.userId).subscribe({
+      next: (blob) => {
+        this.isLoading = false;
+        this.isDownloading = false;
+        
+        // Create download from blob
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${this.name}-Sides-Ways.zip`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      },
+      error: (error) => {
+        console.error('Download error:', error);
+        
+        // Provide more specific error messages based on error type
+        if (error.status === 403) {
+          this.error = 'You do not have permission to download this document';
+        } else if (error.status === 404) {
+          this.error = 'Document not found. It may have been deleted';
+        } else if (error.status === 401 || error.status === 400) {
+          this.error = 'Your download link has expired. Please generate a new document.';
+          // Clear the expired token
+          localStorage.removeItem('pdfToken');
+          localStorage.removeItem('pdfTokenExpires');
+          // Redirect to home after a delay
+          setTimeout(() => this.router.navigate(['/']), 3000);
+        } else {
+          this.error = error.message || 'Failed to download document';
+        }
+        
+        this.isLoading = false;
+        this.isDownloading = false;
       }
     });
+  }
+
+  handleDeleteDocument() {
+    if (!confirm('Are you sure? This process is final.')) {
+      return;
+    }
+    const pdfToken = localStorage.getItem('pdfBackupToken');
+
+    if (!pdfToken) {
+      this.error = 'No PDF token found for deletion.';
+      return;
+    }
+    // Remove the token from localStorage before making the request
+    localStorage.removeItem('pdfBackupToken');
+    localStorage.removeItem('pdfTokenExpires');
+    this.upload.deleteFinalDocument(pdfToken).subscribe({
+      next: () => {
+        localStorage.removeItem('name');
+        alert('Your document has been deleted. You will be redirected to upload a new document.');
+        this.router.navigate(['/']);
+      },
+      error: (err) => {
+        console.error('Delete error:', err);
+        this.error = 'Failed to delete document';
+      }
+    });
+  }
+
+  navigateToProfile() {
+    this.router.navigate(['/profile']);
   }
 }

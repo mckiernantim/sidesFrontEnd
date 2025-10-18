@@ -5,9 +5,10 @@ interface Film {
   poster:string
 }
 @Component({
-  selector: 'app-testimonial-grid',
-  templateUrl: './testimonial-grid.component.html',
-  styleUrls: ['./testimonial-grid.component.css'],
+    selector: 'app-testimonial-grid',
+    templateUrl: './testimonial-grid.component.html',
+    styleUrls: ['./testimonial-grid.component.css'],
+    standalone: false
 })
 
 export class TestimonialGridComponent {

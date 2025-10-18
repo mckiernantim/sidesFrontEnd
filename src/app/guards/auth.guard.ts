@@ -1,24 +1,31 @@
 import { Injectable } from '@angular/core';
-import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot } from '@angular/router';
+import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from '@angular/router';
 import { Observable } from 'rxjs';
+import { AuthService } from '../services/auth/auth.service';
+import { map, take } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthGuard implements CanActivate {
-  constructor(private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
 
   canActivate(
     route: ActivatedRouteSnapshot,
-    state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
-    const token = route.queryParams['pdfToken'];
-    const expires = +route.queryParams['expires'];
-    if (token && expires && expires > Date.now()) {
-      return true;
-    } else {
-      alert('No valid session token or expiration time found or token has expired.');
-      this.router.navigate(['/']);
-      return false;
-    }
+    state: RouterStateSnapshot
+  ): Observable<boolean> {
+    return this.authService.getAuthenticatedUser().pipe(
+      take(1),
+      map(user => {
+        if (user) {
+          return true;
+        }
+        this.router.navigate(['/']);
+        return false;
+      })
+    );
   }
-}
+} 

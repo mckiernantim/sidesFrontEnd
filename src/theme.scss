@@ -9,7 +9,8 @@ $light-gray: #d3d3d3; // Light Gray for tables
 
 @use '@angular/material' as mat;
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-@include mat.core();
+@include mat.elevation-classes();
+@include mat.app-background();
 
 // Define custom palette for accent color
 $custom-teal: (
@@ -45,11 +46,11 @@ $custom-teal: (
   )
 );
 
-$my-primary-color: mat.define-palette(mat.$blue-palette, 500);
-$my-accent-color: mat.define-palette($custom-teal, 500);
-$my-warn-color: mat.define-palette(mat.$red-palette, 600);
+$my-primary-color: mat.m2-define-palette(mat.$m2-blue-palette, 500);
+$my-accent-color: mat.m2-define-palette($custom-teal, 500);
+$my-warn-color: mat.m2-define-palette(mat.$m2-red-palette, 600);
 
-$my-custom-theme: mat.define-light-theme((
+$my-custom-theme: mat.m2-define-light-theme((
   color: (
     primary: $my-primary-color,
     accent: $my-accent-color,
@@ -81,16 +82,17 @@ $my-custom-theme: mat.define-light-theme((
   ),
   background: (
     default: $background-color,
-    appBar: mat.get-color-from-palette($my-primary-color, 700),
-    card: mat.get-color-from-palette(mat.$grey-palette, 50),
-    dialog: mat.get-color-from-palette(mat.$grey-palette, 50),
-    hover: mat.get-color-from-palette($my-primary-color, 100),
+    appBar: mat.m2-get-color-from-palette($my-primary-color, 700),
+    card: mat.m2-get-color-from-palette(mat.$m2-grey-palette, 50),
+    dialog: mat.m2-get-color-from-palette(mat.$m2-grey-palette, 50),
+    hover: mat.m2-get-color-from-palette($my-primary-color, 100),
   ),
   density: 0,
 ));
 
 @include mat.all-component-themes($my-custom-theme);
-@include mat.core-theme($my-custom-theme);
+@include mat.elevation-classes();
+@include mat.app-background();
 @include mat.button-theme($my-custom-theme);
 
 body {

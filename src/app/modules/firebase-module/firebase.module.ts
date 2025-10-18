@@ -1,27 +1,54 @@
-// src/app/modules/firebase-module/firebase.module.ts
-import { NgModule } from '@angular/core';
+import { NgModule, isDevMode } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ModuleWithProviders } from '@angular/core';
 
-import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
-import { provideAnalytics, getAnalytics, setUserId } from '@angular/fire/analytics';
-import { provideFirestore, getFirestore } from '@angular/fire/firestore';
-import { provideAuth, getAuth } from '@angular/fire/auth';
-import { environment } from '../../../environments/environment';
+// Import Firebase modules
+import { initializeApp } from '@angular/fire/app';
+import { getAuth } from '@angular/fire/auth';
+import { getFirestore } from '@angular/fire/firestore';
+import { getStorage } from '@angular/fire/storage';
+import { provideFirebaseApp, FirebaseAppModule } from '@angular/fire/app';
+import { provideAuth, AuthModule } from '@angular/fire/auth';
+import { provideFirestore, FirestoreModule } from '@angular/fire/firestore';
+import { provideStorage, StorageModule } from '@angular/fire/storage';
+import { getConfig } from '../../../environments/environment';
 
-const { firebaseConfig } = environment;
+// Get the correct config based on mode
+const config = getConfig(!isDevMode());
+const { firebaseConfig } = config;
 
 @NgModule({
   imports: [
     CommonModule,
-    provideFirebaseApp(() => initializeApp(firebaseConfig)),
-    provideAnalytics(() => {
-      const analytics = getAnalytics();
-      // We're not setting a user ID initially
-      return analytics;
-    }),
-    provideFirestore(() => getFirestore()),
-    provideAuth(() => getAuth()), // Add this line to enable authentication
+    FirebaseAppModule,
+    AuthModule,
+    FirestoreModule,
+    StorageModule
   ],
-  exports: [],
+  providers: [
+    provideFirebaseApp(() => initializeApp(firebaseConfig)),
+    provideAuth(() => getAuth()),
+    provideFirestore(() => getFirestore()),
+    provideStorage(() => getStorage()),
+    { 
+      provide: 'FIREBASE_CONFIG', 
+      useFactory: () => {
+        console.log(`Using ${isDevMode() ? 'development' : 'production'} Firebase configuration`);
+        return firebaseConfig;
+      }
+    }
+  ]
 })
-export class FirebaseModule {}
+export class FirebaseModule {
+  static forRoot(): ModuleWithProviders<FirebaseModule> {
+    return {
+      ngModule: FirebaseModule,
+      providers: [
+        provideFirebaseApp(() => initializeApp(firebaseConfig)),
+        provideAuth(() => getAuth()),
+        provideFirestore(() => getFirestore()),
+        provideStorage(() => getStorage())
+      ]
+    };
+  }
+}

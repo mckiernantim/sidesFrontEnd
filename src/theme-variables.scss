@@ -1,0 +1,14 @@
+// Custom variables and mixins only
+// DO NOT include mat-core() here
+
+// Your custom colors, fonts, etc.
+$primary-color: #3f51b5;
+$accent-color: #ff4081;
+$warn-color: #f44336;
+
+// Custom mixins
+@mixin custom-box-shadow {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.26);
+}
+
+// Any other custom styles 

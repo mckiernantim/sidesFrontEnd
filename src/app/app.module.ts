@@ -1,60 +1,83 @@
-import { NgModule } from '@angular/core';
-import { DatePipe } from '@angular/common';
-import { AppRoutingModule } from './app-routing.module';
-import { HttpClientModule } from '@angular/common/http';
+import { NgModule, APP_INITIALIZER } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { FormsModule } from '@angular/forms';
-import { LayoutModule } from '@angular/cdk/layout';
-// material stuff
-import { MaterialModule } from './modules/material-module/material.module';
-// Firebase
-import { FirebaseModule } from './modules/firebase-module/firebase.module';
-import { UploadModule } from './modules/upload-module/upload.module';
-// components
+import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule, DatePipe } from '@angular/common';
+import { DragDropModule } from '@angular/cdk/drag-drop';
+
+import { FirebaseModule } from './modules/firebase-module/firebase.module';
+
 import { AboutComponent } from './components/about/about.component';
+import { PricingComponent } from './components/pricing/pricing.component';
+import { ContactComponent } from './components/contact/contact.component';
 import { DonateComponent } from './components/donate/donate.component';
 import { IssueComponent } from './components/issue/issue.component';
-import { SharedModule } from './modules/shared-module/shared.module';
+import { UploadModule } from './modules/upload-module/upload.module';
 import { DashboardModule } from './modules/dashboard-module/dashboard.module';
+import { SharedModule } from './modules/shared-module/shared.module';
+import { PaymentSuccessComponent } from './components/payment-success/payment-success.component';
+import { ProfileComponent } from './components/profile/profile.component';
+import { TestComponent } from './components/test/test.component';
+import { HttpLogInterceptor } from './services/http-interceptor.service';
+import { HowItWorksComponent } from './components/how-it-works/how-it-works.component';
+import { SubscriptionModalComponent } from './components/subscription-modal/subscription-modal.component';
+import { AuthService } from './services/auth/auth.service';
+
+// Factory function to ensure Firebase is initialized before the app starts
+export function initializeFirebase(authService: AuthService) {
+  return () => new Promise<void>(resolve => {
+    // This will trigger the auth state listener in the service
+    authService.handleRedirectResult().then(() => {
+      console.log('Firebase initialized and redirect handled');
+      resolve();
+    });
+  });
+}
 
 @NgModule({
-    declarations: [
-        AppComponent,
-        IssueComponent,
-        AboutComponent,
-        DonateComponent,
-     ],
-    imports: [
-        BrowserModule,
-        AppRoutingModule,
-        HttpClientModule,
-        BrowserAnimationsModule,
-        LayoutModule,
-        MaterialModule,
-        FirebaseModule,
-        FormsModule,
-        UploadModule,
-        DashboardModule,
-        SharedModule,
-    ],
-    providers: [
-        DatePipe,
-    ],
-    bootstrap: [AppComponent]
+  declarations: [
+    AppComponent,
+    AboutComponent,
+    PricingComponent,
+    ContactComponent,
+    DonateComponent,
+    IssueComponent,
+    ProfileComponent,
+    PaymentSuccessComponent,
+    TestComponent,
+    HowItWorksComponent,
+    PricingComponent,
+    AboutComponent,
+    ContactComponent,
+    SubscriptionModalComponent,
+  ],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    BrowserAnimationsModule,
+    HttpClientModule,
+    FormsModule,
+    ReactiveFormsModule,
+    CommonModule,
+    UploadModule,
+    SharedModule,
+    DashboardModule,
+    FirebaseModule.forRoot(),
+    DragDropModule,
+  ],
+  providers: [
+    DatePipe,
+    { provide: HTTP_INTERCEPTORS, useClass: HttpLogInterceptor, multi: true },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeFirebase,
+      deps: [AuthService],
+      multi: true
+    }
+  ],
+  bootstrap: [AppComponent]
 })
-export class AppModule {}
-    
-
-  
-
-
-
-
-
-
-
-
-
-
+export class AppModule { }

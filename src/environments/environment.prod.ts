@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  stripe:"pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ",
+  stripe: 'YOUR_NEW_PUBLISHABLE_KEY_HERE',
   // firebaseConfig:{
   //   apiKey: "AIzaSyBXD5kQfAS4lrmSJxYAuEUq8sxvXgWmCio",
   //   authDomain: "scriptthing.firebaseapp.com",
@@ -12,8 +12,9 @@ export const environment = {
   //   measurementId: "G-XM3P84P6N7"
   // },
   // url: 'https://sides3.herokuapp.com',
+
   // DEV SET UP
-  firebaseConfig :{
+  firebaseConfig: {
     apiKey: "AIzaSyCr0Gemya880xoOnAYWtTcZWssg5Uc2HY0",
     authDomain: "scriptthing-dev.firebaseapp.com",
     projectId: "scriptthing-dev",
@@ -25,6 +26,13 @@ export const environment = {
   url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
   password:"NOTEWORTHY"
 };
+
+export const environmentProd = environment;
+
+// Helper function to get the right environment
+export function getConfig(isProd = false) {
+  return environment;
+}
 
 
 

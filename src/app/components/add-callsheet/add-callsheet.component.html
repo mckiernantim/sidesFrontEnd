@@ -1,33 +1,157 @@
 <div class="flex flex-col justify-center items-center w-full space-y-4">
-    <form #callSheet name="callSheet" id="callSheet" class="w-full space-y-4">
+  <form #callSheet name="callSheet" id="callSheet" class="w-full space-y-4">
       <input
-        type="file"
-        hidden
-        #uploadButton
-        enctype="multipart/form-data"
-        accept="application/pdf"
-        (change)="handleFileInput($event.target.files)"
+          type="file"
+          hidden
+          #uploadButton
+          enctype="multipart/form-data"
+          accept="application/pdf,image/jpeg,image/jpg,image/png"
+          (change)="handleFileInput($event.target.files)"
       >
-      <div class="flex flex-col space-y-2 w-full">
-        <button
-          *ngIf="!callsheet"
-          mat-raised-button
-          color="warn"
-          class="w-full py-2 px-4 bg-red-600 text-white font-semibold rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-          (click)="uploadButton.click()"
-        >
-         Add Callsheet
-        </button>
-        <button
-          *ngIf="callsheet"
-          mat-raised-button
-          color="warn"
-          class="w-full py-2 px-4 bg-red-600 text-white font-semibold rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-          (click)="resetCallsheet()"
-        >
-          Remove Callsheet
-        </button>
+      
+      <!-- Upload/Remove Button Section -->
+      <div class="flex flex-col space-y-3 w-full">
+          
+          <!-- Initial Upload Button -->
+          <button
+              *ngIf="!callsheet && !isUploading && !uploadError"
+              type="button"
+              class="w-full py-3 px-4 bg-red-600 text-white font-semibold rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+              (click)="uploadButton.click()"
+          >
+              <div class="flex items-center justify-center">
+                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                  </svg>
+                  Add Callsheet
+              </div>
+          </button>
+          
+          <!-- Loading State -->
+          <div *ngIf="isUploading" class="w-full">
+              <button
+                  disabled
+                  type="button"
+                  class="w-full py-3 px-4 bg-gray-400 text-white font-semibold rounded-md shadow-sm cursor-not-allowed flex items-center justify-center"
+              >
+                  <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span *ngIf="!callsheetPreview">Uploading & Processing...</span>
+                  <span *ngIf="callsheetPreview">Loading Preview...</span>
+              </button>
+              
+              <!-- Upload Progress Indicator -->
+              <div class="mt-2 text-center">
+                  <p class="text-sm text-gray-600" *ngIf="!callsheetPreview">Converting file for preview...</p>
+                  <p class="text-sm text-gray-600" *ngIf="callsheetPreview">Preparing callsheet for display...</p>
+              </div>
+          </div>
+          
+          <!-- Error State -->
+          <div *ngIf="uploadError && !isUploading" class="space-y-3">
+              <div class="text-center p-4 bg-red-50 border border-red-200 rounded-md">
+                  <svg class="mx-auto h-10 w-10 text-red-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <h3 class="text-sm font-medium text-red-800 mb-1">Upload Failed</h3>
+                  <p class="text-sm text-red-600">{{ uploadError }}</p>
+              </div>
+              <button
+                  type="button"
+                  class="w-full py-2 px-4 bg-red-600 text-white font-semibold rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+                  (click)="retryUpload()"
+              >
+                  Try Again
+              </button>
+          </div>
+          
+          <!-- Success State with Enhanced Preview -->
+          <div *ngIf="callsheet && !isUploading && !uploadError" class="space-y-4">
+              <!-- Success Message -->
+              <div class="text-center p-3 bg-green-50 border border-green-200 rounded-md">
+                  <div class="flex items-center justify-center">
+                      <svg class="h-5 w-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                      <p class="text-sm text-green-700 font-medium">
+                          Callsheet Ready: {{ getCallsheetDisplayName() }}
+                      </p>
+                  </div>
+              </div>
+              
+              <!-- Enhanced Preview Card -->
+              <div *ngIf="hasPreview()" class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                  <div class="flex flex-col items-center">
+                      <!-- Preview Label -->
+                      <div class="flex items-center mb-3">
+                          <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                          </svg>
+                          <span class="text-sm font-medium text-gray-700">Preview</span>
+                      </div>
+                      
+                      <!-- Preview Image -->
+                      <div class="relative">
+                          <img 
+                              [src]="callsheetPreview" 
+                              alt="Callsheet preview"
+                              class="max-w-40 max-h-48 object-contain border border-gray-300 rounded-md shadow-sm bg-white"
+                              crossorigin="anonymous"
+                              (error)="onPreviewError()"
+                          >
+                          
+                          <!-- File type badge -->
+                          <span class="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                              {{ callsheet.fileType === 'application/pdf' ? 'PDF' : 'IMG' }}
+                          </span>
+                          
+                          <!-- Size indicator -->
+                          <div class="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                              Preview
+                          </div>
+                      </div>
+                      
+                      <!-- File info -->
+                      <div class="mt-3 text-center">
+                          <p class="text-xs text-gray-500 break-all">{{ callsheet.fileName }}</p>
+                      </div>
+                  </div>
+              </div>
+              
+              <!-- No Preview Available -->
+              <div *ngIf="!hasPreview()" class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div class="flex flex-col items-center text-gray-500">
+                      <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                      </svg>
+                      <p class="text-sm">Preview not available</p>
+                      <p class="text-xs text-gray-400">{{ callsheet.fileName }}</p>
+                  </div>
+              </div>
+              
+              <!-- Remove Button -->
+              <button
+                  type="button"
+                  class="w-full py-2 px-4 bg-red-600 text-white font-semibold rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+                  (click)="resetCallsheet()"
+              >
+                  <div class="flex items-center justify-center">
+                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                      </svg>
+                      Remove cllsheet
+                  </div>
+              </button>
+          </div>
       </div>
-    </form>
-  </div>
-  
+      <!-- File Requirements -->
+      <div class="text-center border-t pt-3">
+          <p class="text-xs text-gray-500">
+              📄 PDF or image files (JPEG, PNG) • 📏 Max 10MB
+          </p>
+      </div>
+  </form>
+</div>

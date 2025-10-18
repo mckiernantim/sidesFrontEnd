@@ -1,36 +1,35 @@
 // upload.module.ts
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CommonModule, AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms'; 
-import { MatDialogModule } from '@angular/material/dialog';
-import { MatButtonModule } from '@angular/material/button'
 import { UploadComponent } from '../../components/landing-page/upload/upload.component';
-
-import { FeatureGridComponent } from 'src/app/components/landing-page/feature/feature-grid/feature-grid.component';
-import { AboutItemGridComponent } from 'src/app/components/landing-page/about/about-item-grid/about-item-grid.component';
-import { FeatureCardComponent } from 'src/app/components/landing-page/feature/feature-card/feature-card.component';
-import { CarouselComponent } from 'src/app/components/carousel/carousel.component';
-import { TestimonialGridComponent } from 'src/app/components/landing-page/testimonial/testimonial-grid/testimonial-grid.component';
 import { SharedModule } from '../shared-module/shared.module';
+import { FeatureGridComponent } from '../../components/landing-page/feature/feature-grid/feature-grid.component';
+import { FeatureCardComponent } from '../../components/landing-page/feature/feature-card/feature-card.component';
+import { TestimonialGridComponent } from '../../components/landing-page/testimonial/testimonial-grid/testimonial-grid.component';
+import { CarouselComponent } from '../../components/carousel/carousel.component';
 
 @NgModule({
   declarations: [
     UploadComponent,
     FeatureGridComponent,
-    AboutItemGridComponent,
-    TestimonialGridComponent,
     FeatureCardComponent,
+    TestimonialGridComponent,
     CarouselComponent
   ],
   imports: [
     CommonModule,
     FormsModule,
-    MatDialogModule,
-    SharedModule,
-    MatButtonModule
+    SharedModule
   ],
   exports: [
-    UploadComponent
-  ]
+    UploadComponent,
+    FeatureGridComponent,
+    FeatureCardComponent,
+    TestimonialGridComponent,
+    CarouselComponent
+  ],
+  providers: [AsyncPipe],
+
 })
 export class UploadModule { }

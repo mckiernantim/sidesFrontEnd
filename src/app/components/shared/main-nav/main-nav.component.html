@@ -1,27 +1,55 @@
-
-
-  
-    <mat-toolbar class="!bg-my-blue text-offWhite top-0  realtive z-10000 w-full">
-
-      <span class="logo nav-item text-white">Sides-Ways</span>
-      <span class="spacer"></span>
-      <!-- Display the countdown value -->
-      @if (displayClock ) {
-        <ng-container >
-        <div class="right nav-item text-red-500">Deleting your IP in: {{ countdownClock }} </div>
-      </ng-container>
-    } 
-      <button mat-raised-button  class="nav-item text-offWhite " routerLink="/">Home</button>
-      <button mat-raised-button  class="nav-item text-offWhite" routerLink="/About">About</button>
-      <div class="right nav-item">
+<nav class="bg-gray-800 text-white py-4">
+  <div class="container mx-auto px-4">
+    <div class="flex justify-between items-center py-2">
+      <div class="flex items-center">
+        <a [routerLink]="['/']" class="text-xl font-bold text-white">Sides-Ways</a>
       </div>
-
-    </mat-toolbar>
-    <div class="app-container">
-      <router-outlet></router-outlet>
-    </div>
-
-    
+      
+      <div class="hidden md:flex items-center space-x-8">
+        <a routerLink="/" routerLinkActive="text-white" [routerLinkActiveOptions]="{exact: true}" class="text-gray-400 hover:text-white transition-colors">Home</a>
+        <a routerLink="/how-it-works" routerLinkActive="text-white" class="text-gray-400 hover:text-white transition-colors">How It Works</a>
+        <a routerLink="/pricing" routerLinkActive="text-white" class="text-gray-400 hover:text-white transition-colors">Pricing</a>
+        <a routerLink="/about" routerLinkActive="text-white" class="text-gray-400 hover:text-white transition-colors">About</a>
+        <a routerLink="/contact" routerLinkActive="text-white" class="text-gray-400 hover:text-white transition-colors">Contact</a>
+      </div>
+      
+      <div class="flex items-center space-x-4">
+        <ng-container *ngIf="!isLoggedIn; else loggedInTemplate">
+          <button (click)="signIn()" class="text-gray-400 hover:text-white transition-colors">Login</button>
+        </ng-container>
         
-
-
+        <ng-template #loggedInTemplate>
+          <div class="relative" (click)="toggleUserMenu()" (clickOutside)="closeUserMenu()">
+            <button class="flex items-center space-x-2 focus:outline-none">
+              <img [src]="userAvatar || 'assets/default-avatar.png'" alt="User avatar" class="w-8 h-8 rounded-full object-cover">
+              <span class="text-gray-300">{{ username }}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+            </button>
+            
+            <div *ngIf="isUserMenuOpen" class="absolute right-0 mt-2 w-48 bg-gray-700 rounded-md shadow-lg py-1 z-10">
+              <a [routerLink]="['/profile']" class="block px-4 py-2 text-gray-300 hover:bg-gray-600 hover:text-white">Profile</a>
+              <a [routerLink]="['/settings']" class="block px-4 py-2 text-gray-300 hover:bg-gray-600 hover:text-white">Settings</a>
+              <a (click)="logout()" class="block px-4 py-2 text-gray-300 hover:bg-gray-600 hover:text-white">Logout</a>
+            </div>
+          </div>
+        </ng-template>
+      </div>
+      
+      <button class="md:hidden focus:outline-none" (click)="toggleMobileMenu()">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+    
+    <div *ngIf="isMobileMenuOpen" class="md:hidden py-4">
+      <a href="#" class="block py-2 text-gray-400 hover:text-white">Home</a>
+      <a href="#" class="block py-2 text-gray-400 hover:text-white">Features</a>
+      <a href="#" class="block py-2 text-gray-400 hover:text-white">Pricing</a>
+      <a href="#" class="block py-2 text-gray-400 hover:text-white">About</a>
+      <a href="#" class="block py-2 text-gray-400 hover:text-white">Contact</a>
+    </div>
+  </div>
+</nav>

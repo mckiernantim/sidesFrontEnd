@@ -1,25 +1,46 @@
-<main [@fadeInOut] class="last-looks-container shadow-lg my-8">
-
-  <div class="pagination-controls flex flex-row items-center">
-    <span class="px-8">Page {{ currentPageIndex + 1 }} / {{ pages.length }}</span>
-    <div class="ml-auto flex space-x-2">
-      <button mat-raised-button color="warn" (click)="previousPage()" [disabled]="currentPageIndex === 0">Previous</button>
-      <button mat-raised-button color="warn" (click)="nextPage()" [disabled]="currentPageIndex === pages.length - 1">Next</button>
+<main [@fadeInOut] class="last-looks-container h-screen">
+  <div class="flex h-full">
+    <!-- Document Viewer (Main Content) -->
+    <div class="w-full flex flex-col overflow-hidden min-w-0 h-full">
+      <!-- Pagination Controls - Moved here -->
+      <div class="bg-white p-4 border-b border-gray-200">
+        <div class="flex justify-between space-x-2">
+          <button 
+            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            (click)="previousPage()" 
+            [disabled]="currentPageIndex === 0">
+            Previous
+          </button>
+          <div class="flex items-center justify-center px-4 text-gray-700 font-medium">
+            Page {{currentPageIndex + 1}} of {{pages?.length || 0}}
+          </div>
+          <button 
+            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            (click)="nextPage()" 
+            [disabled]="currentPageIndex === (pages?.length - 1)">
+            Next
+          </button>
+        </div>
+      </div>
+      <div class="page-container h-full">
+        <app-last-looks-page 
+          [page]="currentPage"
+          [canEditDocument]="canEditDocument"
+          [selectedLine]="selectedLine"
+          [currentPageIndex]="currentPageIndex"
+          [totalPages]="pages.length"
+          [editMode]="editState"
+          (lineChanged)="handleLineChange($event)"
+          (lineSelected)="handleLineSelected($event)"
+          (categoryChanged)="handleCategoryChange($event)"
+          (positionChanged)="handlePositionChange($event)"
+          (pageUpdate)="handlePageUpdate($event)"
+          (proceedToCheckout)="handleProceedToCheckout()"
+          (toggleVisibilityRequest)="handleToggleVisibilityRequest()"
+          (pageChange)="handlePageChange($event)">
+        </app-last-looks-page>
+      </div>
     </div>
   </div>
-  
-
-  <div class="page-container">
-
-    <app-last-looks-page 
-      [page]="currentPage" 
-      [canEditDocument]="editState"
-      [resetSelectedLine] = "selectedLine"
-      (pageUpdate) ="handlePageUpdate($event)"
-      >
-    </app-last-looks-page>
-    
-  </div>
-
 </main>
   

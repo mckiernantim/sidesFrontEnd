@@ -1,47 +1,49 @@
 import { Component, Input, OnInit, Optional, Inject, ChangeDetectorRef } from '@angular/core';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
-
 
 type ServerError = {
-  message:string;
-  code:number;
+  message: string;
+  code: number;
+  type: string;
 }
+
 interface ModalData {
-  title:string,
-  dialogOption:string,
-  selected?:string[],
-  error?:ServerError
+  title: string;
+  dialogOption: string;
+  selected?: string[];
+  response?: any;
+  error?: ServerError;
 }
+
 @Component({
   selector: 'app-spinning-bot',
   templateUrl: './spinning-bot.component.html',
-  styleUrls: ['./spinning-bot.component.css']
-}) 
-
-
+  styleUrls: ['./spinning-bot.component.scss'],
+  standalone: false
+})
 export class SpinningBotComponent implements OnInit {
-  title:string
-  dialogOption:string
-  paymentMsg:string = "Building sides for: "
-  error:ServerError
-  constructor(@Optional() 
-  @Inject(MAT_DIALOG_DATA) public data: ModalData, public cd:ChangeDetectorRef) {
-    if (data) {
-      const { title, dialogOption, error } = data;
-      this.paymentMsg += title
-      this.title = title;
-      this.dialogOption = dialogOption; 
-      this.error = error || { message:"Unknown server error", code : 500 }
-      
-      setTimeout(() => {
-        this.paymentMsg = `Rerouting to payment - sit tight`;
-        this.cd.detectChanges()
-      }, 1200);
-      
+  @Input() error?: ServerError | null;
+  @Input() title?: string;
+  @Input() dialogOption?: string;
+  @Input() paymentMsg: string = "Building sides for: ";
+  @Input() response?: any;
+  @Input() modalData?: ModalData;
+
+  constructor(private cdr: ChangeDetectorRef) {}
+
+  ngOnInit(): void {
+    // Ensure error is properly initialized
+    if (this.error === undefined) {
+      this.error = null;
     }
   }
 
-  ngOnInit(): void {}
+  getErrorMessage(): string {
+    return this.error?.message || 'An unknown error occurred';
+  }
+
+  getErrorType(): string {
+    return this.error?.type || 'Unknown';
+  }
 }
 
   

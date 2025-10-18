@@ -1,0 +1,98 @@
+<div class="overflow-x-auto">
+  <table class="min-w-full bg-white border border-gray-200">
+    <thead>
+      <tr class="bg-gray-100">
+        <th *ngIf="selectable" class="w-10 px-4 py-2"></th>
+        
+        <th *ngFor="let column of columns" 
+            class="px-4 py-2 text-left text-sm font-medium text-gray-700 uppercase tracking-wider cursor-pointer"
+            (click)="sort(column.key)">
+          {{ column.header }}
+          <span *ngIf="sortColumn === column.key">
+            {{ sortDirection === 'asc' ? '↑' : '↓' }}
+          </span>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of sortedData" 
+          class="border-t border-gray-200 hover:bg-gray-50"
+          [class.bg-indigo-50]="isSelected(item)">
+        <td *ngIf="selectable" class="w-10 px-4 py-2">
+          <input type="checkbox" 
+                 [checked]="isSelected(item)"
+                 (click)="toggleSelection($event, item)"
+                 class="form-checkbox h-5 w-5 text-indigo-600">
+        </td>
+        <td *ngFor="let column of columns" class="px-4 py-2">
+          <ng-container *ngIf="column.cell; else defaultCell">
+            {{ column.cell(item) }}
+          </ng-container>
+          <ng-template #defaultCell>
+            {{ item[column.key] }}
+          </ng-template>
+        </td>
+      </tr>
+      <tr *ngIf="data.length === 0">
+        <td [attr.colspan]="columns.length + (selectable ? 1 : 0)" class="px-4 py-2 text-center text-gray-500">
+          No data available
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div *ngIf="pagination && totalPages > 1" class="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+  <div class="flex justify-between sm:hidden">
+    <button [disabled]="currentPage === 1"
+            (click)="goToPage(currentPage - 1)"
+            class="relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
+            [ngClass]="{'opacity-50 cursor-not-allowed': currentPage === 1}">
+      Previous
+    </button>
+    <button [disabled]="currentPage === totalPages"
+            (click)="goToPage(currentPage + 1)"
+            class="ml-3 relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
+            [ngClass]="{'opacity-50 cursor-not-allowed': currentPage === totalPages}">
+      Next
+    </button>
+  </div>
+  <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+    <div>
+      <p class="text-sm text-gray-700">
+        Showing
+        <span class="font-medium">{{ (currentPage - 1) * pageSize + 1 }}</span>
+        to
+        <span class="font-medium">{{ Math.min(currentPage * pageSize, data.length) }}</span>
+        of
+        <span class="font-medium">{{ data.length }}</span>
+        results
+      </p>
+    </div>
+    <div>
+      <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+        <button [disabled]="currentPage === 1"
+                (click)="goToPage(currentPage - 1)"
+                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                [ngClass]="{'opacity-50 cursor-not-allowed': currentPage === 1}">
+          <span class="sr-only">Previous</span>
+          &laquo;
+        </button>
+        <ng-container *ngFor="let page of [].constructor(totalPages); let i = index">
+          <button (click)="goToPage(i + 1)"
+                  [ngClass]="{'bg-blue-50 border-blue-500 text-blue-600': currentPage === i + 1, 'bg-white border-gray-300 text-gray-500': currentPage !== i + 1}"
+                  class="relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+            {{ i + 1 }}
+          </button>
+        </ng-container>
+        <button [disabled]="currentPage === totalPages"
+                (click)="goToPage(currentPage + 1)"
+                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                [ngClass]="{'opacity-50 cursor-not-allowed': currentPage === totalPages}">
+          <span class="sr-only">Next</span>
+          &raquo;
+        </button>
+      </nav>
+    </div>
+  </div>
+</div> 

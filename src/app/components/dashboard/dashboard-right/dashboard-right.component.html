@@ -1,152 +1,308 @@
-<div [@fadeInOut] class="min-h-100 h-auto px-12">
-  <!-- entire page left and right -->
-  <div class="flex flex-col-reverse xl:flex-row justify-center min-h-50 h-auto space-y-8 xl:space-y-0 xl:space-x-8">
-    <ng-container *ngIf="!lastLooksReady; else lastLooks">
-      <!-- LEFT PANEL -->
-      <div class="data-feed cell max-h-[45vh] lg:max-h-full flex flex-col justify-around">
-        <h2 class="font-semibold text-2xl m-4"> {{ script }} scenes</h2>
-        <div class="mat-elevation-z8 table-container max-h-[15vh]">
-          <mat-form-field style="width:100%">
-            <mat-label>Search </mat-label>
-            <input matInput (keyup)="applyFilter($event)" placeholder="Search your scenes here" #input color="accent">
-          </mat-form-field>
+<div class="dashboard-right">
+  <div class="dashboard-right-content">
+    <div class="h-auto px-4 md:px-12 animate-fade-in position-relative z-5 flex flex-col">
+      <!-- entire page left and right -->
+      <div class="flex flex-col-reverse xl:flex-row justify-center min-h-50 h-auto space-y-8 xl:space-y-0 xl:space-x-8 flex-grow">
+        <ng-container *ngIf="!lastLooksReady; else lastLooks">
+          <!-- LEFT PANEL - Reduced width on larger screens -->
+          <div class="bg-white rounded-lg shadow-md p-6 lg:max-h-none flex flex-col justify-around w-full xl:w-3/5">
+            <h2 class="font-semibold text-2xl m-4">{{ script }} scenes</h2>
+            <div class="scene-selection-container flex-grow overflow-auto">
+              <div class="filter-container mb-4">
+                <input 
+                  type="text" 
+                  placeholder="Filter scenes..." 
+                  class="w-full p-2 border border-gray-300 rounded-md"
+                  (input)="applyFilter($event)">
+              </div>
 
-          <table mat-table [dataSource]="dataSource" matSort>
-            <ng-container matColumnDef="number">
-              <th class="table-scene-num" mat-header-cell *matHeaderCellDef mat-sort-header sticky> Scene Number </th>
-              <td class="table-scene-num" mat-cell *matCellDef="let scene; let i=index"> {{scene.sceneNumberText}} </td>
-            </ng-container>
-            <ng-container matColumnDef="page number">
-              <th class="table-page-num" mat-header-cell *matHeaderCellDef mat-sort-header sticky> Page Number </th>
-              <td class="table-page-num" mat-cell *matCellDef="let scene; let i=index"> {{scene.pageNumber}} </td>
-            </ng-container>
-            <ng-container matColumnDef="text">
-              <th class="table-scene-header" mat-header-cell *matHeaderCellDef mat-sort-header sticky> Scene Header
-              </th>
-              <td class="table-scene-header" mat-cell *matCellDef="let scene"> {{scene.text}} </td>
-            </ng-container>
-            <ng-container matColumnDef="preview">
-              <th class="table-preview" mat-header-cell *matHeaderCellDef mat-sort-header sticky> Text </th>
-              <td class="table-preview" mat-cell *matCellDef="let scene"> {{scene.preview}} </td>
-            </ng-container>
-            <ng-container matColumnDef="select">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header> Select </th>
-              <td mat-cell *matCellDef="let scene; let i=index">
-                <input type="checkbox" name={{i+1}} (change)="toggleSelected($event, scene)"
-                  [attr.disabled]="active === false ? 'disabled' : null">
-              </td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-
-            <tr class="mat-row" *matNoDataRow>
-              <td class="mat-cell" colspan="4">No data matching the filter "{{input.value}}"</td>
-            </tr>
-
-          </table>
-        </div>
-      </div>
-    </ng-container>
-    <!-- RIGHT PANEL -->
-    <div class="border border-red flex flex-col justify-start items-center [min-width:40%] py-12 overflow-auto">
-      <h1 class="text-3xl text-center">Generating sides for
-        <br>
-        <p class="pt-4">{{ script }} - {{ date | date }}</p>
-      </h1>
-      <div class="flex flex-row justify-between items-center">
-        <p class="text-xl">
-          @if (callsheetState) {
-            Callsheet: {{ callsheet }}
-          }
-        </p>
-        <p class="text-xl">
-          @if (watermark) {
-            Watermark: {{ watermark}}
-          }
-      </div>
-      @if (lastLooksReady) {
-        <div class="flex flex-col items-center">
-          <h2 class="p-8 text-xl">Total: FREE</h2>
-          <div class="flex flex-row items-center space-x-4">
-            <button class="px-12" mat-raised-button color="warn" (click)="openConfirmPurchaseDialog()">Proceed To
-              Checkout</button>
-            <button mat-raised-button color="warn" (click)="toggleLastLooks()" [disabled]="selected.length === 0">Back To Scene Select</button>
-          </div>
-        </div>
-      }
-
-      <div class="flex flex-col h-auto w-full justify-center items-center">
-        <!-- Top Panel (Selected Container) -->
-        <div class="flex-1 flex justify-center py-8">
-          <ng-container>
-            <ul class="p-12">
-              <ng-container>
-             
-                <li class="p-2" *ngFor="let scene of selected">
-                  <pre> {{scene.sceneNumberText}}     {{scene.text}}     {{scene.sceneNumberText}}</pre>
-                </li>
-              </ng-container>
-            </ul>
-          </ng-container>
-        </div>
-
-        <div class="flex-1 overflow-auto flex flex-col content-center items-center justify-center p-8 [min-width:60%]">
-          <ng-container *ngIf="!lastLooksReady; else lastLooksControls">
-            <div class="flex flex-row items-center w-full justify-around ">
-              <button mat-raised-button color="warn" (click)="toggleLastLooks()" [disabled]="selected.length === 0">getPDF</button>
-              <button mat-raised-button color="warn" (click)="this.router.navigate(['/'])">Back To Upload</button>
+              <app-tailwind-table 
+                [data]="scenes" 
+                [columns]="tableColumns"
+                [selectable]="true"
+                [pagination]="true"
+                [pageSize]="pageSize"
+                [selectedItems]="selected"
+                (selectionChange)="onSelectionChange($event)">
+              </app-tailwind-table>
             </div>
-          </ng-container>
-          <ng-template #lastLooksControls>
-         <div class="flex flex-wrap justify-center items-center space-y-4 lg:space-y-0">
-  <!-- Add Callsheet and Update Watermark in one row -->
-  <div class="flex flex-col md:flex-row md:space-x-4">
-    <div class="p-4">
-      <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
-    </div>
-    <div class="p-4">
-      <app-add-watermark (waterMarkUpdate)="addWaterMark($event)"></app-add-watermark>
-    </div>
-  </div>
+          </div>
+        </ng-container>
 
-  <!-- Final Button on its own row for medium/small screens -->
-  <div class="w-full md:w-auto p-4">
-    <button 
-      mat-raised-button 
-      color="warn" 
-      class="w-full md:w-auto bg-red-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-      disabled="true" 
-      (click)="toggleEditStateInLastLooks()"
-    >
-      Edit PDF - coming soon
-    </button>
-  </div>
-</div>
+        <!-- RIGHT PANEL - Increased width on larger screens -->
+        <div class="bg-white rounded-lg shadow-md p-6 flex flex-col justify-start items-center w-full xl:w-2/5 py-12 overflow-visible" [class.edit-state]="editState">
+          <h1 class="text-3xl text-center mb-6">Generating sides for
+            <br>
+            <p class="pt-4 text-xl text-indigo-700 font-medium">{{ script }} - {{ date | date }}</p>
+          </h1>
+          
+          <!-- Selected scenes list with delete option -->
+          <div class="selected-scenes-list" 
+          cdkDropList 
+          #dropList
+          (cdkDropListDropped)="onSceneDrop($event)"
+          [cdkDropListDisabled]="!editState">
+       <div *ngFor="let scene of getSortedSelectedScenes(); let i = index; trackBy: trackBySceneIndex" 
+            cdkDrag
+            [cdkDragDisabled]="!editState"
+            class="flex justify-between items-center p-3 mb-2 bg-gray-50 rounded-md border border-gray-200"
+            [class.cursor-move]="editState"
+            [class.cursor-default]="!editState">
+         
+         <!-- Drag handle - only visible in edit mode -->
+         <div class="flex items-center">
+           <svg *ngIf="editState"
+                xmlns="http://www.w3.org/2000/svg" 
+                class="h-5 w-5 mr-2 text-gray-400" 
+                viewBox="0 0 20 20" 
+                fill="currentColor"
+                cdkDragHandle>
+             <path d="M7 2a1 1 0 011 1v1h3a1 1 0 110 2H9.578a18.87 18.87 0 01-1.724 4.78c.29.354.596.696.914 1.026a1 1 0 11-1.44 1.389 21.034 21.034 0 01-.554-.6 19.098 19.098 0 01-3.107 3.567 1 1 0 01-1.334-1.49 17.087 17.087 0 003.13-3.733 18.992 18.992 0 01-1.487-2.494 1 1 0 111.79-.89c.234.47.489.928.764 1.372.417-.934.752-1.913.997-2.927H3a1 1 0 110-2h3V3a1 1 0 011-1zm6 6a1 1 0 01.894.553l2.991 5.982a.869.869 0 01.02.037l.99 1.98a1 1 0 11-1.79.895L15.383 16h-4.764l-.724 1.447a1 1 0 11-1.788-.894l.99-1.98.019-.038 2.99-5.982A1 1 0 0113 8zm-1.382 6h2.764L13 11.236 11.618 14z" />
+           </svg>
+           
+           <span class="font-medium scene-number" 
+                 [attr.contenteditable]="editState && scene.category === 'scene-header' ? 'true' : 'false'"
+                 (dblclick)="startEditingSceneNumber(scene)"
+                 (blur)="saveSceneNumberEdit(scene, $event)"
+                 (keydown)="handleSceneNumberKeyDown($event)"
+                 [class.editing]="editingSceneNumber === scene.sceneNumberText"
+                 [class.scene-header]="scene.category === 'scene-header'">{{ scene.sceneNumberText }}</span>: 
+           
+           <span class="scene-text ml-2"
+                 [attr.contenteditable]="editState ? 'true' : 'false'"
+                 (dblclick)="startEditingSceneText(scene)"
+                 (blur)="saveSceneTextEdit(scene, $event)"
+                 (keydown)="handleSceneTextKeyDown($event)"
+                 [class.editing]="editingSceneText === scene.text">{{ scene.text }}</span>
+         </div>
+         
+         <button (click)="removeSelectedScene(scene)" 
+                 class="text-red-500 hover:text-red-700 focus:outline-none ml-2">
+           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+           </svg>
+         </button>
+       </div>
        
-          </ng-template>
+       <!-- Empty state message -->
+       <div *ngIf="selected.length === 0" class="text-gray-500 italic p-3">
+         No scenes selected. Please select scenes from the table.
+       </div>
+       
+       <!-- Reordering instructions when in edit mode -->
+       <div *ngIf="editState && selected.length > 1" class="text-xs text-gray-600 italic p-2 bg-blue-50 rounded mt-2">
+         <i class="fas fa-info-circle mr-1"></i>
+         Drag and drop scenes to reorder them in the final document
+       </div>
+     </div>
+          
+          <!-- Rest of the right panel content -->
+          <div class="flex flex-col md:flex-row justify-between items-center w-full px-4 mb-6">
+            <p class="text-lg mb-2 md:mb-0">
+              @if (callsheetState) {
+                <span class="font-medium">Callsheet:</span> {{ callsheet }}
+              }
+            </p>
+            <p class="text-lg">
+              @if (watermark) {
+                <span class="font-medium">Watermark:</span> {{ watermark}}
+              }
+            </p>
+          </div>
+
+          <!-- Checkout/Auth Section -->
+          @if (lastLooksReady) {
+            <div class="flex flex-col items-center mb-8">
+              <h2 class="p-4 text-xl font-bold text-green-600">Total: FREE </h2>
+              <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+                @if (!userData) {
+                  <button 
+                    (click)="auth.signInWithGoogle()"
+                    class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors"
+                  >
+                    Sign in to continue
+                  </button>
+                } @else {
+                  <button 
+                    (click)="openConfirmPurchaseDialog()"
+                    [disabled]="isCheckingSubscription"
+                    [class.opacity-50]="isCheckingSubscription"
+                    [class.cursor-not-allowed]="isCheckingSubscription"
+                    class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    @if (isCheckingSubscription) {
+                      <span class="flex items-center">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Checking...
+                      </span>
+                    } @else {
+                      Get My Sides
+                    }
+                  </button>
+                }
+
+                <button 
+                  (click)="toggleLastLooks()" 
+                  [disabled]="selected.length === 0"
+                  class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Back To Scene Select
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- Controls Section -->
+          <div class="w-full">
+            <ng-container *ngIf="!lastLooksReady; else lastLooksControls">
+              <div class="controls-section" [class.edit-state]="editState">
+                <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                  <button 
+                    (click)="toggleLastLooks()" 
+                    [disabled]="selected.length === 0"
+                    class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Get PDF
+                  </button>
+                  <button 
+                    (click)="navigateBackToUpload()"
+                    class="w-full sm:w-auto bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-colors"
+                  >
+                    Back To Upload
+                  </button>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-template #lastLooksControls>
+              <div class="controls-section" [class.edit-state]="editState">
+                <div class="flex flex-wrap justify-center items-center space-y-4 lg:space-y-0 lg:space-x-4">
+                  <!-- Callsheet and Watermark controls -->
+                  <div class="flex flex-col md:flex-row md:space-x-4 w-full lg:w-auto">
+                    <div class="p-2 w-full md:w-1/2 lg:w-auto">
+                      <!-- Updated callsheet component call -->
+                      <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
+                    </div>
+                    <div class="p-2 w-full md:w-1/2 lg:w-auto">
+                      <app-add-watermark (waterMarkUpdate)="addWaterMark($event)"></app-add-watermark>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Callsheet Status Display (Optional) -->
+                <div *ngIf="callsheetReady && callSheetPath" class="mt-4 text-center">
+                  <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    Callsheet Ready
+                  </div>
+                </div>
+                
+                <!-- Watermark Status Display (Optional) -->
+                <div *ngIf="watermark" class="mt-2 text-center">
+                  <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+                    </svg>
+                    Watermark: {{ watermark }}
+                  </div>
+                </div>
+              </div>
+            </ng-template>
+          </div>
+
+          <!-- Sticky Edit Button and Help Tooltip -->
+          @if (lastLooksReady) {
+            <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end space-y-4">
+              <!-- Edit Controls - Only visible in edit mode -->
+              @if (editState) {
+                <div class="flex flex-col space-y-2">
+                  <!-- Undo Button -->
+                  <button 
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 flex items-center space-x-2"
+                    (click)="handleToolTipClicked('undo')">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                    </svg>
+                    <span>Undo</span>
+                  </button>
+                  
+                  <!-- Reset Document Button -->
+                  <button 
+                    class="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 flex items-center space-x-2"
+                    (click)="handleToolTipClicked('resetDoc')">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Reset Document</span>
+                  </button>
+                </div>
+              }
+              
+              <!-- Edit Button -->
+              <button 
+                class="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
+                (click)="triggerEditMode()"
+                [class.bg-green-600]="editState"
+                [class.hover:bg-green-700]="editState">
+                {{ editState ? 'Save Changes' : 'Edit PDF' }}
+              </button>
+              
+              <!-- Help Tooltip - Always visible in edit mode -->
+              @if (editState) {
+                <div class="bg-white rounded-lg shadow-xl border border-gray-200 max-w-sm w-80">
+                  <div class="p-4">
+                    <h3 class="text-lg font-bold mb-3 text-gray-800">Edit Functionality</h3>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                      <li><strong>Selection:</strong> Click to select, Ctrl/Cmd+Click for multi-select, Shift+Click for range</li>
+                      <li><strong>Edit Text:</strong> Double-click any line to edit</li>
+                      <li><strong>Move Lines:</strong> Click and drag selected lines</li>
+                      <li><strong>Change Category:</strong> Right-click for context menu</li>
+                      <li><strong>Edit Scene Numbers:</strong> Double-click scene numbers</li>
+                      <li><strong>Edit Bar Text:</strong> Double-click START/END/CONTINUE text</li>
+                      <li><strong>Toggle Visibility:</strong> Press 'X' key on selected lines</li>
+                    </ul>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <app-scene-selection 
+            [scenes]="scenes" 
+            (sceneSelected)="handleSceneSelection($event)">
+          </app-scene-selection>
         </div>
+
+        <ng-template #lastLooks>
+          <div class="flex flex-col w-full">
+            <!-- Last Looks Component - Below header -->
+            <div class="flex-1">
+              <app-last-looks
+                [editState]="editLastLooksState"
+                [resetDocState]="resetFinalDocState"
+                [selectedLineState]="selectedLineState"
+                [undoState]="fireUndo"
+                [triggerLastLooksAction]="triggerLastLooksAction"
+                [callsheetPath]="callSheetPath"
+                (pageUpdate)="onPageUpdate($event)">
+              </app-last-looks>
+            </div>
+          </div>
+        </ng-template>
       </div>
 
-      @if (editLastLooksState) {
-      <ng-container>
-        <div class="flex flex-row w-full">
-          <app-tool-tip class="w-full" (buttonAction)="handleToolTipClicked($event)"
-            [data]="toolTipContent"></app-tool-tip>
-        </div>
-      </ng-container>
-      }
+      <app-checkout-modal 
+        *ngIf="showCheckoutModal"
+        [selectedScenes]="selected"
+        [userData]="userData"
+        (checkout)="handleCheckout($event)"
+        (close)="closeCheckoutModal()"
+      ></app-checkout-modal>
     </div>
-
-    <ng-template #lastLooks>
-      <div *ngIf="this.pdf.finalDocReady">
-        <!-- Inputs passed to trigger changes in our lastlooks to handle edit state -->
-        <app-last-looks 
-        [resetDocState]="resetFinalDocState" 
-          [editState]="editLastLooksState" 
-          [undoState]="fireUndo"
-          [selectedLineState]="false" (onPageUpdate)="onPageUpdate($event)"></app-last-looks>
-      </div>
-    </ng-template>
   </div>
 </div>

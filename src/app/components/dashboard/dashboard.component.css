@@ -1,11 +1,10 @@
-
 .main{
+    min-height: 100vh;
     height: auto;
-    grid-template-rows: 300px;
     text-align: center;
     /* background: var(--white); */
     /* text-shadow: 1px 1px black; */
-    overflow: auto;
+    overflow: visible;
     
 }
 .white-logo{
@@ -20,16 +19,38 @@
 .main-container {
     display:flex;
     flex-direction: column-reverse;
+    min-height: auto;
+    height: auto;
 }
 @media screen and (min-width: 1200px) {
     .main-container {
         flex-direction: row;
+        height: auto;
     }
 }
 @media screen and (max-width: 768px) {
     .white-logo{
         display:none
     }
+}
+
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    height: auto;
+    width: 100%;
+}
+
+/* Ensure child components can grow */
+app-dashboard-right {
+   
+        flex-direction: column;
+        height: auto;
+        overflow: hidden;
+        background-color: #f9fafb;
+        margin-bottom: 1rem;
+        min-height: 1200px
 }
 
 

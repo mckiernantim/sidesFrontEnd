@@ -5,51 +5,61 @@
     height: 1056px;
 }
 
-.edit-mode {
-   
-    box-shadow:0 0 50px rgba(255, 255, 0, 0.7);
-    background-color: rgba(255, 255, 0, 0.4) ;
-    transition: box-shadow 0.2s ease; 
-        -webkit-touch-callout: none; /* iOS Safari */
-        -webkit-user-select: none; /* Safari */
-        -khtml-user-select: none; /* Konqueror HTML */
-        -moz-user-select: none; /* Old versions of Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-        user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera, and Firefox */
-    
-      
+.hidden {
+    display: none !important;
 }
+
+.edit-mode {
+    box-shadow: 0 0 50px rgba(255, 255, 0, 0.7);
+    background-color: rgba(255, 255, 0, 0.4);
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
 .edit-li:hover, .bar-span:hover {
-    transform: scale(1.10);
     cursor: grab;
 }
+
 .page {
     font-family: 'Courier Prime', monospace;
     height: 1056px;
     width: 816px;
     background-color: white;
-  
+    margin: 0 auto;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
+
 .grab-cursor {
-    cursor: grabbing !important;
+    cursor: grabbing;
 }
+
 .last {
-    margin-bottom: 0 !important;
+    margin-bottom: 0;
 }
 
 .break {
     page-break-after: always;
     height: 1056px;
-    width: 100%;
+    width: 816px;
     margin: 0 auto;
-    margin-bottom: 50px;
     text-align: left;
-
+    position: relative;
+    overflow: visible;
 }
+
 .last-looks-container {
-    display:flex;
-    flex-direction: row;
- 
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 1rem;
+    background-color: #f9fafb;
+    min-width: 816px;
+    height: 100%;
 }
 
 p {
@@ -57,17 +67,15 @@ p {
 }
 
 .screenbox {
-    margin: 0 auto;
-    margin-bottom: 50px;
+    margin: 0;
     position: relative;
-    break-before: always;
-    width: 95%;
-    height: 100%
+    width: 100%;
+    height: 100%;
+    padding: 0;
 }
 
 li,
 span {
-
     position: absolute;
     list-style-type: none;
     line-height: normal;
@@ -78,24 +86,29 @@ span {
 }
 
 .bar-span {
-
+    position: absolute;
+    width: 100%;
+    z-index: 10;
+    pointer-events: auto;
+    margin: 0 15px;
 }
+
 .page-number-text {
     position: absolute;
     page-break-before: always;
     text-align: right;
     right: 105px;
-    bottom: 975px
+    bottom: 975px;
 }
 
 .draft-text {
     bottom: 975px;
     position: absolute;
-    right: 43%
+    right: 43%;
 }
 
 li.page-number {
-    display: none !important;
+    display: none;
 }
 
 .true-scene {
@@ -105,27 +118,25 @@ li.page-number {
 }
 
 .final {
-    display: none
+    display: none;
 }
 
 .false {
     text-decoration: line-through;
     text-decoration-thickness: 25%;
-
 }
+
 .legal {
     margin: 1000px 20px 0px 20px;
-    
 }
 
 .true {
-    list-style-type: none !important;
-    text-decoration: none !important
+    list-style-type: none;
+    text-decoration: none;
 }
 
 .scene-header {
     font-weight: 700;
-
 }
 
 .version {
@@ -143,19 +154,17 @@ li.page-number {
 .hideEnd,
 .hideCont,
 .hideBar {
-    display: none !important
+    display: none;
 }
 
 .scene-header {
-    font-weight: 900 !important;
-    left: 96px !important;
-
+    font-weight: 900;
+    left: 96px;
 }
 
 .scene-number-left {
-    left: 45px !important;
-    font-weight: 900 !important;
-
+    left: 45px;
+    font-weight: 900;
 }
 
 .bar {
@@ -164,13 +173,11 @@ li.page-number {
     text-align: right;
     font-size: 11.5px;
     padding-left: -5%;
-    font-weight: 900 !important;
-
+    font-weight: 900;
 }
 
-
 .scene-number-right {
-    right: 85px !important;
+    right: 85px;
     text-align: right;
     font-weight: 900;
 }
@@ -178,53 +185,69 @@ li.page-number {
 .docTitle {
     font: 42px;
     margin: 0 auto;
-
-}
-
-.hidden {
-    display: none !important
 }
 
 .END {
-    width: 85%;
+    margin: 0 15px;
+    width: 95%;
     border-bottom: 2.5px solid black;
-    position: absolute;
     font-size: 11.5px;
     padding-left: 4%;
-    font-weight: 900 !important;
+    font-weight: 900;
+    position: absolute;
+    z-index: 5;
+    pointer-events: auto;
 }
 
 .CONTINUE {
-    bottom: 45.5px;
+    margin: 0 15px;
+    position: absolute;
     width: 100%;
+    border-top: 1px solid #000;
+    padding-top: 5px;
+    text-align: right;
+    right: 0;
+    font-size: 10px;
+    font-weight: bold;
+    z-index: 1;
+    pointer-events: auto;
+}
+
+.CONTINUE .bar-text {
+    position: relative;
+    width: auto;
+    border: none;
+    padding-right: 10px;
+    text-align: right;
+    font-size: 16pt;
+    font-weight: bold;
+    cursor: move;
+    pointer-events: auto;
+    z-index: 2;
+    display: inline-block;
+    margin-left: auto;
+}
+
+.bar-span.CONTINUE,
+span.CONTINUE {
+    width: 95%;
     border-top: 2.5px solid;
     padding-top: 2.5px;
     text-align: right;
+    right: 5px;
     font-size: 16pt;
-    font-weight: 900 !important;
+    font-weight: 900;
+    position: absolute;
 }
-
-.CONTINUE-TOP {
-    top: 45.5px;
-    width: 100%;
-    border-top: 2.5px solid;
-    padding-top: 2.5px;
-    text-align: left;
-    font-size: 16pt;
-    font-weight: 900 !important;
-}
-
-
 
 .page-number-hidden {
-    display: none !important;
+    display: none;
 }
 
 .footer {
-    font-size: 6px !important;
+    font-size: 6px;
     bottom: 15px;
     left: 50px;
-
 }
 
 .cover-sheet-left,
@@ -236,23 +259,26 @@ li.page-number {
     top: 35px;
     font-size: larger;
     font-weight: bold;
-    
-
 }
+
 .classification-option {
     margin-bottom: 10px;
     position: inherit;
 }
 
 .start-span {
-    right: 5%;
+    left: 1%;
     font-size: 16pt;
-
+    padding-left: 5px;
+    padding-right: 5px;
 }
 
 .end-span {
+    left: -15px;
     font-size: 16pt;
     bottom: -5px;
+    padding-left: 5px;
+    padding-right: 5px;
 }
 
 .notes {
@@ -261,40 +287,106 @@ li.page-number {
     border-bottom: 2px solid;
     font-size: 30px;
     height: 32px;
-
-
 }
+
 .selected {
-    border:2px solid black;
-    background-color:yellow;
-    transform: scale(1.1);
-    z-index: 10000000;
+    border: 2px solid black;
+    background-color: rgba(255, 255, 0, 0.3);
+    z-index: 1000;
 }
 
 .isRevision {
-    display: block !important;
-    right: 35px !important
+    display: block;
+    right: 35px;
 }
+
 .continue-span {
-
-    font-size: 16pt
+    font-size: 16pt;
 }
-
-.watermark {
-    z-index: 2;
-    font-size: 66px;
-    transform: rotateY(0deg) rotate(315deg);
+.watermark-overlay {
     position: absolute;
-    bottom: 35%;
-    opacity: .4;
-    bottom: 50%;
-    text-align: center;
-    width: 90%;
-    text-align: color;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
 }
 
+.watermark-repeating-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    white-space: nowrap;
+    width: 300%;
+    height: 300%;
+    display: flex;
+    flex-direction: column; /* Changed to column for three rows */
+    align-items: center;
+    justify-content: center;
+    gap: 20px; /* Space between rows */
+}
+
+/* Individual row styling */
+.watermark-timestamp-rows-above,
+.watermark-actor-row,
+.watermark-timestamp-rows-below {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    width: 100%;
+}
+
+.watermark-timestamp-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    width: 100%;
+}
+
+.watermark-timestamp-block {
+    font-size: 15px;
+    color: #666;
+    opacity: 0.25;
+    font-weight: 400;
+    letter-spacing: 1px;
+    font-family: 'Arial', sans-serif;
+    margin: 0 15px;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.watermark-actor-block {
+    font-size: 45px;
+    color: #666;
+    opacity: 0.25;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'Arial', sans-serif;
+    margin: 0 15px;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+/* Ensure watermark doesn't interfere with content */
+.watermark-overlay * {
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
 .footer {
-    display:none
+    display: none;
+}
+
+.end-bar-text {
+    right: 20px;
 }
 
 .context-menu {
@@ -303,42 +395,918 @@ li.page-number {
     border: 1px solid #ccc;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     z-index: 9999;
-  }
-  
-  .context-menu ul {
+}
+
+.context-menu ul {
     list-style: none;
     padding: 0;
     margin: 0;
-  }
-  
-  .context-menu li {
+}
+
+.context-menu li {
     padding: 8px 12px;
     cursor: pointer;
-  }
-  
-  .context-menu li:hover {
+}
+
+.context-menu li:hover {
     background-color: #f0f0f0;
-  }
+}
 
+/* Selected line styling */
+.selected-line, li.selected-line {
+    outline: 2px solid #3b82f6;
+    background-color: rgba(59, 130, 246, 0.2);
+    border-radius: 4px;
+    position: absolute;
+    z-index: 100;
+    display: block;
+    opacity: 1;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+}
 
-  @media (max-width:1200px)  {
-    .last-looks-container {
-        justify-content: center;
-    }
-  }
-
-  .callsheet-container {
+/* Context menu styling */
+.context-menu {
+    position: fixed;
     background: white;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+    min-width: 150px;
+}
+
+.context-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.classification-option {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.classification-option:hover {
+    background-color: #f5f5f5;
+}
+
+/* Add a subtle indicator for draggable items */
+.edit-mode li {
+    cursor: move;
+    display: block;
+}
+
+.edit-mode li:hover::before {
+    content: "⋮";
+    position: absolute;
+    left: -15px;
+    color: #888;
+}
+
+/* Add this CSS to show crossed-out lines */
+li[crossedout="true"], 
+li.crossed-out {
+    text-decoration: line-through;
+    color: #ff0000;
+}
+
+/* Style for draggable end spans */
+.draggable-end {
+    cursor: move;
+}
+
+/* Make sure all spans are visible and draggable */
+.START, .END, .CONTINUE, .CONTINUE-TOP {
+    margin: 0 15px;
+    display: block;
+    visibility: visible;
+    cursor: move;
+}
+
+/* Add visual feedback when hovering over draggable spans */
+.edit-mode .START:hover,
+.edit-mode .END:hover,
+.edit-mode .CONTINUE:hover,
+.edit-mode .CONTINUE-TOP:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Only show selection styling in edit mode */
+.selected-line {
+    outline: 2px solid #3b82f6;
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Hide selection when not in edit mode */
+:not(.edit-mode) .selected-line {
+    outline: none;
+    background-color: transparent;
+}
+
+/* Add these styles to your component CSS */
+.bar-text {
+    display: inline-block;
+    padding: 2px 10px;
+    margin: 0;
+    border-radius: 3px;
+    font-size: 16pt;
+    font-weight: 900;
+}
+
+.edit-mode .bar-text:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.END .bar-text {
+    position: relative;
+    text-align: right;
+    font-size: 16pt;
+    padding-left: 5px;
+    padding-right: 10px;
+    cursor: ew-resize;
+    pointer-events: auto;
+    z-index: 100;
+}
+
+.CONTINUE .bar-text {
+    position: relative;
+    text-align: right;
+    font-size: 16pt;
+    padding-right: 10px;
+    padding-left: 5px;
+    cursor: ew-resize;
+    pointer-events: auto;
+    z-index: 100;
+}
+
+.CONTINUE-TOP .bar-text {
+    position: relative;
+    text-align: left;
+    font-size: 16pt;
+    padding-left: 10px;
+    padding-right: 5px;
+    cursor: ew-resize;
+    pointer-events: auto;
+    z-index: 100;
+}
+
+[contenteditable="true"] {
+    outline: none;
+    background-color: rgba(255, 165, 0, 0.2);
+    min-width: 50px;
+    padding: 0 4px;
+    border-radius: 3px;
+    font-size: inherit;
+    font-weight: inherit;
+    font-family: inherit;
+}
+
+.ew-resize-cursor {
+    cursor: ew-resize;
+}
+
+/* Preserve the cursor styles for draggable elements */
+.edit-mode li,
+.edit-mode .bar-span,
+.edit-mode .END,
+.edit-mode .CONTINUE,
+.edit-mode .CONTINUE-TOP,
+.edit-mode .bar-text {
+    cursor: grab;
+}
+
+/* When actively dragging, use the grabbing cursor */
+.edit-mode li:active,
+.edit-mode .bar-span:active,
+.edit-mode .END:active,
+.edit-mode .CONTINUE:active,
+.edit-mode .CONTINUE-TOP:active,
+.edit-mode .bar-text:active,
+.grab-cursor {
+    cursor: grabbing;
+}
+
+/* Ensure the text editing cursor is still used when editing text */
+[contenteditable="true"] {
+    cursor: text;
+}
+
+/* Use ew-resize cursor for horizontal text dragging */
+.edit-mode .bar-text:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    cursor: ew-resize;
+}
+
+/* Fix for continue-top dragging */
+.continue-top-span {
+    position: absolute;
+    width: 100%;
+    z-index: 100;
+    pointer-events: auto;
+}
+
+/* Hide duplicate page numbers */
+li.page-number {
+    display: none;
+}
+
+.page-number-hidden,
+.page-number {
+    display: none;
+}
+
+/* Fix the bar-text padding with higher specificity */
+.screenbox .bar-span .bar-text,
+.screenbox span.bar-text,
+.edit-mode .bar-span .bar-text,
+.edit-mode span.bar-text,
+.CONTINUE .bar-text,
+.CONTINUE-TOP .bar-text,
+.END .bar-text,
+.bar .bar-text {
+    padding: 2px 5px;
+    display: inline-block;
+    border-radius: 3px;
+}
+
+/* Add styles for the page wrapper to handle overflow */
+.page-wrapper {
+    overflow: auto;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 1rem;
+}
+
+/* Pagination controls */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    margin: 15px 0;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.pagination-button {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 16px;
+    margin: 0 5px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:hover {
+    background-color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.page-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 10px;
+    color: #1f2937;
+}
+
+/* Editing instructions */
+.editing-instructions {
+    background-color: rgba(255, 251, 235, 0.95);
+    border-left: 4px solid #f59e0b;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.editing-instructions h3 {
+    color: #b45309;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.editing-instructions ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.editing-instructions li {
+    margin-bottom: 8px;
+    color: #4b5563;
+    font-size: 14px;
+}
+
+.editing-instructions kbd {
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 3px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    color: #1f2937;
+    display: inline-block;
+    font-size: 12px;
+    line-height: 1;
+    padding: 2px 5px;
+    margin: 0 2px;
+}
+
+/* Help button */
+.help-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+.help-button:hover {
+    background-color: #2563eb;
+    transform: scale(1.1);
+}
+
+/* Bar controls */
+.bar-controls {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 10px 0;
+}
+
+.bar-controls h4 {
+    color: #374151;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.bar-controls-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.bar-controls button {
+    background-color: white;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.bar-controls button:hover {
+    background-color: #eff6ff;
+    border-color: #93c5fd;
+}
+
+.bar-controls button.active {
+    background-color: #dbeafe;
+    border-color: #60a5fa;
+    color: #1e40af;
+}
+
+.bar-controls button svg {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+}
+
+@media (max-width: 1200px) {
+    .last-looks-container {
+        padding: 0.5rem;
+    }
+    
+    .page {
+        transform-origin: top center;
+        transform: scale(0.9);
+    }
+}
+
+@media (max-width: 900px) {
+    .page {
+        transform: scale(0.8);
+    }
+}
+
+@media (max-width: 700px) {
+    .page {
+        transform: scale(0.7);
+    }
+}
+
+.callsheet-container {
+    width: 100%;
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 11in;
-    padding: 1rem;
-  }
-  
-  .callsheet-container img {
-    object-fit: contain;
+    padding: 20px;
+    box-sizing: border-box;
+    background: white;
+}
+
+.callsheet-image {
     max-width: 100%;
-    height: auto;
-  }
+    max-height: 100%;
+    object-fit: contain;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.callsheet-error {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+}
+
+.callsheet-pdf {
+    width: 100%;
+    height: 100%;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.callsheet-content {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.callsheet-page {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Basic drag preview styles */
+.cdk-drag-preview {
+    opacity: 0.7;
+    background-color: white;
+    border: 2px solid #3b82f6;
+    border-radius: 3px;
+    box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+    z-index: 1001;
+}
+
+.cdk-drag-placeholder {
+    opacity: 0;
+}
+
+/* Basic styles for draggable elements */
+.END, .CONTINUE, .CONTINUE-TOP {
+    display: block;
+    visibility: visible;
+    cursor: move;
+}
+
+/* Basic hover effect */
+.edit-mode .END:hover,
+.edit-mode .CONTINUE:hover,
+.edit-mode .CONTINUE-TOP:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Selected line styling */
+.selected-line, li.selected-line {
+    outline: 2px solid #3b82f6 !important;
+    background-color: rgba(59, 130, 246, 0.2) !important;
+    border-radius: 4px !important;
+    position: absolute !important;
+    z-index: 100 !important;
+    display: block;
+    opacity: 1 !important;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5) !important;
+}
+
+/* Context menu styling */
+.context-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+    min-width: 150px;
+}
+
+.context-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.classification-option {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.classification-option:hover {
+    background-color: #f5f5f5;
+}
+
+/* Add a subtle indicator for draggable items */
+.edit-mode li {
+    cursor: move;
+    display: block;
+}
+
+.edit-mode li:hover::before {
+    content: "⋮";
+    position: absolute;
+    left: -15px;
+    color: #888;
+}
+
+/* Add this CSS to show crossed-out lines */
+li[crossedout="true"], 
+li.crossed-out {
+    text-decoration: line-through;
+    color: #ff0000;
+}
+
+/* Style for draggable end spans */
+.draggable-end {
+    cursor: move;
+}
+
+/* Make sure all spans are visible and draggable */
+.START, .END, .CONTINUE, .CONTINUE-TOP {
+    margin:0 15px;
+    display: block;
+    visibility: visible !important;
+    cursor: move;
+}
+
+/* Add visual feedback when hovering over draggable spans */
+.edit-mode .START:hover,
+.edit-mode .END:hover,
+.edit-mode .CONTINUE:hover,
+.edit-mode .CONTINUE-TOP:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Only show selection styling in edit mode */
+.selected-line {
+    outline: 2px solid #3b82f6;
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Hide selection when not in edit mode */
+:not(.edit-mode) .selected-line {
+    outline: none !important;
+    background-color: transparent !important;
+}
+
+/* Add these styles to your component CSS */
+.bar-text {
+    display: inline-block;
+    padding: 2px 10px !important;
+    margin: 0;
+    border-radius: 3px;
+    font-size: 16pt;
+    font-weight: 900 !important;
+}
+
+.edit-mode .bar-text:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.END .bar-text {
+    position: relative;
+    text-align: right;
+    font-size: 16pt;
+    padding-left: 5px;
+    padding-right: 10px;
+    cursor: ew-resize;
+    pointer-events: auto;
+    z-index: 100;
+}
+
+.CONTINUE .bar-text {
+    position: relative;
+    text-align: right;
+    font-size: 16pt;
+    padding-right: 10px;
+    padding-left: 5px;
+    cursor: ew-resize;
+    pointer-events: auto;
+    z-index: 100;
+}
+
+.CONTINUE-TOP .bar-text {
+    position: relative;
+    text-align: left;
+    font-size: 16pt;
+    padding-left: 10px;
+    padding-right: 5px;
+    cursor: ew-resize;
+    pointer-events: auto;
+    z-index: 100;
+}
+
+[contenteditable="true"] {
+    outline: none;
+    background-color: rgba(255, 165, 0, 0.2);
+    min-width: 50px;
+    padding: 0 4px;
+    border-radius: 3px;
+    font-size: inherit;
+    font-weight: inherit;
+    font-family: inherit;
+}
+
+.ew-resize-cursor {
+    cursor: ew-resize !important;
+}
+
+/* Preserve the cursor styles for draggable elements */
+.edit-mode li,
+.edit-mode .bar-span,
+.edit-mode .END,
+.edit-mode .CONTINUE,
+.edit-mode .CONTINUE-TOP,
+.edit-mode .bar-text {
+    cursor: grab !important;
+}
+
+/* When actively dragging, use the grabbing cursor */
+.edit-mode li:active,
+.edit-mode .bar-span:active,
+.edit-mode .END:active,
+.edit-mode .CONTINUE:active,
+.edit-mode .CONTINUE-TOP:active,
+.edit-mode .bar-text:active,
+.grab-cursor {
+    cursor: grabbing !important;
+}
+
+/* Ensure the text editing cursor is still used when editing text */
+[contenteditable="true"] {
+    cursor: text !important;
+}
+
+/* Use ew-resize cursor for horizontal text dragging */
+.edit-mode .bar-text:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    cursor: ew-resize !important;
+}
+
+/* Fix for continue-top dragging */
+.continue-top-span {
+    position: absolute;
+    width: 100%;
+    z-index: 100;
+    pointer-events: auto;
+}
+
+/* Hide duplicate page numbers */
+li.page-number {
+    display: none !important;
+}
+
+.page-number-hidden,
+.page-number {
+    display: none !important;
+}
+
+/* Fix the bar-text padding with higher specificity */
+.screenbox .bar-span .bar-text,
+.screenbox span.bar-text,
+.edit-mode .bar-span .bar-text,
+.edit-mode span.bar-text,
+.CONTINUE .bar-text,
+.CONTINUE-TOP .bar-text,
+.END .bar-text,
+.bar .bar-text {
+    padding: 2px 5px !important;
+    display: inline-block !important;
+    border-radius: 3px !important;
+}
+
+/* Add styles for the page wrapper to handle overflow */
+.page-wrapper {
+    overflow: auto;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 1rem;
+}
+
+/* Pagination controls */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    margin: 15px 0;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.pagination-button {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 16px;
+    margin: 0 5px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:hover {
+    background-color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.page-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 10px;
+    color: #1f2937;
+}
+
+/* Editing instructions */
+.editing-instructions {
+    background-color: rgba(255, 251, 235, 0.95);
+    border-left: 4px solid #f59e0b;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.editing-instructions h3 {
+    color: #b45309;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.editing-instructions ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.editing-instructions li {
+    margin-bottom: 8px;
+    color: #4b5563;
+    font-size: 14px;
+}
+
+.editing-instructions kbd {
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 3px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    color: #1f2937;
+    display: inline-block;
+    font-size: 12px;
+    line-height: 1;
+    padding: 2px 5px;
+    margin: 0 2px;
+}
+
+/* Help button */
+.help-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+.help-button:hover {
+    background-color: #2563eb;
+    transform: scale(1.1);
+}
+
+/* Bar controls */
+.bar-controls {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 10px 0;
+}
+
+.bar-controls h4 {
+    color: #374151;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.bar-controls-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.bar-controls button {
+    background-color: white;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.bar-controls button:hover {
+    background-color: #eff6ff;
+    border-color: #93c5fd;
+}
+
+.bar-controls button.active {
+    background-color: #dbeafe;
+    border-color: #60a5fa;
+    color: #1e40af;
+}
+
+.bar-controls button svg {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+}

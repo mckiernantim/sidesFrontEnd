@@ -1,0 +1,38 @@
+<div *ngIf="isOpen" class="fixed inset-0 z-50 flex items-center justify-center">
+  <!-- Background overlay -->
+  <div class="fixed inset-0 bg-gray-500 bg-opacity-75"></div>
+  
+  <!-- Centered container -->
+  <div class="relative z-50 w-full max-w-lg mx-4">
+    <div class="bg-white rounded-lg shadow-xl">
+      <!-- Content -->
+      <div class="px-4 pt-5 pb-4 sm:p-6">
+        <div class="text-center">
+          <h3 *ngIf="title" class="text-lg font-semibold text-gray-900 mb-4">
+            {{ title }}
+          </h3>
+          <div [innerHTML]="content"></div>
+        </div>
+      </div>
+      
+      <!-- Actions -->
+      <div class="px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse justify-center space-x-3">
+        <ng-container *ngFor="let action of actions">
+          <button
+            type="button"
+            [ngClass]="{
+              'bg-indigo-600 hover:bg-indigo-500 text-white': action.style === 'primary',
+              'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300': action.style === 'secondary',
+              'bg-red-600 hover:bg-red-500 text-white': action.style === 'danger'
+            }"
+            class="inline-flex w-full justify-center rounded-md px-4 py-2 text-sm font-medium shadow-sm sm:w-auto"
+            (click)="onAction(action.value)"
+          >
+            {{ action.label }}
+          </button>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</div>
+<div *ngIf="isOpen && !disableClose" class="fixed inset-0 z-40 bg-black opacity-25" (click)="onClose()"></div> 

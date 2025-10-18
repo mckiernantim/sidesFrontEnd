@@ -1,12 +1,19 @@
-import { Component } from '@angular/core';
-import { environment } from '../environments/environment';
-import { NavComponent } from './components/shared/nav/nav.component';
+import { Component, OnInit } from '@angular/core';
+import { MainNavComponent } from './components/shared/main-nav/main-nav.component';
+import { AuthService } from './services/auth/auth.service';
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+    selector: 'app-root',
+    templateUrl: './app.component.html',
+    styleUrls: ['./app.component.css'],
+    standalone: false
 })
-export class AppComponent {
-  title = 'sideWays';
+export class AppComponent implements OnInit {
+  title = 'side-ways';
+
+  constructor(private authService: AuthService) {}
+
+  ngOnInit(): void {
+    // The auth service will handle redirect results automatically
+  }
 }

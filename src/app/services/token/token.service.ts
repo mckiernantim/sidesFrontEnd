@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, timer } from 'rxjs';
+import { BehaviorSubject, Observable, timer, interval, Subject } from 'rxjs';
 import { map, startWith, switchMap, takeWhile } from 'rxjs/operators';
 import Cookies from 'js-cookie';
 
@@ -7,62 +7,128 @@ import Cookies from 'js-cookie';
   providedIn: 'root',
 })
 export class TokenService {
-  private readonly tokenKey = 'dltr_sidesWays';
-  private initialTimeSource = new BehaviorSubject<number>(0);
-  public countdown$: Observable<number>;
+  private readonly PDF_TOKEN_KEY = 'pdfToken';
+  private readonly PDF_TOKEN_EXPIRES_KEY = 'pdfTokenExpires';
+  private tokenSubject = new BehaviorSubject<string | null>(null);
+  private tokenExpiredSubject = new Subject<void>();
+  
+  public token$ = this.tokenSubject.asObservable();
+  public tokenExpired$ = this.tokenExpiredSubject.asObservable();
 
   constructor() {
-    this.countdown$ = this.initialTimeSource.pipe(
-      switchMap(initialTime => {
-        if (initialTime <= 0) return new BehaviorSubject(0);
-        
-        return timer(0, 1000).pipe(
-          map(() => Math.max(initialTime - Date.now(), 0)),
-          takeWhile(timeLeft => timeLeft > 0, true)
-        );
-      })
-    );
+    // Initialize token from localStorage
+    const token = this.getToken();
+    this.tokenSubject.next(token);
+    
+    // Set up periodic token validation
+    this.setupTokenValidation();
   }
 
-  public initializeCountdown(expirationTime: number): void {
-    // Store both the token and expiration time
-    Cookies.set(this.tokenKey, String(expirationTime));
+  private setupTokenValidation(): void {
+    // Check token validity every minute
+    interval(60000).subscribe(() => {
+      this.validateToken();
+    });
+  }
+
+  private validateToken(): void {
+    const token = localStorage.getItem(this.PDF_TOKEN_KEY);
+    const expirationTime = localStorage.getItem(this.PDF_TOKEN_EXPIRES_KEY);
     
-    if (expirationTime > Date.now()) {
-      this.initialTimeSource.next(expirationTime);
-    } else {
-      this.initialTimeSource.next(0);
+    if (!token || !expirationTime) {
+      this.removeToken();
+      return;
+    }
+
+    const currentTime = Date.now();
+    const expiresAt = parseInt(expirationTime);
+
+    if (currentTime >= expiresAt) {
+      console.log('Token expired:', {
+        currentTime: new Date(currentTime).toISOString(),
+        expiresAt: new Date(expiresAt).toISOString()
+      });
+      this.removeToken();
+      this.tokenExpiredSubject.next();
     }
   }
 
+  public setToken(token: string, expirationTime: number): void {
+    if (!token || !expirationTime) {
+      console.error('Invalid token or expiration time provided');
+      return;
+    }
+
+    // Validate expiration time is in the future
+    if (expirationTime <= Date.now()) {
+      console.error('Expiration time must be in the future');
+      return;
+    }
+
+    localStorage.setItem(this.PDF_TOKEN_KEY, token);
+    localStorage.setItem(this.PDF_TOKEN_EXPIRES_KEY, expirationTime.toString());
+    this.tokenSubject.next(token);
+    
+    console.log('Token stored:', {
+      token: token,
+      expires: new Date(expirationTime).toISOString()
+    });
+  }
+
+  public getToken(): string | null {
+    this.validateToken(); // Check validity before returning
+    return localStorage.getItem(this.PDF_TOKEN_KEY);
+  }
+
   public isTokenValid(): boolean {
-    const expirationTime = Number(Cookies.get(this.tokenKey));
-    return expirationTime && expirationTime > Date.now();
+    const token = localStorage.getItem(this.PDF_TOKEN_KEY);
+    const expirationTime = localStorage.getItem(this.PDF_TOKEN_EXPIRES_KEY);
+    
+    if (!token || !expirationTime) return false;
+    
+    const currentTime = Date.now();
+    const expiresAt = parseInt(expirationTime);
+    
+    return currentTime < expiresAt;
   }
 
   public removeToken(): void {
-    Cookies.remove(this.tokenKey);
-    this.initialTimeSource.next(0);
+    console.log('Removing expired token');
+    localStorage.removeItem(this.PDF_TOKEN_KEY);
+    localStorage.removeItem(this.PDF_TOKEN_EXPIRES_KEY);
+    this.tokenSubject.next(null);
   }
 
-  public getCountdownObservable(): Observable<number> {
-    return this.countdown$;
+  public getTokenExpirationTime(): number | null {
+    const expirationTime = localStorage.getItem(this.PDF_TOKEN_EXPIRES_KEY);
+    return expirationTime ? parseInt(expirationTime) : null;
   }
 
-  // Helper method to debug token state
+  public getTimeUntilExpiration(): number | null {
+    const expirationTime = this.getTokenExpirationTime();
+    if (!expirationTime) return null;
+    
+    const currentTime = Date.now();
+    return Math.max(0, expirationTime - currentTime);
+  }
+
   public getTokenDebugInfo(): { 
     hasToken: boolean; 
-    expirationTime: number; 
+    expirationTime: number | null; 
     currentTime: number;
-    timeRemaining: number;
+    timeRemaining: number | null;
+    isValid: boolean;
   } {
-    const expirationTime = Number(Cookies.get(this.tokenKey));
+    const expirationTime = this.getTokenExpirationTime();
     const currentTime = Date.now();
+    const timeRemaining = expirationTime ? Math.max(0, expirationTime - currentTime) : null;
+    
     return {
-      hasToken: !!Cookies.get(this.tokenKey),
+      hasToken: !!this.getToken(),
       expirationTime,
       currentTime,
-      timeRemaining: expirationTime - currentTime
+      timeRemaining,
+      isValid: this.isTokenValid()
     };
   }
 }

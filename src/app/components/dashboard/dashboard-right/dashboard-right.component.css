@@ -129,3 +129,260 @@ table {
    }
 }
 
+.min-h-screen {
+  min-height: 100vh;
+  height: auto
+}
+
+/* Update the container for last-looks */
+app-last-looks {
+  display: block;
+  height: auto; /* Force full height */
+  width: 100%;
+}
+
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 4px;
+  box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+              0 8px 10px 1px rgba(0, 0, 0, 0.14),
+              0 3px 14px 2px rgba(0, 0, 0, 0.12);
+}
+
+.cdk-drag-placeholder {
+  opacity: 0;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.selected-scenes-list.cdk-drop-list-dragging .scene-item:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.scene-item {
+  cursor: move;
+  background: white;
+  border-radius: 4px;
+  margin: 8px 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.scene-item:hover {
+  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+}
+
+.dashboard-right {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    background-color: #f9fafb;
+}
+
+.dashboard-right-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    height: auto;
+}
+
+/* Header Section Styles */
+.header-section {
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.selected-scenes-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 1rem;
+}
+
+/* Last Looks Container */
+.last-looks-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Medium screens and below */
+@media (max-width: 1200px) {
+    .dashboard-right-content {
+        height: auto;
+        min-height: 0;
+    }
+
+    .header-section {
+        margin: 1rem;
+    }
+
+    .selected-scenes-list {
+        max-height: 200px;
+    }
+}
+
+/* Small screens */
+@media (max-width: 768px) {
+    .dashboard-right-content {
+        padding: 0.5rem;
+    }
+
+    .header-section {
+        margin: 0.5rem;
+        padding: 1rem;
+    }
+}
+
+/* Scene item styles */
+.scene-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+}
+
+.scene-item:hover {
+    transform: translateX(4px);
+    background-color: #f3f4f6;
+}
+
+/* Drag and drop styles */
+.cdk-drag-preview {
+    box-sizing: border-box;
+    border-radius: 4px;
+    box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+                0 8px 10px 1px rgba(0, 0, 0, 0.14),
+                0 3px 14px 2px rgba(0, 0, 0, 0.12);
+}
+
+.cdk-drag-placeholder {
+    opacity: 0;
+}
+
+.cdk-drag-animating {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.selected-scenes-list.cdk-drop-list-dragging .scene-item:not(.cdk-drag-placeholder) {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Update media queries to maintain page dimensions and scrolling */
+@media (max-width: 1400px) {
+    .last-looks-container {
+        display: flex;
+        flex-direction: column-reverse;
+        height: auto;
+        min-height: calc(100vh - 64px);
+    }
+
+    .main-content-area {
+        order: 1;
+        margin-bottom: 2rem;
+    }
+
+    .right-side-content {
+        order: 2;
+        width: 100%;
+        max-width: none;
+    }
+
+    .scene-list-container {
+        max-height: 300px;
+        width: 100%;
+    }
+
+    .page-container {
+        padding: 1rem;
+        min-width: calc(816px + 2rem);
+    }
+
+    .controls-container {
+        width: 100%;
+    }
+}
+
+/* Small screens */
+@media (max-width: 900px) {
+    .last-looks-container {
+        padding: 0.5rem;
+    }
+
+    .controls-container {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .scene-list-container {
+        max-height: 200px;
+    }
+
+    .page-container {
+        padding: 0.5rem;
+        min-width: calc(816px + 1rem);
+    }
+}
+
+/* Controls Section with Edit State */
+.controls-section {
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.controls-section.edit-state {
+    background-color: #fef9c3; /* Light yellow background */
+}
+
+/* Right Panel with Edit State */
+.bg-white.rounded-lg.shadow-md.p-6.flex.flex-col.justify-start.items-center.w-full.xl\:w-2\/5.py-12.overflow-visible {
+    transition: background-color 0.3s ease;
+}
+
+.bg-white.rounded-lg.shadow-md.p-6.flex.flex-col.justify-start.items-center.w-full.xl\:w-2\/5.py-12.overflow-visible.edit-state {
+    background-color: #fef9c3; /* Light yellow background */
+}
+
+.scene-number, .scene-text {
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.scene-number.editing, .scene-text.editing {
+  background-color: #f0f9ff;
+  border: 1px solid #60a5fa;
+  outline: none;
+}
+
+.scene-number:focus, .scene-text:focus {
+  background-color: #f0f9ff;
+  border: 1px solid #60a5fa;
+  outline: none;
+}
+
+.edit-state .scene-number, .edit-state .scene-text {
+  cursor: text;
+}
+
+.edit-state .scene-number:hover, .edit-state .scene-text:hover {
+  background-color: #f3f4f6;
+}
+
+

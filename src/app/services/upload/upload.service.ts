@@ -1,39 +1,49 @@
-import { Injectable } from '@angular/core';
-import { Observable, throwError, tap, catchError } from 'rxjs';
+import { Injectable, isDevMode } from '@angular/core';
+import {
+  Observable,
+  throwError,
+  tap,
+  catchError,
+  of,
+  from,
+  switchMap,
+  timeout,
+  finalize,
+  BehaviorSubject,
+} from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
   HttpClient,
   HttpHeaders,
   HttpParams,
-  HttpErrorResponse
+  HttpErrorResponse,
 } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
+import { getConfig } from '../../../environments/environment';
 import { Line } from '../../types/Line';
 import { TokenService } from '../token/token.service';
-import Cookies from "js-cookie";
-type ClassifyResponse = {
-  allLines: string,
-  allChars: string,
-  individualPages: string,
-  title: string,
-  firstAndLastLinesOfScenes: string
-}
+import { AuthService } from '../auth/auth.service';
+import { getAuth, Auth } from 'firebase/auth';
+import Cookies from 'js-cookie';
+import {
+  User,
+  PdfResponse,
+  SubscriptionResponse,
+  isPdfResponse,
+  PdfGenerationResponse,
+  DeleteResponse,
+} from 'src/app/types/user';
+import { PdfUsage } from 'src/app/types/PdfUsageTypes';
+import { StripeService } from '../stripe/stripe.service';
+import { Timestamp } from '@angular/fire/firestore';
 
-interface DeleteResponse {
-  success: boolean;
-  message: string;
-  timestamp: number;
-  pdfToken: string;
-  stripeTransaction?: {
-    id: string;
-  } | null;
-}
 
 @Injectable({
   providedIn: 'root',
 })
 export class UploadService {
-  private readonly tokenKey = '';
+  private readonly tokenKey = 'pdfBackupToken';
+  private pdfUsageSubject = new BehaviorSubject<PdfUsage | null>(null);
+  public pdfUsage$ = this.pdfUsageSubject.asObservable();
   _devPdfPath: string = 'MARSHMALLOW_PINK';
   // values from script
   script: string;
@@ -53,27 +63,231 @@ export class UploadService {
     responseType: null,
   };
   msg: any;
-  public url: string = environment.url;
+  public url: string;
 
   constructor(
     // private firestore: Firestore,
     public httpClient: HttpClient,
-    public token: TokenService
+    public token: TokenService,
+    public auth: AuthService,
+    private stripe: StripeService
   ) {
-
+    // Get config based on production mode
+    const config = getConfig(!isDevMode());
+    this.url = config.url;
   }
-  // final step
-  getPDF(name: string, callsheet: string, pdfToken: string): Observable<any> {
-    const headers = new HttpHeaders().set('Content-Type', 'application/json');
 
-    const params = new HttpParams()
-      .set('name', name)
-      .set('callsheet', callsheet)
-      .set('pdfToken', pdfToken)
-    return this.httpClient.get(this.url + `/complete/${pdfToken}`, {
-      responseType: 'blob',
+  // Helper type guard for checking response type
+  isSubscriptionResponse(
+    response: PdfGenerationResponse
+  ): response is SubscriptionResponse {
+    return !response.success && 'needsSubscription' in response;
+  }
+
+  isPdfResponse(response: PdfGenerationResponse): response is PdfResponse {
+    return response.success && 'pdfToken' in response;
+  }
+
+  handleSubscriptionFlow(
+    finalDocument: any,
+    checkoutUrl: string
+  ): Observable<PdfGenerationResponse> {
+    const popupWidth = 700;
+    const popupHeight = 1000;
+    const left = window.screen.width / 2 - popupWidth / 2;
+    const top = window.screen.height / 2 - popupHeight / 2;
+
+    const popup = window.open(
+      checkoutUrl,
+      'StripeCheckout',
+      `width=${popupWidth},height=${popupHeight},left=${left},top=${top}`
+    );
+
+    return new Observable<PdfGenerationResponse>((observer) => {
+      const popupCheck = setInterval(async () => {
+        if (popup?.closed) {
+          clearInterval(popupCheck);
+
+          try {
+            // Check subscription status after popup closes
+            const subscriptionStatus =
+              await this.auth.checkSubscriptionStatus();
+
+            if (subscriptionStatus) {
+              // Just return the response, let component handle navigation
+              this.generatePdf(finalDocument).subscribe({
+                next: (response) => {
+                  observer.next({
+                    ...response,
+                    success: true,
+                    needsSubscription: false,
+                  });
+                  observer.complete();
+                },
+                error: (err) => observer.error(err),
+              });
+            } else {
+              observer.next({
+                success: false,
+                needsSubscription: true,
+                message: 'Subscription process incomplete',
+              });
+              observer.complete();
+            }
+          } catch (error) {
+            observer.error(error);
+          }
+        }
+      }, 500);
+
+      // Cleanup
+      return () => {
+        clearInterval(popupCheck);
+        if (popup && !popup.closed) popup.close();
+      };
+    });
+  }
+
+  generatePdf(finalDocument: any): Observable<PdfGenerationResponse> {
+    console.log('=== UPLOAD SERVICE: GENERATING PDF ===');
+    console.log('Document structure:', {
+      name: finalDocument.name,
+      email: finalDocument.email,
+      userId: finalDocument.userId,
+      callSheetPath: finalDocument.callSheetPath,
+      callSheet: finalDocument.callSheet, // Legacy property
+      hasCallSheet: finalDocument.hasCallSheet,
+      dataLength: finalDocument.data?.length || 0
+    });
+    
+    return from(getAuth().currentUser?.getIdToken() || Promise.reject('No user')).pipe(
+      switchMap((token) => {
+        console.log('Got auth token, sending request to server');
+        
+        const requestBody = {
+          data: finalDocument.data,
+          name: finalDocument.name,
+          email: finalDocument.email,
+          callSheetPath: finalDocument.callSheetPath, // Fixed: use callSheetPath instead of callSheet
+          userId: finalDocument.userId
+        };
+        
+        console.log('Request body being sent to server:', requestBody);
+        
+        return this.httpClient.post<PdfResponse>(
+          this.url + '/pdf', 
+          requestBody,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }),
+      tap((response) => {
+        console.log('Response received from server:', response);
+        
+        // Store the token from the response body
+        if (response && response.token) {
+          localStorage.setItem(this.tokenKey, response.token);
+          
+          // Also store the expiration time
+          if (response.expirationTime) {
+            localStorage.setItem('pdfTokenExpires', response.expirationTime.toString());
+          }
+        }
+
+        // Update PDF usage if available
+        if (response && response.usage) {
+          const pdfUsage: PdfUsage = {
+            pdfsGenerated: response.usage.pdfsGenerated,
+            lastGeneration: Timestamp.fromMillis(response.usage.lastGeneration),
+            currentPeriodStart: Timestamp.fromMillis(response.usage.currentPeriodStart),
+            currentPeriodEnd: Timestamp.fromMillis(response.usage.currentPeriodEnd),
+            usageLimit: response.usage.usageLimit
+          };
+          this.pdfUsageSubject.next(pdfUsage);
+        }
+      }),
+      catchError((error) => {
+        console.error('Error in generatePdf:', error);
+
+        if (error.status === 403 && error.error?.needsSubscription) {
+          console.log('Subscription needed, handling subscription flow');
+          return this.handleSubscriptionFlow(
+            finalDocument,
+            error.error.checkoutUrl
+          );
+        }
+
+        return throwError(() => error);
+      })
+    );
+  }
+
+  downloadPdf(
+    name: string,
+    callsheet: string,
+    pdfToken: string,
+    userId?: string
+  ): Observable<Blob> {
+    // Get the token from localStorage
+    ;
+    const token = localStorage.getItem('pdfBackupToken');
+    if (!token) {
+      return throwError(() => new Error('PDF token not found'));
+    }
+
+    // Create request body with name and token
+    const requestBody = {
+      name,
+      pdfToken: token,
+      // Only include userId if it exists
+      ...(userId ? { userId } : {})
+    };
+
+    // Log the request for debugging
+    console.log('Download PDF request:', {
+      endpoint: `${this.url}/complete`,
+      requestBody,
+      hasToken: !!token
+    });
+
+    return this.httpClient
+      .post(`${this.url}/complete`, requestBody, {
+        responseType: 'blob',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .pipe(
+        tap(() => console.log('Download PDF response received')),
+        catchError((error) => {
+          console.error('Download PDF error:', error);
+          // Handle specific error cases
+          if (error.status === 403) {
+            if (error.error?.error === 'User not found') {
+              // If user not found is the only error, we can still proceed
+              return this.httpClient.post(`${this.url}/complete`, {
+                name,
+                pdfToken: token
+              }, {
+                responseType: 'blob',
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              });
+            }
+          }
+          return throwError(() => error);
+        })
+      );
+  }
+  // Add method to verify subscription status
+  verifySubscriptionStatus(sessionId: string): Observable<any> {
+    return this.httpClient.get(`/subscription-status?session_id=${sessionId}`, {
       withCredentials: true,
-      params: params
     });
   }
 
@@ -89,12 +303,36 @@ export class UploadService {
     });
   }
   getTestJSON(name) {
-    let params = new HttpParams();
-    params.append('name', name);
-    this.httpOptions.params = params;
-    this.httpOptions.headers = new Headers();
-    this.httpOptions.responseType = 'blob';
-    return this.httpClient.post(this.url + '/testing', this.script);
+    return from(this.auth.user$).pipe(
+      switchMap((user) => {
+        if (!user) {
+          return throwError(
+            () => new Error('User must be authenticated to use test JSON')
+          );
+        }
+
+        let params = new HttpParams()
+          .set('name', name)
+          .set('userEmail', user.email)
+          .set('userId', user.uid);
+
+        this.httpOptions.params = params;
+        this.httpOptions.headers = new Headers();
+        this.httpOptions.responseType = 'blob';
+
+        return this.httpClient.post(this.url + '/testing', this.script).pipe(
+          catchError((error) => {
+            console.error('Test JSON error:', {
+              userEmail: user.email,
+              testName: name,
+              timestamp: new Date().toISOString(),
+              error: error,
+            });
+            return throwError(() => error);
+          })
+        );
+      })
+    );
   }
 
   makeJSON(data) {
@@ -110,57 +348,108 @@ export class UploadService {
   // get classified data => returns observable for stuff to plug into
   postFile(fileToUpload: File): Observable<any> {
     this.resetHttpOptions();
-    localStorage.setItem('name', fileToUpload.name.replace(/.pdf/, ''));
-    this.script = localStorage.getItem('name');
-    const formData: FormData = new FormData();
-    formData.append('script', fileToUpload, fileToUpload.name);
-    return this.httpClient
-      .post(this.url + '/api', formData, this.httpOptions)
-      .pipe(
-        map((data: any) => {
-          let { allLines, allChars, individualPages, title, firstAndLastLinesOfScenes } = data
-          this.allLines = allLines;
-          this.firstAndLastLinesOfScenes = firstAndLastLinesOfScenes
-          this.individualPages = individualPages;
-          this.allChars = allChars
-          this.title = title;
-          this.lineCount = [];
-          this.individualPages.forEach((page) => {
-            this.lineCount.push(page.filter((item) => item.totalLines));
-          });
-          return data;
-        })
-      );
-  }
 
-  generatePdf(sceneArr) {
+    // Get current user from auth service
+    return from(this.auth.user$).pipe(
+      switchMap((user) => {
+        if (!user) {
+          return throwError(
+            () => new Error('User must be authenticated to upload files')
+          );
+        }
 
-    let params = new HttpParams().append('name', sceneArr.name);
-    this.httpOptions.headers = new Headers();
-    this.httpOptions.params = params;
-    this.httpOptions.responseType = 'blob';
+        localStorage.setItem('name', fileToUpload.name.replace(/.pdf/, ''));
+        this.script = localStorage.getItem('name');
 
-    return this.httpClient.post(this.url + '/pdf', sceneArr, {
-      params: params,
-      withCredentials: true,
-    });
+        const formData: FormData = new FormData();
+        formData.append('script', fileToUpload, fileToUpload.name);
+        // Add user metadata to the request
+        formData.append('userEmail', user.email);
+        formData.append('userId', user.uid);
+        formData.append('uploadTime', new Date().toISOString());
+
+        return this.httpClient
+          .post(this.url + '/api', formData, this.httpOptions)
+          .pipe(
+            map((res: any) => {
+              let {
+                allLines,
+                allChars,
+                individualPages,
+                title,
+                firstAndLastLinesOfScenes,
+              } = res.data;
+              
+              this.allLines = allLines;
+              this.firstAndLastLinesOfScenes = firstAndLastLinesOfScenes;
+              this.individualPages = individualPages;
+              this.allChars = allChars;
+              this.title = title;
+              this.lineCount = [];
+              this.individualPages.forEach((page) => {
+                this.lineCount.push(page.filter((item) => item.totalLines));
+              });
+              debugger
+              return res;
+            }),
+            catchError((error) => {
+              console.error('Upload error:', {
+                userEmail: user.email,
+                fileName: fileToUpload.name,
+                timestamp: new Date().toISOString(),
+                error: error,
+              });
+              // Reset service state on error
+              this.resetServiceState();
+              return throwError(() => error);
+            }),
+            // Reset service state after successful completion
+            finalize(() => {
+              this.resetServiceState();
+            })
+          );
+      })
+    );
   }
 
   postCallSheet(fileToUpload: File): Observable<any> {
     this.resetHttpOptions();
-    const formData: FormData = new FormData();
-    if (fileToUpload) {
-      this.coverSheet = fileToUpload;
-      formData.append('callSheet', fileToUpload, fileToUpload.name);
-    } else {
-      this.coverSheet = null;
-      formData.append('callSheet', null);
-    }
 
-    return this.httpClient.post(
-      this.url + '/callsheet',
-      formData,
-      this.httpOptions
+    return from(this.auth.user$).pipe(
+      switchMap((user) => {
+        if (!user) {
+          return throwError(
+            () => new Error('User must be authenticated to upload callsheet')
+          );
+        }
+
+        const formData: FormData = new FormData();
+        if (fileToUpload) {
+          this.coverSheet = fileToUpload;
+          formData.append('callSheet', fileToUpload, fileToUpload.name);
+          // Add user metadata
+          formData.append('userEmail', user.email);
+          formData.append('userId', user.uid);
+          formData.append('uploadTime', new Date().toISOString());
+        } else {
+          this.coverSheet = null;
+          formData.append('callSheet', null);
+        }
+
+        return this.httpClient
+          .post(this.url + '/callsheet', formData, this.httpOptions)
+          .pipe(
+            catchError((error) => {
+              console.error('Callsheet upload error:', {
+                userEmail: user.email,
+                fileName: fileToUpload?.name,
+                timestamp: new Date().toISOString(),
+                error: error,
+              });
+              return throwError(() => error);
+            })
+          );
+      })
     );
   }
 
@@ -178,39 +467,41 @@ export class UploadService {
   }
 
   deleteFinalDocument(tokenId: string): Observable<DeleteResponse> {
-
     // const sessionToken = Cookies.get(this.tokenKey);
 
-    // if (!sessionToken) {
+    // if (!sessionToken)
     //   return throwError(() => new Error('No session token found'));
     // }
 
     const httpOptions = {
       headers: new HttpHeaders({
         'Content-Type': 'application/json',
-        'Authorization': `Bearer`
-      })
+        Authorization: `Bearer`,
+      }),
     };
 
-    return this.httpClient.post<DeleteResponse>(
-      `${this.url}/delete`,
-      { pdfToken: tokenId }, // Changed to match backend expectation of 'pdfToken'
-      httpOptions
-    ).pipe(
-      tap(response => {
-        if (response.success) {
-          console.log('Document deleted successfully:', response.pdfToken);
-        }
-      }),
-      catchError(this.handleError)
-    );
+    return this.httpClient
+      .post<DeleteResponse>(
+        `${this.url}/delete`,
+        { pdfToken: tokenId }, // Changed to match backend expectation of 'pdfToken'
+        httpOptions
+      )
+      .pipe(
+        tap((response) => {
+          if (response.success) {
+            console.log('Document deleted successfully:', response.pdfToken);
+          }
+        }),
+        catchError(this.handleError)
+      );
   }
 
   private handleError(error: HttpErrorResponse) {
     let errorMessage = 'An error occurred while processing your request.';
 
     if (error.status === 0) {
-      errorMessage = 'Unable to connect to the server. Please check your internet connection.';
+      errorMessage =
+        'Unable to connect to the server. Please check your internet connection.';
     } else if (error.status === 401) {
       errorMessage = 'Your session has expired. Please log in again.';
     } else if (error.status === 403) {
@@ -226,7 +517,7 @@ export class UploadService {
     console.error('Error:', {
       status: error.status,
       message: errorMessage,
-      error: error.error
+      error: error.error,
     });
 
     return throwError(() => new Error(errorMessage));
@@ -236,5 +527,51 @@ export class UploadService {
   private getAuthToken(): string | null {
     return Cookies.get(this.tokenKey);
   }
-}
 
+  downloadDocumentById(name: string, userId: string): Observable<Blob> {
+    // We don't need to extract the token - the browser will automatically send the cookie
+    return this.httpClient.post(
+      `${this.url}/complete`,
+      { name: name,
+        userId:userId 
+       },
+      {
+        responseType: 'blob',
+        withCredentials: true  // This ensures cookies are sent with the request
+      }
+    ).pipe(
+      catchError(error => {
+        console.error('Download error:', error);
+        return throwError(() => new Error('Failed to download document: ' + (error.message || 'Unknown error')));
+      })
+    );
+  }
+
+  deleteDocumentById(): Observable<any> {
+    // The cookie is automatically sent with the request
+    return this.httpClient.post(
+      `${this.url}/delete`,
+      {},  // Empty body, the cookie contains the token
+      {
+        withCredentials: true  // Include the cookie
+      }
+    ).pipe(
+      catchError(error => {
+        console.error('Delete error:', error);
+        return throwError(() => new Error('Failed to delete document: ' + (error.message || 'Unknown error')));
+      })
+    );
+  }
+
+  // Add this method to reset service state after upload
+  resetServiceState(): void {
+    // Reset any state that might prevent subsequent uploads
+    this.resetHttpOptions();
+    // Clear any other state that might be causing issues
+    this.script = null;
+    this.allLines = null;
+    this.individualPages = null;
+    this.allChars = null;
+    this.title = null;
+  }
+}

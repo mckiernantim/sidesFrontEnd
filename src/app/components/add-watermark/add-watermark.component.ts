@@ -1,21 +1,30 @@
 import { Component, EventEmitter, Output} from '@angular/core';
 
 @Component({
-  selector: 'app-add-watermark',
-  templateUrl: './add-watermark.component.html',
-  styleUrls: ['./add-watermark.component.css']
+    selector: 'app-add-watermark',
+    templateUrl: './add-watermark.component.html',
+    styleUrls: ['./add-watermark.component.css'],
+    standalone: false
 })
 export class AddWatermarkComponent {
-  displayWaterMark: boolean;
-  waterMark:string = null;
+  displayWaterMark: boolean = false;
+  waterMark: string = null;
   addWaterMark: Function;
   @Output() waterMarkUpdate = new EventEmitter<string>();
+  @Output() waterMarkRemove = new EventEmitter<void>();
 
   emitValue() {
-    // get data from inpit';
-    this.waterMarkUpdate.emit(this.waterMark);
+    // Emit the watermark value (null if empty)
+    const watermarkValue = this.waterMark && this.waterMark.trim() ? this.waterMark.trim() : null;
+    this.waterMarkUpdate.emit(watermarkValue);
   }
-  toggleDisplayWaterMark () {
+
+  removeWatermark() {
+    this.waterMark = null;
+    this.waterMarkRemove.emit();
+  }
+
+  toggleDisplayWaterMark() {
     this.displayWaterMark = !this.displayWaterMark;
   }
 }

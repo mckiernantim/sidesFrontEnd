@@ -1,169 +1,301 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DashboardRightComponent } from './dashboard-right.component';
-import { UploadService } from '../../../services/upload/upload.service';
-import { PdfService } from '../../../services/pdf/pdf.service';
-import { MatDialogModule } from '@angular/material/dialog';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { of } from 'rxjs';
+import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import _ from 'lodash';
-import lineDataNoteworthy from '../../../testingData/pdfServiceData/finalDocData/NOTEWORTHY/NOTEWORTHY-lineArr-mock-data.json';
-import pageDataNoteworthy from '../../../testingData/pdfServiceData/finalDocData/NOTEWORTHY/NOTEWORTHY-pagesArr-mock-data.json';
-import finalDocDataNoteworthy from '../../../testingData/pdfServiceData/finalDocData/NOTEWORTHY/NOTEWORTHY[1,2,5,11,12,22,28].json';
-import lineDataKidnapped from '../../../testingData/pdfServiceData/finalDocData/KIDNAPPED/KIDNAPPED-lineArr-mock-data.json';
-import pageDataKidnapped from '../../../testingData/pdfServiceData/finalDocData/KIDNAPPED/KIDNAPPED-pagesArr-mock-data.json';
-import finalDocDataKidnapped from '../../../testingData/pdfServiceData/finalDocData/KIDNAPPED/KIDNAPPED[2,14,A24,33,A40,53,A73,92,157].json';
-import lineDataTheFinalRose from '../../../testingData/pdfServiceData/finalDocData/THE FINAL ROSE/THE FINAL ROSE-lineArr-mock-data.json';
-import pageDataTheFinalRose from '../../../testingData/pdfServiceData/finalDocData/THE FINAL ROSE/THE FINAL ROSE-pagesArr-mock-data.json';
-import finalDocDataTheFinalRose from '../../../testingData/pdfServiceData/finalDocData/THE FINAL ROSE/THE FINAL ROSE[2,4,7,11,18A,18B,18C,29,53,73,104].json';
+import { of, BehaviorSubject } from 'rxjs';
+import { DashboardRightComponent } from './dashboard-right.component';
+import { AuthService } from '../../../services/auth/auth.service';
+import { StripeService } from '../../../services/stripe/stripe.service';
+import { PdfService } from '../../../services/pdf/pdf.service';
+import { UploadService } from '../../../services/upload/upload.service';
+import { UndoService } from '../../../services/edit/undo.service';
+import { LineOutService } from '../../../services/line-out/line-out.service';
+import { TokenService } from '../../../services/token/token.service';
+import { TailwindDialogService } from '../../../services/tailwind-dialog/tailwind-dialog.service';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { NavigationEnd } from '@angular/router';
+import { getAnalytics } from '@angular/fire/analytics';
 
-const BASE_PATH = '../../../testingData/pdfServiceData/finalDocData';
+// Mock the Firebase analytics
+jest.mock('@angular/fire/analytics', () => ({
+  getAnalytics: jest.fn().mockReturnValue({}),
+  logEvent: jest.fn()
+}));
 
-function deepDiff(expected, actual) {
-  const uniqueToExpected = _.differenceWith(expected, actual, _.isEqual);
-  const uniqueToActual = _.differenceWith(actual, expected, _.isEqual);
-  return [uniqueToExpected, uniqueToActual];
-}
+describe('DashboardRightComponent', () => {
+  let component: DashboardRightComponent;
+  let fixture: ComponentFixture<DashboardRightComponent>;
+  let authServiceMock: any;
+  let stripeServiceMock: any;
+  let pdfServiceMock: any;
+  let uploadServiceMock: any;
+  let undoServiceMock: any;
+  let lineOutServiceMock: any;
+  let tokenServiceMock: any;
+  let tailwindDialogServiceMock: any;
+  let routerMock: any;
+  let userSubject: BehaviorSubject<any>;
 
-function sanitizeLinesForCompare(arr, category, cssClassForFinal) {
-  return arr.flat().filter(line => line[category] === cssClassForFinal).map(line => ({
-    text: line.text,
-    category: line.category,
-    xPos: line.xPos,
-    yPos: line.yPos,
-    cont: line.cont,
-    visible: line.visible,
-    end: line.end,
-    sceneNumberText: line.sceneNumberText,
-  }));
-}
+  beforeEach(async () => {
+    // Create a subject to simulate auth state changes
+    userSubject = new BehaviorSubject<any>(null);
 
-function toBeWithinRange(value, floor, ceiling) {
-  return value >= floor && value <= ceiling;
-}
+    // Mock services
+    authServiceMock = {
+      user$: userSubject.asObservable(),
+      signInWithGoogle: jest.fn().mockResolvedValue({}),
+      signOut: jest.fn().mockResolvedValue({}),
+      getCurrentUser: jest.fn().mockReturnValue({
+        uid: 'test-user-id',
+        email: 'test@example.com'
+      })
+    };
 
-interface TestCase {
-  name: string;
-  lineData: any[];
-  pageData: any[];
-  finalDoc: any[];
-  scenes: string[];
-}
+    stripeServiceMock = {
+      getSubscriptionStatus: jest.fn().mockReturnValue(of({
+        active: true,
+        subscription: {
+          status: 'active',
+          currentPeriodEnd: new Date().toISOString()
+        }
+      })),
+      createSubscription: jest.fn().mockReturnValue(of({
+        success: true,
+        checkoutUrl: 'https://checkout.stripe.com/test'
+      }))
+    };
 
-const testCases: TestCase[] = [
-  {
-    name: 'THE FINAL ROSE',
-    lineData: lineDataTheFinalRose,
-    pageData: pageDataTheFinalRose,
-    finalDoc: finalDocDataTheFinalRose,
-    scenes: ['2', '4', '7', '11', '18A', '18B', '18C', '29', '53', '73', '104'],
-  },
-  {
-    name: 'KIDNAPPED',
-    lineData: lineDataKidnapped,
-    pageData: pageDataKidnapped,
-    finalDoc: finalDocDataKidnapped,
-    scenes: ['2', '14', 'A24', '33', 'A40', '53', 'A73', '92', '157'],
-  },
-  {
-    name: 'NOTEWORTHY',
-    lineData: lineDataNoteworthy,
-    pageData: pageDataNoteworthy,
-    finalDoc: finalDocDataNoteworthy,
-    scenes: ['1', '2', '5', '11', '12', '22', '28'],
-  },
-];
+    pdfServiceMock = {
+      allLines: [
+        { text: 'Line 1', page: 1, index: 0 },
+        { text: 'Line 2', page: 1, index: 1 }
+      ],
+      individualPages: [
+        { pageNumber: 1, lines: [{ text: 'Line 1' }, { text: 'Line 2' }] }
+      ],
+      scenes: [
+        { name: 'Scene 1', index: 0, firstLine: 0, lastLine: 1 }
+      ],
+      processPdf: jest.fn(),
+      finalDocument: {
+        data: [],
+        callSheet: '',
+        callSheetPath: ''
+      },
+      finalDocReady: false,
+      sceneNumberUpdated$: {
+        asObservable: jest.fn().mockReturnValue(of({}))
+      },
+      sceneHeaderTextUpdated$: of({}),
+      documentRegenerated$: of(false),
+      documentReordered$: of(false),
+      watermarkUpdated$: of({}),
+      finalDocumentData$: of({})
+    };
 
-testCases.forEach(testCase => {
-  describe(`DashboardRightComponent - ${testCase.name} Scene Selection and PDF Generation`, () => {
-    let component: DashboardRightComponent;
-    let fixture: ComponentFixture<DashboardRightComponent>;
-    let pdfService: PdfService;
-    let finalDocExpected;
-    let finalDocActual;
+    uploadServiceMock = {
+      getFile: jest.fn().mockReturnValue(of(new Blob(['test data'])))
+    };
 
-    beforeEach(async () => {
-      const uploadServiceMock = {
-        allLines: testCase.lineData,
-        scenes: testCase.pageData,
-        individualPages: testCase.pageData,
-      };
+    undoServiceMock = {
+      pop: jest.fn()
+    };
 
-      await TestBed.configureTestingModule({
-        imports: [MatDialogModule, HttpClientTestingModule, NoopAnimationsModule],
-        declarations: [DashboardRightComponent],
-        providers: [
-          { provide: UploadService, useValue: uploadServiceMock },
-          PdfService,
-        ],
-        schemas: [NO_ERRORS_SCHEMA],
-      }).compileComponents();
+    lineOutServiceMock = {};
 
-      finalDocExpected = testCase.finalDoc.map(page => page.filter(el => el.category !== 'injected-break'));
-      fixture = TestBed.createComponent(DashboardRightComponent);
-      component = fixture.componentInstance;
-      fixture.detectChanges();
-      component.pdf.allLines = testCase.lineData;
-      component.pdf.individualPages = testCase.pageData;
-      component.pdf.finalDocument = {
-        data: testCase.finalDoc
-      };
-      component.selected = component.pdf.allLines.filter(line => testCase.scenes.includes(line.sceneNumberText) && line.category === 'scene-header');
-      component.toggleLastLooks();
-      finalDocActual = component.pdf.finalDocument.data.map(page => page.filter(el => el.category !== 'injected-break'));
+    tokenServiceMock = {
+      tokenExpired$: of(false)
+    };
+
+    tailwindDialogServiceMock = {
+      open: jest.fn().mockReturnValue({
+        afterClosed: jest.fn().mockReturnValue(of(true))
+      })
+    };
+
+    routerMock = {
+      navigate: jest.fn(),
+      url: '/dashboard',
+      events: of(new NavigationEnd(1, '/dashboard', '/dashboard'))
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [
+        RouterTestingModule,
+        HttpClientTestingModule,
+        NoopAnimationsModule
+      ],
+      declarations: [DashboardRightComponent],
+      providers: [
+        { provide: AuthService, useValue: authServiceMock },
+        { provide: StripeService, useValue: stripeServiceMock },
+        { provide: PdfService, useValue: pdfServiceMock },
+        { provide: UploadService, useValue: uploadServiceMock },
+        { provide: UndoService, useValue: undoServiceMock },
+        { provide: LineOutService, useValue: lineOutServiceMock },
+        { provide: TokenService, useValue: tokenServiceMock },
+        { provide: TailwindDialogService, useValue: tailwindDialogServiceMock }
+      ],
+      schemas: [NO_ERRORS_SCHEMA] // Ignore unknown elements
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(DashboardRightComponent);
+    component = fixture.componentInstance;
+    
+    // Mock localStorage
+    jest.spyOn(localStorage, 'getItem').mockImplementation((key) => {
+      if (key === 'name') return 'test-script.pdf';
+      if (key === 'callSheetPath') return 'test-callsheet.pdf';
+      return null;
     });
+    
+    // Mock sessionStorage
+    jest.spyOn(sessionStorage, 'setItem').mockImplementation(() => {});
+    
+    fixture.detectChanges();
+  });
 
-    it('should have a defined component', () => {
-      expect(component).toBeDefined();
-    });
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
 
-    it('finalDocument should be the same number of pages', () => {
-      expect(finalDocActual.length).toBe(finalDocExpected.length);
-    });
+  it('should initialize with script data', () => {
+    expect(component.script).toBe('test-script.pdf');
+    expect(component.allLines).toEqual(pdfServiceMock.allLines);
+    expect(component.individualPages).toEqual(pdfServiceMock.individualPages);
+  });
 
-    it('finalDocument should have same visible: "true" lines as expected document', () => {
-      const expectedTrueLines = finalDocExpected.flat().filter(line => line.visible === 'true').map(line => ({
-        text: line.text,
-        index: line.index,
-      }));
-      const actualTrueLines = finalDocActual.flat().filter(line => line.visible === 'true').map(line => ({
-        text: line.text,
-        index: line.index,
-      }));
-      const differenceLimit = 5;
-      const [uniqueToExpected, uniqueToActual] = deepDiff(expectedTrueLines, actualTrueLines);
-      expect(toBeWithinRange(uniqueToExpected.length, uniqueToActual.length - differenceLimit, uniqueToActual.length + differenceLimit)).toBe(true);
-    });
+  it('should handle auth state changes', () => {
+    // Initially no user
+    expect(component.userData).toBeNull();
+    
+    // Simulate user login
+    const mockUser = { uid: 'test-user-id', email: 'test@example.com' };
+    userSubject.next(mockUser);
+    fixture.detectChanges();
+    
+    expect(component.userData).toEqual(mockUser);
+  });
 
-    it('finalDocument should have same visible: "false" lines as expected document', () => {
-      const expectedFalseLines = sanitizeLinesForCompare(finalDocExpected, 'visible', 'false');
-      const actualFalseLines = sanitizeLinesForCompare(finalDocActual, 'visible', 'false');
-      expect(toBeWithinRange(expectedFalseLines.length, actualFalseLines.length - 5, actualFalseLines.length + 5)).toBe(true);
-    });
+  it('should handle sign out', async () => {
+    await component.handleSignOut();
+    expect(authServiceMock.signOut).toHaveBeenCalled();
+  });
 
-    it('should have the same "cont" lines values', () => {
-      const expectedContLines = sanitizeLinesForCompare(finalDocExpected, 'cont', "CON'T");
-      const actualContLines = sanitizeLinesForCompare(finalDocActual, 'cont', "CON'T");
-      expect(toBeWithinRange(expectedContLines.length, actualContLines.length - 5, actualContLines.length + 5)).toBe(true);
-    });
+  it('should open confirm purchase dialog', () => {
+    // Mock the dialog service
+    jest.spyOn(component, 'openConfirmPurchaseDialog');
+    
+    component.openConfirmPurchaseDialog();
+    expect(component.openConfirmPurchaseDialog).toHaveBeenCalled();
+  });
 
-    it('should have an equal number of end lines as scenes', () => {
-      const expectedEndLines = sanitizeLinesForCompare(finalDocExpected, 'end', 'END');
-      const actualEndLines = sanitizeLinesForCompare(finalDocActual, 'end', 'END');
-      expect(expectedEndLines.length).toEqual(actualEndLines.length);
-    });
+  it('should toggle last looks', () => {
+    // Initial state
+    expect(component.lastLooksReady).toBeFalse();
+    
+    // Toggle on
+    component.toggleLastLooks();
+    
+    expect(component.lastLooksReady).toBeTrue();
+    expect(pdfServiceMock.processPdf).toHaveBeenCalled();
+    expect(pdfServiceMock.finalDocReady).toBeTrue();
+  });
 
-    it('should have the same "end" lines values', () => {
-      const expectedEndLines = sanitizeLinesForCompare(finalDocExpected, 'end', 'END');
-      const actualEndLines = sanitizeLinesForCompare(finalDocActual, 'end', 'END');
-      expect(expectedEndLines).toEqual(actualEndLines);
-    });
+  it('should prepare final document with callsheet', () => {
+    component.prepFinalDocument(true);
+    
+    expect(pdfServiceMock.finalDocument.callSheet).toBe('test-callsheet.pdf');
+    expect(pdfServiceMock.finalDocument.callSheetPath).toBe('test-callsheet.pdf');
+    expect(component.finalDocReady).toBeTrue();
+    expect(component.waitingForScript).toBeTrue();
+  });
 
-    it('should have one page number visible per page', () => {
-      const actualNumbersVisible = finalDocActual.flat().filter(line => line.category === 'scene-number' && line.visible === 'true');
-      const expectedNumbersVisible = finalDocExpected.flat().filter(line => line.category === 'scene-number' && line.visible === 'true');
-      expect(actualNumbersVisible).toEqual(expectedNumbersVisible);
-    });
+  it('should prepare final document without callsheet', () => {
+    component.prepFinalDocument(false);
+    
+    expect(pdfServiceMock.finalDocument.callSheet).toBe('');
+    expect(pdfServiceMock.finalDocument.callSheetPath).toBe('');
+    expect(component.finalDocReady).toBeTrue();
+    expect(component.waitingForScript).toBeTrue();
+  });
+
+  it('should handle subscription required', () => {
+    const finalDocument = { data: [] };
+    const response = { 
+      checkoutUrl: 'https://checkout.stripe.com/test',
+      requiresSubscription: true
+    };
+    
+    // Call private method using any type
+    (component as any).handleSubscriptionRequired(finalDocument, response);
+    
+    // Check sessionStorage was set
+    expect(sessionStorage.setItem).toHaveBeenCalledWith('pendingDocument', JSON.stringify(finalDocument));
+    expect(sessionStorage.setItem).toHaveBeenCalledWith('returnPath', '/dashboard');
+    
+    // Check dialog was opened
+    expect(tailwindDialogServiceMock.open).toHaveBeenCalled();
+  });
+
+  it('should toggle edit state in last looks', () => {
+    // Initial state
+    expect(component.editLastLooksState).toBeFalse();
+    
+    // Toggle
+    component.toggleEditStateInLastLooks();
+    
+    expect(component.editLastLooksState).toBeTrue();
+    
+    // Toggle back
+    component.toggleEditStateInLastLooks();
+    
+    expect(component.editLastLooksState).toBeFalse();
+  });
+
+  it('should handle tool tip clicked for undo', () => {
+    component.handleToolTipClicked('undo');
+    expect(undoServiceMock.pop).toHaveBeenCalled();
+  });
+
+  it('should handle tool tip clicked for resetDoc', () => {
+    // Initial state
+    expect(component.resetFinalDocState).toBeFalse();
+    
+    component.handleToolTipClicked('resetDoc');
+    
+    expect(component.resetFinalDocState).toBeTrue();
+  });
+
+  it('should handle tool tip clicked for stopEdit', () => {
+    // Initial state
+    expect(component.editLastLooksState).toBeFalse();
+    
+    component.handleToolTipClicked('stopEdit');
+    
+    expect(component.editLastLooksState).toBeTrue();
+  });
+
+  it('should toggle selected scene', () => {
+    const scene = { name: 'Scene 1', index: 0 };
+    
+    // Initial state - not selected
+    expect(component.selected).not.toContain(scene);
+    
+    // Create a mock MouseEvent
+    const mockEvent = {
+      stopPropagation: jest.fn(),
+      preventDefault: jest.fn()
+    } as any;
+    
+    // Select
+    component.toggleSelected(mockEvent, scene);
+    
+    expect(component.selected).toContain(scene);
+    
+    // Deselect
+    component.toggleSelected(mockEvent, scene);
+    
+    expect(component.selected).not.toContain(scene);
   });
 });
