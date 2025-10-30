@@ -167,6 +167,23 @@ li.page-number {
     font-weight: 900;
 }
 
+.scene-number-left.selected,
+.scene-number-right.selected {
+    border: 5px solid black !important;
+    border-radius: 50% !important;
+    padding: 1% !important;
+    display: inline-block !important;
+    box-sizing: border-box !important;
+}
+
+span.scene-number-left.true,
+span.scene-number-right.true {
+    border: 5px solid black;
+    border-radius: 50%;
+    display: inline-block;
+    padding:1%
+}
+
 .bar {
     border-top: 2.5px solid;
     width: 95%;

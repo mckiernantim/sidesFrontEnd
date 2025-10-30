@@ -55,7 +55,7 @@
 
                     <!-- scene number span -->
                     <span *ngIf="line.category === 'scene-header'"
-                        [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible"
+                        [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible + (canEditDocument && isLineSelected(line) ? ' selected' : '')"
                         [attr.contenteditable]="editingSceneNumber === line.sceneNumberText ? 'true' : 'false'"
                         (dblclick)="canEditDocument && startEditingSceneNumber(line)"
                         (blur)="saveSceneNumberEdit(line, $event)"
@@ -116,8 +116,7 @@
                             (blur)="editingLine === line.docPageLineIndex && saveEdit()"
                             (keydown)="editingLine === line.docPageLineIndex && handleEditKeyDown($event)"
                             (input)="editingLine === line.docPageLineIndex && onEditTextChange($event.target.textContent)">
-                            {{ line.text }}
-                        </li>
+                            {{ line.text }} 
                     </ng-container>
                     <ng-template #nonEditable>
                         <li id="{{ line.docPageLineIndex }}" 
@@ -126,7 +125,7 @@
                             [class.selected-line]="isSelectedLine(line, line.docPageLineIndex)"
                             [style.bottom]="line.calculatedYpos"
                             [style.left]="line.calculatedXpos" 
-                            [textContent]="line.text">
+                            [textContent]="line.text"> 
                         </li>
                     </ng-template>
 
@@ -221,7 +220,7 @@
 
                     <!-- right scene number span -->
                     <span *ngIf="line.category === 'scene-header'"
-                        class="scene-number-right {{ line.trueScene }} {{ line.visible }}"
+                        [class]="'scene-number-right ' + line.trueScene + ' ' + line.visible + (canEditDocument && isLineSelected(line) ? ' selected' : '')"
                         [attr.contenteditable]="editingSceneNumber === line.sceneNumberText ? 'true' : 'false'"
                         (dblclick)="canEditDocument && startEditingSceneNumber(line)"
                         (blur)="saveSceneNumberEdit(line, $event)"
