@@ -62,6 +62,7 @@ export class AuthService {
     // Listen for auth state changes
     onAuthStateChanged(this.auth, 
       async (user) => {
+        debugger
         console.log('Auth state changed:', user?.uid || 'No user');
         this.userSubject.next(user);
         this.authInitialized = true;
@@ -69,19 +70,10 @@ export class AuthService {
         // Check admin whitelist status when user signs in
         if (user) {
           await this.checkAdminWhitelist(user);
-        } else {
-          this.isAdminSubject.next(false);
-        }
-        
-        // If we were redirecting and now have a user, go to the intended destination
-        if (this.isRedirecting && user) {
-          this.isRedirecting = false;
-          const returnUrl = localStorage.getItem('auth_return_url') || '/';
-          localStorage.removeItem('auth_return_url');
-          this.router.navigateByUrl(returnUrl);
-          
           // Update user data in Firestore
           this.updateUserData(user);
+        } else {
+          this.isAdminSubject.next(false);
         }
       },
       (error) => {
@@ -176,9 +168,11 @@ export class AuthService {
         this.isAdminSubject.next(false);
         return;
       }
-
-      // Query the 'admin' collection for a document matching the user's email
-      const adminDocRef = doc(this.firestore, `listed/${user.email}`);
+  
+      // Encode email to make it a valid Firestore document ID
+      const encodedEmail = user.email.replace(/\./g, '_dot_').replace(/@/g, '_at_');
+      debugger
+      const adminDocRef = doc(this.firestore, `listed/${encodedEmail}`);
       const adminSnapshot = await getDoc(adminDocRef);
       
       const isAdmin = adminSnapshot.exists();
