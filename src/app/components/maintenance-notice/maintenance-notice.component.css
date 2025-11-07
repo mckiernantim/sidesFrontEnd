@@ -1,0 +1,32 @@
+.maintenance-notice {
+  min-height: calc(100vh - 200px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(180deg, #0b0f1a 0%, #1c2333 100%);
+  color: #f4f7ff;
+  text-align: center;
+}
+
+.maintenance-notice__content {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.maintenance-notice__title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.maintenance-notice__message {
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.maintenance-notice__support a {
+  color: #7fb3ff;
+  text-decoration: underline;
+}
+

@@ -56,8 +56,20 @@ export class UploadComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const config = getConfig(!isDevMode());
     this.underConstruction = !config.production;
-    this.maintenanceMode = !!config.maintenanceMode;
     this.working = true;
+    
+    // Set initial maintenance mode from config
+    this.maintenanceMode = !!config.maintenanceMode;
+    
+    // Subscribe to admin status - if user is admin, bypass maintenance mode
+    this.authService.isAdmin$.subscribe(isAdmin => {
+      if (isAdmin && config.maintenanceMode) {
+        console.log('Admin user detected - bypassing maintenance mode');
+        this.maintenanceMode = false;
+      } else {
+        this.maintenanceMode = !!config.maintenanceMode;
+      }
+    });
     
     // Always reset document state when component initializes
     // This handles direct URL access, page refresh, browser navigation, etc.

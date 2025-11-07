@@ -26,6 +26,10 @@ export class AuthService {
   
   // Track if auth state has been initialized
   private authInitialized = false;
+  
+  // Track admin whitelist status for maintenance mode bypass
+  private isAdminSubject = new BehaviorSubject<boolean>(false);
+  isAdmin$: Observable<boolean> = this.isAdminSubject.asObservable();
 
   constructor(
     private auth: Auth,
@@ -57,10 +61,17 @@ export class AuthService {
   private setupAuthStateListener(): void {
     // Listen for auth state changes
     onAuthStateChanged(this.auth, 
-      (user) => {
+      async (user) => {
         console.log('Auth state changed:', user?.uid || 'No user');
         this.userSubject.next(user);
         this.authInitialized = true;
+        
+        // Check admin whitelist status when user signs in
+        if (user) {
+          await this.checkAdminWhitelist(user);
+        } else {
+          this.isAdminSubject.next(false);
+        }
         
         // If we were redirecting and now have a user, go to the intended destination
         if (this.isRedirecting && user) {
@@ -158,6 +169,27 @@ export class AuthService {
     });
   }
   
+  // Check if user is in admin whitelist (for maintenance mode bypass)
+  private async checkAdminWhitelist(user: User): Promise<void> {
+    try {
+      if (!user.email) {
+        this.isAdminSubject.next(false);
+        return;
+      }
+
+      // Query the 'admin' collection for a document matching the user's email
+      const adminDocRef = doc(this.firestore, `listed/${user.email}`);
+      const adminSnapshot = await getDoc(adminDocRef);
+      
+      const isAdmin = adminSnapshot.exists();
+      console.log(`Admin whitelist check for ${user.email}:`, isAdmin);
+      this.isAdminSubject.next(isAdmin);
+    } catch (error) {
+      console.error('Error checking admin whitelist:', error);
+      this.isAdminSubject.next(false);
+    }
+  }
+
   // Check subscription status
   async checkSubscriptionStatus(): Promise<boolean> {
     const user = this.auth.currentUser;
