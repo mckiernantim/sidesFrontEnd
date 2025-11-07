@@ -25,6 +25,7 @@ import { HttpLogInterceptor } from './services/http-interceptor.service';
 import { HowItWorksComponent } from './components/how-it-works/how-it-works.component';
 import { SubscriptionModalComponent } from './components/subscription-modal/subscription-modal.component';
 import { AuthService } from './services/auth/auth.service';
+import { MaintenanceNoticeComponent } from './components/maintenance-notice/maintenance-notice.component';
 
 // Factory function to ensure Firebase is initialized before the app starts
 export function initializeFirebase(authService: AuthService) {
@@ -53,6 +54,7 @@ export function initializeFirebase(authService: AuthService) {
     AboutComponent,
     ContactComponent,
     SubscriptionModalComponent,
+    MaintenanceNoticeComponent,
   ],
   imports: [
     BrowserModule,

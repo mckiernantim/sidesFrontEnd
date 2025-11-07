@@ -24,7 +24,8 @@ export const environment = {
     measurementId: "G-1JF7DG5L5H"
   },
   url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
-  password:"NOTEWORTHY"
+  password:"NOTEWORTHY",
+  maintenanceMode: true
 };
 
 export const environmentProd = environment;

@@ -372,13 +372,14 @@ export class UploadService {
           .post(this.url + '/api', formData, this.httpOptions)
           .pipe(
             map((res: any) => {
+              debugger
               let {
                 allLines,
                 allChars,
                 individualPages,
                 title,
                 firstAndLastLinesOfScenes,
-              } = res.data;
+              } = res;
               
               this.allLines = allLines;
               this.firstAndLastLinesOfScenes = firstAndLastLinesOfScenes;

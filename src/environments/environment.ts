@@ -27,7 +27,8 @@ export const environment = {
   },
   // url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
   url: 'http://localhost:8080',
-  password:"NOTEWORTHY"
+  password:"NOTEWORTHY",
+  maintenanceMode: true
 };
 
 // For production - this will be used if environment.prod.ts isn't properly loaded
@@ -44,7 +45,7 @@ export const environmentProd = {
     measurementId: "G-1JF7DG5L5H",
   },
   url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
-
+  maintenanceMode: true
 };
 
 // Helper function to get the right environment

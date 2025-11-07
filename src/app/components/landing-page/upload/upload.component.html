@@ -56,37 +56,60 @@
           <p class="text-lg font-medium text-gray-800 italic">That's it.</p>
         </div>
         
-        <div>
-          <ng-container *ngIf="(user$ | async) as user; else signIn">
-            <div class="flex flex-col items-center justify-center p-4 bg-white rounded-lg shadow-md">
-              <h2 class="text-xl font-bold mb-2">Upload Your File</h2>
-              
-              <div class="w-full max-w-md">
-                <label class="block mb-1 text-sm font-medium text-gray-700">
-                  Select a file to upload
-                </label>
-                <div class="flex items-center justify-center w-full">
-                  <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                    <div class="flex flex-col items-center justify-center pt-4 pb-4">
-                      <svg class="w-7 h-7 mb-2 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-                      </svg>
-                      <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
-                      <p class="text-xs text-gray-500">PDF, Word, or text formats</p>
-                    </div>
-                    <input id="file-upload" type="file" class="hidden" (change)="onFileSelected($event)" #fileInput />
+        <!-- Maintenance mode banner or upload section -->
+        <div *ngIf="maintenanceMode; else uploadSection" class="p-6 bg-yellow-50 border-2 border-yellow-400 rounded-lg">
+          <div class="flex items-start">
+            <svg class="w-6 h-6 text-yellow-600 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div>
+              <h3 class="text-lg font-bold text-yellow-800 mb-2">We're Upgrading!</h3>
+              <p class="text-yellow-700 mb-2">
+                Sides Ways is temporarily offline while we roll out exciting new features and improvements.
+              </p>
+              <p class="text-yellow-700 mb-2">
+                We'll be back online in a few days. Thank you for your patience!
+              </p>
+              <p class="text-sm text-yellow-600">
+                Questions? Email <a href="mailto:support&#64;sides-ways.com" class="underline font-medium">support&#64;sides-ways.com</a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #uploadSection>
+          <div>
+            <ng-container *ngIf="(user$ | async) as user; else signIn">
+              <div class="flex flex-col items-center justify-center p-4 bg-white rounded-lg shadow-md">
+                <h2 class="text-xl font-bold mb-2">Upload Your File</h2>
+                
+                <div class="w-full max-w-md">
+                  <label class="block mb-1 text-sm font-medium text-gray-700">
+                    Select a file to upload
                   </label>
+                  <div class="flex items-center justify-center w-full">
+                    <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                      <div class="flex flex-col items-center justify-center pt-4 pb-4">
+                        <svg class="w-7 h-7 mb-2 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                        </svg>
+                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                        <p class="text-xs text-gray-500">PDF, Word, or text formats</p>
+                      </div>
+                      <input id="file-upload" type="file" class="hidden" (change)="onFileSelected($event)" #fileInput />
+                    </label>
+                  </div>
                 </div>
               </div>
-            </div>
-          </ng-container>
-          
-          <ng-template #signIn>
-            <button (click)="this.signIn()" class="btn btn-primary">
-              Sign in with Google
-            </button>
-          </ng-template>
-        </div>
+            </ng-container>
+            
+            <ng-template #signIn>
+              <button (click)="this.signIn()" class="btn btn-primary">
+                Sign in with Google
+              </button>
+            </ng-template>
+          </div>
+        </ng-template>
       </div>
       
       <!-- Right side image -->

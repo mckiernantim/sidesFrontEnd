@@ -31,6 +31,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   dataSubscription: Subscription;
   underConstruction: boolean;
   working: boolean;
+  maintenanceMode: boolean = false;
   displayData: {
     allLines: number;
     characters: number;
@@ -55,6 +56,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const config = getConfig(!isDevMode());
     this.underConstruction = !config.production;
+    this.maintenanceMode = !!config.maintenanceMode;
     this.working = true;
     
     // Always reset document state when component initializes

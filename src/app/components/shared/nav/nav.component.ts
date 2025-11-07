@@ -1,8 +1,5 @@
-import { Component } from '@angular/core';
-
-import { Observable } from 'rxjs';
-import { map, shareReplay } from 'rxjs/operators';
-
+import { Component, isDevMode } from '@angular/core';
+import { getConfig } from '../../../../environments/environment';
 
 @Component({
     selector: 'app-nav',
@@ -11,10 +8,10 @@ import { map, shareReplay } from 'rxjs/operators';
     standalone: false
 })
 export class NavComponent {
+  maintenanceMode = false;
 
-
-  constructor( ) {
-    
+  constructor() {
+    const config = getConfig(!isDevMode());
+    this.maintenanceMode = !!config.maintenanceMode;
   }
-
 }
