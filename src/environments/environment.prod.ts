@@ -1,12 +1,17 @@
 export const environment = {
   production: true,
-  stripe: 'YOUR_NEW_PUBLISHABLE_KEY_HERE',
+  
+  // ⚠️⚠️⚠️ CRITICAL: CHANGE TO REAL STRIPE PRODUCTION KEY BEFORE GOING LIVE! ⚠️⚠️⚠️
+  // Current key is TEST mode - will NOT process real payments!
+  // Replace with: pk_live_... (your real production publishable key)
+  stripe: 'pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ',
+  
   firebaseConfig:{
     apiKey: "AIzaSyBXD5kQfAS4lrmSJxYAuEUq8sxvXgWmCio",
     authDomain: "scriptthing.firebaseapp.com",
     databaseURL: "https://scriptthing.firebaseio.com",
     projectId: "scriptthing",
-    storageBucket: "scriptthing.appspot.com",
+    storageBucket: "scriptthing.firebasestorage.app",
     messagingSenderId: "195325163986",
     appId: "1:195325163986:web:e7a70646f087850353300b",
     measurementId: "G-XM3P84P6N7"
