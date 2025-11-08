@@ -379,7 +379,7 @@ export class UploadService {
                 individualPages,
                 title,
                 firstAndLastLinesOfScenes,
-              } = res;
+              } = res.data;
               
               this.allLines = allLines;
               this.firstAndLastLinesOfScenes = firstAndLastLinesOfScenes;

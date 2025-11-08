@@ -25,10 +25,10 @@ export const environment = {
     appId: "1:401150394674:web:760ffe3a546b2d01a8d72b",
     measurementId: "G-1JF7DG5L5H"
   },
-  // url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
-  url: 'http://localhost:8080',
+  url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
+  // url: 'http://localhost:8080',
   password:"NOTEWORTHY",
-  maintenanceMode: true
+  maintenanceMode: false
 };
 
 // For production - this will be used if environment.prod.ts isn't properly loaded
@@ -45,7 +45,7 @@ export const environmentProd = {
     measurementId: "G-1JF7DG5L5H",
   },
   url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
-  maintenanceMode: true
+  maintenanceMode: false
 };
 
 // Helper function to get the right environment

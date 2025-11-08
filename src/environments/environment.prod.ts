@@ -25,7 +25,7 @@ export const environment = {
   },
   url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
   password:"NOTEWORTHY",
-  maintenanceMode: true
+  maintenanceMode: false
 };
 
 export const environmentProd = environment;
