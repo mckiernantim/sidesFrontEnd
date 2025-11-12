@@ -462,7 +462,31 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
       try {
         this.pdf.getScenes();
         this.scenes = this.pdf.scenes || [];
-        this.selected = this.selected || [];
+        
+        // Sync selected array with PDF service's selected scenes
+        const pdfSelectedScenes = this.pdf.getSelectedScenes();
+        if (pdfSelectedScenes && pdfSelectedScenes.length > 0) {
+          console.log('Restoring scene selection from PDF service:', pdfSelectedScenes.length, 'scenes');
+          
+          // Match PDF service selected scenes with our scenes array
+          // Use scene index as the unique identifier
+          this.selected = pdfSelectedScenes
+            .map(pdfScene => {
+              return this.scenes.find(scene => scene.index === pdfScene.index);
+            })
+            .filter(scene => scene !== undefined); // Filter out any that weren't found
+          
+          // Also rebuild the selectedScenesMap for consistency
+          this.selectedScenesMap.clear();
+          this.selected.forEach(scene => {
+            this.selectedScenesMap.set(scene.docPageIndex, scene);
+          });
+          
+          console.log('Scene selection restored:', this.selected.length, 'scenes selected');
+        } else {
+          this.selected = this.selected || [];
+        }
+        
         console.log('Scene data loaded:', this.scenes.length);
       } catch (error) {
         console.error('Error loading scenes:', error);
@@ -1424,6 +1448,9 @@ async sendFinalDocumentToServer(finalDocument) {
       // Remove from selection if already selected
       this.selected.splice(index, 1);
     }
+
+    // Update the PDF service's selected scenes to keep them in sync
+    this.pdf.setSelectedScenes(this.selected);
 
     // Update the UI
     this.cdr.detectChanges();
