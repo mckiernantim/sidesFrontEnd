@@ -509,14 +509,6 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     console.log('Dashboard: Watermark removed');
     this.pdf.removeWatermark(this.pdf.finalDocument.data);
   }
-  getPreview(ind) {
-    return (this.scenes[ind].preview =
-      this.allLines[this.scenes[ind].index + 1].text +
-      ' ' +
-      this.allLines[this.scenes[ind].index + 2].text)
-      ? this.allLines[this.scenes[ind].index + 2].text
-      : ' ';
-  }
 
   getPages(data) {
     let num = data[data.length - 1].page;
@@ -1132,9 +1124,6 @@ async sendFinalDocumentToServer(finalDocument) {
       // Handle dialog close if needed
     });
   }
-  getLastPage = (scene) => {
-    return this.allLines[scene.lastLine].page || null;
-  };
 
   toggleLastLooks() {
     console.log('Before toggle:', {
@@ -1355,8 +1344,8 @@ async sendFinalDocumentToServer(finalDocument) {
             ? (currentScene.firstLine = 0)
             : (currentScene.firstLine =
                 this.allLines[currentScene.index - 1].index);
-          currentScene.preview = this.getPreview(i);
-          currentScene.lastPage = this.getLastPage(currentScene);
+          currentScene.preview = this.pdf.getPreview(i);
+          currentScene.lastPage = this.pdf.getLastPage(currentScene);
         } else {
           // get first and last lines for last scenes
           last =
@@ -1364,8 +1353,8 @@ async sendFinalDocumentToServer(finalDocument) {
             this.allLines.length - 1;
           currentScene.firstLine = this.allLines[currentScene.index - 1].index;
           currentScene.lastLine = last;
-          currentScene.lastPage = this.getLastPage(currentScene);
-          currentScene.preview = this.getPreview(i);
+          currentScene.lastPage = this.pdf.getLastPage(currentScene);
+          currentScene.preview = this.pdf.getPreview(i);
         }
       }
     } catch (err) {

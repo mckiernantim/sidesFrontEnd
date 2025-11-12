@@ -1451,12 +1451,59 @@ resetToInitialState(): void {
   };
 
   getPreview(ind) {
-    return (this.scenes[ind].preview =
-      this.allLines[this.scenes[ind].index + 1]?.text +
-      ' ' +
-      this.allLines[this.scenes[ind].index + 2]?.text)
-      ? this.allLines[this.scenes[ind].index + 2]?.text
-      : ' ';
+    const sceneIndex = this.scenes[ind].index;
+    let previewText = '';
+    
+    // Categories to skip when looking for preview text
+    const skipCategories = [
+      'scene-header',
+      'page-number',
+      'page-number-hidden',
+      'more',
+      'continue',
+      'continue-top',
+      'shot',
+      'draft-color-text'
+    ];
+    
+    // Start at the line after the scene header
+    let lineIndex = sceneIndex + 1;
+    let linesChecked = 0;
+    const maxLinesToCheck = 10;
+    
+    // Find descriptive content for preview
+    while (linesChecked < maxLinesToCheck && lineIndex < this.allLines.length) {
+      const currentLine = this.allLines[lineIndex];
+      linesChecked++;
+      lineIndex++;
+      
+      // Skip non-descriptive categories
+      if (skipCategories.includes(currentLine?.category)) {
+        continue;
+      }
+      
+      const lineText = (currentLine?.text || '').trim();
+      
+      // Skip empty lines
+      if (!lineText) {
+        continue;
+      }
+      
+      // Add text to preview
+      if (previewText) {
+        previewText += ' ';
+      }
+      previewText += lineText;
+      
+      // If we have at least 20 characters, we're done
+      if (previewText.length >= 20) {
+        break;
+      }
+    }
+    
+    // Assign and return the preview
+    this.scenes[ind].preview = previewText || ' ';
+    return this.scenes[ind].preview;
   }
 
   private _selectedScenes: any[] = [];
