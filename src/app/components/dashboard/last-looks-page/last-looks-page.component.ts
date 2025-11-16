@@ -83,6 +83,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   // Add initialPageState property
   private initialPageState: any[] = [];
+  private isUndoInProgress: boolean = false;
 
   private subscription: Subscription;
   private sceneHeaderTextUpdateSubscription: Subscription;
@@ -126,12 +127,13 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       if (update) {
         // If the update is for our current page
         if (update.docPageIndex === this.currentPageIndex) {
-          // Find the line in our page array
-          const lineIndex = this.page.findIndex(l => l.docPageLineIndex === update.docPageLineIndex);
-          if (lineIndex !== -1) {
+          // update.docPageLineIndex is already the array index within the page
+          const lineIndex = update.docPageLineIndex;
+          if (lineIndex >= 0 && lineIndex < this.page.length) {
             // Update only the specific line that changed
             this.page[lineIndex] = { ...update.line };
             this.cdRef.detectChanges();
+            console.log('Updated line via subscription:', update.docPageLineIndex, update.line);
           }
         }
       }
@@ -167,15 +169,26 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   
   ngOnChanges(changes: SimpleChanges): void {
     console.log('LastLooksPage ngOnChanges:', Object.keys(changes));
-    
+
     if (changes['page']) {
       const newPage = changes['page'].currentValue;
       console.log('Page input changed. New page has', newPage?.length, 'lines');
-      
-      // Store initial state when page changes
+
+      // Log scene numbers to verify updates are propagating
+      if (newPage && Array.isArray(newPage)) {
+        const sceneNumbers = newPage
+          .filter(line => line.sceneNumberText)
+          .map(line => `${line.category}: "${line.sceneNumberText}"`)
+          .join(', ');
+        console.log('Page scene numbers:', sceneNumbers);
+      }
+
+      // Store initial state when page changes (only if we have a valid page)
       this.callsheetLoadError = null;
-      this.initialPageState = [...this.page];
-      
+      if (this.page && Array.isArray(this.page)) {
+        this.initialPageState = [...this.page];
+      }
+
       // Special handling for callsheet pages
       if (this.isCallsheetPage(newPage)) {
         console.log('New page is a callsheet page:', {
@@ -184,7 +197,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
           category: newPage[0]?.category,
           hasLoadError: !!newPage[0]?.loadError
         });
-        
+
         // Validate the image path
         if (!newPage[0]?.imagePath) {
           console.error('Callsheet page has no image path');
@@ -195,19 +208,23 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
           console.log('Callsheet page has valid image path:', newPage[0].imagePath);
         }
       }
-      
-      // Reset editing states
-      this.editingLine = null;
-      this.editingText = '';
-      this.editingSceneNumber = null;
-      this.editingSceneText = null;
-      this.barTextEditingId = null;
-      this.barTextEditingType = null;
-      this.barTextEditingContent = '';
-      
-      // Clear selection when page changes
-      this.clearSelection();
-      
+
+      // Only reset editing states if we're not currently in an undo operation
+      // This prevents undo from being interrupted by page changes
+      if (!this.isUndoInProgress) {
+        // Reset editing states
+        this.editingLine = null;
+        this.editingText = '';
+        this.editingSceneNumber = null;
+        this.editingSceneText = null;
+        this.barTextEditingId = null;
+        this.barTextEditingType = null;
+        this.barTextEditingContent = '';
+
+        // Clear selection when page changes
+        this.clearSelection();
+      }
+
       // Force change detection
       this.cdRef.detectChanges();
     }
@@ -219,11 +236,36 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     }
   
     if (changes['resetDocState'] && changes['resetDocState'].currentValue) {
+      console.log('LastLooksPage: Resetting to initial page state');
+
+      // Reset to the initial page state
       this.page = JSON.parse(JSON.stringify(this.initialPageState));
       this.selectedLineIds = [];
       this.lastSelectedIndex = null;
       this.selectedLine = null;
+
+      // Clear any editing states
+      this.editingLine = null;
+      this.editingText = '';
+      this.editingSceneNumber = null;
+      this.editingSceneText = null;
+      this.barTextEditingId = null;
+      this.barTextEditingType = null;
+      this.barTextEditingContent = '';
+
+      // Clear mouse dragging states
+      this.mouseDragging = false;
+      this.dragLineId = null;
+      this.barTextDragging = false;
+      this.barTextDragLineId = null;
+
+      // Force change detection
+      this.cdRef.detectChanges();
+
+      // Emit the reset page
       this.pageUpdate.emit(this.page);
+
+      console.log('LastLooksPage: Page reset to initial state complete');
     }
   }
 
@@ -264,31 +306,61 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   // ============= MOUSE DRAG METHODS =============
 
+  onMouseDown(event: MouseEvent, line: Line): void {
+    // Only auto-select if no modifier keys are pressed AND line is not selected
+    // This provides immediate feedback for drag operations
+    if (!this.canEditDocument || event.shiftKey || event.ctrlKey || event.metaKey) return;
+
+    if (!this.isLineSelected(line)) {
+      console.log('🔽 Auto-selecting line on mousedown:', line.docPageLineIndex);
+      const mockEvent = { shiftKey: false, ctrlKey: false, metaKey: false } as MouseEvent;
+      this.selectLine(line, mockEvent);
+    }
+  }
+
   startLineDrag(event: MouseEvent, line: Line, type: 'line' | 'end' | 'continue' | 'continue-top'): void {
     // Don't start drag if we're in a double-click situation
     if (event.detail > 1) {
         return;
     }
 
-    // Only check line selection for the main line drag, not for bars
-    if (type === 'line' && !this.isLineSelected(line)) {
-        return;
+    if (!this.canEditDocument) return;
+
+    // Don't start drag if modifier keys are pressed (allow multi-selection)
+    if (event.shiftKey || event.ctrlKey || event.metaKey) {
+      return;
     }
 
-    if (!this.canEditDocument) return;
-    
+    // For main line drag, always select the line (whether it was selected or not)
+    if (type === 'line') {
+      console.log('🎯 Selecting line for drag:', line.docPageLineIndex);
+      const mockEvent = { shiftKey: false, ctrlKey: false, metaKey: false } as MouseEvent;
+      this.selectLine(line, mockEvent);
+    }
+
+    // Store the original state before any changes for undo
+    const lineIndex = this.page.findIndex(l => l.docPageLineIndex === line.docPageLineIndex);
+    if (lineIndex !== -1) {
+      this.undoService.recordLineChange(
+        this.currentPageIndex,
+        lineIndex,
+        cloneDeep(line), // Deep clone of the original state
+        `Drag ${type} position`
+      );
+    }
+
     event.preventDefault();
     event.stopPropagation();
-    
+
     this.mouseDragging = true;
     this.dragStartX = event.clientX;
     this.dragStartY = event.clientY;
     this.dragLineId = line.docPageLineIndex;
     this.dragType = type;
-    
+
     // Add grab cursor to body
     document.body.classList.add('grab-cursor');
-    
+
     // Store initial position
     switch (type) {
         case 'line':
@@ -311,7 +383,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
             };
             break;
     }
-    
+
     document.addEventListener('mousemove', this.handleMouseMove);
     document.addEventListener('mouseup', this.handleMouseUp);
   }
@@ -358,26 +430,29 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   // Handle mouse up
   handleMouseUp = (event: MouseEvent): void => {
     if (!this.mouseDragging) return;
-    
+
     // Remove event listeners
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
-    
+
     // Remove grab cursor
     document.body.classList.remove('grab-cursor');
-    
+
     // Calculate final position
     const deltaX = event.clientX - this.dragStartX;
     const deltaY = event.clientY - this.dragStartY;
     const finalX = this.initialPosition.x + deltaX;
     const finalY = this.initialPosition.y - deltaY;
-    
+
     // Find the line
     const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.dragLineId);
     if (lineIndex === -1) return;
-    
+
     const line = this.page[lineIndex];
-    
+
+    // Check if position actually changed (minimum drag threshold)
+    const hasPositionChanged = Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2;
+
     // Set final position and store raw values
     switch (this.dragType) {
       case 'line':
@@ -396,24 +471,27 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         line.barY = Math.max(0, finalY);
         break;
     }
-    
-    // Emit events and update PdfService
-    this.positionChanged.emit({
-      line,
-      lineIndex,
-      newPosition: { x: Math.max(0, finalX) + 'px', y: Math.max(0, finalY) + 'px' },
-      originalPosition: { x: this.initialPosition.x + 'px', y: this.initialPosition.y + 'px' },
-      isEndSpan: this.dragType === 'end',
-      isContinueSpan: this.dragType === 'continue',
-      isContinueTopSpan: this.dragType === 'continue-top'
-    });
-    
-    this.pageUpdate.emit([...this.page]);
-    
+
+    // Only emit events and update if position actually changed
+    if (hasPositionChanged) {
+      // Emit events and update PdfService
+      this.positionChanged.emit({
+        line,
+        lineIndex,
+        newPosition: { x: Math.max(0, finalX) + 'px', y: Math.max(0, finalY) + 'px' },
+        originalPosition: { x: this.initialPosition.x + 'px', y: this.initialPosition.y + 'px' },
+        isEndSpan: this.dragType === 'end',
+        isContinueSpan: this.dragType === 'continue',
+        isContinueTopSpan: this.dragType === 'continue-top'
+      });
+
+      this.pageUpdate.emit([...this.page]);
+    }
+
     // Clear dragging state
     this.mouseDragging = false;
     this.dragLineId = null;
-    
+
     this.cdRef.detectChanges();
   };
 
@@ -421,7 +499,12 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   
   startBarTextDrag(event: MouseEvent, line: Line, type: 'start' | 'end' | 'continue' | 'continue-top'): void {
     if (!this.canEditDocument || this.barTextEditingId !== null) return;
-    
+
+    // Don't start bar text drag if modifier keys are pressed (allow multi-selection)
+    if (event.shiftKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+
     event.stopPropagation();
     event.preventDefault();
     
@@ -432,7 +515,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.undoService.recordLineChange(
       this.currentPageIndex,
       lineIndex,
-      line,
+      cloneDeep(line), // Deep clone of the original state
       `Drag ${type} bar text`
     );
     
@@ -493,13 +576,55 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   endBarTextDrag = (event: MouseEvent): void => {
     if (!this.barTextDragging) return;
-    
+
+    // Check if text offset actually changed (minimum drag threshold)
+    const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.barTextDragLineId);
+    if (lineIndex !== -1) {
+      const line = this.page[lineIndex];
+      let currentOffset = 0;
+
+      switch (this.barTextDragType) {
+        case 'start':
+          currentOffset = line.startTextOffset || 0;
+          break;
+        case 'end':
+          currentOffset = line.endTextOffset || 0;
+          break;
+        case 'continue':
+          currentOffset = line.continueTextOffset || 0;
+          break;
+        case 'continue-top':
+          currentOffset = line.continueTopTextOffset || 0;
+          break;
+      }
+
+      const hasOffsetChanged = Math.abs(currentOffset - this.barTextInitialOffset) > 2;
+
+      // If no significant change, revert to original offset
+      if (!hasOffsetChanged) {
+        switch (this.barTextDragType) {
+          case 'start':
+            line.startTextOffset = this.barTextInitialOffset;
+            break;
+          case 'end':
+            line.endTextOffset = this.barTextInitialOffset;
+            break;
+          case 'continue':
+            line.continueTextOffset = this.barTextInitialOffset;
+            break;
+          case 'continue-top':
+            line.continueTopTextOffset = this.barTextInitialOffset;
+            break;
+        }
+      }
+    }
+
     document.removeEventListener('mousemove', this.moveBarText);
     document.removeEventListener('mouseup', this.endBarTextDrag);
     document.body.classList.remove('ew-resize-cursor');
-    
+
     this.pageUpdate.emit([...this.page]);
-    
+
     this.barTextDragging = false;
     this.barTextDragLineId = null;
     this.barTextDragType = null;
@@ -613,19 +738,27 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   // ============= SELECTION METHODS =============
 
   selectLine(line: Line, event: MouseEvent): void {
+    console.log('🖱️ selectLine called for line:', line.docPageLineIndex, 'shiftKey:', event.shiftKey, 'ctrlKey:', event.ctrlKey, 'lastSelectedIndex:', this.lastSelectedIndex);
     if (!this.canEditDocument) return;
-    
+
     const lineId = line.docPageLineIndex;
     
     if (event.shiftKey && this.lastSelectedIndex !== null) {
       // Shift + click for range selection
       this.selectedLineIds = [];
-      const startIndex = Math.min(this.lastSelectedIndex, lineId);
-      const endIndex = Math.max(this.lastSelectedIndex, lineId);
-      
-      for (let i = startIndex; i <= endIndex; i++) {
-        if (this.page[i] && this.page[i].docPageLineIndex !== undefined) {
-          this.selectedLineIds.push(this.page[i].docPageLineIndex);
+
+      // Find array indices for both the last selected line and current line
+      const lastSelectedArrayIndex = this.page.findIndex(l => l.docPageLineIndex === this.lastSelectedIndex);
+      const currentArrayIndex = this.page.findIndex(l => l.docPageLineIndex === lineId);
+
+      if (lastSelectedArrayIndex !== -1 && currentArrayIndex !== -1) {
+        const startIndex = Math.min(lastSelectedArrayIndex, currentArrayIndex);
+        const endIndex = Math.max(lastSelectedArrayIndex, currentArrayIndex);
+
+        for (let i = startIndex; i <= endIndex; i++) {
+          if (this.page[i] && this.page[i].docPageLineIndex !== undefined) {
+            this.selectedLineIds.push(this.page[i].docPageLineIndex);
+          }
         }
       }
     } else if (event.ctrlKey || event.metaKey) {
@@ -650,6 +783,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     
     this.emitSelectedLines();
     this.cdRef.detectChanges();
+
+    console.log('After selection, selectedLineIds:', this.selectedLineIds);
   }
 
   private emitSelectedLines() {
@@ -682,15 +817,19 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     return this.selectedLine.docPageLineIndex === line.docPageLineIndex;
   }
 
+  isLineEditing(line: any): boolean {
+    return this.editingLine === line.docPageLineIndex;
+  }
+
   clearSelection(): void {
     // Clear selection state
     this.selectedLineIds = [];
     this.lastSelectedIndex = null;
     this.lineSelected.emit(null);
 
-    // Clear editing state if not currently editing
-    if (this.editingLine === null) {
-      this.editingText = '';
+    // Cancel editing if currently editing
+    if (this.editingLine !== null) {
+      this.cancelEdit();
     }
 
     // Update selection state for all lines
@@ -704,14 +843,18 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   // ============= CONTEXT MENU METHODS =============
 
   openContextMenu(event: MouseEvent, line: any, lineIndex: number): void {
+    console.log('🔴 openContextMenu called, selectedLineIds:', this.selectedLineIds, 'line:', line?.docPageLineIndex);
     event.preventDefault();
-    
-    // Only show context menu if we have selected lines
-    if (this.selectedLineIds.length === 0) {
-      this.clearSelection();
-      return;
+
+    // If no lines are selected, select the right-clicked line
+    if (this.selectedLineIds.length === 0 && line) {
+      console.log('🔴 No lines selected, auto-selecting right-clicked line');
+      this.selectedLineIds = [line.docPageLineIndex];
+      this.lastSelectedIndex = line.docPageLineIndex;
+      this.emitSelectedLines();
     }
 
+    console.log('🔴 Opening context menu');
     this.showContextMenu = true;
     this.contextMenuPosition = { x: event.clientX, y: event.clientY };
     this.selectedLine = line;
@@ -722,25 +865,100 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.showContextMenu = false;
   }
 
+  editSelectedLineText(event: Event): void {
+    console.log('🎯 Edit Text clicked! selectedLineIds:', this.selectedLineIds);
+    event.stopPropagation();
+    this.showContextMenu = false;
+
+    // Only allow editing one line at a time
+    if (this.selectedLineIds.length === 1) {
+      const lineId = this.selectedLineIds[0];
+      const line = this.page.find(l => l.docPageLineIndex === lineId);
+      console.log('🎯 Found line to edit:', line, 'lineId:', lineId);
+      if (line) {
+        // Start editing this line
+        this.startEditingLine(lineId, line.text);
+      }
+    } else {
+      console.log('🎯 Cannot edit - selectedLineIds length:', this.selectedLineIds.length);
+    }
+  }
+
+  private startEditingLine(lineId: number, text: string): void {
+    console.log('startEditingLine called with lineId:', lineId, 'text:', text);
+
+    // Find the line
+    const line = this.page.find(line => line.docPageLineIndex === lineId);
+    if (!line) {
+      console.log('Line not found for lineId:', lineId);
+      return;
+    }
+
+    // Get the array index for undo recording
+    const lineIndex = this.page.findIndex(l => l.docPageLineIndex === lineId);
+
+    console.log('Setting editingLine to:', lineId, 'editingText to:', text);
+
+    // Record undo state before editing
+    this.undoService.recordLineChange(
+      this.currentPageIndex,
+      lineIndex,
+      line,
+      `Edit line text: "${text}"`
+    );
+
+    this.editingLine = lineId;
+    this.editingText = text;
+
+    console.log('About to force change detection, editingLine is now:', this.editingLine);
+
+    // Force immediate UI update - just change detection, no pageUpdate emit for editing setup
+    this.cdRef.detectChanges();
+
+    // Focus the line element after the UI has updated
+    setTimeout(() => {
+      const lineElement = document.getElementById(lineId.toString());
+      console.log('Looking for element with ID:', lineId.toString(), 'found:', lineElement);
+      if (lineElement) {
+        // Ensure contenteditable is set (backup to Angular binding)
+        lineElement.setAttribute('contenteditable', 'true');
+        console.log('Set contenteditable manually, now focusing element');
+        lineElement.focus();
+        console.log('Focused element, contenteditable:', lineElement.getAttribute('contenteditable'));
+
+        // Place cursor at the end of the text
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.selectNodeContents(lineElement);
+        range.collapse(false); // false means collapse to end
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+        console.log('Set cursor position');
+      } else {
+        console.log('Element not found with ID:', lineId.toString());
+      }
+    }, 100); // Increased timeout
+  }
+
   changeLineCategory(event: Event, category: string, xPos: string, line: any, lineIndex: number): void {
     event.stopPropagation();
     this.showContextMenu = false;
     
     // Get all selected lines
     const selectedLines = this.selectedLineIds.map(lineId => {
-      const line = this.page[lineId];
-      return { line, lineIndex: lineId };
+      const line = this.page.find(l => l.docPageLineIndex === lineId);
+      const lineIndex = this.page.findIndex(l => l.docPageLineIndex === lineId);
+      return { line, lineIndex };
     });
 
-    // Record undo state for each selected line
-    selectedLines.forEach(({ line, lineIndex }) => {
-      this.undoService.recordLineChange(
-        this.currentPageIndex,
-        lineIndex,
-        line,
-        `Change category: ${line.category} → ${category}`
-      );
-    });
+    // Record undo state for all selected lines as one batch operation
+    const batchChanges = selectedLines.map(({ line, lineIndex }) => ({
+      pageIndex: this.currentPageIndex,
+      lineIndex,
+      currentLineState: line,
+      changeDescription: `Change category: ${line.category} → ${category} (batch operation)`
+    }));
+    this.undoService.recordBatchChanges(batchChanges);
     
     // Update all selected lines
     selectedLines.forEach(({ line, lineIndex }) => {
@@ -791,19 +1009,25 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   @HostListener('document:contextmenu', ['$event'])
   onContextMenu(event: MouseEvent): void {
+    console.log('🖱️ Right-click detected on document');
     // Check if click is on a line element
     const clickedLine = (event.target as HTMLElement).closest('li');
+    console.log('🖱️ Clicked element:', clickedLine, 'id:', clickedLine?.id);
     if (!clickedLine) {
+      console.log('🖱️ Not clicked on a line, hiding context menu');
       this.showContextMenu = false;
       return;
     }
 
-    // Get the line index from the clicked element
+    // Get the line ID from the clicked element
     const lineId = parseInt(clickedLine.id);
-    const line = this.page[lineId];
-    
+    const line = this.page.find(l => l.docPageLineIndex === lineId);
+    console.log('🖱️ Found line for context menu:', line, 'lineId:', lineId);
+
     if (line) {
       this.openContextMenu(event, line, lineId);
+    } else {
+      console.log('🖱️ No line found for lineId:', lineId);
     }
   }
 
@@ -821,39 +1045,26 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   // ============= TEXT EDITING METHODS =============
 
-  onDoubleClick(index: number, text: string): void {
+  onDoubleClick(event: MouseEvent, lineId: number, text: string): void {
+    if (!this.canEditDocument) return;
+
+    // Prevent default behavior and stop propagation to avoid interference
+    event.preventDefault();
+    event.stopPropagation();
+
     // Find the line using docPageLineIndex
-    const line = this.page[index];
-    if (!line || !this.isLineSelected(line)) return;
-    
-    // Record undo state before editing
-    this.undoService.recordLineChange(
-      this.currentPageIndex,
-      index,
-      line,
-      `Edit line text: "${text}"`
-    );
-    
-    this.editingLine = index;
-    this.editingText = text;
-    
-    // Force immediate UI update
-    this.pageUpdate.emit([...this.page]);
-    
-    // Focus the line element after the UI has updated
-    setTimeout(() => {
-      const lineElement = document.getElementById(line.docPageLineIndex.toString());
-      if (lineElement) {
-        lineElement.focus();
-        // Place cursor at the end of the text
-        const range = document.createRange();
-        const sel = window.getSelection();
-        range.selectNodeContents(lineElement);
-        range.collapse(false); // false means collapse to end
-        sel?.removeAllRanges();
-        sel?.addRange(range);
-      }
-    }, 10);
+    const line = this.page.find(line => line.docPageLineIndex === lineId);
+    if (!line) return;
+
+    // Auto-select the line if it's not already selected
+    if (!this.isLineSelected(line)) {
+      // Create a mock mouse event for single selection
+      const mockEvent = { shiftKey: false, ctrlKey: false, metaKey: false } as MouseEvent;
+      this.selectLine(line, mockEvent);
+    }
+
+    // Use the same logic as the context menu
+    this.startEditingLine(lineId, text);
   }
 
   onEditTextChange(newText: string): void {
@@ -880,13 +1091,16 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   saveEdit(): void {
     if (this.editingLine !== null) {
-      const line = this.page[this.editingLine];
+      const line = this.page.find(line => line.docPageLineIndex === this.editingLine);
       if (!line) return;
+
+      // Get the array index for undo recording
+      const lineIndex = this.page.findIndex(l => l.docPageLineIndex === this.editingLine);
 
       // Record undo state
       this.undoService.recordLineChange(
         this.currentPageIndex,
-        this.editingLine,
+        lineIndex,
         line,
         `Edit line text: "${line.text}" → "${this.editingText}"`
       );
@@ -905,14 +1119,17 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         );
       } else {
         // Use updateLine for other lines
-        this.pdfService.updateLine(this.currentPageIndex, this.editingLine, {
+        this.pdfService.updateLine(this.currentPageIndex, lineIndex, {
           ...line,
           text: this.editingText
         });
-        
+
         // Clean up editing state
         this.editingLine = null;
         this.editingText = '';
+
+        // Don't emit pageUpdate here - the PDF service update will trigger the parent component update
+        // this.pageUpdate.emit([...this.page]);
       }
     }
   }
@@ -1029,15 +1246,14 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       
       if (selectedLines.length === 0) return;
       
-      // Record undo for each line BEFORE making changes
-      selectedLines.forEach(({ line, lineIndex }) => {
-        this.undoService.recordLineChange(
-          this.currentPageIndex,
-          lineIndex,
-          line,
-          `Toggle visibility: ${line.visible} (batch operation)`
-        );
-      });
+      // Record undo for all lines as one batch operation
+      const batchChanges = selectedLines.map(({ line, lineIndex }) => ({
+        pageIndex: this.currentPageIndex,
+        lineIndex,
+        currentLineState: line,
+        changeDescription: `Toggle visibility: ${line.visible} (batch operation)`
+      }));
+      this.undoService.recordBatchChanges(batchChanges);
       
       // Get the visibility state of the first selected line
       const firstLine = selectedLines[0];
@@ -1081,15 +1297,25 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   // ============= UNDO/REDO METHODS =============
   
   performUndo(): void {
+    console.log('[UNDO] Starting undo operation');
+    this.isUndoInProgress = true;
     this.undoService.undo();
-    // That's it! PdfService will update and trigger component refresh automatically
-    console.log('[UNDO] Undo performed');
+    // Reset flag after a short delay to allow updates to complete
+    setTimeout(() => {
+      this.isUndoInProgress = false;
+      console.log('[UNDO] Undo operation completed');
+    }, 100);
   }
-  
+
   performRedo(): void {
+    console.log('[UNDO] Starting redo operation');
+    this.isUndoInProgress = true;
     this.undoService.redo();
-    // That's it! PdfService will update and trigger component refresh automatically
-    console.log('[UNDO] Redo performed');
+    // Reset flag after a short delay to allow updates to complete
+    setTimeout(() => {
+      this.isUndoInProgress = false;
+      console.log('[UNDO] Redo operation completed');
+    }, 100);
   }
   
   handleKeyDown(event: KeyboardEvent, line: Line, lineIndex: number): void {
@@ -1192,7 +1418,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       );
 
       // Use updateSceneNumber from the PDF service
-      this.pdfService.updateSceneNumber(line, newSceneNumber).subscribe(
+      this.pdfService.updateSceneNumber(line, newSceneNumber, this.currentPageIndex).subscribe(
         ({ success }) => {
           if (success) {
             // Find the start and end of the scene

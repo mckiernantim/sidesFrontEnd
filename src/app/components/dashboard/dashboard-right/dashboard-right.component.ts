@@ -526,12 +526,23 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     this.watermark = line;
     console.log('Dashboard: Watermark added:', line);
     this.pdf.watermarkPages(this.watermark, this.pdf.finalDocument.data);
+    // Trigger change detection to update the hasWatermark status
+    this.cdr.detectChanges();
   }
 
   removeWatermark() {
     this.watermark = null;
     console.log('Dashboard: Watermark removed');
     this.pdf.removeWatermark(this.pdf.finalDocument.data);
+    // Trigger change detection to update the hasWatermark status
+    this.cdr.detectChanges();
+  }
+
+  get hasWatermark(): boolean {
+    if (!this.pdf.finalDocument?.data) return false;
+    return this.pdf.finalDocument.data.some(page =>
+      page && page[0] && page[0].watermarkData && page[0].watermarkData.isActive
+    );
   }
 
   getPages(data) {
@@ -1511,14 +1522,8 @@ async sendFinalDocumentToServer(finalDocument) {
     if (!this.editState) return;
     // Only allow editing if it's a scene header
     if (scene.category === 'scene-header') {
-      // Record undo state before editing
-      this.undoService.recordLineChange(
-        this.currentPageIndex,
-        scene.docPageLineIndex,
-        scene,
-        `Edit scene number: ${scene.sceneNumberText}`
-      );
-      
+      // Record undo state before editing - use the PDF service method for consistency
+      // The actual undo recording happens in the PDF service's updateSceneNumber method
       this.editingSceneNumber = scene.sceneNumberText;
       this.originalSceneNumber = scene.sceneNumberText;
     }
@@ -1536,78 +1541,47 @@ async sendFinalDocumentToServer(finalDocument) {
 
   saveSceneNumberEdit(scene: any, event: FocusEvent): void {
     if (!this.editState) return;
-    
+
     const newSceneNumber = (event.target as HTMLElement).textContent?.trim();
-    
+
     if (newSceneNumber && newSceneNumber !== scene.sceneNumberText) {
-      // Record undo state before changing scene number
-      this.undoService.recordLineChange(
-        scene.docPageIndex,
-        scene.docPageLineIndex,
-        scene,
-        `Edit scene number: ${scene.sceneNumberText} → ${newSceneNumber}`
-      );
+      console.log(`Dashboard-Right: Updating scene number from "${scene.sceneNumberText}" to "${newSceneNumber}"`);
 
-      // Update the scene in selected
-      const selectedIndex = this.selected.findIndex(s => s.docPageLineIndex === scene.docPageLineIndex);
-      if (selectedIndex !== -1) {
-        this.selected[selectedIndex] = {
-          ...this.selected[selectedIndex],
-          sceneNumberText: newSceneNumber
-        };
-        // Create new array reference to trigger change detection
-        this.selected = [...this.selected];
-      }
+      // Use the PDF service's comprehensive updateSceneNumber method
+      // This will update ALL lines across ALL pages that belong to this scene
+      this.pdf.updateSceneNumber(scene, newSceneNumber, this.currentPageIndex).subscribe(
+        ({ success }) => {
+          if (success) {
+            console.log('Dashboard-Right: Scene number update successful');
 
-      // Get all lines from the PDF service for this page
-      const allLines = this.pdf.finalDocument?.data[scene.docPageIndex] || [];
-      
-      // Find the start and end of the scene
-      const sceneStartIndex = allLines.findIndex(l => l.docPageLineIndex === scene.docPageLineIndex);
-      let sceneEndIndex = sceneStartIndex;
-      
-      // Find the next scene header or end of page
-      for (let i = sceneStartIndex + 1; i < allLines.length; i++) {
-        if (allLines[i].category === 'scene-header') {
-          break;
+            // Update the scene in the selected scenes array for the table display
+            const selectedIndex = this.selected.findIndex(s => s.sceneNumberText === scene.sceneNumberText);
+            if (selectedIndex !== -1) {
+              this.selected[selectedIndex] = {
+                ...this.selected[selectedIndex],
+                sceneNumberText: newSceneNumber
+              };
+              // Create new array reference to trigger change detection
+              this.selected = [...this.selected];
+            }
+
+            // Force change detection to update the UI
+            this.cdr.detectChanges();
+          } else {
+            console.error('Dashboard-Right: Failed to update scene number');
+          }
         }
-        sceneEndIndex = i;
-      }
-
-      // Get all lines in this scene
-      const sceneLines = allLines.slice(sceneStartIndex, sceneEndIndex + 1);
-
-      // Update all lines in the scene
-      sceneLines.forEach(l => {
-        // Update the line in the PDF service
-        this.pdf.updateLine(scene.docPageIndex, l.docPageLineIndex, {
-          ...l,
-          sceneNumber: newSceneNumber, // Update sceneNumber
-          sceneNumberText: newSceneNumber, // Update sceneNumberText if it exists
-          // Update text for specific line types
-          text: l.category === 'scene-header' ? l.text :
-                l.category === 'end' ? `END ${newSceneNumber}` :
-                (l.category === 'continue' || l.category === 'continue-top') ? 
-                `↓↓↓ ${newSceneNumber} CONTINUED ↓↓↓` : l.text
-        });
-      });
+      );
     }
-    
+
     this.editingSceneNumber = null;
     this.cdr.detectChanges();
   }
 
   startEditingSceneText(scene: any): void {
     if (!this.editState) return;
-    
-    // Record undo state before editing
-    this.undoService.recordLineChange(
-      this.currentPageIndex,
-      scene.docPageLineIndex,
-      scene,
-      `Edit scene text: ${scene.text}`
-    );
-    
+
+    // Record undo state before editing - handled by PDF service method
     this.editingSceneText = scene.text;
     this.originalSceneText = scene.text;
   }
@@ -1624,36 +1598,37 @@ async sendFinalDocumentToServer(finalDocument) {
 
   saveSceneTextEdit(scene: any, event: FocusEvent): void {
     if (!this.editState) return;
-    
+
     const newText = (event.target as HTMLElement).textContent?.trim();
-    
+
     if (newText && newText !== scene.text) {
-      // Record undo state before changing scene text
-      this.undoService.recordLineChange(
-        scene.docPageIndex,
-        scene.docPageLineIndex,
-        scene,
-        `Edit scene text: "${scene.text}" → "${newText}"`
+      // Use updateSceneHeaderText instead of updateLine to handle scene reordering correctly
+      // This method finds the scene by sceneNumberText instead of relying on potentially stale indices
+      this.pdf.updateSceneHeaderText(scene, newText).subscribe(
+        ({ success }) => {
+          if (success) {
+            console.log('Dashboard-right: Scene text updated successfully');
+
+            // Update the scene in selected array
+            const selectedIndex = this.selected.findIndex(s => s.sceneNumberText === scene.sceneNumberText);
+            if (selectedIndex !== -1) {
+              this.selected[selectedIndex] = {
+                ...this.selected[selectedIndex],
+                text: newText
+              };
+              // Create new array reference to trigger change detection
+              this.selected = [...this.selected];
+            }
+
+            // Force change detection to update the UI
+            this.cdr.detectChanges();
+          } else {
+            console.error('Dashboard-right: Failed to update scene text');
+          }
+        }
       );
-
-      // Update the scene in selected
-      const selectedIndex = this.selected.findIndex(s => s.docPageLineIndex === scene.docPageLineIndex);
-      if (selectedIndex !== -1) {
-        this.selected[selectedIndex] = {
-          ...this.selected[selectedIndex],
-          text: newText
-        };
-        // Create new array reference to trigger change detection
-        this.selected = [...this.selected];
-      }
-
-      // Update the line in the PDF service
-      this.pdf.updateLine(scene.docPageIndex, scene.docPageLineIndex, {
-        ...scene,
-        text: newText
-      });
     }
-    
+
     this.editingSceneText = null;
     this.originalSceneText = null;
   }
@@ -1824,33 +1799,22 @@ async sendFinalDocumentToServer(finalDocument) {
    */
   private resetSceneOrderToInitial(): void {
     console.log('Dashboard-right: Resetting scene order to initial state');
-    
-    if (this.initialSceneOrder && this.initialSceneOrder.length > 0) {
-      // Reset the selected array to the initial order
-      this.selected = this.initialSceneOrder.map(scene => {
-        const existingScene = this.scenes.find(s => s.index === scene.index);
-        if (existingScene) {
-          return {
-            ...existingScene,
-            ...scene,
-            preview: existingScene.preview,
-            lastPage: existingScene.lastPage
-          };
-        }
-        return scene;
-      });
-      
-      // Update the selectedScenesMap to match
-      this.selectedScenesMap.clear();
-      this.selected.forEach(scene => {
-        this.selectedScenesMap.set(scene.docPageIndex, scene);
-      });
-      
-      // Force change detection
-      this.cdr.detectChanges();
-      
-      console.log('Dashboard-right: Scene order reset to initial state successfully');
-    }
+
+    // Get the initial scenes and selected scenes from PDF service
+    this.scenes = JSON.parse(JSON.stringify(this.pdf.scenes || []));
+    this.selected = JSON.parse(JSON.stringify(this.pdf.getSelectedScenes() || []));
+
+    // Update the selectedScenesMap
+    this.selectedScenesMap.clear();
+    this.selected.forEach(scene => {
+      this.selectedScenesMap.set(scene.docPageIndex, scene);
+    });
+
+    // Force change detection to update the UI
+    this.cdr.detectChanges();
+
+    console.log('Dashboard-right: Scene order reset to initial state successfully');
+    console.log('Dashboard-right: Scenes count:', this.scenes.length, 'Selected count:', this.selected.length);
   }
 
   /**

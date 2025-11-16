@@ -187,7 +187,7 @@
                       <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
                     </div>
                     <div class="p-2 w-full md:w-1/2 lg:w-auto">
-                      <app-add-watermark (waterMarkUpdate)="addWaterMark($event)"></app-add-watermark>
+                      <app-add-watermark [hasWatermark]="hasWatermark" (waterMarkUpdate)="addWaterMark($event)" (waterMarkRemove)="removeWatermark()"></app-add-watermark>
                     </div>
                   </div>
                 </div>

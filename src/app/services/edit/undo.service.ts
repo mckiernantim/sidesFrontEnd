@@ -33,8 +33,20 @@ export interface SceneReorderUndoItem {
   changeDescription?: string;
 }
 
+export interface BatchLineChangeUndoItem {
+  type: 'batch-line-changes';
+  changes: {
+    pageIndex: number;
+    lineIndex: number;
+    previousLineState: Line;
+    changeDescription?: string;
+  }[];
+  timestamp: number;
+  changeDescription?: string;
+}
+
 // Union type for all possible undo items
-export type AnyUndoItem = UndoStackItem | SceneOrderUndoItem | DocumentReorderUndoItem | SceneReorderUndoItem;
+export type AnyUndoItem = UndoStackItem | SceneOrderUndoItem | DocumentReorderUndoItem | SceneReorderUndoItem | BatchLineChangeUndoItem;
 
 @Injectable({
   providedIn: 'root',
@@ -215,7 +227,10 @@ export class UndoService {
     this.redoStack.push(undoItem);
 
     // Handle different types of undo items
-    if (this.isSceneReorderUndoItem(undoItem)) {
+    if (this.isBatchLineChangeUndoItem(undoItem)) {
+      console.log('🔄 UNDO Service: Processing as batch line changes undo item');
+      this.handleBatchLineChangeUndo(undoItem as BatchLineChangeUndoItem);
+    } else if (this.isSceneReorderUndoItem(undoItem)) {
       console.log('🔄 UNDO Service: Processing as scene reorder undo item');
       this.handleSceneReorderUndo(undoItem as SceneReorderUndoItem);
     } else if (this.isSceneOrderUndoItem(undoItem)) {
@@ -250,7 +265,10 @@ export class UndoService {
     
     const redoItem = this.redoStack.pop()!;
     
-    if (this.isSceneReorderUndoItem(redoItem)) {
+    if (this.isBatchLineChangeUndoItem(redoItem)) {
+      // Handle batch line changes redo
+      this.handleBatchLineChangeRedo(redoItem as BatchLineChangeUndoItem);
+    } else if (this.isSceneReorderUndoItem(redoItem)) {
       // Handle scene reorder redo
       this.handleSceneReorderRedo(redoItem as SceneReorderUndoItem);
     } else if (this.isSceneOrderUndoItem(redoItem)) {
@@ -289,6 +307,10 @@ export class UndoService {
   /**
    * Type guard to check if an undo item is a scene reorder change (combined)
    */
+  private isBatchLineChangeUndoItem(item: AnyUndoItem): item is BatchLineChangeUndoItem {
+    return (item as BatchLineChangeUndoItem).type === 'batch-line-changes';
+  }
+
   private isSceneReorderUndoItem(item: AnyUndoItem): item is SceneReorderUndoItem {
     return (item as SceneReorderUndoItem).type === 'scene-reorder';
   }
@@ -391,15 +413,60 @@ export class UndoService {
   }
 
   /**
+   * Handle undoing a batch of line changes
+   */
+  private handleBatchLineChangeUndo(undoItem: BatchLineChangeUndoItem): void {
+    console.log('🔄 UNDO: Handling batch line changes undo for', undoItem.changes.length, 'lines');
+
+    // Save current states for redo
+    const redoChanges = undoItem.changes.map(change => {
+      if (this.pdfService && this.pdfService.finalDocument?.data) {
+        const currentPage = this.pdfService.finalDocument.data[change.pageIndex];
+        if (currentPage && currentPage[change.lineIndex]) {
+          return {
+            ...change,
+            previousLineState: cloneDeep(currentPage[change.lineIndex])
+          };
+        }
+      }
+      return change;
+    });
+
+    // Create redo item for the batch
+    const redoItem: BatchLineChangeUndoItem = {
+      type: 'batch-line-changes',
+      changes: redoChanges,
+      timestamp: Date.now(),
+      changeDescription: undoItem.changeDescription
+    };
+    this.redoStack.push(redoItem);
+
+    // Restore all previous states
+    undoItem.changes.forEach(change => {
+      this.restoreLineState({
+        pageIndex: change.pageIndex,
+        lineIndex: change.lineIndex,
+        previousLineState: change.previousLineState,
+        timestamp: undoItem.timestamp,
+        changeDescription: change.changeDescription
+      } as UndoStackItem);
+    });
+
+    console.log('🔄 UNDO: Restored batch of', undoItem.changes.length, 'line states');
+  }
+
+  /**
    * Handle undoing a line change
    */
   private handleLineChangeUndo(undoItem: UndoStackItem): void {
+    console.log('🔄 UNDO: Handling line change undo for page', undoItem.pageIndex, 'line', undoItem.lineIndex);
+
     // Before restoring, save the current state for redo
     if (this.pdfService && this.pdfService.finalDocument?.data) {
       const currentPage = this.pdfService.finalDocument.data[undoItem.pageIndex];
       if (currentPage && currentPage[undoItem.lineIndex]) {
         const currentLineState = cloneDeep(currentPage[undoItem.lineIndex]);
-        
+
         // Add current state to redo stack
         const redoItem: UndoStackItem = {
           ...undoItem,
@@ -407,11 +474,56 @@ export class UndoService {
           timestamp: Date.now()
         };
         this.redoStack.push(redoItem);
+        console.log('🔄 UNDO: Saved current state to redo stack');
       }
     }
-    
+
     // Restore the previous state directly in PdfService
     this.restoreLineState(undoItem);
+    console.log('🔄 UNDO: Restored previous line state');
+  }
+
+  /**
+   * Handle redoing a batch of line changes
+   */
+  private handleBatchLineChangeRedo(redoItem: BatchLineChangeUndoItem): void {
+    console.log('🔄 REDO: Handling batch line changes redo for', redoItem.changes.length, 'lines');
+
+    // Save current states for undo
+    const undoChanges = redoItem.changes.map(change => {
+      if (this.pdfService && this.pdfService.finalDocument?.data) {
+        const currentPage = this.pdfService.finalDocument.data[change.pageIndex];
+        if (currentPage && currentPage[change.lineIndex]) {
+          return {
+            ...change,
+            previousLineState: cloneDeep(currentPage[change.lineIndex])
+          };
+        }
+      }
+      return change;
+    });
+
+    // Create undo item for the batch
+    const undoItem: BatchLineChangeUndoItem = {
+      type: 'batch-line-changes',
+      changes: undoChanges,
+      timestamp: Date.now(),
+      changeDescription: redoItem.changeDescription
+    };
+    this.undoStack.push(undoItem);
+
+    // Restore all redo states
+    redoItem.changes.forEach(change => {
+      this.restoreLineState({
+        pageIndex: change.pageIndex,
+        lineIndex: change.lineIndex,
+        previousLineState: change.previousLineState,
+        timestamp: redoItem.timestamp,
+        changeDescription: change.changeDescription
+      } as UndoStackItem);
+    });
+
+    console.log('🔄 REDO: Restored batch of', redoItem.changes.length, 'line states');
   }
 
   /**
@@ -444,7 +556,6 @@ export class UndoService {
   reset(): void {
     this.undoStack = [];
     this.redoStack = [];
-    this.pdfService.resetToInitialState(); // Direct call
     // Notify components that reset has occurred
     this.resetSubject.next();
     console.log('[UNDO] History reset');
@@ -479,25 +590,27 @@ export class UndoService {
       if (page && page[undoItem.lineIndex]) {
         // Replace the entire line with the previous state
         this.pdfService.finalDocument.data[undoItem.pageIndex][undoItem.lineIndex] = cloneDeep(undoItem.previousLineState);
-        
+
+        console.log(`🔄 UNDO: Updated PDF service data for line ${undoItem.lineIndex}, new position:`, undoItem.previousLineState.calculatedXpos, undoItem.previousLineState.calculatedYpos);
+
         // Trigger the observable to notify all components with the specific line update
         this.pdfService._finalDocumentData$.next({
           docPageIndex: undoItem.pageIndex,
           docPageLineIndex: undoItem.lineIndex,
           line: cloneDeep(undoItem.previousLineState)
         });
-        
-        console.log(`[UNDO] Line state restored in PdfService: Page ${undoItem.pageIndex}, Line ${undoItem.lineIndex}`);
+
+        console.log(`🔄 UNDO: Emitted update notification for line ${undoItem.lineIndex}`);
       } else {
-        console.warn(`[UNDO] Could not find line at page ${undoItem.pageIndex}, line ${undoItem.lineIndex}`);
+        console.warn(`🔄 UNDO: Could not find line at page ${undoItem.pageIndex}, line ${undoItem.lineIndex}`);
       }
     } else {
-      console.warn('[UNDO] No finalDocument.data available in PdfService');
+      console.warn('🔄 UNDO: No finalDocument.data available in PdfService');
     }
   }
 
   /**
-   * Record multiple line changes at once (for batch operations)
+   * Record multiple line changes at once (for batch operations) as a single undo item
    */
   recordBatchChanges(changes: {
     pageIndex: number;
@@ -505,16 +618,28 @@ export class UndoService {
     currentLineState: Line;
     changeDescription?: string;
   }[]): void {
-    changes.forEach(change => {
-      this.recordLineChange(
-        change.pageIndex,
-        change.lineIndex,
-        change.currentLineState,
-        change.changeDescription
-      );
-    });
-    
-    console.log(`[UNDO] Recorded batch of ${changes.length} changes`);
+    const batchUndoItem: BatchLineChangeUndoItem = {
+      type: 'batch-line-changes',
+      changes: changes.map(change => ({
+        pageIndex: change.pageIndex,
+        lineIndex: change.lineIndex,
+        previousLineState: cloneDeep(change.currentLineState),
+        changeDescription: change.changeDescription
+      })),
+      timestamp: Date.now(),
+      changeDescription: `Batch operation: ${changes.length} line changes`
+    };
+
+    // Add to undo stack
+    this.undoStack.push(batchUndoItem);
+
+    // Clear redo stack when new change is made
+    this.redoStack = [];
+
+    // Trim stack if needed
+    this.trimStackIfNeeded();
+
+    console.log(`[UNDO] Recorded batch of ${changes.length} line changes as single undo item`);
   }
 
   // ============= GETTERS AND UTILITY METHODS =============

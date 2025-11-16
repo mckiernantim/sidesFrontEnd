@@ -94,13 +94,13 @@
 
                     <!-- Main line element -->
                     <ng-container *ngIf="canEditDocument; else nonEditable">
-                        <li id="{{ line.docPageLineIndex }}" 
-                            (dblclick)="canEditDocument && onDoubleClick(line.docPageLineIndex, line.text)"
+                        <li id="{{ line.docPageLineIndex }}"
+                            (dblclick)="canEditDocument && onDoubleClick($event, line.docPageLineIndex, line.text)"
                             [class.editing]="editingLine === line.docPageLineIndex"
-                            tabindex="0" 
+                            tabindex="0"
                             (mousedown)="startLineDrag($event, line, 'line')"
-                            [class.draggable]="canEditDocument && isLineSelected(line)"
-                            [style.cursor]="canEditDocument && isLineSelected(line) ? 'grab' : 'default'"
+                            [class.draggable]="canEditDocument"
+                            [style.cursor]="canEditDocument ? 'grab' : 'default'"
                             [class.grabbing]="mouseDragging && dragLineId === line.docPageLineIndex"
                             [value]="line.sceneNumber"
                             [class]="line.category + ' ' + line.visible + ' ' + line.hidden"
@@ -109,14 +109,13 @@
                             [class.editing]="editingLine === line.docPageLineIndex"
                             [ngClass]="{ 'edit-li': canEditDocument }"
                             (click)="canEditDocument && selectLine(line, $event)"
-                            [style.bottom]="line.calculatedYpos" 
+                            [style.bottom]="line.calculatedYpos"
                             [style.left]="line.calculatedXpos"
-                            [attr.contenteditable]="editingLine === line.docPageLineIndex ? 'true' : 'false'"
                             [style.background-color]="editingLine === line.docPageLineIndex ? 'orange' : 'transparent'"
                             (blur)="editingLine === line.docPageLineIndex && saveEdit()"
                             (keydown)="editingLine === line.docPageLineIndex && handleEditKeyDown($event)"
                             (input)="editingLine === line.docPageLineIndex && onEditTextChange($event.target.textContent)">
-                            {{ line.text }} 
+                            {{ line.text }}
                     </ng-container>
                     <ng-template #nonEditable>
                         <li id="{{ line.docPageLineIndex }}" 
@@ -252,7 +251,14 @@
                     ({{ selectedLineIds.length }} selected)
                 </span>
             </li>
-            <li (click)="changeLineCategory($event, 'hidden', '', selectedLine, selectedLineIndex)" 
+            <li (click)="editSelectedLineText($event)"
+                class="classification-option text-blue-600">
+                Edit Text
+                <span *ngIf="selectedLineIds.length > 1" class="text-sm text-gray-500">
+                    ({{ selectedLineIds.length }} selected)
+                </span>
+            </li>
+            <li (click)="changeLineCategory($event, 'hidden', '', selectedLine, selectedLineIndex)"
                 class="classification-option text-red-500">
                 Delete
                 <span *ngIf="selectedLineIds.length > 1" class="text-sm text-gray-500">

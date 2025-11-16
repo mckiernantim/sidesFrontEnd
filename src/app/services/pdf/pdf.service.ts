@@ -59,6 +59,19 @@ export class PdfService {
 
   // Add initialDocumentState property
   private initialDocumentState: any;
+  private trueInitialDocumentState: any; // Never updated after first document processing
+  private trueInitialScenesState: any[]; // Never updated after first document processing
+  private trueInitialSelectedScenesState: any[]; // Never updated after first document processing
+  private initialScenesState: any[];
+  private initialSelectedScenesState: any[];
+
+  // Comprehensive index of ALL continue/continue-top bars across ALL scenes
+  private sceneContinueBarIndex: { [sceneNumber: string]: Array<{ pageIndex: number, lineIndex: number, category: string, line: any }> } = {};
+
+  // Public getter for the continue bar index (for debugging/testing)
+  getSceneContinueBarIndex(): { [sceneNumber: string]: Array<{ pageIndex: number, lineIndex: number, category: string, line: any }> } {
+    return this.sceneContinueBarIndex;
+  }
   private _documentReordered$ = new BehaviorSubject<boolean>(false);
   public documentReordered$ = this._documentReordered$.asObservable();
   private _watermarkUpdated$ = new Subject<{ watermark: string | null, action: 'add' | 'remove' }>();
@@ -223,14 +236,33 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
   return null;
 }
 
-// KEEP the resetToInitialState method (called by undo reset)
-resetToInitialState(): void {
-  if (this.initialDocumentState) {
-    this.finalDocument = JSON.parse(JSON.stringify(this.initialDocumentState));
-    // Initial state is handled by components
-    this.finalDocReady = true;
+// Simple reset to initial state
+  resetToInitialState(): void {
+    if (this.trueInitialDocumentState) {
+      console.log('PDF Service: Resetting to TRUE initial document state (before any edits)');
+
+      // Reset to the TRUE initial state (captured when document was first processed)
+      this.finalDocument = JSON.parse(JSON.stringify(this.trueInitialDocumentState));
+      this.scenes = JSON.parse(JSON.stringify(this.trueInitialScenesState || []));
+      this._selectedScenes = JSON.parse(JSON.stringify(this.trueInitialSelectedScenesState || []));
+
+      // Reset the current initial states to match the true initial state
+      this.initialDocumentState = JSON.parse(JSON.stringify(this.trueInitialDocumentState));
+      this.initialScenesState = JSON.parse(JSON.stringify(this.trueInitialScenesState || []));
+      this.initialSelectedScenesState = JSON.parse(JSON.stringify(this.trueInitialSelectedScenesState || []));
+
+      // Rebuild the continue bar index after reset
+      this.buildSceneContinueBarIndex();
+
+      // Set ready flag and notify
+      this.finalDocReady = true;
+      this._documentRegenerated$.next(true);
+
+      console.log('PDF Service: Reset to true initial state complete');
+    } else {
+      console.warn('PDF Service: No true initial document state available for reset');
+    }
   }
-}
 // Add these methods to your PdfService for better undo integration:
 
   resetData() {
@@ -694,8 +726,20 @@ resetToInitialState(): void {
     // Create new page order based on scene order
     const newPageOrder: any[] = [];
     const usedPageIndexes = new Set<number>();
-  
-    // Add ALL pages for each scene in the new order
+
+    // FIRST: Preserve callsheets at the beginning (index 0)
+    // Callsheets should always stay at index 0 regardless of scene reordering
+    this.finalDocument.data.forEach((page, pageIndex) => {
+      if (!usedPageIndexes.has(pageIndex) &&
+          page && page[0] &&
+          (page[0].type === 'callsheet' || page[0].category === 'callsheet')) {
+        newPageOrder.push(page);
+        usedPageIndexes.add(pageIndex);
+        console.log(`Preserved callsheet page ${pageIndex} at beginning`);
+      }
+    });
+
+    // SECOND: Add ALL pages for each scene in the new order
     newSceneOrder.forEach(scene => {
       const pageIndexes = sceneToPageIndexes.get(scene.sceneNumberText);
       if (pageIndexes) {
@@ -714,8 +758,8 @@ resetToInitialState(): void {
         console.log(`No pages found for scene ${scene.sceneNumberText}`);
       }
     });
-  
-    // Add any remaining pages that weren't part of scenes
+
+    // THIRD: Add any remaining pages that weren't part of scenes or callsheets
     this.finalDocument.data.forEach((page, pageIndex) => {
       if (!usedPageIndexes.has(pageIndex)) {
         newPageOrder.push(page);
@@ -846,14 +890,86 @@ resetToInitialState(): void {
     this.finalDocument.data = reorderedPages;
     // Initial state is handled by components
 
+    // Build comprehensive index of ALL continue/continue-top bars across ALL scenes
+    this.buildSceneContinueBarIndex();
+
     // Save initial state after document is fully processed
     this.initialDocumentState = JSON.parse(JSON.stringify(this.finalDocument));
+    this.initialScenesState = JSON.parse(JSON.stringify(this.scenes));
+    this.initialSelectedScenesState = JSON.parse(JSON.stringify(this._selectedScenes));
+
+    // Save TRUE initial state (only once, never updated)
+    if (!this.trueInitialDocumentState) {
+      this.trueInitialDocumentState = JSON.parse(JSON.stringify(this.finalDocument));
+      this.trueInitialScenesState = JSON.parse(JSON.stringify(this.scenes));
+      this.trueInitialSelectedScenesState = JSON.parse(JSON.stringify(this._selectedScenes));
+      console.log('PDF Service: True initial document state captured');
+    }
 
     this.updatePageNumberVisibility();
 
     this.finalDocReady = true;
     this._documentRegenerated$.next(true);
     return true;
+  }
+
+
+  /**
+   * Build index of transition continue/continue-top bars (page boundaries) across ALL scenes
+   */
+  private buildSceneContinueBarIndex(): void {
+    console.log('PDF Service: Building transition continue bar index');
+
+    // Clear existing index
+    this.sceneContinueBarIndex = {};
+
+    if (!this.finalDocument?.data) {
+      console.warn('PDF Service: No document data available for indexing');
+      return;
+    }
+
+    // Scan ALL pages and identify transition continue bars
+    this.finalDocument.data.forEach((page, pageIndex) => {
+      page.forEach((line, lineIndex) => {
+        if (line && (line.category === 'continue' || line.category === 'continue-top')) {
+          const sceneNumber = line.sceneNumberText || line.sceneNumber;
+
+          if (sceneNumber) {
+            // Only index continue bars at page transitions
+            let isTransitionBar = false;
+
+            if (line.category === 'continue') {
+              // Continue bars at end of pages (transition to next page)
+              isTransitionBar = lineIndex >= page.length - 5; // Last 5 lines
+            } else if (line.category === 'continue-top') {
+              // Continue-top bars at start of pages (continuation from previous page)
+              isTransitionBar = lineIndex <= 5; // First 5 lines
+            }
+
+            if (isTransitionBar) {
+              if (!this.sceneContinueBarIndex[sceneNumber]) {
+                this.sceneContinueBarIndex[sceneNumber] = [];
+              }
+
+              // Store position info for transition bars
+              this.sceneContinueBarIndex[sceneNumber].push({
+                pageIndex,
+                lineIndex,
+                category: line.category,
+                line: line
+              });
+
+              console.log(`PDF Service: Indexed transition ${line.category} bar for scene "${sceneNumber}" at page ${pageIndex}, line ${lineIndex}`);
+            }
+          }
+        }
+      });
+    });
+
+    // Log the transition index
+    console.log('PDF Service: Transition continue bar index built:', this.sceneContinueBarIndex);
+    const totalIndexed = Object.values(this.sceneContinueBarIndex).reduce((sum, bars) => sum + bars.length, 0);
+    console.log(`PDF Service: Total transition continue/continue-top bars indexed: ${totalIndexed}`);
   }
 
   private reorderPagesBySceneOrder(pages: any[], originalSceneOrder: any[]): any[] {
@@ -1703,64 +1819,91 @@ resetToInitialState(): void {
     return currentTime < parseInt(expirationTime);
   }
 
-  updateSceneNumber(scene: any, newSceneNumber: string): Observable<{ success: boolean }> {
+  updateSceneNumber(scene: any, newSceneNumber: string, currentPageIndex?: number): Observable<{ success: boolean }> {
     return new Observable(observer => {
       try {
         if (this.finalDocument && this.finalDocument.data) {
-          // Record the previous state for undo before making changes
-          const affectedLines: Array<{ pageIndex: number; lineIndex: number; line: Line }> = [];
-          
-          this.finalDocument.data.forEach((page, pageIndex) => {
+          // Store the current document state before making changes
+          const currentDocumentState = cloneDeep(this.finalDocument);
+
+          // Record this as ONE document-level change instead of individual line changes
+          this.undoService.recordDocumentReorderChange(
+            currentDocumentState,
+            `Update scene number: "${scene.sceneNumberText}" → "${newSceneNumber}"`
+          );
+
+          const oldSceneNumber = scene.sceneNumberText;
+          console.log(`PDF Service: Updating all lines with scene number "${oldSceneNumber}" → "${newSceneNumber}"`);
+
+          const updatedData = this.finalDocument.data.map((page, pageIndex) => {
+            return page.map((line, lineIndex) => {
+              // Update any line that has the old scene number
+              if (line.sceneNumberText === oldSceneNumber) {
+                console.log(`PDF Service: Updating line at page ${pageIndex}, line ${lineIndex} (${line.category}): "${line.sceneNumberText}" → "${newSceneNumber}"`);
+
+                let updatedLine = {
+                  ...line,
+                  sceneNumber: newSceneNumber,
+                  sceneNumberText: newSceneNumber
+                };
+
+                // Update custom text fields that may contain the scene number
+                if (line.customStartText && line.customStartText.includes(oldSceneNumber)) {
+                  updatedLine.customStartText = line.customStartText.replace(oldSceneNumber, newSceneNumber);
+                }
+                if (line.customEndText && line.customEndText.includes(oldSceneNumber)) {
+                  updatedLine.customEndText = line.customEndText.replace(oldSceneNumber, newSceneNumber);
+                }
+                if (line.customContinueText && line.customContinueText.includes(oldSceneNumber)) {
+                  updatedLine.customContinueText = line.customContinueText.replace(oldSceneNumber, newSceneNumber);
+                  // Also update the text field for continue bars
+                  if (line.category === 'continue') {
+                    updatedLine.text = `↓↓↓ ${newSceneNumber} CONTINUED ↓↓↓`;
+                  }
+                }
+                if (line.customContinueTopText && line.customContinueTopText.includes(oldSceneNumber)) {
+                  updatedLine.customContinueTopText = line.customContinueTopText.replace(oldSceneNumber, newSceneNumber);
+                  // Also update the text field for continue-top bars
+                  if (line.category === 'continue-top') {
+                    updatedLine.text = `↓↓↓ ${newSceneNumber} CONTINUED ↓↓↓`;
+                  }
+                }
+
+                return updatedLine;
+              }
+
+              return line;
+            });
+          });
+
+          this.finalDocument.data = updatedData;
+
+          // Rebuild the continue bar index since scene numbers changed
+          this.buildSceneContinueBarIndex();
+
+          // Emit individual updates for each affected line so components update properly
+          let updatedLinesCount = 0;
+          updatedData.forEach((page, pageIndex) => {
             page.forEach((line, lineIndex) => {
-              if (line.index === scene.index || line.sceneNumberText === scene.sceneNumberText) {
-                affectedLines.push({
-                  pageIndex,
-                  lineIndex,
-                  line: { ...line } // Clone the current state
+              // Emit update for any line that now has the new scene number
+              if (line.sceneNumberText === newSceneNumber) {
+                updatedLinesCount++;
+                console.log(`PDF Service: Emitting update for ${line.category} line at page ${pageIndex}, line ${lineIndex}`);
+                this._finalDocumentData$.next({
+                  docPageIndex: pageIndex,
+                  docPageLineIndex: lineIndex,
+                  line: line
                 });
               }
             });
           });
 
-          // Record all affected lines in the undo stack
-          affectedLines.forEach(({ pageIndex, lineIndex, line }) => {
-            this.undoService.recordLineChange(
-              pageIndex,
-              lineIndex,
-              line,
-              `Update scene number: "${scene.sceneNumberText}" → "${newSceneNumber}"`
-            );
-          });
+          console.log(`PDF Service: Scene number update complete. Updated ${updatedLinesCount} lines for scene "${scene.sceneNumberText}" → "${newSceneNumber}"`);
+          console.log(`PDF Service: Final document state after update:`, this.finalDocument.data.map((page, i) => `Page ${i}: ${page.length} lines`));
 
-          const updatedData = this.finalDocument.data.map(page => {
-            return page.map(line => {
-              // If this is the scene header line
-              if (line.index === scene.index) {
-                return { ...line, sceneNumberText: newSceneNumber };
-              }
-              
-              // If this line is part of the same scene (based on sceneNumberText)
-              if (line.sceneNumberText === scene.sceneNumberText) {
-                return {
-                  ...line,
-                  sceneNumber: newSceneNumber,
-                  sceneNumberText: newSceneNumber,
-                  // Update text for specific line types
-                  text: line.category === 'scene-header' ? line.text :
-                        line.category === 'end' ? `END ${newSceneNumber}` :
-                        (line.category === 'continue' || line.category === 'continue-top') ? 
-                        `↓↓↓ ${newSceneNumber} CONTINUED ↓↓↓` : line.text
-                };
-              }
-              return line;
-            });
-          });
-          
-          this.finalDocument.data = updatedData;
-          
-          // Emit the update through the subject
+          // Also emit the scene number update for backward compatibility
           this._sceneNumberUpdated$.next({ scene, newSceneNumber });
-          
+
           observer.next({ success: true });
           observer.complete();
         } else {
@@ -1834,44 +1977,57 @@ resetToInitialState(): void {
     return new Observable(observer => {
       try {
         if (this.finalDocument && this.finalDocument.data) {
-          // Record the change for undo functionality
-          this.undoService.recordLineChange(
-            scene.docPageIndex,
-            scene.docPageLineIndex,
-            scene,
-            `Edit scene text: "${scene.text}" → "${newText}"`
-          );
+          // Record undo for ALL affected scene header lines across all pages
+          const affectedSceneHeaders: Array<{ pageIndex: number; lineIndex: number; line: Line }> = [];
+
+          this.finalDocument.data.forEach((page, pageIndex) => {
+            page.forEach((line, lineIndex) => {
+              // Find all scene headers with the same scene number text
+              if (line.category === 'scene-header' && line.sceneNumberText === scene.sceneNumberText) {
+                affectedSceneHeaders.push({
+                  pageIndex,
+                  lineIndex,
+                  line: { ...line } // Clone current state
+                });
+              }
+            });
+          });
+
+          // Record undo for all affected scene headers
+          affectedSceneHeaders.forEach(({ pageIndex, lineIndex, line }) => {
+            this.undoService.recordLineChange(
+              pageIndex,
+              lineIndex,
+              line,
+              `Edit scene text: "${scene.text}" → "${newText}"`
+            );
+          });
 
           const updatedData = this.finalDocument.data.map(page => {
             return page.map(line => {
-              if (line.index === scene.index) {
-                // Update the scene header text
-                const updatedLine = { ...line, text: newText };
-                
-                // If this is a scene header, update all related lines in the scene
-                if (line.category === 'scene-header') {
-                  // Find all lines in the same scene and update their scene text
-                  const sceneLines = page.filter(l => 
-                    l.sceneNumberText === line.sceneNumberText
-                  );
-                  sceneLines.forEach(l => {
-                    if (l.category === 'scene-header') {
-                      l.text = newText;
-                    }
-                  });
-                }
-                
-                return updatedLine;
+              // Update all scene headers with the same scene number text
+              if (line.category === 'scene-header' && line.sceneNumberText === scene.sceneNumberText) {
+                return { ...line, text: newText };
               }
               return line;
             });
           });
-          
+
           this.finalDocument.data = updatedData;
-          
-          // Emit the update through the subject
+
+          // Emit update for each affected scene header
+          affectedSceneHeaders.forEach(({ pageIndex, lineIndex }) => {
+            const updatedLine = updatedData[pageIndex][lineIndex];
+            this._finalDocumentData$.next({
+              docPageIndex: pageIndex,
+              docPageLineIndex: lineIndex,
+              line: updatedLine
+            });
+          });
+
+          // Also emit the scene header text update for backward compatibility
           this._sceneHeaderTextUpdated$.next({ scene, newText });
-          
+
           observer.next({ success: true });
           observer.complete();
         } else {
@@ -2285,7 +2441,7 @@ resetToInitialState(): void {
    */
   resetDocumentState(): void {
     console.log('PdfService: Resetting all document state');
-    
+
     // Reset all document data
     this.finalPdfData = null;
     this.callsheet = null;
@@ -2313,6 +2469,9 @@ resetToInitialState(): void {
     this.scriptLength = 0;
     this.date = 0;
     this.totalLines = null;
+
+    // Clear the continue bar index
+    this.sceneContinueBarIndex = {};
     
     // Reset document state observables
     this._documentReordered$.next(false);
@@ -2330,6 +2489,9 @@ resetToInitialState(): void {
     
     // Reset initial states
     this.initialDocumentState = null;
+    this.trueInitialDocumentState = null;
+    this.trueInitialScenesState = null;
+    this.trueInitialSelectedScenesState = null;
     
     // Clear localStorage items related to document state
     localStorage.removeItem('name');
@@ -2353,7 +2515,15 @@ resetToInitialState(): void {
   
   watermarkPages(watermark: string, doc: any[]) {
     console.log('PDF Service: Adding watermark:', watermark);
-    
+
+    // Record undo state before adding watermark (save complete document state)
+    if (this.undoService) {
+      this.undoService.recordDocumentReorderChange(
+        cloneDeep(doc),
+        `Add watermark: "${watermark}"`
+      );
+    }
+
     // Generate human-readable timestamp
     const now = new Date();
     const timestamp = now.toLocaleString('en-US', {
@@ -2365,7 +2535,7 @@ resetToInitialState(): void {
       second: '2-digit',
       hour12: true
     });
-    
+
     // Create the watermark data structure with ONLY 10 repetitions
     const watermarkData = {
       actorName: watermark,
@@ -2373,7 +2543,7 @@ resetToInitialState(): void {
       isActive: true,
       repetitions: 10 // Reduced from 30 to 10
     };
-    
+
     doc.forEach((page) => {
       // Store watermark data in the first line of each page
       if (page && page[0]) {
@@ -2386,10 +2556,10 @@ resetToInitialState(): void {
         });
       }
     });
-    
+
     // Emit watermark update
     this._watermarkUpdated$.next({ watermark, action: 'add' });
-    
+
     // Trigger document regeneration to update the preview
     this._documentRegenerated$.next(true);
     console.log('PDF Service: Watermark added and document regeneration triggered');
@@ -2397,6 +2567,15 @@ resetToInitialState(): void {
   
   removeWatermark(doc: any[]) {
     console.log('PDF Service: Removing watermark');
+
+    // Record undo state before removing watermark (save complete document state)
+    if (this.undoService) {
+      this.undoService.recordDocumentReorderChange(
+        cloneDeep(doc),
+        'Remove watermark'
+      );
+    }
+
     doc.forEach((page) => {
       if (page && page[0]) {
         page[0].watermarkData = null;

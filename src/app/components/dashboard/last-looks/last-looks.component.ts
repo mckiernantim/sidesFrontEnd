@@ -19,6 +19,7 @@ import { Observable, Subscription } from 'rxjs';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
 import { LastLooksPageComponent } from '../last-looks-page/last-looks-page.component';
 import { UndoService } from 'src/app/services/edit/undo.service';
+import { cloneDeep } from 'lodash';
 
 interface CallsheetPage {
   type: 'callsheet';
@@ -153,23 +154,22 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       (data) => {
         if (data) {
           console.log('LastLooks received document update:', data);
-          
-          // Update the specific line in the pages array
-          if (this.pages && this.pages[data.docPageIndex]) {
-            const page = this.pages[data.docPageIndex];
-            const lineIndex = page.findIndex(line => line.docPageLineIndex === data.docPageLineIndex);
-            if (lineIndex !== -1) {
-              page[lineIndex] = data.line;
-              
-              // Update current page if this is the current page
-              if (data.docPageIndex === this.currentPageIndex) {
-                this.currentPage = [...page];
-              }
-              
-              // Force change detection
-              this.cdRef.detectChanges();
-            }
+
+          // ALWAYS sync the full pages array with PDF service state
+          // Scene number changes affect lines across ALL pages, not just current page
+          if (this.pdf.finalDocument?.data) {
+            this.pages = [...this.pdf.finalDocument.data];
+            console.log('LastLooks: Synced full pages array from PDF service');
           }
+
+          // Update current page reference - Angular will automatically pass this to child component
+          if (this.pages[this.currentPageIndex]) {
+            this.currentPage = [...this.pages[this.currentPageIndex]];
+            console.log('LastLooks: Updated current page reference for child component');
+          }
+
+          // Force change detection
+          this.cdRef.detectChanges();
         }
       }
     );
@@ -190,6 +190,14 @@ export class LastLooksComponent implements OnInit, OnDestroy {
           console.log('LastLooks: Document regenerated, updating display');
           this.refreshDocument();
         }
+      }
+    );
+
+    // Subscribe to undo/redo operations to update component state
+    this.undoQueue = this.undoService.undoRedo$.subscribe(
+      ({ type, item }) => {
+        console.log(`LastLooks: ${type} operation completed, updating component state`);
+        this.handleUndoRedoUpdate();
       }
     );
     
@@ -355,13 +363,21 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   }
   private insertCallsheetPage(imagePath: string) {
     console.log('Inserting callsheet page with path:', imagePath);
-    
+
     // Check if we're processing for server - if so, don't insert callsheet
     if (this.pdf.isProcessingForServer()) {
       console.log('Skipping callsheet insertion - processing for server');
       return;
     }
-    
+
+    // Record undo state before inserting callsheet (save complete document state)
+    if (this.pdf.finalDocument?.data) {
+      this.undoService.recordDocumentReorderChange(
+        cloneDeep(this.pdf.finalDocument.data),
+        `Insert callsheet page`
+      );
+    }
+
     // Create a new callsheet page with proper structure
     const callsheetPage = [{
       type: 'callsheet',
@@ -388,48 +404,48 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       hidden: '',
       trueScene: ''
     }];
-    
+
     console.log('Created callsheet page object:', callsheetPage);
-    
+
     // Insert at the start of the document
     if (this.pdf.finalDocument?.data) {
       console.log('Document data exists, inserting callsheet');
-      
+
       // Remove any existing callsheet page first
-      this.pdf.finalDocument.data = this.pdf.finalDocument.data.filter(page => 
+      this.pdf.finalDocument.data = this.pdf.finalDocument.data.filter(page =>
         !(page[0] && (page[0].type === 'callsheet' || page[0].category === 'callsheet'))
       );
-      
+
       // Insert the new callsheet page at the beginning
       this.pdf.finalDocument.data = [callsheetPage, ...this.pdf.finalDocument.data];
-      
+
       // Update local state
       this.pages = this.pdf.finalDocument.data;
       this.hasCallsheet = true;
-      
+
       // Reset to first page to show the callsheet
       this.currentPageIndex = 0;
       this.currentPage = this.pages[0] || [];
-      
+
       console.log('Updated pages array:', this.pages);
       console.log('Current page index:', this.currentPageIndex);
       console.log('Current page:', this.currentPage);
       console.log('Is current page a callsheet?', this.isCallsheetPage(this.currentPage));
-      
+
       // Save the document state
       this.pdf.saveDocumentState();
-      
+
       // Force change detection on this component
       this.cdRef.detectChanges();
-      
+
       // Force change detection on child component if available
       if (this.lastLooksPage) {
         this.lastLooksPage.cdRef.detectChanges();
       }
-      
+
       // Emit page update to parent
       this.pageUpdate.emit(this.currentPage);
-      
+
       console.log('Callsheet page inserted successfully at index 0');
     } else {
       console.error('Cannot insert callsheet: finalDocument.data is undefined');
@@ -466,17 +482,28 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     console.log('LastLooks: Document reorder complete, now on page 1 of', this.pages.length);
   }
   handlePageUpdate(updatedPage: any) {
-    if (!this.isCallsheetPage(this.pages[this.currentPageIndex])) {
+    console.log('handlePageUpdate called with updatedPage:', updatedPage);
+
+    if (!this.isCallsheetPage(updatedPage)) {
       // Update the page in our local state
-      this.pages[this.currentPageIndex] = updatedPage;
-      
-      // Update the PDF service
-      this.pdf.updateLine(this.currentPageIndex, 0, {
-        ...updatedPage[0]
+      this.pages[this.currentPageIndex] = [...updatedPage];
+
+      // Update the PDF service for each line in the page
+      updatedPage.forEach((line: any, lineIndex: number) => {
+        if (line && line.docPageIndex !== undefined && line.docPageLineIndex !== undefined) {
+          this.pdf.updateLine(line.docPageIndex, line.docPageLineIndex, line);
+        }
       });
-      
+
+      // Update current page reference if needed
+      if (this.currentPageIndex === this.currentPageIndex) {
+        this.currentPage = [...updatedPage];
+      }
+
       // Force change detection
       this.cdRef.detectChanges();
+
+      console.log('Page updated successfully');
     }
   }
   handleWaterMarkUpdate(newWatermark: string) {}
@@ -545,33 +572,29 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   }
 
   resetDocumentToInitialState() {
-    if (this.initialDocState && this.initialDocState.length > 0) {
-      console.log('Resetting document to initial state');
-      
-      // Create a deep copy of the initial state to avoid reference issues
-      this.pages = JSON.parse(JSON.stringify(this.initialDocState));
-      
-      // Process the lines to ensure proper positioning
-      this.processLinesForLastLooks(this.pages);
-      
-      // Update the current page reference
-      this.currentPage = this.pages[this.currentPageIndex];
-      
-      // Clear any selected line
-      this.selectedLine = null;
-      
-      // Directly reset the page component if available
-      if (this.lastLooksPage) {
-        this.lastLooksPage.resetPage(this.currentPage);
-      }
-      
-      // Force change detection
-      this.cdRef.detectChanges();
-      
-      console.log('Document reset to initial state complete');
-    } else {
-      console.warn('No initial state available for reset');
-    }
+    console.log('LastLooksComponent: Resetting document to initial state');
+
+    // Use PDF service to reset to initial state
+    this.pdf.resetToInitialState();
+
+    // Sync with PDF service state - Angular will pass updated page to child component
+    this.pages = JSON.parse(JSON.stringify(this.pdf.finalDocument?.data || []));
+    this.currentPageIndex = 0; // Reset to first page
+    this.currentPage = JSON.parse(JSON.stringify(this.pages[this.currentPageIndex] || []));
+
+    // Clear selections
+    this.selectedLine = null;
+    this.selectedLines = [];
+    this.isMultipleSelection = false;
+
+    // Process lines for display with the reset data
+    this.processLinesForLastLooks(this.pages);
+
+    // Force change detection to update the UI
+    this.cdRef.detectChanges();
+
+    console.log('LastLooksComponent: Document reset to initial state complete');
+    console.log('LastLooksComponent: Pages count:', this.pages.length, 'Current page lines:', this.currentPage.length);
   }
   updateDisplayedPage(forceDeepClone = true): void {
     console.log('updateDisplayedPage called with index:', this.currentPageIndex, 'pages length:', this.pages?.length);
@@ -791,29 +814,51 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   // Update the toggleVisibility method to force change detection
   toggleVisibility() {
     if (this.isMultipleSelection && this.selectedLines.length > 0) {
-      // Handle multiple lines
+      // Handle multiple lines - use batch undo recording
       const newVisibility = this.selectedLine?.visible === 'true' ? 'false' : 'true';
-      
+
+      // Record undo state for all selected lines as one batch operation
+      const batchChanges = this.selectedLines.map(line => {
+        const lineIndex = this.pages[this.currentPageIndex].findIndex(l => l.docPageLineIndex === line.docPageLineIndex);
+        return {
+          pageIndex: this.currentPageIndex,
+          lineIndex,
+          currentLineState: { ...line }, // Clone current state
+          changeDescription: `Toggle visibility: ${line.visible} → ${newVisibility} (batch operation)`
+        };
+      });
+      this.undoService.recordBatchChanges(batchChanges);
+
+      // Update all selected lines
       this.selectedLines.forEach(line => {
         // Set the new visibility
         line.visible = newVisibility;
       });
-      
+
       // Update the page and force change detection
       this.pageUpdate.emit([...this.pages[this.currentPageIndex]]);
       this.cdRef.detectChanges();
     } else if (this.selectedLine) {
-      // Handle single line
+      // Handle single line - use individual undo recording
       const newVisibility = this.selectedLine.visible === 'true' ? 'false' : 'true';
-      
+
+      // Record undo state for single line
+      const lineIndex = this.pages[this.currentPageIndex].findIndex(l => l.docPageLineIndex === this.selectedLine.docPageLineIndex);
+      this.undoService.recordLineChange(
+        this.currentPageIndex,
+        lineIndex,
+        { ...this.selectedLine }, // Clone current state
+        `Toggle visibility: ${this.selectedLine.visible} → ${newVisibility}`
+      );
+
       // Toggle visibility
       this.selectedLine.visible = newVisibility;
-      
+
       // Update the page and force change detection
       this.pageUpdate.emit([...this.pages[this.currentPageIndex]]);
       this.cdRef.detectChanges();
     }
-    
+
     // Save changes to PDF service
     this.saveChangesToPdfService();
   }
@@ -1021,12 +1066,46 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       }, 100);
     }
   }
-  public refreshDocument(): void {
+  public   refreshDocument(): void {
     if (this.pdf.finalDocument?.data) {
       this.pages = this.pdf.finalDocument.data;
       this.currentPage = this.pages[this.currentPageIndex] || [];
       this.processLinesForLastLooks(this.pages);
       this.cdRef.detectChanges();
+    }
+  }
+
+  /**
+   * Handle undo/redo operations by updating component state
+   */
+  handleUndoRedoUpdate(): void {
+    console.log('LastLooks: Handling undo/redo update');
+
+    // Sync component state with PDF service state
+    if (this.pdf.finalDocument?.data) {
+      this.pages = [...this.pdf.finalDocument.data];
+
+      // Update current page reference
+      if (this.pages[this.currentPageIndex]) {
+        this.currentPage = [...this.pages[this.currentPageIndex]];
+      } else {
+        // If current page index is out of bounds, reset to first page
+        this.currentPageIndex = 0;
+        this.currentPage = this.pages[0] || [];
+      }
+
+      // Process lines for display
+      this.processLinesForLastLooks(this.pages);
+
+      // Clear selections after undo/redo as they may no longer be valid
+      this.selectedLine = null;
+      this.selectedLines = [];
+      this.isMultipleSelection = false;
+
+      // Force change detection
+      this.cdRef.detectChanges();
+
+      console.log('LastLooks: Component state updated after undo/redo');
     }
   }
   /**
@@ -1259,37 +1338,45 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   // Add this method to handle callsheet removal
   private removeCallsheetFromDocument(): void {
     console.log('Removing callsheet from document');
-    
+
+    // Record undo state before removing callsheet (save complete document state)
+    if (this.pdf.finalDocument?.data) {
+      this.undoService.recordDocumentReorderChange(
+        cloneDeep(this.pdf.finalDocument.data),
+        'Remove callsheet page'
+      );
+    }
+
     if (this.pdf.finalDocument?.data) {
       // Remove any callsheet pages
-      this.pdf.finalDocument.data = this.pdf.finalDocument.data.filter(page => 
+      this.pdf.finalDocument.data = this.pdf.finalDocument.data.filter(page =>
         !(page[0] && (page[0].type === 'callsheet' || page[0].category === 'callsheet'))
       );
-      
+
       // Update local state
       this.pages = this.pdf.finalDocument.data;
       this.hasCallsheet = false;
-      
+
       // Reset to first page if we were on the callsheet page
       if (this.currentPageIndex === 0 && this.isCallsheetPage(this.currentPage)) {
         this.currentPageIndex = 0;
         this.currentPage = this.pages[0] || [];
       }
-      
+
       // Save the document state
       this.pdf.saveDocumentState();
-      
+
       // Force change detection
       this.cdRef.detectChanges();
-      
+
       // Force change detection on child component if available
       if (this.lastLooksPage) {
         this.lastLooksPage.cdRef.detectChanges();
       }
-      
+
       // Emit page update to parent
       this.pageUpdate.emit(this.currentPage);
-      
+
       console.log('Callsheet removed from document successfully');
     }
   }
@@ -1300,7 +1387,16 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     if (this.finalDocumentDataSubscription) {
       this.finalDocumentDataSubscription.unsubscribe();
     }
-    
+    if (this.documentReorderedSubscription) {
+      this.documentReorderedSubscription.unsubscribe();
+    }
+    if (this.documentRegeneratedSubscription) {
+      this.documentRegeneratedSubscription.unsubscribe();
+    }
+    if (this.undoQueue) {
+      this.undoQueue.unsubscribe();
+    }
+
     // Clear large data structures
     this.pages = null;
     this.currentPage = null;

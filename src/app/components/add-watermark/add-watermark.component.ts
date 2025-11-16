@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output} from '@angular/core';
+import { Component, EventEmitter, Output, Input} from '@angular/core';
 
 @Component({
     selector: 'app-add-watermark',
@@ -10,6 +10,7 @@ export class AddWatermarkComponent {
   displayWaterMark: boolean = false;
   waterMark: string = null;
   addWaterMark: Function;
+  @Input() hasWatermark: boolean = false;
   @Output() waterMarkUpdate = new EventEmitter<string>();
   @Output() waterMarkRemove = new EventEmitter<void>();
 
