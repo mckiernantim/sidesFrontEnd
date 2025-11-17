@@ -81,7 +81,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     public pdf: PdfService,
     private undoService: UndoService,
   ) {
-    console.log('LastLooks Component Constructed');
   }
   // doc is given to our component
   doc: any;
@@ -153,19 +152,16 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     this.finalDocumentDataSubscription = this.pdf.finalDocumentData$.subscribe(
       (data) => {
         if (data) {
-          console.log('LastLooks received document update:', data);
 
           // ALWAYS sync the full pages array with PDF service state
           // Scene number changes affect lines across ALL pages, not just current page
           if (this.pdf.finalDocument?.data) {
             this.pages = [...this.pdf.finalDocument.data];
-            console.log('LastLooks: Synced full pages array from PDF service');
           }
 
           // Update current page reference - Angular will automatically pass this to child component
           if (this.pages[this.currentPageIndex]) {
             this.currentPage = [...this.pages[this.currentPageIndex]];
-            console.log('LastLooks: Updated current page reference for child component');
           }
 
           // Force change detection
@@ -177,7 +173,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     this.documentReorderedSubscription = this.pdf.documentReordered$.subscribe(
       (reordered) => {
         if (reordered) {
-          console.log('LastLooks: Document reordered, resetting to first page');
           this.handleDocumentReorder();
         }
       }
@@ -187,7 +182,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     this.documentRegeneratedSubscription = this.pdf.documentRegenerated$.subscribe(
       (regenerated) => {
         if (regenerated) {
-          console.log('LastLooks: Document regenerated, updating display');
           this.refreshDocument();
         }
       }
@@ -196,7 +190,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     // Subscribe to undo/redo operations to update component state
     this.undoQueue = this.undoService.undoRedo$.subscribe(
       ({ type, item }) => {
-        console.log(`LastLooks: ${type} operation completed, updating component state`);
         this.handleUndoRedoUpdate();
       }
     );
@@ -216,11 +209,9 @@ export class LastLooksComponent implements OnInit, OnDestroy {
         const displayUrl = parsedData.imageUrl || parsedData.previewUrl;
         
         if (displayUrl && this.pdf.finalDocument?.data && !this.pdf.isProcessingForServer()) {
-          console.log('Loading existing callsheet from localStorage:', displayUrl);
           this.insertCallsheetPage(displayUrl);
         }
       } catch (error) {
-        console.error('Error loading callsheet data from localStorage:', error);
       }
     } else if (this.callsheetPath && !this.pdf.isProcessingForServer()) {
       // Fallback to callsheetPath input if no localStorage data
@@ -234,11 +225,9 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     this.initializeScenes();
   
     this.canEditDocument = this.editState;
-    console.log('LastLooks initialized with editState:', this.editState);
   }
   
   ngOnChanges(changes: SimpleChanges) {
-    console.log('LastLooks ngOnChanges called with changes:', Object.keys(changes));
     
     if (changes['resetDocState'] && changes['resetDocState'].currentValue) {
       // Reset the document to initial state
@@ -253,7 +242,7 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     if (changes['callsheetPath']) {
       const newCallsheetPath = changes['callsheetPath'].currentValue;
       const previousCallsheetPath = changes['callsheetPath'].previousValue;
-      
+
       console.log('Callsheet path changed:', {
         new: newCallsheetPath,
         previous: previousCallsheetPath,
@@ -263,7 +252,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       
       // Skip callsheet insertion if processing for server
       if (this.pdf.isProcessingForServer()) {
-        console.log('Skipping callsheet path change handling - processing for server');
         return;
       }
       
@@ -276,7 +264,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
             const displayUrl = parsedData.imageUrl || parsedData.previewUrl;
             
             if (displayUrl) {
-              console.log('Using callsheet display URL from localStorage:', displayUrl);
               // Insert the callsheet at the start of the document
               this.insertCallsheetPage(displayUrl);
               
@@ -291,16 +278,12 @@ export class LastLooksComponent implements OnInit, OnDestroy {
                 // Force change detection
                 this.cdRef.detectChanges();
                 
-                console.log('Callsheet successfully inserted and document updated');
               }
             } else {
-              console.error('No display URL found in callsheet data');
             }
           } catch (error) {
-            console.error('Error parsing callsheet data:', error);
           }
         } else {
-          console.log('No callsheet data found in localStorage, using path directly');
           // Fallback to using the path directly
           this.insertCallsheetPage(newCallsheetPath);
           
@@ -318,23 +301,21 @@ export class LastLooksComponent implements OnInit, OnDestroy {
         }
       } else if (newCallsheetPath === null && previousCallsheetPath) {
         // Callsheet was removed
-        console.log('Callsheet removed, cleaning up document');
         this.removeCallsheetFromDocument();
       }
     }
 
     if (changes['editState']) {
       this.canEditDocument = changes['editState'].currentValue;
-      console.log('LastLooks editState changed to:', this.canEditDocument);
     }
   }
 
   isCallsheetPage(page: any): boolean {
     const isCallsheet = page && page[0] && (
-      page[0].type === 'callsheet' || 
+      page[0].type === 'callsheet' ||
       page[0].category === 'callsheet'
     );
-    
+
     console.log('isCallsheetPage check:', {
       page: page,
       firstElement: page?.[0],
@@ -342,7 +323,7 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       category: page?.[0]?.category,
       isCallsheet: isCallsheet
     });
-    
+
     return isCallsheet;
   }
 
@@ -362,11 +343,9 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     return lastLinesOfScenes;
   }
   private insertCallsheetPage(imagePath: string) {
-    console.log('Inserting callsheet page with path:', imagePath);
 
     // Check if we're processing for server - if so, don't insert callsheet
     if (this.pdf.isProcessingForServer()) {
-      console.log('Skipping callsheet insertion - processing for server');
       return;
     }
 
@@ -405,11 +384,9 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       trueScene: ''
     }];
 
-    console.log('Created callsheet page object:', callsheetPage);
 
     // Insert at the start of the document
     if (this.pdf.finalDocument?.data) {
-      console.log('Document data exists, inserting callsheet');
 
       // Remove any existing callsheet page first
       this.pdf.finalDocument.data = this.pdf.finalDocument.data.filter(page =>
@@ -427,10 +404,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       this.currentPageIndex = 0;
       this.currentPage = this.pages[0] || [];
 
-      console.log('Updated pages array:', this.pages);
-      console.log('Current page index:', this.currentPageIndex);
-      console.log('Current page:', this.currentPage);
-      console.log('Is current page a callsheet?', this.isCallsheetPage(this.currentPage));
 
       // Save the document state
       this.pdf.saveDocumentState();
@@ -446,16 +419,12 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       // Emit page update to parent
       this.pageUpdate.emit(this.currentPage);
 
-      console.log('Callsheet page inserted successfully at index 0');
     } else {
-      console.error('Cannot insert callsheet: finalDocument.data is undefined');
     }
   }
   private handleDocumentReorder(): void {
-    console.log('LastLooks: Document reordered, resetting to first page');
     
     if (!this.pdf.finalDocument?.data) {
-      console.error('No document data available');
       return;
     }
   
@@ -479,19 +448,17 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     // Force change detection
     this.cdRef.detectChanges();
     
-    console.log('LastLooks: Document reorder complete, now on page 1 of', this.pages.length);
   }
   handlePageUpdate(updatedPage: any) {
-    console.log('handlePageUpdate called with updatedPage:', updatedPage);
 
     if (!this.isCallsheetPage(updatedPage)) {
       // Update the page in our local state
       this.pages[this.currentPageIndex] = [...updatedPage];
 
-      // Update the PDF service for each line in the page
+      // Update the PDF service for each line in the page (skip undo recording since this is a sync operation)
       updatedPage.forEach((line: any, lineIndex: number) => {
         if (line && line.docPageIndex !== undefined && line.docPageLineIndex !== undefined) {
-          this.pdf.updateLine(line.docPageIndex, line.docPageLineIndex, line);
+          this.pdf.updateLine(line.docPageIndex, line.docPageLineIndex, line, true); // skipUndoRecording = true
         }
       });
 
@@ -503,14 +470,12 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       // Force change detection
       this.cdRef.detectChanges();
 
-      console.log('Page updated successfully');
     }
   }
   handleWaterMarkUpdate(newWatermark: string) {}
 
   processLinesForLastLooks(pages: Line[][]) {
     if (!pages || pages.length === 0) {
-      console.warn('No pages to process');
       return;
     }
     
@@ -526,16 +491,21 @@ export class LastLooksComponent implements OnInit, OnDestroy {
           this.adjustBarPosition(line);
           this.calculateYPositions(line);
           
-          // Set calculated X position if not already set
-          if (line.xPos !== undefined) {
-            line.calculatedXpos = line.calculatedXpos || (Number(line.xPos) * 1.3 + 'px');
+          // Set calculated X position if not already set or if it's clearly invalid
+          if (!line.calculatedXpos || line.calculatedXpos === 'undefinedpx' || line.calculatedXpos === 'NaNpx') {
+            const xPosValue = line.xPos !== undefined ? Number(line.xPos) : 0; // Default to 0 if xPos is undefined
+            line.calculatedXpos = (xPosValue * 1.3 + 'px');
           }
-          
+
           // Set calculated end position
           if (line.endY !== undefined) {
-            line.calculatedEnd = line.calculatedEnd || (Number(line.endY) * 1.3 + 'px');
+            if (!line.calculatedEnd || line.calculatedEnd === 'undefinedpx' || line.calculatedEnd === 'NaNpx') {
+              line.calculatedEnd = (Number(line.endY) * 1.3 + 'px');
+            }
           } else {
-            line.calculatedEnd = Number(line.yPos) > 90 ? Number(line.yPos) * 1.3 + 'px' : '90px';
+            if (!line.calculatedEnd || line.calculatedEnd === 'undefinedpx' || line.calculatedEnd === 'NaNpx') {
+              line.calculatedEnd = Number(line.yPos) > 90 ? Number(line.yPos) * 1.3 + 'px' : '90px';
+            }
           }
           
           // Ensure visibility is set
@@ -568,11 +538,9 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   //
 
   private logLinePositions(page: Line[], message: string) {
-    console.log(message, page.map(line => `${line.text}: ${line.yPos}`).join('\n'));
   }
 
   resetDocumentToInitialState() {
-    console.log('LastLooksComponent: Resetting document to initial state');
 
     // Use PDF service to reset to initial state
     this.pdf.resetToInitialState();
@@ -593,25 +561,19 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     // Force change detection to update the UI
     this.cdRef.detectChanges();
 
-    console.log('LastLooksComponent: Document reset to initial state complete');
-    console.log('LastLooksComponent: Pages count:', this.pages.length, 'Current page lines:', this.currentPage.length);
   }
   updateDisplayedPage(forceDeepClone = true): void {
-    console.log('updateDisplayedPage called with index:', this.currentPageIndex, 'pages length:', this.pages?.length);
     
     if (!this.pages || this.pages.length === 0) {
-      console.warn('No pages available for display');
       return;
     }
 
     const currentPage = this.pages[this.currentPageIndex];
     
     if (!currentPage) {
-      console.warn(`No page found at index ${this.currentPageIndex}`);
       return;
     }
     
-    console.log('Found page at index', this.currentPageIndex, 'with', currentPage.length, 'lines');
     
     // Handle callsheet page if present
     this.handleCallsheetPage(currentPage);
@@ -628,11 +590,9 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     this.selectedLines = [];
     this.isMultipleSelection = false;
     
-    console.log('Updated currentPage with', this.currentPage.length, 'lines');
     this.cdRef.detectChanges();
   }
   previousPage() {
-    console.log('Previous page clicked. Current index:', this.currentPageIndex, 'Total pages:', this.pages?.length);
     if (this.currentPageIndex > 0) {
       // Save current page state if needed
       if (this.editState) {
@@ -640,14 +600,11 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       }
       
       this.currentPageIndex--;
-      console.log('Moving to previous page, new index:', this.currentPageIndex);
       this.updateDisplayedPage(false); // Pass false to avoid deep cloning
     } else {
-      console.log('Already on first page');
     }
   }
   nextPage() {
-    console.log('Next page clicked. Current index:', this.currentPageIndex, 'Total pages:', this.pages?.length);
     if (this.currentPageIndex < this.pages.length - 1) {
       // Save current page state if needed
       if (this.editState) {
@@ -655,10 +612,8 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       }
       
       this.currentPageIndex++;
-      console.log('Moving to next page, new index:', this.currentPageIndex);
       this.updateDisplayedPage(false); // Pass false to avoid deep cloning
     } else {
-      console.log('Already on last page');
     }
   }
   adjustLinesForDisplay(pages) {
@@ -703,7 +658,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
 
   adjustSceneHeader(line: Line) {
     if (line.category === 'scene-header') {
-      console.log('changing scene header for ' + line.index);
       if (line.visible === 'true') {
         line.trueScene = 'true-scene';
         line.bar = 'bar';
@@ -723,7 +677,9 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   }
   calculateYPositions(line: Line) {
     if (line.yPos !== undefined) {
-      line.calculatedYpos = line.calculatedYpos || (Number(line.yPos) * 1.3 + 'px');
+      if (!line.calculatedYpos || line.calculatedYpos === 'undefinedpx' || line.calculatedYpos === 'NaNpx') {
+        line.calculatedYpos = (Number(line.yPos) * 1.3 + 'px');
+      }
     }
   }
 
@@ -783,9 +739,9 @@ export class LastLooksComponent implements OnInit, OnDestroy {
 
     // Update page
     this.pages[this.currentPageIndex][lineIndex] = line;
-    
-    // Update PDF service with all position properties
-    this.pdf.updateLine(this.currentPageIndex, lineIndex, {
+
+    // Update PDF service position properties (no undo recording since we already recorded at drag start)
+    this.pdf.updateLinePosition(this.currentPageIndex, lineIndex, {
       // Bar positions
       calculatedBarY: line.calculatedBarY,
       calculatedEnd: line.calculatedEnd,
@@ -1079,8 +1035,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
    * Handle undo/redo operations by updating component state
    */
   handleUndoRedoUpdate(): void {
-    console.log('LastLooks: Handling undo/redo update');
-
     // Sync component state with PDF service state
     if (this.pdf.finalDocument?.data) {
       this.pages = [...this.pdf.finalDocument.data];
@@ -1104,8 +1058,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
 
       // Force change detection
       this.cdRef.detectChanges();
-
-      console.log('LastLooks: Component state updated after undo/redo');
     }
   }
   /**
@@ -1113,7 +1065,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
    */
   updateSceneNumber(event: Event, scene: Scene): void {
     if (!this.canEditDocument) {
-      console.log('Cannot edit scene number - edit mode is disabled');
       return;
     }
     event.stopPropagation();
@@ -1174,7 +1125,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error updating scene number in PDF service:', error);
           // Revert changes if PDF service update fails
           scene.sceneNumber = scene.sceneNumber;
           affectedLines.forEach(line => {
@@ -1323,7 +1273,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     // Then call the PDF service's save method
     this.pdf.saveDocumentState();
     
-    console.log('Document state saved with custom bar text and positions');
   }
 
   // Add a method to save the current page state
@@ -1337,7 +1286,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
 
   // Add this method to handle callsheet removal
   private removeCallsheetFromDocument(): void {
-    console.log('Removing callsheet from document');
 
     // Record undo state before removing callsheet (save complete document state)
     if (this.pdf.finalDocument?.data) {
@@ -1377,7 +1325,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       // Emit page update to parent
       this.pageUpdate.emit(this.currentPage);
 
-      console.log('Callsheet removed from document successfully');
     }
   }
 
@@ -1432,7 +1379,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       // Set the primary selected line
       this.selectedLine = line;
       
-      console.log(`Multiple selection: ${this.selectedLines.length} lines selected`);
     } else {
       // Single selection
       this.isMultipleSelection = false;
@@ -1487,7 +1433,6 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   // Add this method to handle callsheet page display
   private handleCallsheetPage(page: any): void {
     if (this.isCallsheetPage(page)) {
-      console.log('Handling callsheet page:', page);
       
       // Ensure the callsheet is visible
       if (page[0]) {
@@ -1501,9 +1446,9 @@ export class LastLooksComponent implements OnInit, OnDestroy {
         if (!page[0].calculatedYpos) {
           page[0].calculatedYpos = '0px';
         }
-        
+
         // Force change detection
-        this.cdRef.detectChanges();
+        this.cdRef?.detectChanges();
       }
     }
   }

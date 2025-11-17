@@ -105,24 +105,50 @@ export class PdfService {
   private _isProcessingForServer = false;
 public finalDocumentData$ = this._finalDocumentData$.asObservable();
 
-updateLine(pageIndex: number, lineIndex: number, updates: Partial<Line>): void {
-  if (!this.finalDocument?.data || 
-      !this.finalDocument.data[pageIndex] || 
+updateLine(pageIndex: number, lineIndex: number, updates: Partial<Line>, skipUndoRecording: boolean = false): void {
+  if (!this.finalDocument?.data ||
+      !this.finalDocument.data[pageIndex] ||
       !this.finalDocument.data[pageIndex][lineIndex]) {
     return;
   }
 
   const line = this.finalDocument.data[pageIndex][lineIndex];
-  
-  // Record the previous state for undo before making changes
-  this.undoService.recordLineChange(
-    pageIndex,
-    lineIndex,
-    { ...line }, // Clone the current state
-    `Update line: ${Object.keys(updates).join(', ')}`
-  );
-  
+
+  // Record the previous state for undo before making changes (unless skipped)
+  if (!skipUndoRecording) {
+    this.undoService.recordLineChange(
+      pageIndex,
+      lineIndex,
+      { ...line }, // Clone the current state
+      `Update line: ${Object.keys(updates).join(', ')}`
+    );
+  }
+
   Object.assign(line, updates);
+
+  // Emit the updated line
+  this._finalDocumentData$.next({
+    docPageIndex: pageIndex,
+    docPageLineIndex: lineIndex,
+    line: { ...line }
+  });
+}
+
+/**
+ * Update line position properties without recording undo (used during drag operations)
+ * The undo recording should have already been done at drag start
+ */
+updateLinePosition(pageIndex: number, lineIndex: number, positionUpdates: Partial<Line>): void {
+  if (!this.finalDocument?.data ||
+      !this.finalDocument.data[pageIndex] ||
+      !this.finalDocument.data[pageIndex][lineIndex]) {
+    return;
+  }
+
+  const line = this.finalDocument.data[pageIndex][lineIndex];
+
+  // Update only position-related properties without undo recording
+  Object.assign(line, positionUpdates);
 
   // Emit the updated line
   this._finalDocumentData$.next({
@@ -665,7 +691,6 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
         `Reorder scenes: ${currentSceneOrder[0]?.sceneNumberText || 'Unknown'} moved to new position`
       );
       
-      console.log('Combined undo state recorded for scene reordering');
     }
   
     // CREATE A MAP OF SCENE NUMBERS TO ALL THEIR PAGE INDEXES (scenes can span multiple pages)

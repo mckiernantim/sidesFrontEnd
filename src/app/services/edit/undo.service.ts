@@ -45,8 +45,24 @@ export interface BatchLineChangeUndoItem {
   changeDescription?: string;
 }
 
+export interface LinePositionChangeUndoItem {
+  type: 'line-position-change';
+  pageIndex: number;
+  lineIndex: number;
+  previousPosition: {
+    calculatedXpos: string;
+    calculatedYpos: string;
+    xPos: number;
+    yPos: number;
+    barY: number | string;
+    endY: number | string;
+  };
+  timestamp: number;
+  changeDescription?: string;
+}
+
 // Union type for all possible undo items
-export type AnyUndoItem = UndoStackItem | SceneOrderUndoItem | DocumentReorderUndoItem | SceneReorderUndoItem | BatchLineChangeUndoItem;
+export type AnyUndoItem = UndoStackItem | SceneOrderUndoItem | DocumentReorderUndoItem | SceneReorderUndoItem | BatchLineChangeUndoItem | LinePositionChangeUndoItem;
 
 @Injectable({
   providedIn: 'root',
@@ -79,15 +95,15 @@ export class UndoService {
   /**
    * Record a line change - saves the PREVIOUS state of the line
    * Call this BEFORE making any changes to a line
-   * 
+   *
    * @param pageIndex - Index of the page in the document
    * @param lineIndex - Index of the line within the page
    * @param currentLineState - Current state of the line (before changes)
    * @param changeDescription - Optional description for debugging
    */
   recordLineChange(
-    pageIndex: number, 
-    lineIndex: number, 
+    pageIndex: number,
+    lineIndex: number,
     currentLineState: Line,
     changeDescription?: string
   ): void {
@@ -98,17 +114,58 @@ export class UndoService {
       timestamp: Date.now(),
       changeDescription
     };
-    
+
     // Add to undo stack
     this.undoStack.push(undoItem);
-    
+
     // Clear redo stack when new change is made
     this.redoStack = [];
-    
+
     // Trim stack if needed
     this.trimStackIfNeeded();
-    
-    console.log(`[UNDO] Recorded line change: Page ${pageIndex}, Line ${lineIndex} - ${changeDescription || 'No description'}`);
+
+  }
+
+  /**
+   * Record a line position change - saves the PREVIOUS position of the line
+   * Call this BEFORE making position changes to a line
+   *
+   * @param pageIndex - Index of the page in the document
+   * @param lineIndex - Index of the line within the page
+   * @param currentPosition - Current position of the line (before changes)
+   * @param changeDescription - Optional description for debugging
+   */
+  recordLinePositionChange(
+    pageIndex: number,
+    lineIndex: number,
+    currentPosition: {
+      calculatedXpos: string;
+      calculatedYpos: string;
+      xPos: number;
+      yPos: number;
+      barY: number | string;
+      endY: number | string;
+    },
+    changeDescription?: string
+  ): void {
+    const undoItem: LinePositionChangeUndoItem = {
+      type: 'line-position-change',
+      pageIndex,
+      lineIndex,
+      previousPosition: cloneDeep(currentPosition),
+      timestamp: Date.now(),
+      changeDescription
+    };
+
+    // Add to undo stack
+    this.undoStack.push(undoItem);
+
+    // Clear redo stack when new change is made
+    this.redoStack = [];
+
+    // Trim stack if needed
+    this.trimStackIfNeeded();
+
   }
 
   /**
@@ -138,7 +195,6 @@ export class UndoService {
     // Trim stack if needed
     this.trimStackIfNeeded();
     
-    console.log(`[UNDO] Recorded scene order change: ${changeDescription || 'Scene reordering'}`);
   }
 
   /**
@@ -168,7 +224,6 @@ export class UndoService {
     // Trim stack if needed
     this.trimStackIfNeeded();
     
-    console.log(`[UNDO] Recorded document reorder change: ${changeDescription || 'Document reordering'}`);
   }
 
   /**
@@ -201,7 +256,6 @@ export class UndoService {
     // Trim stack if needed
     this.trimStackIfNeeded();
     
-    console.log(`[UNDO] Recorded scene reorder change: ${changeDescription || 'Scene reordering with document update'}`);
   }
 
   /**
@@ -211,42 +265,32 @@ export class UndoService {
    * @returns The undo item that was processed, or null if nothing to undo
    */
   undo(): AnyUndoItem | null {
-    console.log('🔄 UNDO Service: undo() method called');
-    console.log('🔄 UNDO Service: Undo stack size:', this.undoStack.length);
-    
     if (this.undoStack.length === 0) {
-      console.log('🔄 UNDO Service: No undo items available');
       return null;
     }
 
     const undoItem = this.undoStack.pop()!;
-    console.log('🔄 UNDO Service: Processing undo item:', undoItem);
-    console.log('🔄 UNDO Service: Undo item type:', this.getUndoItemType(undoItem));
-    
+
     // Add to redo stack
     this.redoStack.push(undoItem);
 
     // Handle different types of undo items
-    if (this.isBatchLineChangeUndoItem(undoItem)) {
-      console.log('🔄 UNDO Service: Processing as batch line changes undo item');
+    if (this.isLinePositionChangeUndoItem(undoItem)) {
+      this.handleLinePositionChangeUndo(undoItem as LinePositionChangeUndoItem);
+    } else if (this.isBatchLineChangeUndoItem(undoItem)) {
       this.handleBatchLineChangeUndo(undoItem as BatchLineChangeUndoItem);
     } else if (this.isSceneReorderUndoItem(undoItem)) {
-      console.log('🔄 UNDO Service: Processing as scene reorder undo item');
       this.handleSceneReorderUndo(undoItem as SceneReorderUndoItem);
     } else if (this.isSceneOrderUndoItem(undoItem)) {
-      console.log('🔄 UNDO Service: Processing as scene order undo item');
       this.handleSceneOrderUndo(undoItem as SceneOrderUndoItem);
     } else if (this.isDocumentReorderUndoItem(undoItem)) {
-      console.log('🔄 UNDO Service: Processing as document reorder undo item');
       this.handleDocumentReorderUndo(undoItem as DocumentReorderUndoItem);
     } else {
-      console.log('🔄 UNDO Service: Processing as line change undo item');
       this.handleLineChangeUndo(undoItem as UndoStackItem);
     }
 
     // Notify components about the undo operation
     this.undoRedoSubject.next({ type: 'undo', item: undoItem });
-    console.log('🔄 UNDO Service: Undo operation completed');
 
     return undoItem;
   }
@@ -259,13 +303,15 @@ export class UndoService {
    */
   redo(): AnyUndoItem | null {
     if (this.redoStack.length === 0) {
-      console.log('[UNDO] Nothing to redo');
       return null;
     }
     
     const redoItem = this.redoStack.pop()!;
-    
-    if (this.isBatchLineChangeUndoItem(redoItem)) {
+
+    if (this.isLinePositionChangeUndoItem(redoItem)) {
+      // Handle line position change redo
+      this.handleLinePositionChangeRedo(redoItem as LinePositionChangeUndoItem);
+    } else if (this.isBatchLineChangeUndoItem(redoItem)) {
       // Handle batch line changes redo
       this.handleBatchLineChangeRedo(redoItem as BatchLineChangeUndoItem);
     } else if (this.isSceneReorderUndoItem(redoItem)) {
@@ -285,7 +331,6 @@ export class UndoService {
     // Emit redo event for components to listen to
     this.undoRedoSubject.next({ type: 'redo', item: redoItem });
     
-    console.log(`[UNDO] Redid: ${redoItem.changeDescription || 'No description'}`);
     
     return redoItem;
   }
@@ -315,43 +360,37 @@ export class UndoService {
     return (item as SceneReorderUndoItem).type === 'scene-reorder';
   }
 
+  private isLinePositionChangeUndoItem(item: AnyUndoItem): item is LinePositionChangeUndoItem {
+    return (item as LinePositionChangeUndoItem).type === 'line-position-change';
+  }
+
   /**
    * Handle undoing a scene order change
    */
   private handleSceneOrderUndo(undoItem: SceneOrderUndoItem): void {
-    console.log('🔄 UNDO Service: handleSceneOrderUndo called');
-    console.log('🔄 UNDO Service: Previous scene order:', undoItem.previousSceneOrder?.map(s => s.sceneNumberText));
     
     if (!this.pdfService) {
-      console.error('[UNDO] PdfService not available');
       return;
     }
 
     // Get current scene order before restoring
     const currentSceneOrder = cloneDeep(this.pdfService.getSelectedScenes());
-    console.log('🔄 UNDO Service: Current scene order before restore:', currentSceneOrder?.map(s => s.sceneNumberText));
     
     // Create redo item with current state (don't add to stack here, it's already done in undo())
     
-    console.log('🔄 UNDO Service: About to call setSelectedScenes with:', undoItem.previousSceneOrder?.map(s => s.sceneNumberText));
     
     // IMPORTANT: Set the selected scenes first
     this.pdfService.setSelectedScenes(undoItem.previousSceneOrder);
-    console.log('🔄 UNDO Service: setSelectedScenes called successfully');
     
     // CRITICAL: Ensure the scene order update is emitted
     // The setSelectedScenes method should emit to _sceneOrderUpdated$, but let's make sure
     if (this.pdfService._sceneOrderUpdated$) {
       this.pdfService._sceneOrderUpdated$.next([...undoItem.previousSceneOrder]);
-      console.log('🔄 UNDO Service: Manually emitted scene order update');
     }
     
     // Then reorder the document
-    console.log('🔄 UNDO Service: About to call reorderScenes with:', undoItem.previousSceneOrder?.map(s => s.sceneNumberText));
     this.pdfService.reorderScenes(undoItem.previousSceneOrder);
-    console.log('🔄 UNDO Service: reorderScenes called successfully');
     
-    console.log(`[UNDO] Scene order restored`);
   }
 
   /**
@@ -359,7 +398,6 @@ export class UndoService {
    */
   private handleDocumentReorderUndo(undoItem: DocumentReorderUndoItem): void {
     if (!this.pdfService) {
-      console.error('[UNDO] PdfService not available');
       return;
     }
 
@@ -381,7 +419,6 @@ export class UndoService {
     // Trigger document regeneration to update all components
     this.pdfService._documentRegenerated$.next(true);
     
-    console.log(`[UNDO] Document reorder restored`);
   }
 
   /**
@@ -389,7 +426,6 @@ export class UndoService {
    */
   private handleSceneOrderRedo(redoItem: SceneOrderUndoItem): void {
     if (!this.pdfService) {
-      console.error('[UNDO] PdfService not available');
       return;
     }
 
@@ -409,14 +445,70 @@ export class UndoService {
     this.pdfService.setSelectedScenes(redoItem.previousSceneOrder);
     this.pdfService.reorderScenes(redoItem.previousSceneOrder);
     
-    console.log(`[UNDO] Scene order redone`);
+  }
+
+  /**
+   * Handle undoing a line position change
+   */
+  private handleLinePositionChangeUndo(undoItem: LinePositionChangeUndoItem): void {
+
+    if (!this.pdfService) {
+      return;
+    }
+
+    // Update the line directly in PdfService's finalDocument.data
+    if (this.pdfService.finalDocument?.data) {
+      const page = this.pdfService.finalDocument.data[undoItem.pageIndex];
+      if (page && page[undoItem.lineIndex]) {
+        const line = page[undoItem.lineIndex];
+
+        // Save current position for redo
+        const currentPosition = {
+          calculatedXpos: line.calculatedXpos,
+          calculatedYpos: line.calculatedYpos,
+          xPos: line.xPos || 0,
+          yPos: line.yPos || 0,
+          barY: Number(line.barY) || 0,
+          endY: Number(line.endY) || 0
+        };
+
+        // Create redo item with current position
+        const redoItem: LinePositionChangeUndoItem = {
+          type: 'line-position-change',
+          pageIndex: undoItem.pageIndex,
+          lineIndex: undoItem.lineIndex,
+          previousPosition: currentPosition,
+          timestamp: Date.now(),
+          changeDescription: undoItem.changeDescription
+        };
+        this.redoStack.push(redoItem);
+
+        // Restore the previous position
+        line.calculatedXpos = undoItem.previousPosition.calculatedXpos;
+        line.calculatedYpos = undoItem.previousPosition.calculatedYpos;
+        line.xPos = undoItem.previousPosition.xPos;
+        line.yPos = undoItem.previousPosition.yPos;
+        line.barY = Number(undoItem.previousPosition.barY) || 0;
+        line.endY = Number(undoItem.previousPosition.endY) || 0;
+
+
+        // Trigger the observable to notify all components
+        this.pdfService._finalDocumentData$.next({
+          docPageIndex: undoItem.pageIndex,
+          docPageLineIndex: undoItem.lineIndex,
+          line: cloneDeep(line)
+        });
+
+      } else {
+      }
+    } else {
+    }
   }
 
   /**
    * Handle undoing a batch of line changes
    */
   private handleBatchLineChangeUndo(undoItem: BatchLineChangeUndoItem): void {
-    console.log('🔄 UNDO: Handling batch line changes undo for', undoItem.changes.length, 'lines');
 
     // Save current states for redo
     const redoChanges = undoItem.changes.map(change => {
@@ -452,15 +544,13 @@ export class UndoService {
       } as UndoStackItem);
     });
 
-    console.log('🔄 UNDO: Restored batch of', undoItem.changes.length, 'line states');
   }
 
   /**
    * Handle undoing a line change
    */
   private handleLineChangeUndo(undoItem: UndoStackItem): void {
-    console.log('🔄 UNDO: Handling line change undo for page', undoItem.pageIndex, 'line', undoItem.lineIndex);
-
+debugger
     // Before restoring, save the current state for redo
     if (this.pdfService && this.pdfService.finalDocument?.data) {
       const currentPage = this.pdfService.finalDocument.data[undoItem.pageIndex];
@@ -474,20 +564,88 @@ export class UndoService {
           timestamp: Date.now()
         };
         this.redoStack.push(redoItem);
-        console.log('🔄 UNDO: Saved current state to redo stack');
       }
     }
 
     // Restore the previous state directly in PdfService
     this.restoreLineState(undoItem);
-    console.log('🔄 UNDO: Restored previous line state');
+  }
+
+  /**
+   * Handle redoing a line position change
+   */
+  private handleLinePositionChangeRedo(redoItem: LinePositionChangeUndoItem): void {
+
+    if (!this.pdfService) {
+      return;
+    }
+
+    // For redo, we need to restore the position that was current when the undo happened
+    // Since we popped this from redo stack, we need to find what the "new" position should be
+    // The redo item contains the previous position that was saved. For redo, we want to go back to the position that was undone.
+
+    // Actually, since the redo stack contains the same items that were undone, and we want to redo the action,
+    // we need to restore the state that existed before the undo happened.
+
+    // But wait, the redo logic is a bit confusing. When we undo, we save the current state to redo stack.
+    // So for redo, we want to restore what was saved in the redo item.
+
+    // Actually, let me check how the other redo methods work. They seem to save the current state to undo stack and then restore the redo item state.
+
+    // For position changes, since we only save the previous position, for redo we need to get the current position and save it as undo, then restore the redo item's previous position.
+
+    if (this.pdfService.finalDocument?.data) {
+      const page = this.pdfService.finalDocument.data[redoItem.pageIndex];
+      if (page && page[redoItem.lineIndex]) {
+        const currentLine = page[redoItem.lineIndex];
+
+        // Save current position for undo
+        const currentPosition = {
+          calculatedXpos: currentLine.calculatedXpos,
+          calculatedYpos: currentLine.calculatedYpos,
+          xPos: currentLine.xPos || 0,
+          yPos: currentLine.yPos || 0,
+          barY: Number(currentLine.barY) || 0,
+          endY: Number(currentLine.endY) || 0
+        };
+
+        // Create undo item with current state
+        const undoItem: LinePositionChangeUndoItem = {
+          type: 'line-position-change',
+          pageIndex: redoItem.pageIndex,
+          lineIndex: redoItem.lineIndex,
+          previousPosition: currentPosition,
+          timestamp: Date.now(),
+          changeDescription: redoItem.changeDescription
+        };
+        this.undoStack.push(undoItem);
+
+        // Restore the position from the redo item
+        currentLine.calculatedXpos = redoItem.previousPosition.calculatedXpos;
+        currentLine.calculatedYpos = redoItem.previousPosition.calculatedYpos;
+        currentLine.xPos = redoItem.previousPosition.xPos;
+        currentLine.yPos = redoItem.previousPosition.yPos;
+        currentLine.barY = Number(redoItem.previousPosition.barY) || 0;
+        currentLine.endY = Number(redoItem.previousPosition.endY) || 0;
+
+
+        // Trigger the observable to notify all components
+        this.pdfService._finalDocumentData$.next({
+          docPageIndex: redoItem.pageIndex,
+          docPageLineIndex: redoItem.lineIndex,
+          line: cloneDeep(currentLine)
+        });
+
+      } else {
+      }
+    } else {
+    }
   }
 
   /**
    * Handle redoing a batch of line changes
    */
   private handleBatchLineChangeRedo(redoItem: BatchLineChangeUndoItem): void {
-    console.log('🔄 REDO: Handling batch line changes redo for', redoItem.changes.length, 'lines');
 
     // Save current states for undo
     const undoChanges = redoItem.changes.map(change => {
@@ -523,7 +681,6 @@ export class UndoService {
       } as UndoStackItem);
     });
 
-    console.log('🔄 REDO: Restored batch of', redoItem.changes.length, 'line states');
   }
 
   /**
@@ -558,7 +715,6 @@ export class UndoService {
     this.redoStack = [];
     // Notify components that reset has occurred
     this.resetSubject.next();
-    console.log('[UNDO] History reset');
   }
     
     
@@ -571,7 +727,6 @@ export class UndoService {
   clearHistory(): void {
     this.undoStack = [];
     this.redoStack = [];
-    console.log('[UNDO] History cleared');
   }
 
   /**
@@ -580,7 +735,6 @@ export class UndoService {
    */
   private restoreLineState(undoItem: UndoStackItem): void {
     if (!this.pdfService) {
-      console.error('[UNDO] PdfService not available');
       return;
     }
 
@@ -591,7 +745,6 @@ export class UndoService {
         // Replace the entire line with the previous state
         this.pdfService.finalDocument.data[undoItem.pageIndex][undoItem.lineIndex] = cloneDeep(undoItem.previousLineState);
 
-        console.log(`🔄 UNDO: Updated PDF service data for line ${undoItem.lineIndex}, new position:`, undoItem.previousLineState.calculatedXpos, undoItem.previousLineState.calculatedYpos);
 
         // Trigger the observable to notify all components with the specific line update
         this.pdfService._finalDocumentData$.next({
@@ -600,12 +753,9 @@ export class UndoService {
           line: cloneDeep(undoItem.previousLineState)
         });
 
-        console.log(`🔄 UNDO: Emitted update notification for line ${undoItem.lineIndex}`);
       } else {
-        console.warn(`🔄 UNDO: Could not find line at page ${undoItem.pageIndex}, line ${undoItem.lineIndex}`);
       }
     } else {
-      console.warn('🔄 UNDO: No finalDocument.data available in PdfService');
     }
   }
 
@@ -639,7 +789,6 @@ export class UndoService {
     // Trim stack if needed
     this.trimStackIfNeeded();
 
-    console.log(`[UNDO] Recorded batch of ${changes.length} line changes as single undo item`);
   }
 
   // ============= GETTERS AND UTILITY METHODS =============
@@ -722,7 +871,6 @@ export class UndoService {
   private trimStackIfNeeded(): void {
     if (this.undoStack.length > this.maxStackSize) {
       this.undoStack = this.undoStack.slice(-this.maxStackSize);
-      console.log(`[UNDO] Trimmed undo stack to ${this.maxStackSize} items`);
     }
   }
 
@@ -782,11 +930,8 @@ export class UndoService {
    * Handle undoing a scene reorder change (combined scene order + document state)
    */
   private handleSceneReorderUndo(undoItem: SceneReorderUndoItem): void {
-    console.log('🔄 UNDO Service: handleSceneReorderUndo called');
-    console.log('🔄 UNDO Service: Previous scene order:', undoItem.previousSceneOrder?.map(s => s.sceneNumberText));
     
     if (!this.pdfService) {
-      console.error('[UNDO] PdfService not available');
       return;
     }
 
@@ -794,20 +939,16 @@ export class UndoService {
     const currentSceneOrder = cloneDeep(this.pdfService.getSelectedScenes());
     const currentDocumentState = cloneDeep(this.pdfService.finalDocument);
     
-    console.log('🔄 UNDO Service: Current scene order before restore:', currentSceneOrder?.map(s => s.sceneNumberText));
     
     // Create redo item with current state (don't add to stack here, it's already done in undo())
     
-    console.log('🔄 UNDO Service: About to call setSelectedScenes with:', undoItem.previousSceneOrder?.map(s => s.sceneNumberText));
     
     // IMPORTANT: Set the selected scenes first
     this.pdfService.setSelectedScenes(undoItem.previousSceneOrder);
-    console.log('🔄 UNDO Service: setSelectedScenes called successfully');
     
     // CRITICAL: Ensure the scene order update is emitted
     if (this.pdfService._sceneOrderUpdated$) {
       this.pdfService._sceneOrderUpdated$.next([...undoItem.previousSceneOrder]);
-      console.log('🔄 UNDO Service: Manually emitted scene order update');
     }
     
     // Restore the previous document state
@@ -816,7 +957,6 @@ export class UndoService {
     // Trigger document regeneration to update all components
     this.pdfService._documentRegenerated$.next(true);
     
-    console.log(`[UNDO] Scene reorder restored (scene order + document state)`);
   }
 
   /**
@@ -824,7 +964,6 @@ export class UndoService {
    */
   private handleSceneReorderRedo(redoItem: SceneReorderUndoItem): void {
     if (!this.pdfService) {
-      console.error('[UNDO] PdfService not available');
       return;
     }
 
@@ -849,7 +988,6 @@ export class UndoService {
     // Trigger document regeneration to update all components
     this.pdfService._documentRegenerated$.next(true);
     
-    console.log(`[UNDO] Scene reorder redone`);
   }
 
   /**
@@ -857,7 +995,6 @@ export class UndoService {
    */
   private handleDocumentReorderRedo(redoItem: DocumentReorderUndoItem): void {
     if (!this.pdfService) {
-      console.error('[UNDO] PdfService not available');
       return;
     }
 
@@ -879,6 +1016,5 @@ export class UndoService {
     // Trigger document regeneration to update all components
     this.pdfService._documentRegenerated$.next(true);
     
-    console.log(`[UNDO] Document reorder redone`);
   }
 }

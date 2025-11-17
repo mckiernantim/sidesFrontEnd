@@ -1753,7 +1753,6 @@ async sendFinalDocumentToServer(finalDocument) {
    * This ensures the dashboard-right component stays in sync with the PDF service
    */
   private syncSceneDataAfterUndo(): void {
-    console.log('Dashboard-right: Syncing scene data after undo/redo');
     
     // Get the current scene order from the PDF service
     const currentSceneOrder = this.pdf.getSelectedScenes();

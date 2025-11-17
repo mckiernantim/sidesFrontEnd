@@ -485,7 +485,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         isContinueTopSpan: this.dragType === 'continue-top'
       });
 
-      this.pageUpdate.emit([...this.page]);
+      // Note: pageUpdate.emit() removed to prevent duplicate PDF service updates
+      // handlePositionChange in parent component already handles the update
     }
 
     // Clear dragging state
