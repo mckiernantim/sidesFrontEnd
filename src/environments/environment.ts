@@ -28,7 +28,7 @@ export const environment = {
   url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
   // url: 'http://localhost:8080',
   password:"NOTEWORTHY",
-  maintenanceMode: true
+  maintenanceMode: false
 };
 
 // For production - this will be used if environment.prod.ts isn't properly loaded
