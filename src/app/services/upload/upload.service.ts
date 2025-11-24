@@ -44,6 +44,17 @@ export class UploadService {
   private readonly tokenKey = 'pdfBackupToken';
   private pdfUsageSubject = new BehaviorSubject<PdfUsage | null>(null);
   public pdfUsage$ = this.pdfUsageSubject.asObservable();
+
+  // Progress tracking for streaming uploads
+  private scanProgressSubject = new BehaviorSubject<{
+    stage: string;
+    message: string;
+    progress: number;
+    currentPage?: number;
+    totalPages?: number;
+  } | null>(null);
+  public scanProgress$ = this.scanProgressSubject.asObservable();
+
   _devPdfPath: string = 'MARSHMALLOW_PINK';
   // values from script
   script: string;
@@ -345,6 +356,187 @@ export class UploadService {
       responseType: null,
     };
   }
+  // Streaming upload method with progress updates
+  postFileStream(fileToUpload: File): Observable<any> {
+    this.resetHttpOptions();
+
+    return from(this.auth.user$).pipe(
+      switchMap((user) => {
+        if (!user) {
+          return throwError(
+            () => new Error('User must be authenticated to upload files')
+          );
+        }
+
+        localStorage.setItem('name', fileToUpload.name.replace(/.pdf/, ''));
+        this.script = localStorage.getItem('name');
+
+        return new Observable<any>((observer) => {
+          const xhr = new XMLHttpRequest();
+
+          xhr.open('POST', `${this.url}/api/stream`, true);
+
+          // Set up event handlers
+          xhr.onprogress = () => {
+            // Handle streaming response data
+            const responseText = xhr.responseText;
+            if (responseText) {
+              const lines = responseText.split('\n');
+              for (const line of lines) {
+                if (line.trim() && line.startsWith('data: ')) {
+                  try {
+                    const data = JSON.parse(line.substring(6));
+
+                      switch (data.type) {
+                        case 'connected':
+                          this.scanProgressSubject.next({
+                            stage: 'connected',
+                            message: 'Connecting to secure processing...',
+                            progress: 0
+                          });
+                          break;
+
+                        case 'validation_complete':
+                          this.scanProgressSubject.next({
+                            stage: 'validation_complete',
+                            message: 'Document validated and secured',
+                            progress: 5,
+                            ...data.metadata
+                          });
+                          break;
+
+                        case 'progress':
+                          // Enhance progress messages for better UX
+                          let enhancedMessage = data.message;
+                          switch (data.stage) {
+                            case 'loading':
+                              enhancedMessage = 'Reading your script document...';
+                              break;
+                            case 'flattening':
+                              enhancedMessage = 'Preparing document for secure processing...';
+                              break;
+                            case 'scanning':
+                              if (data.currentPage && data.totalPages) {
+                                enhancedMessage = `Analyzing page ${data.currentPage} of ${data.totalPages}...`;
+                              } else {
+                                enhancedMessage = 'Analyzing script structure and content...';
+                              }
+                              break;
+                            case 'scanned':
+                              enhancedMessage = 'Script content extracted successfully';
+                              break;
+                            case 'sanitizing':
+                              enhancedMessage = 'Cleaning and formatting script data...';
+                              break;
+                            case 'security_scan':
+                              enhancedMessage = 'Performing final security verification...';
+                              break;
+                            case 'security_checked':
+                              enhancedMessage = 'Security verification complete';
+                              break;
+                            case 'classifying':
+                              enhancedMessage = 'Organizing scenes, characters, and dialog...';
+                              break;
+                            case 'ai_validation':
+                              enhancedMessage = 'AI validation in progress...';
+                              break;
+                            default:
+                              enhancedMessage = data.message;
+                          }
+
+                          this.scanProgressSubject.next({
+                            stage: data.stage,
+                            message: enhancedMessage,
+                            progress: data.progress,
+                            currentPage: data.currentPage,
+                            totalPages: data.totalPages
+                          });
+                          break;
+
+                      case 'complete':
+                        const result = data.data;
+                        this.allLines = result.allLines;
+                        this.firstAndLastLinesOfScenes = result.firstAndLastLinesOfScenes;
+                        this.individualPages = result.individualPages;
+                        this.allChars = result.allChars;
+                        this.title = result.title;
+                        this.lineCount = [];
+                        this.individualPages?.forEach((page) => {
+                          this.lineCount.push(page.filter((item) => item.totalLines));
+                        });
+
+                        this.scanProgressSubject.next({
+                          stage: 'complete',
+                          message: 'Processing complete',
+                          progress: 100
+                        });
+
+                        observer.next(result);
+                        observer.complete();
+                        break;
+
+                      case 'error':
+                        observer.error(new Error(data.message || 'Streaming scan failed'));
+                        break;
+                    }
+                  } catch (parseError) {
+                    // Ignore parse errors for incomplete chunks
+                  }
+                }
+              }
+            }
+          };
+
+          xhr.onload = () => {
+            if (xhr.status !== 200) {
+              observer.error(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+            }
+          };
+
+          xhr.onerror = () => {
+            observer.error(new Error('Network error during streaming upload'));
+          };
+
+          xhr.onabort = () => {
+            observer.error(new Error('Upload aborted'));
+          };
+
+          // Prepare form data
+          const formData = new FormData();
+          formData.append('script', fileToUpload, fileToUpload.name);
+          formData.append('userEmail', user.email);
+          formData.append('userId', user.uid);
+          formData.append('uploadTime', new Date().toISOString());
+
+          // Send the request
+          xhr.send(formData);
+
+          // Cleanup function
+          return () => {
+            if (xhr.readyState !== XMLHttpRequest.DONE) {
+              xhr.abort();
+            }
+            this.scanProgressSubject.next(null);
+          };
+        });
+      }),
+      catchError((error) => {
+        console.error('Streaming upload error:', {
+          userEmail: this.auth.user$.value?.email,
+          fileName: fileToUpload.name,
+          timestamp: new Date().toISOString(),
+          error: error,
+        });
+        this.resetServiceState();
+        this.scanProgressSubject.next(null);
+        return throwError(() => error);
+      }),
+      finalize(() => {
+        this.resetServiceState();
+      })
+    );
+  }
+
   // get classified data => returns observable for stuff to plug into
   postFile(fileToUpload: File): Observable<any> {
     this.resetHttpOptions();
@@ -372,7 +564,6 @@ export class UploadService {
           .post(this.url + '/api', formData, this.httpOptions)
           .pipe(
             map((res: any) => {
-              debugger
               let {
                 allLines,
                 allChars,
@@ -390,7 +581,6 @@ export class UploadService {
               this.individualPages.forEach((page) => {
                 this.lineCount.push(page.filter((item) => item.totalLines));
               });
-              debugger
               return res;
             }),
             catchError((error) => {
@@ -574,5 +764,7 @@ export class UploadService {
     this.individualPages = null;
     this.allChars = null;
     this.title = null;
+    // Reset scan progress
+    this.scanProgressSubject.next(null);
   }
 }

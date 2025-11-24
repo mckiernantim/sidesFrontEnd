@@ -44,6 +44,8 @@ export class UploadComponent implements OnInit, OnDestroy {
   private currentUploadSubscription: Subscription = null;
   private routerSubscription: Subscription = null;
 
+  private scanProgressSubscription: Subscription = null;
+
   constructor(
     public upload: UploadService,
     public router: Router,
@@ -215,6 +217,9 @@ export class UploadComponent implements OnInit, OnDestroy {
     }
     if (this.routerSubscription) {
       this.routerSubscription.unsubscribe();
+    }
+    if (this.scanProgressSubscription) {
+      this.scanProgressSubscription.unsubscribe();
     }
     if (this.totalTickets) this.totalTickets.unsubscribe();
     if (this.totalLines) this.totalLines.unsubscribe();
@@ -414,7 +419,7 @@ export class UploadComponent implements OnInit, OnDestroy {
       this.currentUploadSubscription.unsubscribe();
       this.currentUploadSubscription = null;
     }
-    
+
     const file = event.target.files[0];
     if (file) {
       try {
@@ -426,9 +431,11 @@ export class UploadComponent implements OnInit, OnDestroy {
                 <img src="assets/animations/ScriptBot_Animation-BW.gif" alt="Processing..." class="w-64 h-64 mb-4">
                 <div class="text-center">
                   <h3 class="text-lg font-semibold text-indigo-700 mb-2">Please Wait</h3>
-                  <p class="text-gray-600 mb-2">We're preparing your document for editing.</p>
+                  <p class="text-gray-600 mb-4" id="progress-message">Initializing secure processing...</p>
+                  <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+                    <div class="bg-indigo-600 h-2 rounded-full transition-all duration-300" id="progress-bar" style="width: 0%"></div>
+                  </div>
                   <div class="flex items-center justify-center space-x-2 text-sm text-gray-500">
-                    <span>Analyzing script format</span>
                     <svg class="animate-spin h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -441,17 +448,43 @@ export class UploadComponent implements OnInit, OnDestroy {
             disableClose: true
           }
         });
-        
-        this.currentUploadSubscription = this.upload.postFile(file).subscribe({
+
+        // Subscribe to progress updates
+        this.scanProgressSubscription = this.upload.scanProgress$.subscribe(progress => {
+          if (progress) {
+            // Update the modal content dynamically
+            setTimeout(() => {
+              const progressMessage = document.getElementById('progress-message');
+              const progressBar = document.getElementById('progress-bar');
+
+              if (progressMessage) {
+                progressMessage.textContent = progress.message;
+              }
+
+              if (progressBar) {
+                progressBar.style.width = `${progress.progress}%`;
+              }
+            });
+          }
+        });
+
+        // Use streaming upload
+        this.currentUploadSubscription = this.upload.postFileStream(file).subscribe({
           next: (response) => {
+            // Clean up progress subscription
+            if (this.scanProgressSubscription) {
+              this.scanProgressSubscription.unsubscribe();
+              this.scanProgressSubscription = null;
+            }
+
             // Close the current dialog
             dialogRef.close();
-            
+
             // Navigate to dashboard after successful upload
             this.pdf.initializeData();
             this.resetFileInput();
             this.currentUploadSubscription = null;
-            
+
             // Show a success message and navigate - with IP protection message
             this.dialogService.open(TailwindDialogComponent, {
               data: {
@@ -482,14 +515,20 @@ export class UploadComponent implements OnInit, OnDestroy {
             });
           },
           error: (error) => {
+            // Clean up progress subscription
+            if (this.scanProgressSubscription) {
+              this.scanProgressSubscription.unsubscribe();
+              this.scanProgressSubscription = null;
+            }
+
             dialogRef.close();
             this.resetFileInput();
             this.currentUploadSubscription = null;
-            
+
             // Extract the error message from the response
             let errorTitle = 'Upload Failed';
             let errorMessage = 'An error occurred while processing your document.';
-            
+
             if (error && error.error && error.error.error) {
               // Handle structured error from backend
               errorMessage = error.error.error.message || errorMessage;
@@ -497,7 +536,7 @@ export class UploadComponent implements OnInit, OnDestroy {
               // Handle simple error with message
               errorMessage = error.message;
             }
-            
+
             this.dialogService.open(TailwindDialogComponent, {
               data: {
                 title: errorTitle,
@@ -550,6 +589,12 @@ export class UploadComponent implements OnInit, OnDestroy {
         this.dialogService.openErrorWithDetails(e, 'Upload Error');
         this.resetFileInput();
         this.currentUploadSubscription = null;
+
+        // Clean up progress subscription
+        if (this.scanProgressSubscription) {
+          this.scanProgressSubscription.unsubscribe();
+          this.scanProgressSubscription = null;
+        }
       }
     }
   }
