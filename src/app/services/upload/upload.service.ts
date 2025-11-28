@@ -376,6 +376,11 @@ export class UploadService {
 
           xhr.open('POST', `${this.url}/api/stream`, true);
 
+          // XMLHttpRequest with SSE-like response handling
+          xhr.setRequestHeader('Accept', 'text/event-stream');
+          xhr.setRequestHeader('Cache-Control', 'no-cache');
+          xhr.withCredentials = true;
+
           // Set up event handlers
           xhr.onprogress = () => {
             // Handle streaming response data
@@ -494,6 +499,12 @@ export class UploadService {
           };
 
           xhr.onerror = () => {
+            console.error('XMLHttpRequest error:', {
+              readyState: xhr.readyState,
+              status: xhr.status,
+              statusText: xhr.statusText,
+              responseHeaders: xhr.getAllResponseHeaders()
+            });
             observer.error(new Error('Network error during streaming upload'));
           };
 
