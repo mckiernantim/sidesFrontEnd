@@ -522,7 +522,6 @@ export class UploadService {
       }),
       catchError((error) => {
         console.error('Streaming upload error:', {
-          userEmail: this.auth.user$.value?.email,
           fileName: fileToUpload.name,
           timestamp: new Date().toISOString(),
           error: error,
