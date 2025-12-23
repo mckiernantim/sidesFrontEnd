@@ -52,6 +52,9 @@ export class UploadService {
     progress: number;
     currentPage?: number;
     totalPages?: number;
+    linesFound?: number;
+    step?: number;
+    totalSteps?: number;
   } | null>(null);
   public scanProgress$ = this.scanProgressSubject.asObservable();
 
@@ -372,100 +375,146 @@ export class UploadService {
         this.script = localStorage.getItem('name');
 
         return new Observable<any>((observer) => {
-          const xhr = new XMLHttpRequest();
 
-          xhr.open('POST', `${this.url}/api/stream`, true);
+          // Use fetch with streaming response handling
+          fetch(`${this.url}/api/stream`, {
+            method: 'POST',
+            body: (() => {
+              const formData = new FormData();
+              formData.append('script', fileToUpload, fileToUpload.name);
+              formData.append('userEmail', user.email);
+              formData.append('userId', user.uid);
+              formData.append('uploadTime', new Date().toISOString());
+              return formData;
+            })(),
+            // Temporarily disable credentials for testing
+            // credentials: 'include'
+          })
+          .then(response => {
 
-          // XMLHttpRequest with SSE-like response handling
-          xhr.setRequestHeader('Accept', 'text/event-stream');
-          xhr.setRequestHeader('Cache-Control', 'no-cache');
-          xhr.withCredentials = true;
+            if (!response.body) {
+              throw new Error('No response body');
+            }
 
-          // Set up event handlers
-          xhr.onprogress = () => {
-            // Handle streaming response data
-            const responseText = xhr.responseText;
-            if (responseText) {
-              const lines = responseText.split('\n');
-              for (const line of lines) {
-                if (line.trim() && line.startsWith('data: ')) {
-                  try {
-                    const data = JSON.parse(line.substring(6));
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
 
-                      switch (data.type) {
-                        case 'connected':
-                          this.scanProgressSubject.next({
-                            stage: 'connected',
-                            message: 'Connecting to secure processing...',
-                            progress: 0
-                          });
-                          break;
+            const readStream = async () => {
+              try {
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) {
+                    console.log('Stream ended');
+                    break;
+                  }
 
-                        case 'validation_complete':
-                          this.scanProgressSubject.next({
-                            stage: 'validation_complete',
-                            message: 'Document validated and secured',
-                            progress: 5,
-                            ...data.metadata
-                          });
-                          break;
+                  const chunk = decoder.decode(value, { stream: true });
+                  buffer += chunk;
 
-                        case 'progress':
-                          // Enhance progress messages for better UX
-                          let enhancedMessage = data.message;
-                          switch (data.stage) {
-                            case 'loading':
-                              enhancedMessage = 'Reading your script document...';
-                              break;
-                            case 'flattening':
-                              enhancedMessage = 'Preparing document for secure processing...';
-                              break;
-                            case 'scanning':
-                              if (data.currentPage && data.totalPages) {
-                                enhancedMessage = `Analyzing page ${data.currentPage} of ${data.totalPages}...`;
-                              } else {
-                                enhancedMessage = 'Analyzing script structure and content...';
-                              }
-                              break;
-                            case 'scanned':
-                              enhancedMessage = 'Script content extracted successfully';
-                              break;
-                            case 'sanitizing':
-                              enhancedMessage = 'Cleaning and formatting script data...';
-                              break;
-                            case 'security_scan':
-                              enhancedMessage = 'Performing final security verification...';
-                              break;
-                            case 'security_checked':
-                              enhancedMessage = 'Security verification complete';
-                              break;
-                            case 'classifying':
-                              enhancedMessage = 'Organizing scenes, characters, and dialog...';
-                              break;
-                            case 'ai_validation':
-                              enhancedMessage = 'AI validation in progress...';
-                              break;
-                            default:
-                              enhancedMessage = data.message;
-                          }
+                  // Process complete SSE messages
+                  const lines = buffer.split('\n');
+                  buffer = lines.pop() || ''; // Keep incomplete line in buffer
 
-                          this.scanProgressSubject.next({
-                            stage: data.stage,
-                            message: enhancedMessage,
-                            progress: data.progress,
-                            currentPage: data.currentPage,
-                            totalPages: data.totalPages
-                          });
-                          break;
+                  for (const line of lines) {
+                    if (line.trim() && line.startsWith('data: ')) {
+                      try {
+                        const data = JSON.parse(line.substring(6));
+                        console.log('Received SSE message:', data);
 
-                      case 'complete':
-                        const result = data.data;
-                        this.allLines = result.allLines;
-                        this.firstAndLastLinesOfScenes = result.firstAndLastLinesOfScenes;
-                        this.individualPages = result.individualPages;
-                        this.allChars = result.allChars;
-                        this.title = result.title;
-                        this.lineCount = [];
+                        switch (data.type) {
+                          case 'connected':
+                            this.scanProgressSubject.next({
+                              stage: 'connected',
+                              message: 'Connecting to secure processing...',
+                              progress: 0,
+                              step: 1,
+                              totalSteps: 15
+                            });
+                            break;
+
+                          case 'validation_complete':
+                            this.scanProgressSubject.next({
+                              stage: 'validation_complete',
+                              message: 'Document validated and secured',
+                              progress: 5,
+                              step: 2,
+                              totalSteps: 15,
+                              ...data.metadata
+                            });
+                            break;
+
+                          case 'progress':
+                            // Enhance progress messages for better UX
+                            let enhancedMessage = data.message;
+                            switch (data.stage) {
+                              case 'started':
+                                enhancedMessage = 'Initializing secure document processing...';
+                                break;
+                              case 'loading':
+                                enhancedMessage = 'Reading your script document...';
+                                break;
+                              case 'loaded':
+                                enhancedMessage = 'PDF file loaded and validated';
+                                break;
+                              case 'flattening':
+                                enhancedMessage = 'Preparing document for secure processing...';
+                                break;
+                              case 'flattened':
+                                enhancedMessage = 'PDF flattened and prepared for scanning';
+                                break;
+                              case 'scanning':
+                                if (data.currentPage && data.totalPages) {
+                                  enhancedMessage = `Analyzing page ${data.currentPage} of ${data.totalPages}...`;
+                                } else {
+                                  enhancedMessage = 'Analyzing script structure and content...';
+                                }
+                                break;
+                              case 'scanned':
+                                enhancedMessage = 'Script content extracted successfully';
+                                break;
+                              case 'sanitizing':
+                                enhancedMessage = 'Cleaning and formatting script data...';
+                                break;
+                              case 'sanitized':
+                                enhancedMessage = 'Text sanitized successfully';
+                                break;
+                              case 'security_scan':
+                                enhancedMessage = 'Performing final security verification...';
+                                break;
+                              case 'security_checked':
+                                enhancedMessage = 'Security verification complete';
+                                break;
+                              case 'classifying':
+                                enhancedMessage = 'Organizing scenes, characters, and dialog...';
+                                break;
+                              case 'ai_validation':
+                                enhancedMessage = 'AI validation in progress...';
+                                break;
+                              default:
+                                enhancedMessage = data.message;
+                            }
+
+                            this.scanProgressSubject.next({
+                              stage: data.stage,
+                              message: enhancedMessage,
+                              progress: data.progress,
+                              currentPage: data.currentPage,
+                              totalPages: data.totalPages,
+                              linesFound: data.linesFound,
+                              step: this.getStepNumber(data.stage),
+                              totalSteps: 15
+                            });
+                            break;
+
+                          case 'complete':
+                            const result = data.data;
+                            this.allLines = result.allLines;
+                            this.firstAndLastLinesOfScenes = result.firstAndLastLinesOfScenes;
+                            this.individualPages = result.individualPages;
+                            this.allChars = result.allChars;
+                            this.title = result.title;
+                            this.lineCount = [];
                         this.individualPages?.forEach((page) => {
                           this.lineCount.push(page.filter((item) => item.totalLines));
                         });
@@ -476,57 +525,33 @@ export class UploadService {
                           progress: 100
                         });
 
-                        observer.next(result);
-                        observer.complete();
-                        break;
+                            observer.next(result);
+                            observer.complete();
+                            break;
 
-                      case 'error':
-                        observer.error(new Error(data.message || 'Streaming scan failed'));
-                        break;
+                          case 'error':
+                            observer.error(new Error(data.message || 'Streaming scan failed'));
+                            break;
+                        }
+                      } catch (parseError) {
+                        // Ignore parse errors for incomplete chunks
+                      }
                     }
-                  } catch (parseError) {
-                    // Ignore parse errors for incomplete chunks
                   }
                 }
+              } catch (error) {
+                observer.error(error);
               }
-            }
-          };
+            };
 
-          xhr.onload = () => {
-            if (xhr.status !== 200) {
-              observer.error(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
-            }
-          };
-
-          xhr.onerror = () => {
-            console.error('XMLHttpRequest error:', {
-              readyState: xhr.readyState,
-              status: xhr.status,
-              statusText: xhr.statusText,
-              responseHeaders: xhr.getAllResponseHeaders()
-            });
+            readStream();
+          })
+          .catch(error => {
             observer.error(new Error('Network error during streaming upload'));
-          };
-
-          xhr.onabort = () => {
-            observer.error(new Error('Upload aborted'));
-          };
-
-          // Prepare form data
-          const formData = new FormData();
-          formData.append('script', fileToUpload, fileToUpload.name);
-          formData.append('userEmail', user.email);
-          formData.append('userId', user.uid);
-          formData.append('uploadTime', new Date().toISOString());
-
-          // Send the request
-          xhr.send(formData);
+          });
 
           // Cleanup function
           return () => {
-            if (xhr.readyState !== XMLHttpRequest.DONE) {
-              xhr.abort();
-            }
             this.scanProgressSubject.next(null);
           };
         });
@@ -548,6 +573,7 @@ export class UploadService {
   }
 
   // get classified data => returns observable for stuff to plug into
+  // Automatically handles both sync and async responses
   postFile(fileToUpload: File): Observable<any> {
     this.resetHttpOptions();
 
@@ -573,7 +599,25 @@ export class UploadService {
         return this.httpClient
           .post(this.url + '/api', formData, this.httpOptions)
           .pipe(
-            map((res: any) => {
+            switchMap((res: any) => {
+              // Check if this is an async response (has jobId)
+              if (res.jobId && res.status === 'processing') {
+                console.log('Async response detected, polling for result...');
+                
+                // Store jobId for potential recovery
+                localStorage.setItem('currentJobId', res.jobId);
+                
+                // Poll until complete
+                return this.pollUntilComplete(res.jobId).pipe(
+                  map((result) => {
+                    // Return in same format as sync response
+                    return { success: true, data: result };
+                  })
+                );
+              }
+              
+              // Sync response - process immediately
+              console.log('Sync response detected, processing...');
               let {
                 allLines,
                 allChars,
@@ -591,7 +635,7 @@ export class UploadService {
               this.individualPages.forEach((page) => {
                 this.lineCount.push(page.filter((item) => item.totalLines));
               });
-              return res;
+              return of(res);
             }),
             catchError((error) => {
               console.error('Upload error:', {
@@ -762,6 +806,290 @@ export class UploadService {
         return throwError(() => new Error('Failed to delete document: ' + (error.message || 'Unknown error')));
       })
     );
+  }
+
+  /**
+   * ASYNC CLOUD RUN METHODS
+   * Handle async PDF processing with polling
+   */
+
+  /**
+   * Upload file for async processing (Cloud Run)
+   * Returns jobId immediately for status polling
+   */
+  postFileAsync(fileToUpload: File): Observable<{
+    success: boolean;
+    jobId: string;
+    status: string;
+    message: string;
+    pollingEndpoint?: string;
+    resultEndpoint?: string;
+  }> {
+    this.resetHttpOptions();
+
+    return from(this.auth.user$).pipe(
+      switchMap((user) => {
+        if (!user) {
+          return throwError(
+            () => new Error('User must be authenticated to upload files')
+          );
+        }
+
+        localStorage.setItem('name', fileToUpload.name.replace(/.pdf/, ''));
+        this.script = localStorage.getItem('name');
+
+        const formData: FormData = new FormData();
+        formData.append('script', fileToUpload, fileToUpload.name);
+        formData.append('userEmail', user.email);
+        formData.append('userId', user.uid);
+        formData.append('uploadTime', new Date().toISOString());
+
+        return this.httpClient
+          .post<any>(this.url + '/api/async/upload', formData)
+          .pipe(
+            tap((response) => {
+              console.log('Async upload initiated:', response);
+              // Store jobId for potential recovery
+              if (response.jobId) {
+                localStorage.setItem('currentJobId', response.jobId);
+              }
+            }),
+            catchError((error) => {
+              console.error('Async upload error:', {
+                userEmail: user.email,
+                fileName: fileToUpload.name,
+                timestamp: new Date().toISOString(),
+                error: error,
+              });
+              this.resetServiceState();
+              return throwError(() => error);
+            })
+          );
+      })
+    );
+  }
+
+  /**
+   * Check job status via polling
+   */
+  checkJobStatus(jobId: string): Observable<{
+    success: boolean;
+    jobId: string;
+    status: 'pending' | 'processing' | 'complete' | 'error';
+    progress: number;
+    progressMessage?: string;
+    error?: string;
+    linesProcessed?: number;
+    completedAt?: string;
+  }> {
+    return this.httpClient
+      .get<any>(`${this.url}/api/async/status/${jobId}`)
+      .pipe(
+        tap((response) => {
+          console.log('Job status:', response);
+          
+          // Update progress subject for UI updates
+          if (response.progress !== undefined) {
+            this.scanProgressSubject.next({
+              stage: response.status,
+              message: response.progressMessage || this.getStatusMessage(response.status),
+              progress: response.progress,
+            });
+          }
+        }),
+        catchError((error) => {
+          console.error('Status check error:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  /**
+   * Get completed job result
+   */
+  getJobResult(jobId: string): Observable<any> {
+    return this.httpClient
+      .get<any>(`${this.url}/api/async/result/${jobId}`)
+      .pipe(
+        map((response) => {
+          if (!response.success) {
+            throw new Error(response.error || 'Failed to retrieve result');
+          }
+
+          const result = response.data;
+          
+          // Same processing as sync upload
+          this.allLines = result.allLines;
+          this.firstAndLastLinesOfScenes = result.firstAndLastLinesOfScenes;
+          this.individualPages = result.individualPages;
+          this.allChars = result.allChars;
+          this.title = result.title;
+          this.lineCount = [];
+          this.individualPages?.forEach((page) => {
+            this.lineCount.push(page.filter((item) => item.totalLines));
+          });
+
+          // Clear jobId from localStorage
+          localStorage.removeItem('currentJobId');
+
+          return result;
+        }),
+        catchError((error) => {
+          console.error('Result retrieval error:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  /**
+   * Poll for job completion
+   * Automatically polls every second until complete or error
+   */
+  pollUntilComplete(jobId: string, maxAttempts: number = 120): Observable<any> {
+    let attempts = 0;
+    const totalSteps = 15;
+    
+    return new Observable((observer) => {
+      // Emit initial "scanning" progress
+      this.scanProgressSubject.next({
+        stage: 'scanning',
+        message: 'Scanning your document...',
+        progress: 10,
+        step: 2,
+        totalSteps: totalSteps
+      });
+
+      const interval = setInterval(() => {
+        attempts++;
+        
+        if (attempts > maxAttempts) {
+          clearInterval(interval);
+          this.scanProgressSubject.next(null);
+          observer.error(new Error('Polling timeout - job took too long'));
+          return;
+        }
+
+        this.checkJobStatus(jobId).subscribe({
+          next: (status) => {
+            console.log(`Polling attempt ${attempts}/${maxAttempts}:`, status);
+            
+            // Emit progress updates based on status
+            const progressPercent = Math.min(95, 10 + (attempts * 3));
+            const currentStep = Math.min(totalSteps - 1, 2 + Math.floor((attempts / maxAttempts) * (totalSteps - 2)));
+            
+            let message = 'Scanning your document...';
+            if (status.status === 'processing') {
+              const progress = status.progress || 0;
+              if (progress < 30) {
+                message = 'Scanning your document...';
+              } else if (progress < 60) {
+                message = 'Classifying scenes and characters...';
+              } else if (progress < 90) {
+                message = 'Finalizing document structure...';
+              } else {
+                message = 'Almost done...';
+              }
+            }
+            
+            // Emit progress for modal updates
+            this.scanProgressSubject.next({
+              stage: status.status,
+              message: message,
+              progress: status.progress || progressPercent,
+              step: currentStep,
+              totalSteps: totalSteps,
+              linesFound: status.linesProcessed
+            });
+            
+            if (status.status === 'complete') {
+              clearInterval(interval);
+              
+              // Emit "deleting" progress
+              this.scanProgressSubject.next({
+                stage: 'deleting',
+                message: 'Deleting original document from servers...',
+                progress: 98,
+                step: totalSteps - 1,
+                totalSteps: totalSteps
+              });
+              
+              // Get the final result
+              this.getJobResult(jobId).subscribe({
+                next: (result) => {
+                  // Emit final completion
+                  this.scanProgressSubject.next({
+                    stage: 'complete',
+                    message: 'Document ready!',
+                    progress: 100,
+                    step: totalSteps,
+                    totalSteps: totalSteps
+                  });
+                  
+                  setTimeout(() => this.scanProgressSubject.next(null), 500);
+                  
+                  observer.next(result);
+                  observer.complete();
+                },
+                error: (err) => {
+                  this.scanProgressSubject.next(null);
+                  observer.error(err);
+                }
+              });
+            } else if (status.status === 'error') {
+              clearInterval(interval);
+              this.scanProgressSubject.next(null);
+              observer.error(new Error(status.error || 'Processing failed'));
+            }
+            // Otherwise keep polling (pending/processing)
+          },
+          error: (err) => {
+            clearInterval(interval);
+            this.scanProgressSubject.next(null);
+            observer.error(err);
+          }
+        });
+      }, 1000); // Poll every second
+
+      // Cleanup function
+      return () => {
+        clearInterval(interval);
+      };
+    });
+  }
+
+  /**
+   * Helper to get user-friendly status messages
+   */
+  private getStatusMessage(status: string): string {
+    const messages = {
+      'pending': 'Your document is queued for processing...',
+      'processing': 'Analyzing your script...',
+      'complete': 'Processing complete!',
+      'error': 'An error occurred during processing'
+    };
+    return messages[status] || 'Processing...';
+  }
+
+  // Helper method to get step number for progress tracking
+  private getStepNumber(stage: string): number {
+    const stepMap: { [key: string]: number } = {
+      'connected': 1,
+      'validation_complete': 2,
+      'started': 3,
+      'loading': 4,
+      'loaded': 5,
+      'flattening': 6,
+      'flattened': 7,
+      'scanning': 8,
+      'scanned': 9,
+      'sanitizing': 10,
+      'sanitized': 11,
+      'security_scan': 12,
+      'security_checked': 13,
+      'classifying': 14,
+      'ai_validation': 15
+    };
+    return stepMap[stage] || 0;
   }
 
   // Add this method to reset service state after upload

@@ -62,7 +62,6 @@ export class AuthService {
     // Listen for auth state changes
     onAuthStateChanged(this.auth, 
       async (user) => {
-        debugger
         console.log('Auth state changed:', user?.uid || 'No user');
         this.userSubject.next(user);
         this.authInitialized = true;
@@ -171,7 +170,6 @@ export class AuthService {
   
       // Encode email to make it a valid Firestore document ID
       const encodedEmail = user.email.replace(/\./g, '_dot_').replace(/@/g, '_at_');
-      debugger
       const adminDocRef = doc(this.firestore, `listed/${encodedEmail}`);
       const adminSnapshot = await getDoc(adminDocRef);
       

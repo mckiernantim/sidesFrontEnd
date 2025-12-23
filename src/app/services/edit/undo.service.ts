@@ -550,7 +550,6 @@ export class UndoService {
    * Handle undoing a line change
    */
   private handleLineChangeUndo(undoItem: UndoStackItem): void {
-debugger
     // Before restoring, save the current state for redo
     if (this.pdfService && this.pdfService.finalDocument?.data) {
       const currentPage = this.pdfService.finalDocument.data[undoItem.pageIndex];
