@@ -12,7 +12,12 @@ export class HttpLogInterceptor implements HttpInterceptor {
       body: req.body
     });
     
-    return next.handle(req).pipe(
+    // Clone the request and add withCredentials for cross-origin requests
+    const modifiedReq = req.clone({
+      withCredentials: true
+    });
+    
+    return next.handle(modifiedReq).pipe(
       tap(
         event => {
           if (event instanceof HttpResponse) {

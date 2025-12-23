@@ -387,8 +387,7 @@ export class UploadService {
               formData.append('uploadTime', new Date().toISOString());
               return formData;
             })(),
-            // Temporarily disable credentials for testing
-            // credentials: 'include'
+            credentials: 'include'
           })
           .then(response => {
 
