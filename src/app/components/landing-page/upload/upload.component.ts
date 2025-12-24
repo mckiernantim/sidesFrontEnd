@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, isDevMode, ViewChild, ElementRef } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { Observable, Subscription, EMPTY } from 'rxjs';
-import { catchError, filter } from 'rxjs/operators';
+import { catchError, filter, switchMap } from 'rxjs/operators';
 import { UploadService } from '../../../services/upload/upload.service';
 import { PdfService } from '../../../services/pdf/pdf.service';
 import { fadeInOutAnimation } from '../../../animations/animations';
@@ -482,8 +482,14 @@ export class UploadComponent implements OnInit, OnDestroy {
           }
         });
 
-        // Use streaming upload
-        this.currentUploadSubscription = this.upload.postFileStream(file).subscribe({
+        // Use async polling upload (Cloud Run + Firestore polling)
+        this.currentUploadSubscription = this.upload.postFileAsync(file).pipe(
+          // Start polling after getting jobId
+          switchMap((uploadResponse) => {
+            console.log('Upload initiated, starting polling...', uploadResponse);
+            return this.upload.pollUntilComplete(uploadResponse.jobId);
+          })
+        ).subscribe({
           next: (response) => {
             // Clean up progress subscription
             if (this.scanProgressSubscription) {

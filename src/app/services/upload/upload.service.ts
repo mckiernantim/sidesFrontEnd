@@ -529,7 +529,21 @@ export class UploadService {
                             break;
 
                           case 'error':
-                            observer.error(new Error(data.message || 'Streaming scan failed'));
+                            // Enhanced error with full context from Cloud Run
+                            const enhancedError: any = new Error(data.message || 'Streaming scan failed');
+                            enhancedError.code = data.error; // Error code from backend (e.g., 'PROCESSING_ERROR', 'TIMEOUT')
+                            enhancedError.details = data.details; // Additional error details
+                            enhancedError.context = data.context; // Cloud Run error context
+                            enhancedError.operation = 'CLOUD_RUN_PROCESSING';
+                            enhancedError.timestamp = new Date().toISOString();
+                            
+                            this.scanProgressSubject.next({
+                              stage: 'error',
+                              message: data.message || 'Processing failed',
+                              progress: 0
+                            });
+                            
+                            observer.error(enhancedError);
                             break;
                         }
                       } catch (parseError) {
@@ -596,15 +610,38 @@ export class UploadService {
         formData.append('uploadTime', new Date().toISOString());
 
         return this.httpClient
-          .post(this.url + '/api', formData, this.httpOptions)
+          .post(this.url + '/api', formData, {
+            ...this.httpOptions,
+            observe: 'response' // Get full response to check status code
+          })
           .pipe(
-            switchMap((res: any) => {
-              // Check if this is an async response (has jobId)
-              if (res.jobId && res.status === 'processing') {
-                console.log('Async response detected, polling for result...');
+            switchMap((response: any) => {
+              const res = response.body;
+              const statusCode = response.status;
+              
+              // Check if this is an async response (has jobId) OR status is 205/202
+              if ((res.jobId && res.status === 'processing') || statusCode === 205 || statusCode === 202) {
+                console.log('Async response detected:', {
+                  statusCode,
+                  jobId: res.jobId,
+                  message: statusCode === 205 ? 'Backend processing in background' : 'Standard async response'
+                });
                 
                 // Store jobId for potential recovery
-                localStorage.setItem('currentJobId', res.jobId);
+                if (res.jobId) {
+                  localStorage.setItem('currentJobId', res.jobId);
+                }
+                
+                // Emit initial progress for 205
+                if (statusCode === 205) {
+                  this.scanProgressSubject.next({
+                    stage: 'pending',
+                    message: 'Your document is being processed...',
+                    progress: 5,
+                    step: 1,
+                    totalSteps: 15
+                  });
+                }
                 
                 // Poll until complete
                 return this.pollUntilComplete(res.jobId).pipe(
@@ -844,15 +881,36 @@ export class UploadService {
         formData.append('uploadTime', new Date().toISOString());
 
         return this.httpClient
-          .post<any>(this.url + '/api/async/upload', formData)
+          .post<any>(this.url + '/api/async/upload', formData, {
+            observe: 'response' // Get full response to check status code
+          })
           .pipe(
             tap((response) => {
-              console.log('Async upload initiated:', response);
+              const body = response.body;
+              console.log('Async upload response received:', {
+                status: response.status,
+                body: body
+              });
+              
               // Store jobId for potential recovery
-              if (response.jobId) {
-                localStorage.setItem('currentJobId', response.jobId);
+              if (body && body.jobId) {
+                localStorage.setItem('currentJobId', body.jobId);
+              }
+              
+              // Check for 205 Reset Content - indicates processing started
+              if (response.status === 205) {
+                console.log('205 received - frontend should start polling');
+                // Emit initial scanning progress
+                this.scanProgressSubject.next({
+                  stage: 'pending',
+                  message: 'Your document is being processed...',
+                  progress: 5,
+                  step: 1,
+                  totalSteps: 15
+                });
               }
             }),
+            map((response) => response.body), // Extract body for downstream
             catchError((error) => {
               console.error('Async upload error:', {
                 userEmail: user.email,
