@@ -483,13 +483,8 @@ export class UploadComponent implements OnInit, OnDestroy {
         });
 
         // Use async polling upload (Cloud Run + Firestore polling)
-        this.currentUploadSubscription = this.upload.postFileAsync(file).pipe(
-          // Start polling after getting jobId
-          switchMap((uploadResponse) => {
-            console.log('Upload initiated, starting polling...', uploadResponse);
-            return this.upload.pollUntilComplete(uploadResponse.jobId);
-          })
-        ).subscribe({
+        // The /api endpoint automatically routes to async when Cloud Run is enabled
+        this.currentUploadSubscription = this.upload.postFile(file).subscribe({
           next: (response) => {
             // Clean up progress subscription
             if (this.scanProgressSubscription) {
