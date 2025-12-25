@@ -619,29 +619,31 @@ export class UploadService {
               const res = response.body;
               const statusCode = response.status;
               
-              // Check if this is an async response (has jobId) OR status is 205/202
-              if ((res.jobId && res.status === 'processing') || statusCode === 205 || statusCode === 202) {
+              // Check if this is an async response (has jobId) OR status is 202
+              // Note: Using 202 Accepted instead of 205 because Angular doesn't parse body for 205
+              if ((res && res.jobId && res.status === 'processing') || statusCode === 202) {
                 console.log('Async response detected:', {
                   statusCode,
-                  jobId: res.jobId,
-                  message: statusCode === 205 ? 'Backend processing in background' : 'Standard async response'
+                  jobId: res?.jobId,
+                  fullResponse: res
                 });
                 
-                // Store jobId for potential recovery
-                if (res.jobId) {
-                  localStorage.setItem('currentJobId', res.jobId);
+                if (!res || !res.jobId) {
+                  console.error('Async response missing jobId:', res);
+                  return throwError(() => new Error('Backend sent async response without jobId'));
                 }
                 
-                // Emit initial progress for 205
-                if (statusCode === 205) {
-                  this.scanProgressSubject.next({
-                    stage: 'pending',
-                    message: 'Your document is being processed...',
-                    progress: 5,
-                    step: 1,
-                    totalSteps: 15
-                  });
-                }
+                // Store jobId for potential recovery
+                localStorage.setItem('currentJobId', res.jobId);
+                
+                // Emit initial progress
+                this.scanProgressSubject.next({
+                  stage: 'pending',
+                  message: 'Your document is being processed...',
+                  progress: 5,
+                  step: 1,
+                  totalSteps: 15
+                });
                 
                 // Poll until complete
                 return this.pollUntilComplete(res.jobId).pipe(
@@ -999,6 +1001,21 @@ export class UploadService {
   }
 
   /**
+   * Delete job and cleanup resources
+   */
+  deleteJob(jobId: string): Observable<any> {
+    return this.httpClient
+      .delete<any>(`${this.url}/api/async/job/${jobId}`)
+      .pipe(
+        catchError((error) => {
+          console.error('Job deletion error:', error);
+          // Don't throw - cleanup is best effort
+          return of({ success: false, error: error.message });
+        })
+      );
+  }
+
+  /**
    * Poll for job completion
    * Automatically polls every second until complete or error
    */
@@ -1083,6 +1100,12 @@ export class UploadService {
                   });
                   
                   setTimeout(() => this.scanProgressSubject.next(null), 500);
+                  
+                  // Delete job after successfully downloading result
+                  this.deleteJob(jobId).subscribe({
+                    next: () => console.log('Job cleanup complete:', jobId),
+                    error: (err) => console.warn('Job cleanup failed (non-fatal):', err)
+                  });
                   
                   observer.next(result);
                   observer.complete();
