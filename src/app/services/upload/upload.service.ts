@@ -648,8 +648,20 @@ export class UploadService {
                 // Poll until complete
                 return this.pollUntilComplete(res.jobId).pipe(
                   map((result) => {
-                    // Return in same format as sync response
-                    return { success: true, data: result };
+                    // Return raw result (not wrapped) for compatibility
+                    console.log('Async result received:', {
+                      hasTitle: !!result.title,
+                      hasAllLines: !!result.allLines,
+                      allLinesLength: result.allLines?.length,
+                      hasIndividualPages: !!result.individualPages,
+                      pagesLength: result.individualPages?.length,
+                      hasAllChars: !!result.allChars,
+                      charsLength: result.allChars?.length,
+                      hasFirstAndLast: !!result.firstAndLastLinesOfScenes,
+                      firstAndLastLength: result.firstAndLastLinesOfScenes?.length
+                    });
+                    // Return direct format: { title, allLines, allChars, etc }
+                    return result;
                   })
                 );
               }
@@ -673,7 +685,8 @@ export class UploadService {
               this.individualPages.forEach((page) => {
                 this.lineCount.push(page.filter((item) => item.totalLines));
               });
-              return of(res);
+              // Return raw data for consistency with async path
+              return of(res.data);
             }),
             catchError((error) => {
               console.error('Upload error:', {
