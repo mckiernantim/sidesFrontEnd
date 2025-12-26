@@ -958,16 +958,9 @@ export class UploadService {
       .get<any>(`${this.url}/api/async/status/${jobId}`)
       .pipe(
         tap((response) => {
-          console.log('Job status:', response);
-          
-          // Update progress subject for UI updates
-          if (response.progress !== undefined) {
-            this.scanProgressSubject.next({
-              stage: response.status,
-              message: response.progressMessage || this.getStatusMessage(response.status),
-              progress: response.progress,
-            });
-          }
+          console.log('✅ Job status response:', response);
+          // Note: Progress updates are handled by pollUntilComplete
+          // to avoid duplicate emissions and ensure proper message selection
         }),
         catchError((error) => {
           console.error('Status check error:', error);
@@ -984,14 +977,25 @@ export class UploadService {
       .get<any>(`${this.url}/api/async/result/${jobId}`)
       .pipe(
         map((response) => {
+          console.log('🔍 [getJobResult] Full response:', response);
+          console.log('🔍 [getJobResult] response.data:', response.data);
+          console.log('🔍 [getJobResult] response.data.allLines (first 2):', response.data?.allLines?.slice(0, 2));
+          
           if (!response.success) {
             throw new Error(response.error || 'Failed to retrieve result');
           }
 
           const result = response.data;
+          console.log('🔍 [getJobResult] result object:', result);
+          console.log('🔍 [getJobResult] result.allLines is Array?', Array.isArray(result.allLines));
+          console.log('🔍 [getJobResult] typeof result:', typeof result);
+          console.log('🔍 [getJobResult] result keys:', Object.keys(result || {}));
           
           // Same processing as sync upload
           this.allLines = result.allLines;
+          console.log('🔍 [getJobResult] AFTER ASSIGNMENT - this.allLines is Array?', Array.isArray(this.allLines));
+          console.log('🔍 [getJobResult] AFTER ASSIGNMENT - this.allLines:', this.allLines);
+          
           this.firstAndLastLinesOfScenes = result.firstAndLastLinesOfScenes;
           this.individualPages = result.individualPages;
           this.allChars = result.allChars;
@@ -1060,33 +1064,43 @@ export class UploadService {
           next: (status) => {
             console.log(`Polling attempt ${attempts}/${maxAttempts}:`, status);
             
-            // Emit progress updates based on status
-            const progressPercent = Math.min(95, 10 + (attempts * 3));
-            const currentStep = Math.min(totalSteps - 1, 2 + Math.floor((attempts / maxAttempts) * (totalSteps - 2)));
+            // Use actual backend progress when available, fallback to calculated progress only if null/undefined
+            const actualProgress = status.progress ?? 0;
+            const fallbackProgress = Math.min(95, 10 + (attempts * 3));
+            const displayProgress = status.progress !== null && status.progress !== undefined 
+              ? actualProgress 
+              : fallbackProgress;
             
-            let message = 'Scanning your document...';
-            if (status.status === 'processing') {
-              const progress = status.progress || 0;
-              if (progress < 30) {
+            const currentStep = Math.min(totalSteps - 1, 2 + Math.floor((displayProgress / 100) * (totalSteps - 2)));
+            
+            // Use progressMessage from backend if available, otherwise derive from progress
+            let message = status.progressMessage || 'Scanning your document...';
+            
+            // Only override message if backend didn't provide one
+            if (!status.progressMessage && status.status === 'processing') {
+              if (displayProgress < 30) {
                 message = 'Scanning your document...';
-              } else if (progress < 60) {
+              } else if (displayProgress < 60) {
                 message = 'Classifying scenes and characters...';
-              } else if (progress < 90) {
+              } else if (displayProgress < 90) {
                 message = 'Finalizing document structure...';
               } else {
                 message = 'Almost done...';
               }
             }
-            
+            debugger
             // Emit progress for modal updates
-            this.scanProgressSubject.next({
+            const progressUpdate = {
               stage: status.status,
               message: message,
-              progress: status.progress || progressPercent,
+              progress: displayProgress,
               step: currentStep,
               totalSteps: totalSteps,
               linesFound: status.linesProcessed
-            });
+            };
+            
+            console.log('📊 Emitting progress update:', progressUpdate);
+            this.scanProgressSubject.next(progressUpdate);
             
             if (status.status === 'complete') {
               clearInterval(interval);

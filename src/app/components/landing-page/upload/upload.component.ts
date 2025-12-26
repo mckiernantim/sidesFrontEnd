@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, isDevMode, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, isDevMode, ViewChild, ElementRef, ComponentRef } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { Observable, Subscription, EMPTY } from 'rxjs';
 import { catchError, filter, switchMap } from 'rxjs/operators';
@@ -11,6 +11,8 @@ import { AuthService } from '../../../services/auth/auth.service';
 import { take } from 'rxjs/operators';
 import { TailwindDialogService } from '../../../services/tailwind-dialog/tailwind-dialog.service';
 import { TailwindDialogComponent } from '../../../components/shared/tailwind-dialog/tailwind-dialog.component';
+import { UploadProgressModalComponent } from '../../../components/shared/upload-progress-modal/upload-progress-modal.component';
+import { DocumentReadyModalComponent, DocumentMetadata, ScanWarning } from '../../../components/shared/document-ready-modal/document-ready-modal.component';
 import { CarouselComponent } from '../../../components/carousel/carousel.component';
 @Component({
     selector: 'app-upload',
@@ -45,6 +47,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   private routerSubscription: Subscription = null;
 
   private scanProgressSubscription: Subscription = null;
+  private progressModalComponent: ComponentRef<UploadProgressModalComponent> | null = null;
 
   constructor(
     public upload: UploadService,
@@ -426,71 +429,66 @@ export class UploadComponent implements OnInit, OnDestroy {
         const dialogRef = this.dialogService.open(TailwindDialogComponent, {
           data: {
             title: 'Processing Your Document',
-            content: `
-              <div class="flex flex-col items-center justify-center py-4">
-                <img src="assets/animations/ScriptBot_Animation-BW.gif" alt="Processing..." class="w-48 h-48 mb-4">
-                <div class="text-center max-w-md">
-                  <h3 class="text-lg font-semibold text-indigo-700 mb-2">Processing Your Document</h3>
-                  <div class="mb-4">
-                    <p class="text-sm text-gray-500 mb-1" id="step-info">Step <span id="current-step">1</span> of <span id="total-steps">15</span></p>
-                    <p class="text-gray-700 font-medium" id="progress-message">Uploading your document...</p>
-                  </div>
-                  <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
-                    <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-3 rounded-full transition-all duration-500" id="progress-bar" style="width: 0%"></div>
-                  </div>
-                  <div class="flex items-center justify-center space-x-2 text-sm text-gray-500">
-                    <svg class="animate-spin h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Processing...</span>
-                  </div>
-                </div>
-              </div>
-            `,
+            componentType: UploadProgressModalComponent,
+            componentInputs: {
+              message: 'Uploading your document...',
+              progress: 0,
+              currentStep: 1,
+              totalSteps: 15
+            },
             showCloseButton: false,
             disableClose: true
           }
         });
 
-        // Subscribe to progress updates
-        this.scanProgressSubscription = this.upload.scanProgress$.subscribe(progress => {
-          if (progress) {
-            // Update the modal content dynamically
-            setTimeout(() => {
-              const progressMessage = document.getElementById('progress-message');
-              const progressBar = document.getElementById('progress-bar');
-              const currentStep = document.getElementById('current-step');
-              const totalSteps = document.getElementById('total-steps');
-
-              if (progressMessage) {
-                progressMessage.textContent = progress.message;
-              }
-
-              if (progressBar) {
-                progressBar.style.width = `${progress.progress}%`;
-              }
-
-              if (currentStep && progress.step) {
-                currentStep.textContent = progress.step.toString();
-              }
-
-              if (totalSteps && progress.totalSteps) {
-                totalSteps.textContent = progress.totalSteps.toString();
-              }
-            });
+        console.log('🎬 Dialog opened with UploadProgressModalComponent');
+        
+        // Wait for the dialog component to render and get a reference to the progress modal
+        setTimeout(() => {
+          // Get reference to the dynamically created progress modal component
+          const dialogComponent = dialogRef.componentRef?.instance as TailwindDialogComponent;
+          this.progressModalComponent = dialogComponent?.componentRef as ComponentRef<UploadProgressModalComponent> | null;
+          
+          if (!this.progressModalComponent) {
+            console.error('⚠️ Could not get reference to progress modal component');
+            return;
           }
-        });
+          
+          console.log('🔗 Setting up progress subscription with Angular bindings...');
+          
+          // Subscribe to progress updates and update the component properties
+          this.scanProgressSubscription = this.upload.scanProgress$.subscribe(progress => {
+            if (progress && this.progressModalComponent) {
+              console.log('🎨 Updating progress modal via Angular bindings:', progress);
+              
+              // Update component instance properties - Angular will handle the view update
+              const instance = this.progressModalComponent.instance;
+              instance.message = progress.message;
+              instance.progress = progress.progress;
+              if (progress.step !== undefined) instance.currentStep = progress.step;
+              if (progress.totalSteps !== undefined) instance.totalSteps = progress.totalSteps;
+              
+              // Trigger change detection
+              this.progressModalComponent.changeDetectorRef.detectChanges();
+              
+              console.log('✅ Progress updated:', {
+                message: instance.message,
+                progress: instance.progress,
+                step: instance.currentStep
+              });
+            }
+          });
 
-        // Use async polling upload (Cloud Run + Firestore polling)
-        // The /api endpoint automatically routes to async when Cloud Run is enabled
-        this.currentUploadSubscription = this.upload.postFile(file).subscribe({
+          // Use async polling upload (Cloud Run + Firestore polling)
+          // The /api endpoint automatically routes to async when Cloud Run is enabled
+          this.currentUploadSubscription = this.upload.postFile(file).subscribe({
           next: (response) => {
-            // Clean up progress subscription
+            // Clean up progress subscription and component reference
             if (this.scanProgressSubscription) {
               this.scanProgressSubscription.unsubscribe();
               this.scanProgressSubscription = null;
             }
+            this.progressModalComponent = null;
 
             // Close the current dialog
             dialogRef.close();
@@ -500,41 +498,39 @@ export class UploadComponent implements OnInit, OnDestroy {
             this.resetFileInput();
             this.currentUploadSubscription = null;
 
-            // Show a success message and navigate - with IP protection message
-            this.dialogService.open(TailwindDialogComponent, {
+            // Extract document metadata from response
+            const metadata = this.extractDocumentMetadata(response, file.name);
+            
+            // Show the document ready modal with detailed information
+            const successDialog = this.dialogService.open(TailwindDialogComponent, {
               data: {
-                title: 'Document Ready!',
-                content: `<div class="flex flex-col items-center justify-center py-4">
-                  <div class="bg-green-100 rounded-full p-3 mb-4">
-                    <svg class="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                  </div>
-                  <h3 class="text-lg text-center font-semibold text-green-700 mb-2">Processing Complete!</h3>
-                  <p class="text-gray-600">Your document is ready for editing.</p>
-                  <div class="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                    <p class="text-sm text-blue-800"><strong>Privacy Notice:</strong> "${file.name}" has been deleted from our servers. We do not store your intellectual property.</p>
-                  </div>
-                </div>`,
-                actions: [
-                  {
-                    label: 'Continue to Scene Select',
-                    value: 'continue',
-                    style: 'primary',
-                    class: 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                  }
-                ]
+                componentType: DocumentReadyModalComponent,
+                componentInputs: { metadata },
+                showCloseButton: false,
+                disableClose: false
               }
-            }).afterClosed().subscribe(() => {
-              this.router.navigate(['/dashboard']);
             });
+
+            // Wait for component to be created and subscribe to continue event
+            setTimeout(() => {
+              const dialogComponent = successDialog.componentRef?.instance as TailwindDialogComponent;
+              const docReadyComponent = dialogComponent?.componentRef?.instance as DocumentReadyModalComponent;
+              
+              if (docReadyComponent && docReadyComponent.continue) {
+                docReadyComponent.continue.subscribe(() => {
+                  successDialog.close();
+                  this.router.navigate(['/dashboard']);
+                });
+              }
+            }, 100);
           },
           error: (error) => {
-            // Clean up progress subscription
+            // Clean up progress subscription and component reference
             if (this.scanProgressSubscription) {
               this.scanProgressSubscription.unsubscribe();
               this.scanProgressSubscription = null;
             }
+            this.progressModalComponent = null;
 
             dialogRef.close();
             this.resetFileInput();
@@ -599,17 +595,19 @@ export class UploadComponent implements OnInit, OnDestroy {
             });
           }
         });
+        }, 100); // 100ms delay to ensure dialog DOM is rendered
       } catch (e) {
         console.error('Error in file upload process', e);
         this.dialogService.openErrorWithDetails(e, 'Upload Error');
         this.resetFileInput();
         this.currentUploadSubscription = null;
 
-        // Clean up progress subscription
+        // Clean up progress subscription and component reference
         if (this.scanProgressSubscription) {
           this.scanProgressSubscription.unsubscribe();
           this.scanProgressSubscription = null;
         }
+        this.progressModalComponent = null;
       }
     }
   }
@@ -644,5 +642,192 @@ export class UploadComponent implements OnInit, OnDestroy {
     this.selectedFiles = [];
     this.fileToUpload = null;
     this.working = false;
+  }
+
+  /**
+   * Extract document metadata from backend response
+   * This method prepares data for the DocumentReadyModalComponent
+   * and is designed to be extensible for future backend enhancements
+   */
+  private extractDocumentMetadata(response: any, filename: string): DocumentMetadata {
+    const data = response?.data || response;
+    
+    // Count scenes from firstAndLastLinesOfScenes array
+    const sceneCount = data?.firstAndLastLinesOfScenes?.length || 0;
+    
+    // Detect source format (placeholder for backend detection)
+    const source = this.detectSourceFormat(data);
+    
+    // Extract lines processed count
+    const linesProcessed = data?.allLines?.length || 0;
+    
+    // Parse warnings from backend (structure ready for future implementation)
+    const warnings = this.parseWarnings(data);
+    
+    // Extract any scan messages from backend
+    const scanMessages = data?.scanMessages || data?.messages || [];
+    
+    console.log('📄 Document metadata extracted:', {
+      filename,
+      sceneCount,
+      source,
+      linesProcessed,
+      warningCount: warnings.length,
+      scanMessages
+    });
+    
+    return {
+      filename,
+      sceneCount,
+      source,
+      linesProcessed,
+      warnings,
+      scanMessages
+    };
+  }
+
+  /**
+   * Detect the source format of the script
+   * This is a placeholder for backend detection
+   * In the future, the backend will provide this information
+   */
+  private detectSourceFormat(data: any): string {
+    // Check if backend provided source information
+    if (data?.source) {
+      return data.source;
+    }
+    
+    // Check for metadata hints
+    if (data?.metadata?.source) {
+      return data.metadata.source;
+    }
+    
+    // Placeholder logic - in reality, backend will detect this
+    // based on PDF metadata, formatting patterns, etc.
+    const title = data?.title?.toLowerCase() || '';
+    const allLines = data?.allLines || [];
+    
+    // Check PDF metadata if available
+    if (data?.pdfMetadata) {
+      const creator = data.pdfMetadata.Creator?.toLowerCase() || '';
+      const producer = data.pdfMetadata.Producer?.toLowerCase() || '';
+      
+      if (creator.includes('final draft') || producer.includes('final draft')) {
+        return 'Final Draft';
+      }
+      if (creator.includes('highland') || producer.includes('highland')) {
+        return 'Highland';
+      }
+      if (creator.includes('writerduet') || producer.includes('writerduet')) {
+        return 'WriterDuet';
+      }
+      if (creator.includes('celtx') || producer.includes('celtx')) {
+        return 'Celtx';
+      }
+    }
+    
+    // Default fallback
+    return 'Standard PDF';
+  }
+
+  /**
+   * Parse warnings from backend response
+   * This structure is ready for future backend implementation
+   * 
+   * Expected backend format (future):
+   * {
+   *   warnings: [
+   *     {
+   *       type: 'warning' | 'info' | 'error',
+   *       category: 'scene_headers' | 'scene_numbers' | 'cover_page' | 'pdf_source' | 'formatting',
+   *       message: 'Description of the issue',
+   *       details: 'Additional details (optional)'
+   *     }
+   *   ]
+   * }
+   */
+  private parseWarnings(data: any): ScanWarning[] {
+    const warnings: ScanWarning[] = [];
+    
+    // Check if backend provided warnings array
+    if (data?.warnings && Array.isArray(data.warnings)) {
+      return data.warnings.map((w: any) => ({
+        type: w.type || 'info',
+        category: w.category || 'other',
+        message: w.message || w.text || 'Unknown issue',
+        details: w.details
+      }));
+    }
+    
+    // Check for individual warning flags (future backend support)
+    if (data?.scanResults) {
+      const results = data.scanResults;
+      
+      // Scene header warnings
+      if (results.sceneHeadersDetected === false) {
+        warnings.push({
+          type: 'warning',
+          category: 'scene_headers',
+          message: 'Some scene headers may not have been detected',
+          details: 'Scene detection relies on standard screenplay formatting. Manual review recommended.'
+        });
+      }
+      
+      // Scene number warnings
+      if (results.sceneNumbersDetected === false) {
+        warnings.push({
+          type: 'info',
+          category: 'scene_numbers',
+          message: 'Scene numbers were not detected in this script',
+          details: 'This is normal for scripts without scene numbers.'
+        });
+      }
+      
+      // Cover page warnings
+      if (results.hasCoverPage === false) {
+        warnings.push({
+          type: 'info',
+          category: 'cover_page',
+          message: 'No cover page detected',
+          details: 'Scanning started from the first page of content.'
+        });
+      }
+      
+      // PDF source warnings (unusual formats)
+      if (results.unusualFormat === true || results.source === 'unknown') {
+        warnings.push({
+          type: 'warning',
+          category: 'pdf_source',
+          message: 'Unusual PDF format detected',
+          details: 'This script may have been created with non-standard software. Please review the scene detection carefully.'
+        });
+      }
+      
+      // Formatting warnings
+      if (results.formattingIssues && results.formattingIssues.length > 0) {
+        warnings.push({
+          type: 'warning',
+          category: 'formatting',
+          message: `${results.formattingIssues.length} formatting issue(s) detected`,
+          details: results.formattingIssues.join('; ')
+        });
+      }
+    }
+    
+    // Placeholder: Generate sample warnings for testing (remove when backend is ready)
+    // This helps visualize the feature before backend implementation
+    if (warnings.length === 0 && data?.allLines?.length > 0) {
+      console.log('ℹ️ No warnings from backend - ready for future implementation');
+      
+      // Uncomment below to test the warning UI with sample data:
+      // warnings.push({
+      //   type: 'info',
+      //   category: 'pdf_source',
+      //   message: 'Document scanned successfully',
+      //   details: 'All scene headers and formatting detected correctly.'
+      // });
+    }
+    
+    return warnings;
   }
 }

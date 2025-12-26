@@ -14,6 +14,7 @@ export interface DialogConfig {
 export interface DialogRef {
   afterClosed(): Observable<any>;
   close(result?: any): void;
+  componentRef?: ComponentRef<any>;
 }
 
 @Injectable({
@@ -210,7 +211,8 @@ export class TailwindDialogService {
         afterClosedSubject.next(result);
         afterClosedSubject.complete();
         this.removeFromDOM(componentRef);
-      }
+      },
+      componentRef: componentRef
     };
   }
   
