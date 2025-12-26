@@ -99,6 +99,58 @@
                       <input id="file-upload" type="file" class="hidden" (change)="onFileSelected($event)" #fileInput />
                     </label>
                   </div>
+                  
+                  <!-- AI Validation Toggle -->
+                  <div class="mt-4 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 border border-indigo-200 rounded-lg">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center flex-1">
+                        <label for="ai-validation-toggle" class="flex items-center cursor-pointer">
+                          <div class="relative">
+                            <input 
+                              type="checkbox" 
+                              id="ai-validation-toggle" 
+                              class="sr-only" 
+                              [(ngModel)]="enableAiValidation"
+                            >
+                            <div class="block bg-gray-300 w-10 h-6 rounded-full transition" 
+                                 [ngClass]="{'bg-indigo-600': enableAiValidation}">
+                            </div>
+                            <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform"
+                                 [ngClass]="{'translate-x-4': enableAiValidation}">
+                            </div>
+                          </div>
+                          <span class="ml-3 text-sm font-medium text-gray-800">
+                            AI Validation
+                            <span *ngIf="enableAiValidation" class="text-indigo-600 font-semibold">(Enabled)</span>
+                          </span>
+                        </label>
+                        
+                        <!-- Tooltip Icon -->
+                        <button 
+                          type="button"
+                          class="ml-2 text-indigo-600 hover:text-indigo-800 focus:outline-none"
+                          (click)="showAiTooltip = !showAiTooltip"
+                        >
+                          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <!-- Tooltip Content -->
+                    <div *ngIf="showAiTooltip" class="mt-3 text-xs text-gray-700 bg-white p-3 rounded border border-indigo-200 shadow-sm">
+                      <p class="font-semibold text-indigo-800 mb-2">🤖 How AI Validation Works:</p>
+                      <ul class="list-disc pl-4 space-y-1">
+                        <p>In rare instances, some lines are ambiguously categorized during our scan.  We partner with Antrhopic to validate any ambiguous lines found during scan to double check proper clasification.</p>
+                        <li><strong>No data is saved. EVER.</strong> </li>
+                        <li><strong>Smart & Efficient:</strong> Only ambiguous lines are sent to AI (~200 lines max)</li>
+                        <li><strong>Context-Aware:</strong> Each line includes 2 surrounding lines for accurate classification</li>
+                        <li><strong>Higher Accuracy:</strong> Catches edge cases that rule-based scanning might miss</li>
+                      </ul>
+                      <p class="mt-2 text-indigo-600 font-medium">AI validation is optional and all documents are fully editable before final sides are created</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </ng-container>

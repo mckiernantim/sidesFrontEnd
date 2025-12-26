@@ -49,6 +49,10 @@ export class UploadComponent implements OnInit, OnDestroy {
   private scanProgressSubscription: Subscription = null;
   private progressModalComponent: ComponentRef<UploadProgressModalComponent> | null = null;
 
+  // AI Validation toggle
+  enableAiValidation: boolean = false;
+  showAiTooltip: boolean = false;
+
   constructor(
     public upload: UploadService,
     public router: Router,
@@ -481,7 +485,8 @@ export class UploadComponent implements OnInit, OnDestroy {
 
           // Use async polling upload (Cloud Run + Firestore polling)
           // The /api endpoint automatically routes to async when Cloud Run is enabled
-          this.currentUploadSubscription = this.upload.postFile(file).subscribe({
+          // Pass AI validation flag to the service
+          this.currentUploadSubscription = this.upload.postFile(file, this.enableAiValidation).subscribe({
           next: (response) => {
             // Clean up progress subscription and component reference
             if (this.scanProgressSubscription) {

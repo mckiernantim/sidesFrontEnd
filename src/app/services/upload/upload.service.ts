@@ -587,7 +587,7 @@ export class UploadService {
 
   // get classified data => returns observable for stuff to plug into
   // Automatically handles both sync and async responses
-  postFile(fileToUpload: File): Observable<any> {
+  postFile(fileToUpload: File, enableAiValidation: boolean = false): Observable<any> {
     this.resetHttpOptions();
 
     // Get current user from auth service
@@ -608,6 +608,8 @@ export class UploadService {
         formData.append('userEmail', user.email);
         formData.append('userId', user.uid);
         formData.append('uploadTime', new Date().toISOString());
+        // Add AI validation flag
+        formData.append('enableAiValidation', enableAiValidation.toString());
 
         return this.httpClient
           .post(this.url + '/api', formData, {
