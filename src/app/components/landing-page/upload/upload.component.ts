@@ -14,6 +14,7 @@ import { TailwindDialogComponent } from '../../../components/shared/tailwind-dia
 import { UploadProgressModalComponent } from '../../../components/shared/upload-progress-modal/upload-progress-modal.component';
 import { DocumentReadyModalComponent, DocumentMetadata, ScanWarning } from '../../../components/shared/document-ready-modal/document-ready-modal.component';
 import { CarouselComponent } from '../../../components/carousel/carousel.component';
+import { getUserFriendlyMessage } from '../../../types/error';
 @Component({
     selector: 'app-upload',
     templateUrl: './upload.component.html',
@@ -486,6 +487,19 @@ export class UploadComponent implements OnInit, OnDestroy {
           // Use async polling upload (Cloud Run + Firestore polling)
           // The /api endpoint automatically routes to async when Cloud Run is enabled
           // Pass AI validation flag to the service
+          
+          // ========================================
+          // 🆕 AI VALIDATION TRACKING LOG (FRONTEND)
+          // ========================================
+          console.log('╔═══════════════════════════════════════════════════════════════');
+          console.log('║ [FRONTEND] UPLOADING FILE WITH AI VALIDATION FLAG');
+          console.log('╠═══════════════════════════════════════════════════════════════');
+          console.log('║ File:', file.name);
+          console.log('║ enableAiValidation:', this.enableAiValidation);
+          console.log('║ Type:', typeof this.enableAiValidation);
+          console.log('║ Will send to backend:', this.enableAiValidation ? 'YES ✅' : 'NO ❌');
+          console.log('╚═══════════════════════════════════════════════════════════════');
+          
           this.currentUploadSubscription = this.upload.postFile(file, this.enableAiValidation).subscribe({
           next: (response) => {
             // Clean up progress subscription and component reference
@@ -541,17 +555,29 @@ export class UploadComponent implements OnInit, OnDestroy {
             this.resetFileInput();
             this.currentUploadSubscription = null;
 
-            // Extract the error message from the response
+            // Extract the error message and code from the response
             let errorTitle = 'Upload Failed';
             let errorMessage = 'An error occurred while processing your document.';
+            let errorCode = 'INTERNAL_ERROR';
 
+            // Try to extract structured error from backend
             if (error && error.error && error.error.error) {
-              // Handle structured error from backend
-              errorMessage = error.error.error.message || errorMessage;
+              const backendError = error.error.error;
+              errorCode = backendError.code || errorCode;
+              errorMessage = backendError.message || errorMessage;
+              
+              // Use user-friendly message if error code is recognized
+              errorMessage = getUserFriendlyMessage(errorCode, errorMessage);
+            } else if (error && error.error && error.error.code) {
+              // Handle direct error code
+              errorCode = error.error.code;
+              errorMessage = getUserFriendlyMessage(errorCode, error.error.message);
             } else if (error && error.message) {
               // Handle simple error with message
               errorMessage = error.message;
             }
+
+            console.error('Upload error:', { errorCode, errorMessage, error });
 
             this.dialogService.open(TailwindDialogComponent, {
               data: {
