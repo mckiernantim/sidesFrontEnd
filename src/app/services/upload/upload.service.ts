@@ -590,6 +590,18 @@ export class UploadService {
   postFile(fileToUpload: File, enableAiValidation: boolean = false): Observable<any> {
     this.resetHttpOptions();
 
+    // ========================================
+    // 🆕 AI VALIDATION TRACKING LOG (UPLOAD SERVICE)
+    // ========================================
+    console.log('╔═══════════════════════════════════════════════════════════════');
+    console.log('║ [UPLOAD SERVICE] PREPARING FORM DATA');
+    console.log('╠═══════════════════════════════════════════════════════════════');
+    console.log('║ File:', fileToUpload.name);
+    console.log('║ enableAiValidation parameter:', enableAiValidation);
+    console.log('║ Type:', typeof enableAiValidation);
+    console.log('║ Will append to FormData as:', enableAiValidation.toString());
+    console.log('╚═══════════════════════════════════════════════════════════════');
+
     // Get current user from auth service
     return from(this.auth.user$).pipe(
       switchMap((user) => {
@@ -610,6 +622,17 @@ export class UploadService {
         formData.append('uploadTime', new Date().toISOString());
         // Add AI validation flag
         formData.append('enableAiValidation', enableAiValidation.toString());
+
+        console.log('╔═══════════════════════════════════════════════════════════════');
+        console.log('║ [UPLOAD SERVICE] FORM DATA PREPARED');
+        console.log('╠═══════════════════════════════════════════════════════════════');
+        console.log('║ FormData contents:');
+        console.log('║   - script:', fileToUpload.name);
+        console.log('║   - userEmail:', user.email);
+        console.log('║   - userId:', user.uid);
+        console.log('║   - enableAiValidation:', enableAiValidation.toString());
+        console.log('║ Posting to:', this.url + '/api');
+        console.log('╚═══════════════════════════════════════════════════════════════');
 
         return this.httpClient
           .post(this.url + '/api', formData, {

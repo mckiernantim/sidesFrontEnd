@@ -2534,6 +2534,25 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     console.log('PdfService: Document state reset complete');
   }
 
+  /**
+   * Clear only selected scenes without resetting the entire document state.
+   * Used when users want to generate more sides from the same document.
+   */
+  clearSelectedScenes(): void {
+    console.log('PdfService: Clearing selected scenes only');
+    this._selectedScenes = [];
+    this.selected = [];
+    this.initialSelection = [];
+    this._sceneOrderUpdated$.next([]);
+  }
+
+  /**
+   * Get the current script name
+   */
+  getScriptName(): string {
+    return this.script || localStorage.getItem('name') || '';
+  }
+
   get watermarkUpdated$(): Subject<{ watermark: string | null, action: 'add' | 'remove' }> {
     return this._watermarkUpdated$;
   }

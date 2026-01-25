@@ -1,50 +1,143 @@
 <div class="complete-container h-full min-h-[85vh] mx-5 flex flex-col justify-around shadow-lg p-10 rounded-lg">
   <div class="flex justify-center items-center">
     <div class="max-w-[70rem] w-full flex flex-col justify-center items-center border border-gray-200 px-6 md:px-20 py-8 rounded-lg mx-4 md:mx-auto">
-      <h1 class="text-2xl md:text-6xl mb-4 font-bold">Processing complete on: <em>{{ name }}</em></h1>
+      <h1 class="text-2xl md:text-5xl mb-4 font-bold text-center">Processing complete on: <em class="text-red-600">{{ name }}</em></h1>
       
       <!-- Error message display -->
-      <div *ngIf="error" class="w-full p-4 mb-6 bg-red-100 border-l-4 border-red-500 text-red-700">
+      <div *ngIf="error" class="w-full p-4 mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 rounded">
         <p>{{ error }}</p>
       </div>
       
-      <div *ngIf="documentDeleteActive" class="document-delete-timer bg-yellow-100 text-yellow-800 px-3 py-1 rounded mb-4 font-semibold flex items-center">
-        <svg class="w-4 h-4 mr-1 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <!-- Document timer -->
+      <div *ngIf="documentDeleteActive" class="document-delete-timer bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg mb-6 font-semibold flex items-center">
+        <svg class="w-5 h-5 mr-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <span>Your document will be <span class="font-bold">automatically deleted</span> in: <span class="font-mono">{{ countdownClock }}</span></span>
-      
+        <span>Your document will be <span class="font-bold">automatically deleted</span> in: <span class="font-mono text-lg">{{ countdownClock }}</span></span>
       </div>
       
-      <div class="p-4 border-b flex flex-col justify-between w-full">
-        <h2 class="text-xl md:text-2xl font-bold">Thanks for using Sides-Ways!</h2>
+      <!-- Action buttons grid -->
+      <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <!-- Download Button -->
+        <button 
+          class="flex items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+          [disabled]="isDownloading"
+          [class.opacity-50]="isDownloading"
+          [class.cursor-not-allowed]="isDownloading"
+          (click)="downloadPDF()">
+          <span *ngIf="isDownloading" class="animate-spin">
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </span>
+          <svg *ngIf="!isDownloading" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <span>{{ isDownloading ? 'Downloading...' : 'Download ' + name }}</span>
+        </button>
+
+        <!-- Generate More Sides Button -->
+        <button 
+          class="flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+          (click)="generateMoreSides()">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          <span>Generate more sides with {{ name }}</span>
+        </button>
+
+        <!-- Delete Button -->
+        <button 
+          class="flex items-center justify-center gap-3 bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg md:col-span-2"
+          [disabled]="isLoading" 
+          [class.opacity-50]="isLoading"
+          [class.cursor-not-allowed]="isLoading"
+          (click)="handleDeleteDocument()">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          <span>Delete My Sides</span>
+        </button>
+      </div>
+
+      <!-- Divider -->
+      <div class="w-full border-t border-gray-200 my-6"></div>
+
+      <!-- Rating Section -->
+      <div class="w-full max-w-lg">
+        <h2 class="text-xl md:text-2xl font-bold mb-4 text-center">Rate Your Experience</h2>
         
-        <div class="mt-4">
+        <div *ngIf="!ratingSubmitted; else ratingThankYou">
+          <!-- Star Rating -->
+          <div class="flex justify-center gap-2 mb-4">
+            <button 
+              *ngFor="let star of [1, 2, 3, 4, 5]"
+              (click)="setRating(star)"
+              (mouseenter)="setHoverRating(star)"
+              (mouseleave)="clearHoverRating()"
+              class="focus:outline-none transform transition-transform hover:scale-110">
+              <svg 
+                class="w-10 h-10 transition-colors duration-150"
+                [class.text-yellow-400]="star <= (hoverRating || rating)"
+                [class.text-gray-300]="star > (hoverRating || rating)"
+                fill="currentColor" 
+                viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Rating text -->
+          <p class="text-center text-gray-600 mb-4 text-sm">
+            {{ rating === 0 ? 'Click a star to rate' : 
+               rating === 1 ? 'Poor' : 
+               rating === 2 ? 'Fair' : 
+               rating === 3 ? 'Good' : 
+               rating === 4 ? 'Very Good' : 'Excellent!' }}
+          </p>
+
+          <!-- Comment Box -->
+          <div class="mb-4">
+            <label for="ratingComment" class="block text-sm font-medium text-gray-700 mb-2">
+              Share your feedback (optional)
+            </label>
+            <textarea 
+              id="ratingComment"
+              [(ngModel)]="ratingComment"
+              rows="3"
+              maxlength="500"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all"
+              placeholder="Tell us about your experience..."></textarea>
+            <p class="text-xs text-gray-500 mt-1 text-right">{{ ratingComment.length }}/500</p>
+          </div>
+
+          <!-- Submit Button -->
           <button 
-            class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center justify-center"
-            [disabled]="isDownloading"
-            (click)="downloadPDF()">
-            <span *ngIf="isDownloading" class="mr-2">
-              <!-- Simple loading spinner -->
-              <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            (click)="submitRating()"
+            [disabled]="rating === 0 || isSubmittingRating"
+            [class.opacity-50]="rating === 0 || isSubmittingRating"
+            [class.cursor-not-allowed]="rating === 0 || isSubmittingRating"
+            class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
+            <span *ngIf="isSubmittingRating" class="animate-spin">
+              <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
             </span>
-            {{ isDownloading ? 'Downloading...' : 'Download ' + name }}
+            <span>{{ isSubmittingRating ? 'Submitting...' : 'Submit Feedback' }}</span>
           </button>
         </div>
-        
-        <div class="mt-4">
-          <button 
-            class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-            [disabled]="isLoading" 
-            (click)="handleDeleteDocument()">
-            DELETE MY SIDES
-          </button>
-        </div>
-        
-        <h2 class="text-xl md:text-2xl font-bold mt-4">Please let us know if you had any issues.</h2>
+
+        <ng-template #ratingThankYou>
+          <div class="text-center py-6 bg-green-50 rounded-lg">
+            <svg class="w-16 h-16 mx-auto text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="text-xl font-bold text-green-700 mb-2">Thank You!</h3>
+            <p class="text-gray-600">Your feedback helps us improve Sides-Ways.</p>
+          </div>
+        </ng-template>
       </div>
     </div>
   </div>

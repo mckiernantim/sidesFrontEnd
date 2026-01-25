@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { UploadService } from '../../services/upload/upload.service';
 import { AuthService } from 'src/app/services/auth/auth.service';
+import { PdfService } from 'src/app/services/pdf/pdf.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { switchMap, catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
@@ -25,9 +26,17 @@ export class CompleteComponent implements OnInit, OnDestroy {
   documentDeleteActive: boolean = false;
   countdownClock: string = '';
 
+  // Rating state
+  rating: number = 0;
+  hoverRating: number = 0;
+  ratingComment: string = '';
+  ratingSubmitted: boolean = false;
+  isSubmittingRating: boolean = false;
+
   constructor(
     private upload: UploadService,
     private auth: AuthService,
+    private pdfService: PdfService,
     private router: Router,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef
@@ -42,6 +51,11 @@ export class CompleteComponent implements OnInit, OnDestroy {
       setTimeout(() => this.router.navigate(['/']), 2000);
       return;
     }
+    
+    // Clear selected scenes now that PDF generation is complete
+    // This ensures if users press back button, they start with fresh scene selection
+    this.pdfService.clearSelectedScenes();
+    
     // Start the countdown timer
     this.initDocumentDeleteCountdown();
     // Get userId from the current user object
@@ -217,5 +231,70 @@ export class CompleteComponent implements OnInit, OnDestroy {
 
   navigateToProfile() {
     this.router.navigate(['/profile']);
+  }
+
+  /**
+   * Navigate back to the dashboard to generate more sides with the same document.
+   * Clears selected scenes but preserves the document data.
+   */
+  generateMoreSides(): void {
+    // Clear selected scenes in PDF service so users start fresh with scene selection
+    this.pdfService.clearSelectedScenes();
+    
+    // Navigate back to the dashboard
+    this.router.navigate(['/dashboard']);
+  }
+
+  /**
+   * Set the rating value
+   */
+  setRating(value: number): void {
+    this.rating = value;
+  }
+
+  /**
+   * Set hover rating for visual feedback
+   */
+  setHoverRating(value: number): void {
+    this.hoverRating = value;
+  }
+
+  /**
+   * Clear hover rating when mouse leaves
+   */
+  clearHoverRating(): void {
+    this.hoverRating = 0;
+  }
+
+  /**
+   * Submit the rating and optional comment
+   */
+  submitRating(): void {
+    if (this.rating === 0) {
+      return;
+    }
+
+    this.isSubmittingRating = true;
+    
+    const ratingData = {
+      rating: this.rating,
+      comment: this.ratingComment.trim(),
+      documentName: this.name,
+      userId: this.userId,
+      timestamp: new Date().toISOString()
+    };
+
+    // For now, log the rating data - can be connected to a backend later
+    console.log('Rating submitted:', ratingData);
+    
+    // TODO: Connect to backend to store ratings
+    // this.upload.submitRating(ratingData).subscribe({...});
+    
+    // Simulate submission delay for better UX
+    setTimeout(() => {
+      this.isSubmittingRating = false;
+      this.ratingSubmitted = true;
+      this.cdr.detectChanges();
+    }, 500);
   }
 }
