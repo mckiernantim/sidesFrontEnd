@@ -7,6 +7,86 @@
           <!-- LEFT PANEL - Reduced width on larger screens -->
           <div class="bg-white rounded-lg shadow-md p-6 lg:max-h-none flex flex-col justify-around w-full xl:w-3/5">
             <h2 class="font-semibold text-2xl m-4">{{ script }} scenes</h2>
+            
+            <!-- View Mode Toggle -->
+            <div class="flex items-center justify-between mb-4 px-2">
+              <div class="flex items-center space-x-3">
+                <span class="text-sm font-medium" [class.text-gray-900]="viewMode === 'production'" [class.text-gray-400]="viewMode !== 'production'">Production</span>
+                <button 
+                  type="button"
+                  (click)="toggleViewMode()"
+                  class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2"
+                  [class.bg-indigo-600]="viewMode === 'casting'"
+                  [class.bg-gray-200]="viewMode === 'production'"
+                  role="switch"
+                  [attr.aria-checked]="viewMode === 'casting'">
+                  <span 
+                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                    [class.translate-x-5]="viewMode === 'casting'"
+                    [class.translate-x-0]="viewMode === 'production'">
+                  </span>
+                </button>
+                <span class="text-sm font-medium" [class.text-gray-900]="viewMode === 'casting'" [class.text-gray-400]="viewMode !== 'casting'">Casting</span>
+              </div>
+              
+              <!-- Character count badge when in casting mode -->
+              <div *ngIf="viewMode === 'casting' && selectedCharacters.length > 0" class="flex items-center">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                  {{ selectedCharacters.length }} character{{ selectedCharacters.length > 1 ? 's' : '' }} selected
+                </span>
+                <button 
+                  (click)="clearCharacterSelection()"
+                  class="ml-2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  title="Clear selection">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Character Selection Panel (only visible in casting mode) -->
+            <div *ngIf="viewMode === 'casting'" class="mb-4 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100">
+              <h3 class="text-sm font-semibold text-indigo-900 mb-3 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+                </svg>
+                Select Character{{ selectedCharacters.length > 1 ? 's' : '' }}
+              </h3>
+              <p class="text-xs text-gray-600 mb-3">
+                Click characters to filter scenes. Select multiple to find scenes with all selected characters.
+              </p>
+              <div class="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                <button 
+                  *ngFor="let character of availableCharacters"
+                  (click)="onCharacterSelect(character)"
+                  class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ease-in-out"
+                  [class.bg-indigo-600]="isCharacterSelected(character)"
+                  [class.text-white]="isCharacterSelected(character)"
+                  [class.bg-white]="!isCharacterSelected(character)"
+                  [class.text-gray-700]="!isCharacterSelected(character)"
+                  [class.border]="!isCharacterSelected(character)"
+                  [class.border-gray-300]="!isCharacterSelected(character)"
+                  [class.hover:border-indigo-400]="!isCharacterSelected(character)"
+                  [class.hover:bg-indigo-50]="!isCharacterSelected(character)"
+                  [class.shadow-sm]="isCharacterSelected(character)">
+                  {{ character }}
+                  <svg *ngIf="isCharacterSelected(character)" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+              
+              <!-- Filtered scene count -->
+              <div class="mt-3 pt-3 border-t border-indigo-100">
+                <p class="text-xs text-indigo-700">
+                  <span class="font-semibold">{{ filteredScenes.length }}</span> scene{{ filteredScenes.length !== 1 ? 's' : '' }} 
+                  <span *ngIf="selectedCharacters.length > 0">with {{ selectedCharacters.join(' & ') }}</span>
+                  <span *ngIf="selectedCharacters.length === 0">total</span>
+                </p>
+              </div>
+            </div>
+            
             <div class="scene-selection-container flex-grow overflow-auto">
               <div class="filter-container mb-4">
                 <input 
@@ -17,8 +97,8 @@
               </div>
 
               <app-tailwind-table 
-                [data]="scenes" 
-                [columns]="tableColumns"
+                [data]="currentScenes" 
+                [columns]="currentTableColumns"
                 [selectable]="true"
                 [pagination]="true"
                 [pageSize]="pageSize"
@@ -187,7 +267,12 @@
                       <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
                     </div>
                     <div class="p-2 w-full md:w-1/2 lg:w-auto">
-                      <app-add-watermark [hasWatermark]="hasWatermark" (waterMarkUpdate)="addWaterMark($event)" (waterMarkRemove)="removeWatermark()"></app-add-watermark>
+                      <app-add-watermark 
+                        [hasWatermark]="hasWatermark" 
+                        [showCastingDirector]="viewMode === 'casting'"
+                        (waterMarkUpdate)="addWaterMark($event)" 
+                        (waterMarkRemove)="removeWatermark()">
+                      </app-add-watermark>
                     </div>
                   </div>
                 </div>

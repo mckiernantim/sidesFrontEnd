@@ -20,6 +20,14 @@
                         </div>
                     </div>
                     
+                    <!-- Casting Director row (if present) - rendered below timestamp -->
+                    <div *ngIf="page[0].watermarkData.castingDirector" class="watermark-casting-row">
+                        <div class="watermark-casting-block" 
+                             *ngFor="let block of getWatermarkBlocks(page[0].watermarkData.repetitions)">
+                            {{ page[0].watermarkData.castingDirector }}
+                        </div>
+                    </div>
+                    
                     <!-- Actor name row -->
                     <div class="watermark-actor-row">
                         <div class="watermark-actor-block" 
@@ -33,6 +41,14 @@
                         <div class="watermark-timestamp-block" 
                              *ngFor="let block of getWatermarkBlocks(page[0].watermarkData.repetitions)">
                             {{ page[0].watermarkData.timestamp }}
+                        </div>
+                    </div>
+                    
+                    <!-- Casting Director row (if present) - rendered below timestamp -->
+                    <div *ngIf="page[0].watermarkData.castingDirector" class="watermark-casting-row">
+                        <div class="watermark-casting-block" 
+                             *ngFor="let block of getWatermarkBlocks(page[0].watermarkData.repetitions)">
+                            {{ page[0].watermarkData.castingDirector }}
                         </div>
                     </div>
                 </div>
@@ -111,6 +127,7 @@
                             (click)="canEditDocument && selectLine(line, $event)"
                             [style.bottom]="line.calculatedYpos"
                             [style.left]="line.calculatedXpos"
+                            [style.--line-left]="line.calculatedXpos"
                             [style.background-color]="editingLine === line.docPageLineIndex ? 'orange' : 'transparent'"
                             (blur)="editingLine === line.docPageLineIndex && saveEdit()"
                             (keydown)="editingLine === line.docPageLineIndex && handleEditKeyDown($event)"
@@ -123,7 +140,8 @@
                             [class]="line.category + ' ' + line.visible + ' ' + line.hidden"
                             [class.selected-line]="isSelectedLine(line, line.docPageLineIndex)"
                             [style.bottom]="line.calculatedYpos"
-                            [style.left]="line.calculatedXpos" 
+                            [style.left]="line.calculatedXpos"
+                            [style.--line-left]="line.calculatedXpos"
                             [textContent]="line.text"> 
                         </li>
                     </ng-template>

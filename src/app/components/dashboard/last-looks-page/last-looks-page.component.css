@@ -126,6 +126,36 @@ li.page-number {
     text-decoration-thickness: 25%;
 }
 
+/* Grey background for crossed-out content lines (not scene numbers or page numbers) */
+li.false:not(.page-number):not(.page-number-text):not(.page-number-hidden) {
+    z-index: 2;
+}
+
+li.false:not(.page-number):not(.page-number-text):not(.page-number-hidden)::before {
+    content: '';
+    position: absolute;
+    /* Start at left content margin (96px from page edge) */
+    /* Use negative offset from line's left position to reach 96px mark */
+    left: calc(-1 * (var(--line-left, 96px) - 96px));
+    /* Width spans the content area (approximately 635px) */
+    width: 635px;
+    /* Extend vertically just enough to connect with adjacent crossed-out lines */
+    top: -4px;
+    bottom: -4px;
+    background-color: #d3d3d3;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Scene numbers should NOT have grey background */
+span.false.scene-number-left::before,
+span.false.scene-number-right::before,
+span.scene-number-left.false::before,
+span.scene-number-right.false::before {
+    display: none !important;
+    background: none !important;
+}
+
 .legal {
     margin: 1000px 20px 0px 20px;
 }
@@ -384,6 +414,27 @@ span.CONTINUE {
     font-weight: 600;
     letter-spacing: 2px;
     text-transform: uppercase;
+    font-family: 'Arial', sans-serif;
+    margin: 0 15px;
+    white-space: nowrap;
+}
+
+/* Casting Director watermark styling */
+.watermark-casting-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    width: 100%;
+    margin-top: -15px; /* Reduce gap from timestamp row */
+}
+
+.watermark-casting-block {
+    font-size: 16px;
+    color: #666;
+    opacity: 0.25;
+    font-weight: 500;
+    letter-spacing: 1px;
     font-family: 'Arial', sans-serif;
     margin: 0 15px;
     white-space: nowrap;
@@ -1326,4 +1377,82 @@ li.page-number {
     width: 16px;
     height: 16px;
     margin-right: 6px;
+}
+/* ===== OMITTED SCENE STYLING ===== */
+/* Hollywood-style crossed out scene box */
+.omitted-scene-container {
+    position: absolute;
+    left: 40px;
+    right: 40px;
+    min-height: 50px;
+    background-color: #e8e8e8;
+    border: 3px solid #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    overflow: hidden;
+}
+
+/* The X pattern - using pseudo-elements for diagonal lines */
+.omitted-scene-container::before,
+.omitted-scene-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+/* First diagonal line (top-left to bottom-right) */
+.omitted-scene-container::before {
+    background: linear-gradient(
+        to bottom right,
+        transparent calc(50% - 1.5px),
+        #000 calc(50% - 1.5px),
+        #000 calc(50% + 1.5px),
+        transparent calc(50% + 1.5px)
+    );
+}
+
+/* Second diagonal line (top-right to bottom-left) */
+.omitted-scene-container::after {
+    background: linear-gradient(
+        to bottom left,
+        transparent calc(50% - 1.5px),
+        #000 calc(50% - 1.5px),
+        #000 calc(50% + 1.5px),
+        transparent calc(50% + 1.5px)
+    );
+}
+
+/* The omitted scene text content */
+.omitted-scene-content {
+    position: relative;
+    z-index: 10;
+    background-color: #e8e8e8;
+    padding: 4px 12px;
+    font-weight: 900;
+    font-size: 12pt;
+    text-align: center;
+}
+
+/* Scene numbers on sides of omitted box */
+.omitted-scene-number {
+    position: absolute;
+    font-weight: 900;
+    font-size: 12pt;
+    z-index: 10;
+    background-color: #e8e8e8;
+    padding: 2px 6px;
+}
+
+.omitted-scene-number.left {
+    left: 8px;
+}
+
+.omitted-scene-number.right {
+    right: 8px;
 }

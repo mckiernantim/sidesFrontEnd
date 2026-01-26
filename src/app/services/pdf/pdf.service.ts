@@ -317,14 +317,68 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
 
   getCharacters() {
     if (this.allLines) {
-      // GET CHARS
-      this.characters = this.allLines.filter((line) => {
-        return line.category === 'character';
-      });
-      this.characters = [
-        ...new Set(this.characters.map((line) => line.text.replace(/\s/g, ''))),
-      ];
+      // GET CHARS - only those with actual dialogue and valid names
+      const validCharacters: string[] = [];
+      
+      for (let i = 0; i < this.allLines.length; i++) {
+        const line = this.allLines[i];
+        
+        if (line?.category === 'character') {
+          // Check if this character has dialogue following it
+          const hasDialogue = this.characterHasDialogueGlobal(i);
+          
+          if (hasDialogue) {
+            // Clean up character name - remove parentheticals and whitespace
+            const cleanName = line.text.replace(/\s*\(.*\)/, '').replace(/\s/g, '').trim();
+            
+            // Validate the character name to filter out false positives
+            if (this.isValidCharacterName(cleanName) && !validCharacters.includes(cleanName)) {
+              validCharacters.push(cleanName);
+            }
+          }
+        }
+      }
+      
+      this.characters = validCharacters;
     }
+  }
+
+  /**
+   * Check if a character line has dialogue following it (global version without scene limit)
+   */
+  private characterHasDialogueGlobal(characterIndex: number): boolean {
+    // Look at the next few lines after the character line
+    for (let i = characterIndex + 1; i < Math.min(characterIndex + 5, this.allLines.length); i++) {
+      const nextLine = this.allLines[i];
+      if (!nextLine) continue;
+      
+      // If we hit another character or scene-header, this character has no dialogue
+      if (nextLine.category === 'character' || nextLine.category === 'scene-header') {
+        return false;
+      }
+      
+      // If we find dialogue, this is a valid character
+      if (nextLine.category === 'dialog') {
+        return true;
+      }
+      
+      // Parentheticals are okay - keep looking for dialogue
+      if (nextLine.category === 'parenthetical' || nextLine.subCategory === 'parenthetical') {
+        continue;
+      }
+      
+      // Skip page numbers, more, continue markers
+      if (['page-number', 'page-number-hidden', 'more', 'continue', 'continue-top'].includes(nextLine.category)) {
+        continue;
+      }
+      
+      // Description or other content means no dialogue for this character instance
+      if (nextLine.category === 'description') {
+        return false;
+      }
+    }
+    
+    return false;
   }
   getScenes() {
     if (this.individualPages && this.allLines) {
@@ -340,6 +394,8 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
 
         this.processSceneHeader(sceneRefInTable, sceneInActualScript);
         
+        // Extract characters for this scene
+        this.setSceneCharacters(i);
       }
     }
 
@@ -352,6 +408,258 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
         ? (this.allLines[i].pageNumber = 1)
         : this.allLines;
     }
+  }
+
+  /**
+   * Validate if a string is a valid character name
+   * Filters out false positives like "(", "I?", numbers only, etc.
+   */
+  private isValidCharacterName(name: string): boolean {
+    if (!name) return false;
+    
+    const trimmed = name.trim();
+    
+    // Must be at least 2 characters
+    if (trimmed.length < 2) return false;
+    
+    // Must contain at least one letter
+    if (!/[a-zA-Z]/.test(trimmed)) return false;
+    
+    // Should not be mostly punctuation (allow some like apostrophes, hyphens)
+    const letterCount = (trimmed.match(/[a-zA-Z]/g) || []).length;
+    const totalChars = trimmed.length;
+    if (letterCount / totalChars < 0.5) return false;
+    
+    // Filter out common false positive patterns
+    const invalidPatterns = [
+      /^\(.*\)$/, // Just parenthetical like "(V.O.)"
+      /^\?+$/, // Just question marks
+      /^[.,;:!?'"]+$/, // Just punctuation
+      /^I\?$/, // Common misparse
+      /^\d+$/, // Just numbers
+      /^[A-Z]\?$/, // Single letter with question mark
+      /^\.+$/, // Just periods
+      /^-+$/, // Just dashes
+      /^_+$/, // Just underscores
+      /^\s*$/, // Just whitespace
+    ];
+    
+    for (const pattern of invalidPatterns) {
+      if (pattern.test(trimmed)) return false;
+    }
+    
+    // Filter out strings that are too short after removing common suffixes
+    const withoutSuffix = trimmed.replace(/\s*\(.*\)$/, '').trim();
+    if (withoutSuffix.length < 2) return false;
+    
+    return true;
+  }
+
+  /**
+   * Extract unique characters for a specific scene
+   * Only includes characters that have actual dialogue lines (not false positives)
+   */
+  setSceneCharacters(sceneIndex: number) {
+    const scene = this.scenes[sceneIndex];
+    if (!scene || !this.allLines) {
+      scene.characters = [];
+      return;
+    }
+
+    const firstLineIndex = scene.firstLine || scene.index;
+    const lastLineIndex = scene.lastLine || this.allLines.length - 1;
+
+    // Find all character lines within this scene's range that have dialogue
+    const validCharacterNames: string[] = [];
+    
+    for (let i = firstLineIndex; i <= lastLineIndex; i++) {
+      const line = this.allLines[i];
+      
+      if (line?.category === 'character') {
+        // Check if this character has dialogue following it
+        const hasDialogue = this.characterHasDialogue(i, lastLineIndex);
+        
+        if (hasDialogue) {
+          // Clean up character name - remove parentheticals like (V.O.), (CONT'D)
+          const cleanName = line.text.replace(/\s*\(.*\)/, '').trim();
+          
+          // Validate the character name
+          if (this.isValidCharacterName(cleanName) && !validCharacterNames.includes(cleanName)) {
+            validCharacterNames.push(cleanName);
+          }
+        }
+      }
+    }
+
+    scene.characters = validCharacterNames;
+  }
+
+  /**
+   * Check if a character line has dialogue following it
+   * A valid character should have dialog or parenthetical+dialog after it
+   */
+  private characterHasDialogue(characterIndex: number, maxIndex: number): boolean {
+    // Look at the next few lines after the character line
+    for (let i = characterIndex + 1; i <= Math.min(characterIndex + 5, maxIndex); i++) {
+      const nextLine = this.allLines[i];
+      if (!nextLine) continue;
+      
+      // If we hit another character or scene-header, this character has no dialogue
+      if (nextLine.category === 'character' || nextLine.category === 'scene-header') {
+        return false;
+      }
+      
+      // If we find dialogue, this is a valid character
+      if (nextLine.category === 'dialog') {
+        return true;
+      }
+      
+      // Parentheticals are okay - keep looking for dialogue
+      if (nextLine.category === 'parenthetical' || nextLine.subCategory === 'parenthetical') {
+        continue;
+      }
+      
+      // Skip page numbers, more, continue markers
+      if (['page-number', 'page-number-hidden', 'more', 'continue', 'continue-top'].includes(nextLine.category)) {
+        continue;
+      }
+      
+      // Description or other content means no dialogue for this character instance
+      if (nextLine.category === 'description') {
+        return false;
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * Get dialogue line count for each character
+   * Returns a map of character name -> line count
+   */
+  getCharacterLineCounts(): Map<string, number> {
+    const lineCounts = new Map<string, number>();
+    
+    if (!this.allLines) return lineCounts;
+    
+    for (let i = 0; i < this.allLines.length; i++) {
+      const line = this.allLines[i];
+      
+      if (line?.category === 'character') {
+        // Clean up character name
+        const cleanName = line.text.replace(/\s*\(.*\)/, '').trim();
+        
+        // Skip invalid character names
+        if (!this.isValidCharacterName(cleanName)) continue;
+        
+        // Count dialogue lines following this character
+        let dialogueCount = 0;
+        for (let j = i + 1; j < Math.min(i + 50, this.allLines.length); j++) {
+          const nextLine = this.allLines[j];
+          if (!nextLine) continue;
+          
+          // Stop at next character or scene header
+          if (nextLine.category === 'character' || nextLine.category === 'scene-header') {
+            break;
+          }
+          
+          // Count dialogue lines
+          if (nextLine.category === 'dialog') {
+            dialogueCount++;
+          }
+        }
+        
+        if (dialogueCount > 0) {
+          const currentCount = lineCounts.get(cleanName) || 0;
+          lineCounts.set(cleanName, currentCount + dialogueCount);
+        }
+      }
+    }
+    
+    return lineCounts;
+  }
+
+  /**
+   * Get all unique characters across all scenes, sorted by dialogue line count (most lines first)
+   */
+  getAllCharacters(): string[] {
+    if (!this.scenes || this.scenes.length === 0) {
+      return this.characters || [];
+    }
+
+    const allChars = new Set<string>();
+    this.scenes.forEach(scene => {
+      if (scene.characters) {
+        scene.characters.forEach(char => allChars.add(char));
+      }
+    });
+
+    // Get line counts and sort by them
+    const lineCounts = this.getCharacterLineCounts();
+    
+    return Array.from(allChars).sort((a, b) => {
+      const countA = lineCounts.get(a) || 0;
+      const countB = lineCounts.get(b) || 0;
+      return countB - countA; // Descending order (most lines first)
+    });
+  }
+
+  /**
+   * Get characters that share at least one scene with ALL of the selected characters
+   * Used to filter available characters in casting mode
+   */
+  getCharactersInSharedScenes(selectedCharacters: string[]): string[] {
+    if (!this.scenes || selectedCharacters.length === 0) {
+      return this.getAllCharacters();
+    }
+
+    // Find scenes that contain ALL selected characters
+    const scenesWithSelected = this.scenes.filter(scene => {
+      if (!scene.characters || scene.characters.length === 0) return false;
+      return selectedCharacters.every(charName =>
+        scene.characters.some(sceneChar =>
+          sceneChar.toUpperCase() === charName.toUpperCase()
+        )
+      );
+    });
+
+    // Get all characters from those scenes
+    const availableChars = new Set<string>();
+    scenesWithSelected.forEach(scene => {
+      scene.characters?.forEach(char => availableChars.add(char));
+    });
+
+    // Get line counts for sorting
+    const lineCounts = this.getCharacterLineCounts();
+
+    // Return sorted by line count
+    return Array.from(availableChars).sort((a, b) => {
+      const countA = lineCounts.get(a) || 0;
+      const countB = lineCounts.get(b) || 0;
+      return countB - countA; // Descending order
+    });
+  }
+
+  /**
+   * Get scenes that contain specific character(s)
+   * If multiple characters provided, returns scenes containing ALL of them
+   */
+  getScenesForCharacters(characterNames: string[]): any[] {
+    if (!this.scenes || characterNames.length === 0) {
+      return this.scenes || [];
+    }
+
+    return this.scenes.filter(scene => {
+      if (!scene.characters || scene.characters.length === 0) {
+        return false;
+      }
+      // Check if scene contains all selected characters
+      return characterNames.every(charName => 
+        scene.characters.some(sceneChar => 
+          sceneChar.toUpperCase() === charName.toUpperCase()
+        )
+      );
+    });
   }
 
   setLinesInSceneToVisible(sceneArr, breaks) {
@@ -2557,14 +2865,14 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     return this._watermarkUpdated$;
   }
   
-  watermarkPages(watermark: string, doc: any[]) {
-    console.log('PDF Service: Adding watermark:', watermark);
+  watermarkPages(watermark: string, doc: any[], castingDirector?: string) {
+    console.log('PDF Service: Adding watermark:', watermark, castingDirector ? `(Casting: ${castingDirector})` : '');
 
     // Record undo state before adding watermark (save complete document state)
     if (this.undoService) {
       this.undoService.recordDocumentReorderChange(
         cloneDeep(doc),
-        `Add watermark: "${watermark}"`
+        `Add watermark: "${watermark}"${castingDirector ? ` with casting: ${castingDirector}` : ''}`
       );
     }
 
@@ -2581,12 +2889,17 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     });
 
     // Create the watermark data structure with ONLY 10 repetitions
-    const watermarkData = {
+    const watermarkData: any = {
       actorName: watermark,
       timestamp: timestamp,
       isActive: true,
-      repetitions: 10 // Reduced from 30 to 10
+      repetitions: 10
     };
+
+    // Add casting director if provided
+    if (castingDirector && castingDirector.trim()) {
+      watermarkData.castingDirector = castingDirector.trim();
+    }
 
     doc.forEach((page) => {
       // Store watermark data in the first line of each page
@@ -2596,7 +2909,8 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
           actorName: watermarkData.actorName,
           timestamp: watermarkData.timestamp,
           isActive: watermarkData.isActive,
-          repetitions: watermarkData.repetitions
+          repetitions: watermarkData.repetitions,
+          castingDirector: watermarkData.castingDirector || 'none'
         });
       }
     });
