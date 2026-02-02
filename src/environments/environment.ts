@@ -72,16 +72,22 @@ export function getConfig(isProd = false) {
   const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
   
   if (isLocalhost) {
+    // Check for remote backend override (useful for testing against dev server)
+    const useRemoteBackend = localStorage.getItem('USE_REMOTE_BACKEND') === 'true';
+    
     console.log('🏠 Running on localhost - Using DEV environment');
-    console.log(`📡 Backend: ${useLocalBackend ? 'http://localhost:8080 (LOCAL)' : 'https://sides3-dev-e045a1d9ac46.herokuapp.com (DEV)'}`);
+    console.log(`📡 Backend: ${useRemoteBackend ? 'https://sides3-dev-e045a1d9ac46.herokuapp.com (REMOTE DEV)' : 'http://localhost:8080 (LOCAL)'}`);
     console.log(`🔥 Firebase: scriptthing-dev`);
-    console.log('💡 Tip: To use local backend, run: localStorage.setItem("USE_LOCAL_BACKEND", "true")');
+    if (!useRemoteBackend) {
+      console.log('💡 Tip: To use remote dev backend, run: localStorage.setItem("USE_REMOTE_BACKEND", "true")');
+    }
     
     return {
       ...environment,
       production: false,
       firebaseConfig: devFirebaseConfig,
-      url: useLocalBackend ? 'http://localhost:8080' : 'https://sides3-dev-e045a1d9ac46.herokuapp.com'
+      // DEFAULT to localhost when running locally (flip the default!)
+      url: useRemoteBackend ? 'https://sides3-dev-e045a1d9ac46.herokuapp.com' : 'http://localhost:8080'
     };
   }
   
