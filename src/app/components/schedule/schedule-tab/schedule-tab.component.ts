@@ -11,6 +11,7 @@ import { Line } from '../../../types/Line';
 import { ScheduleStateService } from '../../../services/schedule/schedule-state.service';
 import { ScheduleService } from '../../../services/schedule/schedule.service';
 import { ScheduleApiService, ScheduleSummary } from '../../../services/schedule/schedule-api.service';
+import { ScheduleAutoSaveService } from '../../../services/schedule/schedule-auto-save.service';
 import { ProductionSchedule } from '../../../types/Schedule';
 import { AuthService } from '../../../services/auth/auth.service';
 
@@ -48,6 +49,7 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
   isSaving: boolean = false;
   saveError: string | null = null;
   savedSchedules: ScheduleSummary[] = [];
+  lastSavedAt: string | null = null;
 
   private userId: string = '';
   private subscriptions: Subscription[] = [];
@@ -56,6 +58,7 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
     private scheduleState: ScheduleStateService,
     private scheduleService: ScheduleService,
     private scheduleApi: ScheduleApiService,
+    private autoSave: ScheduleAutoSaveService,
     private authService: AuthService,
     private cdr: ChangeDetectorRef
   ) {}
@@ -64,7 +67,30 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
     // Watch the schedule state
     this.subscriptions.push(
       this.scheduleState.schedule$.subscribe((schedule) => {
+        const wasLoaded = this.scheduleLoaded;
         this.scheduleLoaded = !!schedule;
+
+        // Start auto-save when a schedule is first loaded
+        if (schedule && !wasLoaded && this.userId) {
+          this.autoSave.start();
+        }
+
+        this.cdr.markForCheck();
+      })
+    );
+
+    // Track saving state from auto-save
+    this.subscriptions.push(
+      this.scheduleState.isSaving$.subscribe((saving) => {
+        this.isSaving = saving;
+        this.cdr.markForCheck();
+      })
+    );
+
+    // Track last saved timestamp
+    this.subscriptions.push(
+      this.scheduleState.lastSavedAt$.subscribe((timestamp) => {
+        this.lastSavedAt = timestamp;
         this.cdr.markForCheck();
       })
     );
@@ -76,12 +102,17 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
         // When we have a user, load their saved schedules
         if (this.userId) {
           this.loadSavedSchedules();
+          // Start auto-save if schedule already loaded
+          if (this.scheduleLoaded) {
+            this.autoSave.start();
+          }
         }
       })
     );
   }
 
   ngOnDestroy(): void {
+    this.autoSave.stop();
     this.subscriptions.forEach((s) => s.unsubscribe());
   }
 
@@ -131,13 +162,17 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Saves the current schedule to the backend.
+   * Saves the current schedule immediately (bypasses debounce).
    */
   saveSchedule(): void {
-    const schedule = this.scheduleState.schedule;
-    if (!schedule) return;
+    this.autoSave.saveNow();
+  }
 
-    this.saveScheduleToBackend(schedule);
+  /**
+   * Whether there's a version conflict that needs user attention.
+   */
+  get hasVersionConflict(): boolean {
+    return this.autoSave.versionConflict;
   }
 
   /**

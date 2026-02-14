@@ -11,6 +11,7 @@ import { ScheduleTabComponent } from '../../components/schedule/schedule-tab/sch
 import { ScheduleStateService } from '../../services/schedule/schedule-state.service';
 import { ScheduleService } from '../../services/schedule/schedule.service';
 import { ScheduleApiService } from '../../services/schedule/schedule-api.service';
+import { ScheduleAutoSaveService } from '../../services/schedule/schedule-auto-save.service';
 
 /**
  * ScheduleModule — Declares all production scheduling components
@@ -47,6 +48,7 @@ import { ScheduleApiService } from '../../services/schedule/schedule-api.service
     ScheduleStateService,
     ScheduleService,
     ScheduleApiService,
+    ScheduleAutoSaveService,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })

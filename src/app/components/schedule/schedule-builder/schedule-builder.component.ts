@@ -15,6 +15,7 @@ import {
 } from '../../../types/Schedule';
 import { ScheduleStateService } from '../../../services/schedule/schedule-state.service';
 import { ScheduleService } from '../../../services/schedule/schedule.service';
+import { ScheduleAutoSaveService } from '../../../services/schedule/schedule-auto-save.service';
 
 /**
  * ScheduleBuilderComponent — The main schedule building interface.
@@ -39,6 +40,8 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
   schedule: ProductionSchedule | null = null;
   isDirty: boolean = false;
   isSaving: boolean = false;
+  lastSavedAt: string | null = null;
+  saveError: string | null = null;
 
   private subscriptions: Subscription[] = [];
 
@@ -48,6 +51,7 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
   constructor(
     private scheduleState: ScheduleStateService,
     private scheduleService: ScheduleService,
+    private autoSave: ScheduleAutoSaveService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -64,6 +68,11 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
       }),
       this.scheduleState.isSaving$.subscribe((saving) => {
         this.isSaving = saving;
+        this.cdr.markForCheck();
+      }),
+      this.scheduleState.lastSavedAt$.subscribe((timestamp) => {
+        this.lastSavedAt = timestamp;
+        this.saveError = this.autoSave.lastSaveError;
         this.cdr.markForCheck();
       })
     );
