@@ -1,0 +1,101 @@
+<div class="schedule-builder" *ngIf="schedule">
+  <!-- Schedule Header / Summary Bar -->
+  <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm mb-4 border border-gray-200">
+    <div>
+      <h2 class="text-xl font-bold text-gray-900">{{ schedule.projectTitle }} — Schedule</h2>
+      <p class="text-sm text-gray-500 mt-1">
+        {{ scheduleProgress }} scenes scheduled · {{ schedule.shootDays.length }} shoot day{{ schedule.shootDays.length !== 1 ? 's' : '' }} · {{ totalScheduleTime }} total
+      </p>
+    </div>
+    <div class="flex items-center space-x-3">
+      <span *ngIf="isDirty" class="text-xs text-amber-600 font-medium">● Unsaved changes</span>
+      <span *ngIf="isSaving" class="text-xs text-blue-600 font-medium animate-pulse">Saving...</span>
+      <button
+        (click)="addShootDay()"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
+        + Add Day
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content: Two-Panel Layout -->
+  <div class="flex flex-col xl:flex-row gap-4">
+
+    <!-- LEFT PANEL: Unscheduled Scenes Pool -->
+    <div class="xl:w-1/3 w-full">
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="p-3 bg-gray-50 border-b border-gray-200 rounded-t-lg">
+          <h3 class="text-sm font-bold text-gray-700">
+            Unscheduled Scenes
+            <span class="text-gray-400 font-normal ml-1">({{ schedule.unscheduledScenes.length }})</span>
+          </h3>
+        </div>
+
+        <div
+          class="p-2 min-h-[100px] max-h-[70vh] overflow-y-auto"
+          cdkDropList
+          [id]="unscheduledDropListId"
+          [cdkDropListData]="schedule.unscheduledScenes"
+          [cdkDropListConnectedTo]="allDropListIds"
+          (cdkDropListDropped)="onUnscheduledDrop($event)">
+
+          <div
+            *ngFor="let scene of schedule.unscheduledScenes; trackBy: trackBySceneId"
+            cdkDrag
+            [cdkDragData]="scene"
+            class="mb-1">
+            <app-scene-strip
+              [scene]="scene"
+              [compact]="true"
+              [showTimeline]="false"
+              (sceneClicked)="onSceneClicked($event)">
+            </app-scene-strip>
+          </div>
+
+          <div
+            *ngIf="schedule.unscheduledScenes.length === 0"
+            class="text-center py-8 text-gray-400 text-sm italic">
+            All scenes scheduled ✓
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Shoot Days -->
+    <div class="xl:w-2/3 w-full">
+      <div class="space-y-4">
+        <app-shoot-day-card
+          *ngFor="let day of schedule.shootDays; trackBy: trackByDayId"
+          [day]="day"
+          [editable]="true"
+          [dropListId]="'day-' + day.id"
+          [connectedDropLists]="getConnectedLists(day.id)"
+          (sceneDrop)="onDayDrop($event, day.id)"
+          (sceneRemoved)="onSceneRemoved($event)"
+          (sceneClicked)="onSceneClicked($event)"
+          (dayRemoved)="removeShootDay($event)"
+          (timeChanged)="onTimeChanged($event)">
+        </app-shoot-day-card>
+
+        <!-- Empty State -->
+        <div
+          *ngIf="schedule.shootDays.length === 0"
+          class="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
+          <div class="text-gray-400 text-lg mb-2">No shoot days yet</div>
+          <p class="text-gray-400 text-sm mb-4">Add a day and drag scenes from the unscheduled pool</p>
+          <button
+            (click)="addShootDay()"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-6 rounded-lg transition-colors">
+            + Add First Day
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- No Schedule State -->
+<div *ngIf="!schedule" class="text-center py-12">
+  <div class="text-gray-400 text-lg mb-2">No schedule loaded</div>
+  <p class="text-gray-400 text-sm">Upload a script and create a schedule to get started</p>
+</div>

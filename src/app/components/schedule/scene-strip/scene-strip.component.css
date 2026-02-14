@@ -1,0 +1,19 @@
+.scene-strip {
+  background-color: white;
+  border-color: #e5e7eb;
+}
+
+.scene-strip:hover {
+  background-color: #f9fafb;
+}
+
+.scene-strip.cdk-drag-preview {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  opacity: 0.9;
+}
+
+.scene-strip.cdk-drag-placeholder {
+  opacity: 0.3;
+  background-color: #e0e7ff;
+  border-style: dashed;
+}

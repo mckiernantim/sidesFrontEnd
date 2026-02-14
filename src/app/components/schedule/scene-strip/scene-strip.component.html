@@ -1,0 +1,72 @@
+<div
+  class="scene-strip flex items-center rounded-md border cursor-pointer transition-all duration-150 hover:shadow-md"
+  [ngClass]="{ 'p-2': compact, 'p-3': !compact, 'opacity-50': scene?.isOmitted }"
+  [style.border-left-width]="'4px'"
+  [style.border-left-color]="scene?.stripColor || '#9CA3AF'"
+  (click)="onStripClick()">
+
+  <!-- Scene Number + INT/EXT Badge -->
+  <div class="flex items-center min-w-[80px]">
+    <span class="font-bold text-sm mr-2">{{ scene?.sceneNumber }}</span>
+    <span
+      class="text-xs px-1.5 py-0.5 rounded font-medium"
+      [ngClass]="intExtBadgeClass">
+      {{ intExtBadge }}
+    </span>
+  </div>
+
+  <!-- Location + Time of Day -->
+  <div class="flex-1 mx-3 min-w-0">
+    <div class="text-sm font-medium truncate">{{ scene?.location }}</div>
+    <div *ngIf="!compact" class="text-xs text-gray-500 truncate">
+      {{ scene?.timeOfDay }}
+      <span *ngIf="scene?.characters?.length" class="ml-1">
+        · {{ scene.characters.length }} character{{ scene.characters.length !== 1 ? 's' : '' }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Page Count -->
+  <div class="text-xs text-gray-600 mx-2 text-right min-w-[40px]">
+    <div class="font-medium">{{ formattedPageCount }}</div>
+    <div *ngIf="!compact" class="text-gray-400">pgs</div>
+  </div>
+
+  <!-- Timeline / Estimated Time -->
+  <div *ngIf="showTimeline" class="flex items-center text-xs mx-2 min-w-[80px]">
+    <button
+      *ngIf="editable"
+      (click)="decrementTime($event)"
+      class="w-5 h-5 flex items-center justify-center rounded bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors"
+      title="Decrease time estimate">
+      −
+    </button>
+    <span class="mx-1 font-medium text-indigo-700 whitespace-nowrap">{{ formattedTime }}</span>
+    <button
+      *ngIf="editable"
+      (click)="incrementTime($event)"
+      class="w-5 h-5 flex items-center justify-center rounded bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors"
+      title="Increase time estimate">
+      +
+    </button>
+  </div>
+
+  <!-- Night/Flags Indicators -->
+  <div class="flex items-center space-x-1 mx-1">
+    <span *ngIf="scene?.needsNight" class="text-yellow-500" title="Night shoot">🌙</span>
+    <span *ngIf="scene?.hasStunts" class="text-red-500" title="Stunts">⚡</span>
+    <span *ngIf="scene?.hasEffects" class="text-blue-500" title="Effects">✨</span>
+    <span *ngIf="scene?.hasVehicles" class="text-gray-500" title="Vehicles">🚗</span>
+  </div>
+
+  <!-- Remove Button (when editable) -->
+  <button
+    *ngIf="editable"
+    (click)="onRemoveClick($event)"
+    class="ml-2 text-gray-400 hover:text-red-500 transition-colors"
+    title="Remove from day">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+    </svg>
+  </button>
+</div>

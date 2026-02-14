@@ -178,8 +178,8 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
   // Add a selectedScenes map to track selections
   selectedScenesMap: Map<number, any> = new Map();
 
-  // Casting Mode - Scene view mode toggle
-  viewMode: 'production' | 'casting' = 'production';
+  // Scene view mode toggle (Production / Casting / Schedule)
+  viewMode: 'production' | 'casting' | 'schedule' = 'production';
   selectedCharacters: string[] = [];
   allCharacters: string[] = [];
   filteredScenes: any[] = [];
@@ -533,20 +533,29 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
   /**
    * Toggle between production mode (scenes by scene number) and casting mode (scenes by character)
    */
-  toggleViewMode() {
-    this.viewMode = this.viewMode === 'production' ? 'casting' : 'production';
-    
-    if (this.viewMode === 'production') {
-      // Reset to show all scenes in order
+  /**
+   * Set the view mode to a specific tab.
+   */
+  setViewMode(mode: 'production' | 'casting' | 'schedule') {
+    this.viewMode = mode;
+
+    if (mode === 'production') {
       this.filteredScenes = [...this.scenes];
       this.selectedCharacters = [];
-    } else {
-      // Initialize filtered scenes for casting mode
+    } else if (mode === 'casting') {
       this.updateFilteredScenes();
     }
-    
+    // 'schedule' mode renders <app-schedule-tab> — no scene filtering needed
+
     console.log('View mode changed to:', this.viewMode);
     this.cdr.detectChanges();
+  }
+
+  /**
+   * Legacy toggle between production and casting (kept for backward compat).
+   */
+  toggleViewMode() {
+    this.setViewMode(this.viewMode === 'production' ? 'casting' : 'production');
   }
 
   /**
@@ -1354,6 +1363,10 @@ async sendFinalDocumentToServer(finalDocument) {
         lastLooksReady: this.lastLooksReady,
         pdfFinalDocReady: this.pdf.finalDocReady
       });
+    } else {
+      // User is navigating back to scene select - clear selected scenes in the service
+      console.log('Navigating back to scene select - clearing selected scenes in service');
+      this.pdf.clearSelectedScenes();
     }
   }
 
