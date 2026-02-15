@@ -279,4 +279,23 @@ export class ScheduleStateService {
   markDirty(): void {
     this.isDirtySubject.next(true);
   }
+
+  /**
+   * Sync the local schedule version with the backend version.
+   * Call this after a successful save to prevent version drift
+   * between the client and server.
+   */
+  syncVersion(backendVersion: number): void {
+    const schedule = this.schedule;
+    if (!schedule) return;
+
+    // Only sync if the backend version is different from local
+    if (schedule.version !== backendVersion) {
+      this.scheduleSubject.next({
+        ...schedule,
+        version: backendVersion,
+      });
+      // Don't mark dirty — this is a metadata sync, not a user change
+    }
+  }
 }

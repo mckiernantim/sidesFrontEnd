@@ -207,7 +207,12 @@ export class ScheduleApiService {
           userMessage = `Failed to ${operation.replace(/([A-Z])/g, ' $1').toLowerCase()}: ${serverMessage}`;
       }
 
-      return throwError(() => new Error(userMessage));
+      // Preserve HTTP status code so callers (e.g. auto-save) can react to specific errors
+      const enrichedError: any = new Error(userMessage);
+      enrichedError.status = status;
+      enrichedError.originalError = error;
+
+      return throwError(() => enrichedError);
     };
   }
 }

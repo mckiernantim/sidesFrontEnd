@@ -1,12 +1,14 @@
 import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 
 import { SceneStripComponent } from '../../components/schedule/scene-strip/scene-strip.component';
 import { ShootDayCardComponent } from '../../components/schedule/shoot-day-card/shoot-day-card.component';
 import { ScheduleBuilderComponent } from '../../components/schedule/schedule-builder/schedule-builder.component';
 import { ScheduleTabComponent } from '../../components/schedule/schedule-tab/schedule-tab.component';
+import { SchedulePageComponent } from '../../components/schedule/schedule-page/schedule-page.component';
 
 import { ScheduleStateService } from '../../services/schedule/schedule-state.service';
 import { ScheduleService } from '../../services/schedule/schedule.service';
@@ -22,6 +24,7 @@ import { ScheduleAutoSaveService } from '../../services/schedule/schedule-auto-s
  * - ShootDayCardComponent: A shoot day card with scene drop zone
  * - ScheduleBuilderComponent: The main schedule builder layout
  * - ScheduleTabComponent: Dashboard integration tab container
+ * - SchedulePageComponent: Standalone schedule page (profile → schedule deep-link)
  *
  * Services:
  * - ScheduleStateService: Reactive schedule state management
@@ -33,16 +36,19 @@ import { ScheduleAutoSaveService } from '../../services/schedule/schedule-auto-s
     ShootDayCardComponent,
     ScheduleBuilderComponent,
     ScheduleTabComponent,
+    SchedulePageComponent,
   ],
   imports: [
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
+    RouterModule,
     DragDropModule,
   ],
   exports: [
     ScheduleTabComponent,
     ScheduleBuilderComponent,
+    SchedulePageComponent,
   ],
   providers: [
     ScheduleStateService,

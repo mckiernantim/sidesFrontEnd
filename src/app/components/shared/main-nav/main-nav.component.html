@@ -14,13 +14,20 @@
       </div>
       
       <div class="flex items-center space-x-4">
-        <!-- Current Script Name Badge -->
-        <div *ngIf="currentScriptName && isLoggedIn" class="hidden md:flex items-center gap-2 bg-gray-700/50 px-3 py-1.5 rounded-lg border border-gray-600">
-          <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- Current Script Name Badge (clickable → dashboard) -->
+        <a
+          *ngIf="currentScriptName && isLoggedIn"
+          [routerLink]="['/dashboard']"
+          class="hidden md:flex items-center gap-2 bg-gray-700/50 px-3 py-1.5 rounded-lg border border-gray-600 hover:border-indigo-400 hover:bg-gray-600/60 cursor-pointer transition-all group"
+          [title]="'Open ' + currentScriptName + ' in Dashboard'">
+          <svg class="w-4 h-4 text-red-400 group-hover:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          <span class="text-sm text-gray-300 font-medium max-w-[200px] truncate" [title]="currentScriptName">{{ currentScriptName }}</span>
-        </div>
+          <span class="text-sm text-gray-300 group-hover:text-white font-medium max-w-[200px] truncate">{{ currentScriptName }}</span>
+          <svg class="w-3 h-3 text-gray-500 group-hover:text-indigo-300 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+        </a>
 
         <ng-container *ngIf="!isLoggedIn; else loggedInTemplate">
           <button (click)="signIn()" class="text-gray-400 hover:text-white transition-colors">Login</button>

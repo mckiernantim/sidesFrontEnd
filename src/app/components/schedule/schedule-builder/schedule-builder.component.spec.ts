@@ -4,6 +4,7 @@ import { ShootDayCardComponent } from '../shoot-day-card/shoot-day-card.componen
 import { SceneStripComponent } from '../scene-strip/scene-strip.component';
 import { ScheduleStateService } from '../../../services/schedule/schedule-state.service';
 import { ScheduleService } from '../../../services/schedule/schedule.service';
+import { ScheduleAutoSaveService } from '../../../services/schedule/schedule-auto-save.service';
 import {
   ProductionSchedule,
   ScheduleScene,
@@ -12,6 +13,15 @@ import {
 } from '../../../types/Schedule';
 import { CommonModule } from '@angular/common';
 import { DragDropModule } from '@angular/cdk/drag-drop';
+
+class MockAutoSaveService {
+  start = jest.fn();
+  stop = jest.fn();
+  saveNow = jest.fn();
+  get isActive(): boolean { return false; }
+  get versionConflict(): boolean { return false; }
+  get lastSaveError(): string | null { return null; }
+}
 
 function createMockScene(overrides: Partial<ScheduleScene> = {}): ScheduleScene {
   return {
@@ -91,7 +101,11 @@ describe('ScheduleBuilderComponent', () => {
         SceneStripComponent,
       ],
       imports: [CommonModule, DragDropModule],
-      providers: [ScheduleStateService, ScheduleService],
+      providers: [
+        ScheduleStateService,
+        ScheduleService,
+        { provide: ScheduleAutoSaveService, useClass: MockAutoSaveService },
+      ],
     }).compileComponents();
 
     stateService = TestBed.inject(ScheduleStateService);

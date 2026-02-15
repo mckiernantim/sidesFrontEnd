@@ -1,5 +1,5 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { Subscription, Subject, of, EMPTY } from 'rxjs';
+import { Observable, Subscription, Subject, of, EMPTY } from 'rxjs';
 import {
   debounceTime,
   filter,
@@ -50,6 +50,12 @@ export class ScheduleAutoSaveService implements OnDestroy {
   private _saveAttemptCount = 0;
   private _versionConflict = false;
 
+  /**
+   * Tracks whether the current schedule has been persisted to the backend
+   * at least once. When false, uses POST (create); when true, uses PUT (update).
+   */
+  private _savedToBackend = false;
+
   /** Max retry attempts on transient failures */
   static readonly MAX_RETRIES = 3;
 
@@ -66,14 +72,35 @@ export class ScheduleAutoSaveService implements OnDestroy {
   // ─────────────────────────────────────────────
 
   /**
+   * Mark the current schedule as already persisted to the backend.
+   * Call this after a successful initial save (POST) from the tab component.
+   */
+  markSavedToBackend(): void {
+    this._savedToBackend = true;
+  }
+
+  /**
+   * Whether the schedule has been saved to the backend at least once.
+   */
+  get isSavedToBackend(): boolean {
+    return this._savedToBackend;
+  }
+
+  /**
    * Start the auto-save pipeline. Should be called once when a
    * schedule is loaded and the user is authenticated.
+   *
+   * @param alreadySaved — Pass true when loading an existing schedule
+   *                       from the backend (it already has a Firestore doc).
    */
-  start(): void {
+  start(alreadySaved: boolean = false): void {
     if (this.active) return;
     this.active = true;
     this._lastSaveError = null;
     this._versionConflict = false;
+    if (alreadySaved) {
+      this._savedToBackend = true;
+    }
 
     // Auto-save: fires when isDirty$ becomes true, debounced by 1s
     this.autoSaveSub = this.scheduleState.isDirty$.pipe(
@@ -98,6 +125,7 @@ export class ScheduleAutoSaveService implements OnDestroy {
    */
   stop(): void {
     this.active = false;
+    this._savedToBackend = false;
     this.autoSaveSub?.unsubscribe();
     this.autoSaveSub = null;
     this.manualSaveSub?.unsubscribe();
@@ -158,7 +186,7 @@ export class ScheduleAutoSaveService implements OnDestroy {
     // Mark as saving in state
     this.scheduleState.setSaving(true);
 
-    // Choose create vs update based on whether this schedule exists
+    // Choose create vs update based on whether this schedule has been persisted
     const save$ = this.getSaveObservable(schedule);
 
     return save$.pipe(
@@ -179,12 +207,19 @@ export class ScheduleAutoSaveService implements OnDestroy {
           );
         },
       }),
-      tap(() => {
-        // Success
-        this.scheduleState.markSaved();
+      tap((response: any) => {
+        // Success — mark as saved and sync backend version
+        this._savedToBackend = true;
         this._lastSaveError = null;
         this._versionConflict = false;
         this._saveAttemptCount = 0;
+
+        // Sync the backend version to the local state to prevent drift
+        if (response?.version && this.scheduleState.schedule) {
+          this.scheduleState.syncVersion(response.version);
+        }
+
+        this.scheduleState.markSaved();
       }),
       catchError((error) => {
         // Failed after retries
@@ -213,14 +248,28 @@ export class ScheduleAutoSaveService implements OnDestroy {
   }
 
   /**
-   * Returns the correct API observable based on schedule state.
-   * New schedules (version 1, never saved) use POST, updates use PUT.
+   * Returns the correct API observable based on schedule persistence state.
+   *
+   * - If the schedule has never been saved to the backend, use POST (create).
+   * - If it has been saved before, use PUT (update).
+   * - If PUT returns 404 (schedule deleted externally), fall back to POST.
    */
-  private getSaveObservable(schedule: ProductionSchedule) {
-    // If schedule version is 1 and it hasn't been saved yet,
-    // use create. Otherwise use update.
-    // The version gets incremented by ScheduleStateService on every change,
-    // so version > 1 means it's been modified and needs an update.
-    return this.scheduleApi.updateSchedule(schedule);
+  private getSaveObservable(schedule: ProductionSchedule): Observable<any> {
+    if (!this._savedToBackend) {
+      // New schedule — create it
+      return this.scheduleApi.createSchedule(schedule);
+    }
+
+    // Existing schedule — try update, fall back to create on 404
+    return this.scheduleApi.updateSchedule(schedule).pipe(
+      catchError((error) => {
+        if (error?.status === 404) {
+          console.warn('ScheduleAutoSave: PUT returned 404, falling back to POST');
+          this._savedToBackend = false;
+          return this.scheduleApi.createSchedule(schedule);
+        }
+        throw error; // Re-throw non-404 errors for retry handling
+      })
+    );
   }
 }

@@ -111,6 +111,7 @@ describe('ScheduleAutoSaveService', () => {
       const mockSchedule = createMockSchedule();
       stateService.setSchedule(mockSchedule);
       service.start();
+      service.markSavedToBackend(); // Simulate schedule already persisted
 
       // Trigger a dirty change
       stateService.updateSchedule(mockSchedule);
@@ -126,6 +127,7 @@ describe('ScheduleAutoSaveService', () => {
       const mockSchedule = createMockSchedule();
       stateService.setSchedule(mockSchedule);
       service.start();
+      service.markSavedToBackend(); // Simulate schedule already persisted
 
       // Three rapid updates within the debounce window
       stateService.updateSchedule(mockSchedule);
@@ -182,6 +184,7 @@ describe('ScheduleAutoSaveService', () => {
       const mockSchedule = createMockSchedule();
       stateService.setSchedule(mockSchedule);
       service.start();
+      service.markSavedToBackend(); // Simulate schedule already persisted
 
       stateService.updateSchedule(mockSchedule);
 
@@ -215,6 +218,7 @@ describe('ScheduleAutoSaveService', () => {
       const mockSchedule = createMockSchedule();
       stateService.setSchedule(mockSchedule);
       service.start();
+      service.markSavedToBackend(); // Simulate schedule already persisted
 
       stateService.updateSchedule(mockSchedule);
       service.saveNow();
@@ -231,6 +235,7 @@ describe('ScheduleAutoSaveService', () => {
       const mockSchedule = createMockSchedule();
       stateService.setSchedule(mockSchedule);
       service.start();
+      service.markSavedToBackend(); // Simulate schedule already persisted
 
       stateService.updateSchedule(mockSchedule);
       service.saveNow();
@@ -247,6 +252,7 @@ describe('ScheduleAutoSaveService', () => {
       const mockSchedule = createMockSchedule();
       stateService.setSchedule(mockSchedule);
       service.start();
+      service.markSavedToBackend(); // Simulate schedule already persisted
 
       stateService.updateSchedule(mockSchedule);
       service.saveNow();
@@ -263,6 +269,7 @@ describe('ScheduleAutoSaveService', () => {
       const mockSchedule = createMockSchedule();
       stateService.setSchedule(mockSchedule);
       service.start();
+      service.markSavedToBackend(); // Simulate schedule already persisted
 
       stateService.updateSchedule(mockSchedule);
       service.saveNow();
@@ -280,6 +287,7 @@ describe('ScheduleAutoSaveService', () => {
       const mockSchedule = createMockSchedule();
       stateService.setSchedule(mockSchedule);
       service.start();
+      service.markSavedToBackend(); // Simulate schedule already persisted
 
       stateService.updateSchedule(mockSchedule);
       service.saveNow();
@@ -294,6 +302,33 @@ describe('ScheduleAutoSaveService', () => {
 
       expect(service.versionConflict).toBe(false);
       expect(service.lastSaveError).toBeNull();
+    });
+
+    it('should use createSchedule for new unsaved schedules', () => {
+      const mockSchedule = createMockSchedule();
+      stateService.setSchedule(mockSchedule);
+      service.start();
+      // Do NOT call markSavedToBackend — this is a new schedule
+
+      stateService.updateSchedule(mockSchedule);
+      service.saveNow();
+
+      // Should use createSchedule (POST) since schedule hasn't been saved yet
+      expect(apiService.createSchedule).toHaveBeenCalledTimes(1);
+      expect(apiService.updateSchedule).not.toHaveBeenCalled();
+    });
+
+    it('should mark schedule as saved to backend after successful create', () => {
+      const mockSchedule = createMockSchedule();
+      stateService.setSchedule(mockSchedule);
+      service.start();
+      // New schedule — not yet saved
+
+      stateService.updateSchedule(mockSchedule);
+      service.saveNow();
+
+      // After successful POST, subsequent saves should use PUT
+      expect(service.isSavedToBackend).toBe(true);
     });
   });
 

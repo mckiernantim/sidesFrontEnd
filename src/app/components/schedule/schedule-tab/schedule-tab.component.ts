@@ -12,6 +12,8 @@ import { ScheduleStateService } from '../../../services/schedule/schedule-state.
 import { ScheduleService } from '../../../services/schedule/schedule.service';
 import { ScheduleApiService, ScheduleSummary } from '../../../services/schedule/schedule-api.service';
 import { ScheduleAutoSaveService } from '../../../services/schedule/schedule-auto-save.service';
+import { TailwindDialogService } from '../../../services/tailwind-dialog/tailwind-dialog.service';
+import { TailwindDialogComponent } from '../../shared/tailwind-dialog/tailwind-dialog.component';
 import { ProductionSchedule } from '../../../types/Schedule';
 import { AuthService } from '../../../services/auth/auth.service';
 
@@ -24,6 +26,7 @@ import { AuthService } from '../../../services/auth/auth.service';
  * - Seeds the schedule from classify output via ScheduleService
  * - Passes the schedule to ScheduleBuilderComponent via ScheduleStateService
  * - Saves / loads schedules via ScheduleApiService
+ * - CRUD: New schedule, delete with confirmation, schedule selector
  * - Handles the "Create Schedule" button when no schedule exists
  */
 @Component({
@@ -51,6 +54,12 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
   savedSchedules: ScheduleSummary[] = [];
   lastSavedAt: string | null = null;
 
+  /** Whether the schedule selector dropdown is open */
+  scheduleSelectorOpen: boolean = false;
+
+  /** Whether the schedule is being deleted */
+  isDeleting: boolean = false;
+
   private userId: string = '';
   private subscriptions: Subscription[] = [];
 
@@ -60,6 +69,7 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
     private scheduleApi: ScheduleApiService,
     private autoSave: ScheduleAutoSaveService,
     private authService: AuthService,
+    private dialogService: TailwindDialogService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -116,6 +126,10 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
     this.subscriptions.forEach((s) => s.unsubscribe());
   }
 
+  // ─────────────────────────────────────────────
+  // Schedule Creation
+  // ─────────────────────────────────────────────
+
   /**
    * Creates a new production schedule from the classified script data.
    * Seeds the schedule via ScheduleService and activates it in ScheduleStateService.
@@ -162,6 +176,65 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Starts a new schedule. If a schedule is already loaded with unsaved
+   * changes, prompts the user to confirm before discarding.
+   */
+  confirmNewSchedule(): void {
+    if (!this.allLines || this.allLines.length === 0) {
+      console.warn('ScheduleTab: No allLines available to create schedule');
+      return;
+    }
+
+    if (this.scheduleLoaded && this.scheduleState.isDirty) {
+      const dialogRef = this.dialogService.open(TailwindDialogComponent, {
+        data: {
+          title: 'Unsaved Changes',
+          content: 'You have unsaved changes to the current schedule. Creating a new schedule will discard them.',
+          actions: [
+            { label: 'Cancel', value: 'cancel', style: 'secondary' },
+            { label: 'Discard & Create New', value: 'confirm', style: 'danger' },
+          ],
+        },
+      });
+
+      dialogRef.afterClosed().subscribe((result) => {
+        if (result === 'confirm') {
+          this.autoSave.stop();
+          this.scheduleState.clearSchedule();
+          this.createSchedule();
+        }
+      });
+    } else if (this.scheduleLoaded) {
+      // Schedule loaded but not dirty — just confirm replacement
+      const dialogRef = this.dialogService.open(TailwindDialogComponent, {
+        data: {
+          title: 'Create New Schedule',
+          content: 'This will replace the current schedule with a fresh one. Continue?',
+          actions: [
+            { label: 'Cancel', value: 'cancel', style: 'secondary' },
+            { label: 'Create New', value: 'confirm', style: 'primary' },
+          ],
+        },
+      });
+
+      dialogRef.afterClosed().subscribe((result) => {
+        if (result === 'confirm') {
+          this.autoSave.stop();
+          this.scheduleState.clearSchedule();
+          this.createSchedule();
+        }
+      });
+    } else {
+      // No schedule loaded — create directly
+      this.createSchedule();
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // Schedule Saving
+  // ─────────────────────────────────────────────
+
+  /**
    * Saves the current schedule immediately (bypasses debounce).
    */
   saveSchedule(): void {
@@ -175,16 +248,24 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
     return this.autoSave.versionConflict;
   }
 
+  // ─────────────────────────────────────────────
+  // Schedule Loading & Switching
+  // ─────────────────────────────────────────────
+
   /**
    * Loads a previously saved schedule from the backend.
    */
   loadSchedule(scheduleId: string): void {
     this.isLoading = true;
+    this.scheduleSelectorOpen = false;
     this.cdr.markForCheck();
 
     this.scheduleApi.getSchedule(scheduleId).subscribe({
       next: (response) => {
+        this.autoSave.stop();
         this.scheduleState.setSchedule(response.schedule);
+        // Schedule is loaded from backend, so it's already persisted
+        this.autoSave.markSavedToBackend();
         this.isLoading = false;
         this.cdr.markForCheck();
         console.log('ScheduleTab: Schedule loaded from backend:', scheduleId);
@@ -198,23 +279,135 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Deletes a saved schedule.
+   * Switches to a different saved schedule. If the current schedule has
+   * unsaved changes, prompts the user to confirm first.
+   */
+  switchSchedule(scheduleId: string): void {
+    // Don't switch to the already-active schedule
+    if (this.scheduleState.schedule?.id === scheduleId) {
+      this.scheduleSelectorOpen = false;
+      return;
+    }
+
+    if (this.scheduleState.isDirty) {
+      const dialogRef = this.dialogService.open(TailwindDialogComponent, {
+        data: {
+          title: 'Unsaved Changes',
+          content: 'You have unsaved changes. Switch schedules anyway?',
+          actions: [
+            { label: 'Cancel', value: 'cancel', style: 'secondary' },
+            { label: 'Discard & Switch', value: 'confirm', style: 'danger' },
+          ],
+        },
+      });
+
+      dialogRef.afterClosed().subscribe((result) => {
+        if (result === 'confirm') {
+          this.loadSchedule(scheduleId);
+        }
+      });
+    } else {
+      this.loadSchedule(scheduleId);
+    }
+  }
+
+  /**
+   * Toggles the schedule selector dropdown.
+   */
+  toggleScheduleSelector(): void {
+    this.scheduleSelectorOpen = !this.scheduleSelectorOpen;
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Closes the schedule selector dropdown.
+   */
+  closeScheduleSelector(): void {
+    this.scheduleSelectorOpen = false;
+    this.cdr.markForCheck();
+  }
+
+  // ─────────────────────────────────────────────
+  // Schedule Deletion
+  // ─────────────────────────────────────────────
+
+  /**
+   * Shows a confirmation dialog before deleting a schedule.
+   */
+  confirmDeleteSchedule(scheduleId: string, title?: string): void {
+    const scheduleName = title || 'this schedule';
+    const dialogRef = this.dialogService.open(TailwindDialogComponent, {
+      data: {
+        title: 'Delete Schedule',
+        content: `Are you sure you want to delete <strong>${scheduleName}</strong>? This action cannot be undone.`,
+        actions: [
+          { label: 'Cancel', value: 'cancel', style: 'secondary' },
+          { label: 'Delete', value: 'confirm', style: 'danger' },
+        ],
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result === 'confirm') {
+        this.deleteSchedule(scheduleId);
+      }
+    });
+  }
+
+  /**
+   * Confirms deletion of the currently active schedule.
+   */
+  confirmDeleteCurrentSchedule(): void {
+    const schedule = this.scheduleState.schedule;
+    if (!schedule) return;
+
+    this.confirmDeleteSchedule(schedule.id, schedule.projectTitle);
+  }
+
+  /**
+   * Deletes a saved schedule from the backend.
    */
   deleteSchedule(scheduleId: string): void {
+    this.isDeleting = true;
+    this.cdr.markForCheck();
+
     this.scheduleApi.deleteSchedule(scheduleId).subscribe({
       next: () => {
         this.savedSchedules = this.savedSchedules.filter((s) => s.id !== scheduleId);
         // If the deleted schedule was active, clear state
         if (this.scheduleState.schedule?.id === scheduleId) {
-          this.scheduleState.setSchedule(null as any);
+          this.autoSave.stop();
+          this.scheduleState.clearSchedule();
         }
+        this.isDeleting = false;
         this.cdr.markForCheck();
         console.log('ScheduleTab: Schedule deleted:', scheduleId);
       },
       error: (err) => {
+        this.isDeleting = false;
+        this.cdr.markForCheck();
         console.error('ScheduleTab: Failed to delete schedule:', err);
       },
     });
+  }
+
+  // ─────────────────────────────────────────────
+  // Getters for template
+  // ─────────────────────────────────────────────
+
+  /**
+   * Returns the currently active schedule (for template access).
+   */
+  get currentSchedule(): ProductionSchedule | null {
+    return this.scheduleState.schedule;
+  }
+
+  /**
+   * Returns saved schedules excluding the active one (for the selector).
+   */
+  get otherSavedSchedules(): ScheduleSummary[] {
+    const activeId = this.scheduleState.schedule?.id;
+    return this.savedSchedules.filter((s) => s.id !== activeId);
   }
 
   // ─────────────────────────────────────────────
@@ -236,6 +429,15 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
         this.saveError = null;
         this.cdr.markForCheck();
         console.log('ScheduleTab: Schedule saved to backend:', response);
+
+        // Tell auto-save that this schedule now exists on the backend
+        this.autoSave.markSavedToBackend();
+
+        // Sync version from backend response if available
+        if ((response as any)?.version && this.scheduleState.schedule) {
+          this.scheduleState.syncVersion((response as any).version);
+        }
+
         // Refresh the saved schedules list
         this.loadSavedSchedules();
       },
