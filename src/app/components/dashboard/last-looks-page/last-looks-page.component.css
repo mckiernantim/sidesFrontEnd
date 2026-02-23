@@ -1,3 +1,19 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ⚠️  SACRED SCREENPLAY FORMATTING - DO NOT MODIFY ⚠️
+
+   This file contains traditional Hollywood screenplay formatting.
+   The following elements are SACRED and must never be changed:
+
+   1. Font: Courier Prime, monospace (industry standard)
+   2. Font Size: 12pt for script text, 16pt for bars
+   3. Page Size: 816px × 1056px (standard US Letter)
+   4. Colors: Black text on white background
+   5. Margins: Industry-standard screenplay margins
+
+   These styles use !important to override global design system styles.
+   Modifying these will break industry-standard script formatting.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 @import url('https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap');
 
 @page {
@@ -24,14 +40,17 @@
     cursor: grab;
 }
 
+/* ═══ SACRED SCREENPLAY STYLING - DO NOT MODIFY ═══ */
+/* This preserves traditional Courier font for script pages */
 .page {
-    font-family: 'Courier Prime', monospace;
+    font-family: 'Courier Prime', monospace !important;
     height: 1056px;
     width: 816px;
-    background-color: white;
+    background-color: white !important;
     margin: 0 auto;
     position: relative;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: black !important;
 }
 
 .grab-cursor {
@@ -62,8 +81,11 @@
     height: 100%;
 }
 
+/* Sacred screenplay elements */
 p {
     display: block;
+    font-family: 'Courier Prime', monospace !important;
+    color: black !important;
 }
 
 .screenbox {
@@ -72,8 +94,10 @@ p {
     width: 100%;
     height: 100%;
     padding: 0;
+    font-family: 'Courier Prime', monospace !important;
 }
 
+/* Script elements MUST use Courier Prime - override global styles */
 li,
 span {
     position: absolute;
@@ -81,8 +105,9 @@ span {
     line-height: normal;
     padding: 0;
     margin: 0;
-    font-size: 12pt;
-    color: black;
+    font-size: 12pt !important;
+    font-family: 'Courier Prime', monospace !important;
+    color: black !important;
 }
 
 .bar-span {
@@ -1080,8 +1105,10 @@ li.crossed-out {
     padding: 2px 10px !important;
     margin: 0;
     border-radius: 3px;
-    font-size: 16pt;
+    font-size: 16pt !important;
     font-weight: 900 !important;
+    font-family: 'Courier Prime', monospace !important;
+    color: black !important;
 }
 
 .edit-mode .bar-text:hover {

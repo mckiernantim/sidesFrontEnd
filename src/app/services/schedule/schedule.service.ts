@@ -20,6 +20,7 @@ import {
 } from '../../utils/buildCharacterSceneMap';
 import { Line } from '../../types/Line';
 import { ScheduleStateService } from './schedule-state.service';
+import { PdfService } from '../pdf/pdf.service';
 
 /**
  * ScheduleService — bridges the scan-classify pipeline output to the
@@ -64,7 +65,7 @@ export class ScheduleService {
     const { sceneCharacterMap, allCharacters } = buildCharacterSceneMap(allLines, scenes);
 
     // Convert classify scenes to ScheduleScene objects
-    const scheduleScenes = this.buildScheduleScenes(scenes, sceneCharacterMap);
+    const scheduleScenes = this.buildScheduleScenes(scenes, sceneCharacterMap, allLines);
 
     // Build cast members from character data
     const castMembers = this.buildCastMembers(allCharacters, sceneCharacterMap, scheduleScenes);
@@ -123,7 +124,42 @@ export class ScheduleService {
   }
 
   /**
+   * Seeds a schedule from PDF service (single source of truth).
+   * PDF service must have already processed the script (allLines and scenes populated).
+   */
+  seedScheduleFromPdfService(
+    projectId: string,
+    projectTitle: string,
+    userId: string,
+    pdfService: PdfService
+  ): ProductionSchedule {
+    console.log('🚀 seedScheduleFromPdfService called');
+    console.log(`  PDF Service allLines: ${pdfService.allLines?.length || 0}`);
+    console.log(`  PDF Service scenes: ${pdfService.scenes?.length || 0}`);
+
+    if (!pdfService.allLines || pdfService.allLines.length === 0) {
+      throw new Error('PDF Service has no allLines. Cannot create schedule.');
+    }
+
+    if (!pdfService.scenes || pdfService.scenes.length === 0) {
+      throw new Error('PDF Service has no scenes. Cannot create schedule.');
+    }
+
+    const schedule = this.seedScheduleFromClassifyData(
+      projectId,
+      projectTitle,
+      userId,
+      pdfService.allLines,
+      pdfService.scenes
+    );
+
+    this.scheduleState.setSchedule(schedule);
+    return schedule;
+  }
+
+  /**
    * Seeds a schedule and immediately loads it into the ScheduleStateService.
+   * @deprecated Use seedScheduleFromPdfService instead
    */
   seedAndActivateSchedule(
     projectId: string,
@@ -153,8 +189,11 @@ export class ScheduleService {
    */
   buildScheduleScenes(
     scenes: SceneRef[],
-    sceneCharacterMap: Map<string, SceneCharacter[]>
+    sceneCharacterMap: Map<string, SceneCharacter[]>,
+    allLines: Line[]
   ): ScheduleScene[] {
+    console.log(`🏗️ buildScheduleScenes called with ${scenes.length} scenes and ${allLines.length} allLines`);
+
     return scenes.map((scene, index) => {
       const sceneNumber = String(scene.sceneNumberText || scene.sceneNumber || `${index + 1}`);
       const headerText = scene.text || '';
@@ -163,10 +202,22 @@ export class ScheduleService {
       // Get characters for this scene
       const characters = sceneCharacterMap.get(sceneNumber) || [];
 
+      // Extract description lines for this scene using index (startLine) and lastLine
+      const firstLine = scene.index ?? 0;
+      let lastLine = scene.lastLine ?? firstLine;
+
+      // Defensive: If lastLine is before firstLine (corrupted data), set to firstLine
+      if (lastLine < firstLine) {
+        console.warn(`⚠️  Scene ${sceneNumber}: Invalid lastLine (${lastLine} < ${firstLine}). Using firstLine as lastLine.`);
+        lastLine = firstLine;
+      }
+
+      console.log(`📋 Scene ${sceneNumber} (${headerText}): index=${scene.index}, lastLine=${scene.lastLine}, extracting from ${firstLine} to ${lastLine}`);
+      const descriptions = this.extractDescriptionLines(allLines, firstLine, lastLine);
+      console.log(`  ✅ Found ${descriptions.length} description lines`);
+
       // Estimate page count from line range
-      const startLine = scene.index ?? 0;
-      const endLine = scene.lastLine ?? startLine;
-      const lineSpan = endLine - startLine;
+      const lineSpan = lastLine - firstLine;
       // Rough estimate: ~56 lines per page in standard screenplay format
       const pageCount = Math.max(0.125, Math.round((lineSpan / 56) * 8) / 8);
 
@@ -181,6 +232,7 @@ export class ScheduleService {
         scriptPageStart: scene.index ?? 0,
         scriptPageEnd: scene.lastLine ?? 0,
         characters,
+        descriptions,
         oneLiner: '',
         oneLinerSource: 'manual',
         oneLinerEdited: false,
@@ -196,6 +248,39 @@ export class ScheduleService {
 
       return scheduleScene;
     });
+  }
+
+  /**
+   * Extracts description/action lines from a scene's line range.
+   * Uses the same approach as PDF service - gets lines between firstLine and lastLine,
+   * excluding metadata categories.
+   */
+  private extractDescriptionLines(allLines: Line[], firstLine: number, lastLine: number): string[] {
+    const skipCategories = [
+      'scene-header',
+      'character',
+      'page-number',
+      'page-number-hidden',
+      'more',
+      'continue',
+      'continue-top',
+      'shot',
+      'draft-color-text'
+    ];
+
+    const descriptions: string[] = [];
+
+    for (let i = firstLine; i <= lastLine && i < allLines.length; i++) {
+      const line = allLines[i];
+      if (line &&
+          !skipCategories.includes(line.category) &&
+          line.text &&
+          line.text.trim().length > 0) {
+        descriptions.push(line.text.trim());
+      }
+    }
+
+    return descriptions;
   }
 
   // ─────────────────────────────────────────────
@@ -337,6 +422,109 @@ export class ScheduleService {
    */
   formatTime(increments: number): string {
     return formatFifteenMinIncrements(increments);
+  }
+
+  // ─────────────────────────────────────────────
+  // Validation Helpers
+  // ─────────────────────────────────────────────
+
+  /**
+   * Checks if the PDF service has valid data required for schedule creation
+   * and one-liner generation.
+   *
+   * @param pdfService - The PDF service instance to check
+   * @returns boolean - True if PDF service has allLines and scenes with valid data
+   */
+  hasPdfServiceData(pdfService?: PdfService): boolean {
+    if (!pdfService) {
+      console.log('❌ hasPdfServiceData: no pdfService provided');
+      return false;
+    }
+
+    if (!pdfService.allLines || pdfService.allLines.length === 0) {
+      console.log('❌ hasPdfServiceData: pdfService has no allLines');
+      return false;
+    }
+
+    if (!pdfService.scenes || pdfService.scenes.length === 0) {
+      console.log('❌ hasPdfServiceData: pdfService has no scenes');
+      return false;
+    }
+
+    console.log(`✅ hasPdfServiceData: pdfService has ${pdfService.allLines.length} lines and ${pdfService.scenes.length} scenes`);
+    return true;
+  }
+
+  /**
+   * Checks if a schedule has valid scene descriptions needed for AI one-liner generation.
+   * Returns an object with detailed validation results.
+   *
+   * @param schedule - The production schedule to validate
+   * @returns Object with validation results and statistics
+   */
+  validateScheduleForOneLinerGeneration(schedule: ProductionSchedule): {
+    isValid: boolean;
+    totalScenes: number;
+    scenesWithDescriptions: number;
+    scenesWithoutDescriptions: number;
+    missingScenes: string[];
+    reason?: string;
+  } {
+    if (!schedule) {
+      return {
+        isValid: false,
+        totalScenes: 0,
+        scenesWithDescriptions: 0,
+        scenesWithoutDescriptions: 0,
+        missingScenes: [],
+        reason: 'No schedule provided'
+      };
+    }
+
+    // Collect all scenes from the schedule
+    const allScenes: ScheduleScene[] = [
+      ...(schedule.unscheduledScenes || []),
+      ...(schedule.shootDays || []).flatMap(day => day.scenes || [])
+    ];
+
+    if (allScenes.length === 0) {
+      return {
+        isValid: false,
+        totalScenes: 0,
+        scenesWithDescriptions: 0,
+        scenesWithoutDescriptions: 0,
+        missingScenes: [],
+        reason: 'Schedule has no scenes'
+      };
+    }
+
+    // Check which scenes have descriptions
+    const scenesWithDescriptions = allScenes.filter(s =>
+      s.descriptions && s.descriptions.length > 0
+    );
+    const scenesWithoutDescriptions = allScenes.filter(s =>
+      !s.descriptions || s.descriptions.length === 0
+    );
+
+    const missingScenes = scenesWithoutDescriptions.map(s => s.sceneNumber);
+
+    console.log('📊 validateScheduleForOneLinerGeneration:', {
+      totalScenes: allScenes.length,
+      scenesWithDescriptions: scenesWithDescriptions.length,
+      scenesWithoutDescriptions: scenesWithoutDescriptions.length,
+      missingScenes
+    });
+
+    return {
+      isValid: scenesWithoutDescriptions.length === 0,
+      totalScenes: allScenes.length,
+      scenesWithDescriptions: scenesWithDescriptions.length,
+      scenesWithoutDescriptions: scenesWithoutDescriptions.length,
+      missingScenes,
+      reason: scenesWithoutDescriptions.length > 0
+        ? `${scenesWithoutDescriptions.length} scene(s) missing descriptions`
+        : undefined
+    };
   }
 
   // ─────────────────────────────────────────────

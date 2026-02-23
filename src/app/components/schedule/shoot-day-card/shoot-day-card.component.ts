@@ -47,6 +47,12 @@ export class ShootDayCardComponent {
   @Output() sceneClicked = new EventEmitter<ScheduleScene>();
   @Output() dayRemoved = new EventEmitter<string>();
   @Output() timeChanged = new EventEmitter<{ scene: ScheduleScene; newTime: number }>();
+  @Output() oneLinerChanged = new EventEmitter<{
+    sceneId: string;
+    text: string;
+    source: 'manual';
+  }>();
+  @Output() generateDayOneLiners = new EventEmitter<string>(); // Emits dayId
 
   /**
    * Returns the formatted total estimated time for this day.
@@ -106,6 +112,32 @@ export class ShootDayCardComponent {
 
   onTimeChanged(event: { scene: ScheduleScene; newTime: number }): void {
     this.timeChanged.emit(event);
+  }
+
+  onOneLinerChanged(event: { sceneId: string; text: string; source: 'manual' }): void {
+    this.oneLinerChanged.emit(event);
+  }
+
+  onGenerateDayOneLiners(): void {
+    this.generateDayOneLiners.emit(this.day.id);
+  }
+
+  /**
+   * Returns true if this day has at least one scene with descriptions.
+   */
+  get canGenerateOneLiners(): boolean {
+    if (!this.day || !this.day.scenes || this.day.scenes.length === 0) {
+      return false;
+    }
+    return this.day.scenes.some(scene => scene.descriptions && scene.descriptions.length > 0);
+  }
+
+  /**
+   * Returns the count of scenes ready for one-liner generation.
+   */
+  get scenesReadyForOneLiners(): number {
+    if (!this.day || !this.day.scenes) return 0;
+    return this.day.scenes.filter(scene => scene.descriptions && scene.descriptions.length > 0).length;
   }
 
   trackBySceneId(index: number, scene: ScheduleScene): string {

@@ -70,3 +70,14 @@
     </svg>
   </button>
 </div>
+
+<!-- One-Liner Editor (below main scene strip) -->
+<div *ngIf="shouldShowOneLiner" class="mt-1 px-3 pb-2" (click)="$event.stopPropagation()">
+  <app-one-liner-editor
+    [oneLiner]="scene?.oneLiner || ''"
+    [oneLinerSource]="scene?.oneLinerSource || 'manual'"
+    [editable]="editable"
+    [compact]="compact"
+    (oneLinerChanged)="onOneLinerChanged($event)">
+  </app-one-liner-editor>
+</div>

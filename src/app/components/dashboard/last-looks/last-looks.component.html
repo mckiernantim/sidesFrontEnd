@@ -2,23 +2,23 @@
   <div class="flex h-full">
     <!-- Document Viewer (Main Content) -->
     <div class="w-full flex flex-col overflow-hidden min-w-0 h-full">
-      <!-- Pagination Controls - Moved here -->
-      <div class="bg-white p-4 border-b border-gray-200">
-        <div class="flex justify-between space-x-2">
+      <!-- Pagination Controls -->
+      <div class="bg-sw-surface p-4 border-b border-sw-border">
+        <div class="flex justify-between items-center space-x-2">
           <button 
-            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            class="flex-1 px-4 py-2 border border-sw-border text-sw-text-muted rounded-lg hover:border-sw-accent hover:text-sw-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed bg-transparent"
             (click)="previousPage()" 
             [disabled]="currentPageIndex === 0">
-            Previous
+            ‹‹ Previous
           </button>
-          <div class="flex items-center justify-center px-4 text-gray-700 font-medium">
+          <div class="flex items-center justify-center px-4 text-sw-text-muted font-medium whitespace-nowrap">
             Page {{currentPageIndex + 1}} of {{pages?.length || 0}}
           </div>
           <button 
-            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            class="flex-1 px-4 py-2 border border-sw-border text-sw-text-muted rounded-lg hover:border-sw-accent hover:text-sw-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed bg-transparent"
             (click)="nextPage()" 
             [disabled]="currentPageIndex === (pages?.length - 1)">
-            Next
+            Next ››
           </button>
         </div>
       </div>
@@ -43,4 +43,3 @@
     </div>
   </div>
 </main>
-  

@@ -2,19 +2,13 @@
     min-height: 100vh;
     height: auto;
     text-align: center;
-    /* background: var(--white); */
-    /* text-shadow: 1px 1px black; */
     overflow: visible;
-    
 }
 .white-logo{
     background-image: url("../../../assets/icons/logoFlatWhite.png");
     background-size: contain;
     background-repeat:no-repeat;
-
     margin:0 auto;
-    /* height:250px;
-    width:250px; */
 }
 .main-container {
     display:flex;
@@ -40,17 +34,15 @@
     min-height: 100vh;
     height: auto;
     width: 100%;
+    background-color: var(--sw-bg);
 }
 
 /* Ensure child components can grow */
 app-dashboard-right {
-   
-        flex-direction: column;
-        height: auto;
-        overflow: hidden;
-        background-color: #f9fafb;
-        margin-bottom: 1rem;
-        min-height: 1200px
+    flex-direction: column;
+    height: auto;
+    overflow: hidden;
+    background-color: var(--sw-bg);
+    margin-bottom: 1rem;
+    min-height: 1200px;
 }
-
-

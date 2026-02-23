@@ -16,6 +16,7 @@ import { TailwindDialogService } from '../../../services/tailwind-dialog/tailwin
 import { TailwindDialogComponent } from '../../shared/tailwind-dialog/tailwind-dialog.component';
 import { ProductionSchedule } from '../../../types/Schedule';
 import { AuthService } from '../../../services/auth/auth.service';
+import { PdfService } from '../../../services/pdf/pdf.service';
 
 /**
  * ScheduleTabComponent — Container that bridges the existing dashboard
@@ -37,10 +38,13 @@ import { AuthService } from '../../../services/auth/auth.service';
   standalone: false,
 })
 export class ScheduleTabComponent implements OnInit, OnDestroy {
-  /** All classified lines from scan-classify output */
+  /** PDF Service - single source of truth for script data */
+  @Input() pdfService?: PdfService;
+
+  /** All classified lines from scan-classify output (DEPRECATED: use pdfService) */
   @Input() allLines: Line[] = [];
 
-  /** Scene references (firstAndLastLinesOfScenes from PdfService) */
+  /** Scene references (firstAndLastLinesOfScenes from PdfService) (DEPRECATED: use pdfService) */
   @Input() scenes: any[] = [];
 
   /** Project title (script name) */
@@ -135,8 +139,15 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
    * Seeds the schedule via ScheduleService and activates it in ScheduleStateService.
    */
   createSchedule(): void {
-    if (!this.allLines || this.allLines.length === 0) {
-      console.warn('ScheduleTab: No allLines available to create schedule');
+    // Check if we have any data to work with
+    const hasAllLines = this.allLines && this.allLines.length > 0;
+    const hasPdfService = this.pdfService &&
+                         this.pdfService.allLines &&
+                         this.pdfService.allLines.length > 0;
+
+    if (!hasAllLines && !hasPdfService) {
+      console.warn('ScheduleTab: No script data available to create schedule');
+      alert('Please upload and process a script first before creating a schedule.');
       return;
     }
 
@@ -145,30 +156,54 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
 
     try {
       const projectId = `proj-${Date.now()}`;
-      const schedule = this.scheduleService.seedAndActivateSchedule(
-        projectId,
-        this.projectTitle || 'Untitled Project',
-        this.userId || 'anonymous',
-        this.allLines,
-        this.scenes
-      );
+      let schedule: ProductionSchedule;
 
-      console.log(
-        'ScheduleTab: Schedule created with',
-        schedule.unscheduledScenes.length,
-        'scenes,',
-        schedule.castMembers.length,
-        'cast members,',
-        schedule.locations.length,
-        'locations'
-      );
+      // Prefer PDF Service if available (single source of truth)
+      if (hasPdfService) {
+        console.log('ScheduleTab: Creating schedule from PDF Service');
+        schedule = this.scheduleService.seedScheduleFromPdfService(
+          projectId,
+          this.projectTitle || 'Untitled Project',
+          this.userId || 'anonymous',
+          this.pdfService!
+        );
+
+        console.log(
+          'ScheduleTab: Schedule created from PDF Service with',
+          schedule.unscheduledScenes.length,
+          'scenes,',
+          schedule.castMembers.length,
+          'cast members'
+        );
+      } else {
+        // Fallback to legacy allLines/scenes method
+        console.log('ScheduleTab: Creating schedule from allLines (legacy)');
+        schedule = this.scheduleService.seedAndActivateSchedule(
+          projectId,
+          this.projectTitle || 'Untitled Project',
+          this.userId || 'anonymous',
+          this.allLines,
+          this.scenes
+        );
+
+        console.log(
+          'ScheduleTab: Schedule created with',
+          schedule.unscheduledScenes.length,
+          'scenes,',
+          schedule.castMembers.length,
+          'cast members,',
+          schedule.locations.length,
+          'locations'
+        );
+      }
 
       // Auto-save to backend if user is authenticated
-      if (this.userId) {
+      if (this.userId && schedule) {
         this.saveScheduleToBackend(schedule);
       }
-    } catch (err) {
-      console.error('ScheduleTab: Failed to create schedule:', err);
+    } catch (error) {
+      console.error('ScheduleTab: Failed to create schedule:', error);
+      alert('Failed to create schedule. Please try uploading your script again.');
     } finally {
       this.isLoading = false;
       this.cdr.markForCheck();
@@ -180,8 +215,15 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
    * changes, prompts the user to confirm before discarding.
    */
   confirmNewSchedule(): void {
-    if (!this.allLines || this.allLines.length === 0) {
-      console.warn('ScheduleTab: No allLines available to create schedule');
+    // Check if we have any data to work with
+    const hasAllLines = this.allLines && this.allLines.length > 0;
+    const hasPdfService = this.pdfService &&
+                         this.pdfService.allLines &&
+                         this.pdfService.allLines.length > 0;
+
+    if (!hasAllLines && !hasPdfService) {
+      console.warn('ScheduleTab: No script data available to create schedule');
+      alert('Please upload and process a script first before creating a schedule.');
       return;
     }
 
@@ -408,6 +450,26 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
   get otherSavedSchedules(): ScheduleSummary[] {
     const activeId = this.scheduleState.schedule?.id;
     return this.savedSchedules.filter((s) => s.id !== activeId);
+  }
+
+  /**
+   * Checks if PDF service has valid data for one-liner generation.
+   * This is required for Flow #1 (new script upload).
+   */
+  get hasPdfServiceData(): boolean {
+    return this.scheduleService.hasPdfServiceData(this.pdfService);
+  }
+
+  /**
+   * Checks if we have any script data available to create a schedule.
+   * Returns true if either pdfService OR allLines/scenes have data.
+   */
+  get hasScriptData(): boolean {
+    const hasAllLines = this.allLines && this.allLines.length > 0;
+    const hasPdfService = this.pdfService &&
+                         this.pdfService.allLines &&
+                         this.pdfService.allLines.length > 0;
+    return hasAllLines || hasPdfService;
   }
 
   // ─────────────────────────────────────────────

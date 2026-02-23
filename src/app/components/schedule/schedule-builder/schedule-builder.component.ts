@@ -1,5 +1,6 @@
 import {
   Component,
+  Input,
   OnInit,
   OnDestroy,
   ChangeDetectionStrategy,
@@ -16,6 +17,8 @@ import {
 import { ScheduleStateService } from '../../../services/schedule/schedule-state.service';
 import { ScheduleService } from '../../../services/schedule/schedule.service';
 import { ScheduleAutoSaveService } from '../../../services/schedule/schedule-auto-save.service';
+import { OneLinerService, SceneForOneLiner } from '../../../services/schedule/one-liner.service';
+import { PdfService } from '../../../services/pdf/pdf.service';
 
 /**
  * ScheduleBuilderComponent — The main schedule building interface.
@@ -28,6 +31,10 @@ import { ScheduleAutoSaveService } from '../../../services/schedule/schedule-aut
  * Scenes can be dragged from the unscheduled pool to shoot days,
  * between days, or back to the pool. All changes flow through
  * ScheduleStateService which manages the reactive state.
+ *
+ * One-Liner Generation:
+ * - Requires PDF service to have valid data (allLines and scenes)
+ * - If PDF data is not available, one-liner generation is disabled
  */
 @Component({
   selector: 'app-schedule-builder',
@@ -37,11 +44,15 @@ import { ScheduleAutoSaveService } from '../../../services/schedule/schedule-aut
   standalone: false,
 })
 export class ScheduleBuilderComponent implements OnInit, OnDestroy {
+  /** PDF Service - required for AI one-liner generation */
+  @Input() pdfService?: PdfService;
+
   schedule: ProductionSchedule | null = null;
   isDirty: boolean = false;
   isSaving: boolean = false;
   lastSavedAt: string | null = null;
   saveError: string | null = null;
+  isGeneratingOneLiners: boolean = false;
 
   private subscriptions: Subscription[] = [];
 
@@ -52,6 +63,7 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
     private scheduleState: ScheduleStateService,
     private scheduleService: ScheduleService,
     private autoSave: ScheduleAutoSaveService,
+    private oneLinerService: OneLinerService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -123,6 +135,17 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
       0
     );
     return `${scheduled} / ${total}`;
+  }
+
+  /**
+   * Returns the total number of scenes in the schedule.
+   */
+  get totalScenes(): number {
+    if (!this.schedule) return 0;
+    return (
+      this.schedule.unscheduledScenes.length +
+      this.schedule.shootDays.reduce((sum, d) => sum + d.scenes.length, 0)
+    );
   }
 
   // ─────────────────────────────────────────────
@@ -214,6 +237,14 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
     console.log('Scene clicked:', scene.sceneNumber, scene.location);
   }
 
+  /**
+   * Handle one-liner changes from any scene strip (in days or unscheduled pool).
+   * Updates the ScheduleScene in ScheduleStateService → triggers auto-save.
+   */
+  onOneLinerChanged(event: { sceneId: string; text: string; source: 'manual' }): void {
+    this.scheduleState.updateSceneOneLiner(event.sceneId, event.text, event.source);
+  }
+
   onTimeChanged(event: { scene: ScheduleScene; newTime: number }): void {
     if (!this.schedule) return;
 
@@ -265,5 +296,179 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
 
   trackBySceneId(index: number, scene: ScheduleScene): string {
     return scene.id;
+  }
+
+  // ─────────────────────────────────────────────
+  // One-Liner Generation
+  // ─────────────────────────────────────────────
+
+  /**
+   * Generate one-liners for scenes in a specific shoot day.
+   * Only generates for scenes that have descriptions.
+   */
+  generateDayOneLiners(dayId: string): void {
+    if (!this.schedule || this.isGeneratingOneLiners) return;
+
+    const day = this.schedule.shootDays.find(d => d.id === dayId);
+    if (!day || !day.scenes || day.scenes.length === 0) {
+      console.warn('No scenes found for day:', dayId);
+      return;
+    }
+
+    // Filter to only scenes with descriptions
+    const scenesWithDescriptions = day.scenes.filter(
+      scene => scene.descriptions && scene.descriptions.length > 0
+    );
+
+    if (scenesWithDescriptions.length === 0) {
+      alert(`No scenes in ${day.label || 'Day ' + day.dayNumber} have descriptions. Please upload your script first.`);
+      return;
+    }
+
+    // Transform to the format expected by the service
+    const scenesForGeneration: SceneForOneLiner[] = scenesWithDescriptions.map((scene) => ({
+      sceneNumber: scene.sceneNumber,
+      header: scene.sceneHeader,
+      descriptions: scene.descriptions || [],
+      pageCount: scene.pageCount,
+    }));
+
+    console.log(`Generating one-liners for ${scenesForGeneration.length} scenes in ${day.label || 'Day ' + day.dayNumber}`);
+
+    this.isGeneratingOneLiners = true;
+    this.cdr.markForCheck();
+
+    this.oneLinerService.generateOneLiners(scenesForGeneration).subscribe({
+      next: (oneLiners) => {
+        this.isGeneratingOneLiners = false;
+        this.cdr.markForCheck();
+        console.log(`Generated ${oneLiners.size} one-liners for ${day.label || 'Day ' + day.dayNumber}`);
+        alert(`Successfully generated ${oneLiners.size} one-liners for ${day.label || 'Day ' + day.dayNumber}!`);
+      },
+      error: (err) => {
+        this.isGeneratingOneLiners = false;
+        this.cdr.markForCheck();
+        console.error('Failed to generate one-liners', err);
+        alert('Failed to generate one-liners. Please try again.');
+      },
+    });
+  }
+
+  /**
+   * Generate one-liners for all scenes in the schedule using AI.
+   * Only generates for scenes that have descriptions.
+   */
+  generateAllOneLiners(): void {
+    if (!this.schedule || this.isGeneratingOneLiners) return;
+
+    // Validate that we can generate one-liners
+    if (!this.canGenerateOneLiners) {
+      console.warn('Cannot generate one-liners:', this.oneLinerDisabledReason);
+      alert(this.oneLinerDisabledReason);
+      return;
+    }
+
+    // Collect all scenes (unscheduled + all shoot days)
+    const allScenes: ScheduleScene[] = [
+      ...this.schedule.unscheduledScenes,
+      ...this.schedule.shootDays.flatMap((day) => day.scenes),
+    ];
+
+    if (allScenes.length === 0) {
+      console.log('No scenes to generate one-liners for');
+      return;
+    }
+
+    // Filter to only scenes with descriptions (required for AI generation)
+    const scenesWithDescriptions = allScenes.filter(
+      scene => scene.descriptions && scene.descriptions.length > 0
+    );
+
+    if (scenesWithDescriptions.length === 0) {
+      alert('No scenes have descriptions. Please upload your script to enable AI one-liner generation.');
+      return;
+    }
+
+    // Transform to the format expected by the service
+    const scenesForGeneration: SceneForOneLiner[] = scenesWithDescriptions.map((scene) => ({
+      sceneNumber: scene.sceneNumber,
+      header: scene.sceneHeader,
+      descriptions: scene.descriptions || [],
+      pageCount: scene.pageCount,
+    }));
+
+    console.log(`Generating one-liners for ${scenesForGeneration.length} scenes (out of ${allScenes.length} total)`);
+
+    this.isGeneratingOneLiners = true;
+    this.cdr.markForCheck();
+
+    this.oneLinerService.generateOneLiners(scenesForGeneration).subscribe({
+      next: (oneLiners) => {
+        this.isGeneratingOneLiners = false;
+        this.cdr.markForCheck();
+        console.log(`Generated ${oneLiners.size} one-liners successfully`);
+        alert(`Successfully generated ${oneLiners.size} one-liners for scenes with descriptions.`);
+      },
+      error: (err) => {
+        this.isGeneratingOneLiners = false;
+        this.cdr.markForCheck();
+        console.error('Failed to generate one-liners', err);
+        alert('Failed to generate one-liners. Please try again.');
+      },
+    });
+  }
+
+  /**
+   * Checks if one-liner generation is available.
+   * Requires schedule to exist and have at least ONE scene with descriptions.
+   */
+  get canGenerateOneLiners(): boolean {
+    if (!this.schedule) return false;
+
+    // Collect all scenes
+    const allScenes: ScheduleScene[] = [
+      ...this.schedule.unscheduledScenes,
+      ...this.schedule.shootDays.flatMap((day) => day.scenes),
+    ];
+
+    if (allScenes.length === 0) return false;
+
+    // Check if at least ONE scene has descriptions
+    const scenesWithDescriptions = allScenes.filter(
+      scene => scene.descriptions && scene.descriptions.length > 0
+    );
+
+    return scenesWithDescriptions.length > 0;
+  }
+
+  /**
+   * Gets the reason why one-liner generation is disabled (for tooltip/message).
+   */
+  get oneLinerDisabledReason(): string {
+    if (!this.schedule) return 'No schedule loaded';
+
+    const allScenes: ScheduleScene[] = [
+      ...this.schedule.unscheduledScenes,
+      ...this.schedule.shootDays.flatMap((day) => day.scenes),
+    ];
+
+    if (allScenes.length === 0) {
+      return 'No scenes in schedule';
+    }
+
+    const scenesWithDescriptions = allScenes.filter(
+      scene => scene.descriptions && scene.descriptions.length > 0
+    );
+
+    if (scenesWithDescriptions.length === 0) {
+      return 'Please upload your script to enable AI one-liner generation';
+    }
+
+    // If we have some scenes with descriptions, show how many
+    if (scenesWithDescriptions.length < allScenes.length) {
+      return `${scenesWithDescriptions.length} of ${allScenes.length} scenes ready for AI one-liners`;
+    }
+
+    return `Generate AI one-liners for ${allScenes.length} scenes`;
   }
 }

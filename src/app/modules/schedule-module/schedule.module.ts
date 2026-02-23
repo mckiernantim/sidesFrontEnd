@@ -9,11 +9,13 @@ import { ShootDayCardComponent } from '../../components/schedule/shoot-day-card/
 import { ScheduleBuilderComponent } from '../../components/schedule/schedule-builder/schedule-builder.component';
 import { ScheduleTabComponent } from '../../components/schedule/schedule-tab/schedule-tab.component';
 import { SchedulePageComponent } from '../../components/schedule/schedule-page/schedule-page.component';
+import { OneLinerEditorComponent } from '../../components/schedule/one-liner-editor/one-liner-editor.component';
 
 import { ScheduleStateService } from '../../services/schedule/schedule-state.service';
 import { ScheduleService } from '../../services/schedule/schedule.service';
 import { ScheduleApiService } from '../../services/schedule/schedule-api.service';
 import { ScheduleAutoSaveService } from '../../services/schedule/schedule-auto-save.service';
+import { OneLinerService } from '../../services/schedule/one-liner.service';
 
 /**
  * ScheduleModule — Declares all production scheduling components
@@ -25,10 +27,12 @@ import { ScheduleAutoSaveService } from '../../services/schedule/schedule-auto-s
  * - ScheduleBuilderComponent: The main schedule builder layout
  * - ScheduleTabComponent: Dashboard integration tab container
  * - SchedulePageComponent: Standalone schedule page (profile → schedule deep-link)
+ * - OneLinerEditorComponent: Inline one-liner editor for scene strips
  *
  * Services:
  * - ScheduleStateService: Reactive schedule state management
  * - ScheduleService: Schedule creation and seeding logic
+ * - OneLinerService: AI-powered one-liner generation (providedIn: root)
  */
 @NgModule({
   declarations: [
@@ -37,6 +41,7 @@ import { ScheduleAutoSaveService } from '../../services/schedule/schedule-auto-s
     ScheduleBuilderComponent,
     ScheduleTabComponent,
     SchedulePageComponent,
+    OneLinerEditorComponent,
   ],
   imports: [
     CommonModule,
@@ -55,6 +60,7 @@ import { ScheduleAutoSaveService } from '../../services/schedule/schedule-auto-s
     ScheduleService,
     ScheduleApiService,
     ScheduleAutoSaveService,
+    OneLinerService,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })

@@ -3,19 +3,19 @@
   <!-- Schedule Builder (when schedule is loaded) -->
   <div *ngIf="scheduleLoaded">
     <!-- Header Bar: Save status + New/Delete/Selector controls -->
-    <div class="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+    <div class="flex items-center justify-between mb-4 p-3 bg-sw-surface-2 rounded-lg border-2 border-sw-border shadow-md">
       <!-- Left side: Schedule info + save status -->
       <div class="flex items-center space-x-3">
         <!-- Schedule Selector Dropdown -->
         <div class="relative" *ngIf="savedSchedules.length > 1">
           <button
             (click)="toggleScheduleSelector()"
-            class="inline-flex items-center text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md px-3 py-1.5 hover:bg-gray-50 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            class="inline-flex items-center text-sm font-medium text-sw-text bg-sw-surface border-2 border-sw-border rounded-md px-3 py-1.5 hover:bg-sw-border transition-all shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 text-sw-text-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             {{ currentSchedule?.projectTitle || 'Schedule' }}
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1.5 text-sw-text-subtle" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
             </svg>
           </button>
@@ -23,32 +23,32 @@
           <!-- Dropdown Panel -->
           <div
             *ngIf="scheduleSelectorOpen"
-            class="absolute left-0 top-full mt-1 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-20 py-1">
+            class="absolute left-0 top-full mt-1 w-72 bg-sw-surface rounded-lg shadow-lg border-2 border-sw-border z-20 py-1">
             <!-- Current schedule -->
-            <div class="px-3 py-2 bg-indigo-50 border-b border-gray-100">
-              <p class="text-xs font-semibold text-indigo-700 uppercase tracking-wide">Current</p>
-              <p class="text-sm font-medium text-gray-900 truncate">{{ currentSchedule?.projectTitle }}</p>
+            <div class="px-3 py-2 bg-sw-surface-2 border-b-2 border-sw-border">
+              <p class="text-xs font-semibold text-sw-accent uppercase tracking-wide">Current</p>
+              <p class="text-sm font-medium text-sw-text truncate">{{ currentSchedule?.projectTitle }}</p>
             </div>
 
             <!-- Other saved schedules -->
             <div *ngIf="otherSavedSchedules.length > 0" class="max-h-48 overflow-y-auto">
-              <p class="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">Saved Schedules</p>
+              <p class="px-3 py-1.5 text-xs font-semibold text-sw-text-subtle uppercase tracking-wide">Saved Schedules</p>
               <button
                 *ngFor="let saved of otherSavedSchedules"
                 (click)="switchSchedule(saved.id)"
-                class="w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors group">
-                <p class="text-sm font-medium text-gray-900 truncate group-hover:text-indigo-600">{{ saved.projectTitle }}</p>
-                <p class="text-xs text-gray-400">
+                class="w-full text-left px-3 py-2 hover:bg-sw-border transition-colors group">
+                <p class="text-sm font-medium text-sw-text truncate group-hover:text-sw-accent">{{ saved.projectTitle }}</p>
+                <p class="text-xs text-sw-text-subtle">
                   {{ saved.sceneCount }} scenes · {{ saved.shootDayCount }} days · v{{ saved.version }}
                 </p>
               </button>
             </div>
 
             <!-- Close on outside click helper -->
-            <div class="border-t border-gray-100 px-3 py-2">
+            <div class="border-t-2 border-sw-border px-3 py-2">
               <button
                 (click)="closeScheduleSelector()"
-                class="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                class="text-xs text-sw-text-subtle hover:text-sw-text transition-colors">
                 Close
               </button>
             </div>
@@ -56,23 +56,23 @@
         </div>
 
         <!-- Schedule name (when only 1 schedule) -->
-        <span *ngIf="savedSchedules.length <= 1" class="text-sm font-medium text-gray-700">
+        <span *ngIf="savedSchedules.length <= 1" class="text-sm font-medium text-sw-text">
           {{ currentSchedule?.projectTitle || 'Schedule' }}
         </span>
 
         <!-- Separator -->
-        <span class="text-gray-300">|</span>
+        <span class="text-sw-border">|</span>
 
         <!-- Save Status Indicators -->
-        <span *ngIf="isSaving" class="inline-flex items-center text-sm text-indigo-600">
+        <span *ngIf="isSaving" class="inline-flex items-center text-sm text-sw-accent">
           <svg class="animate-spin -ml-1 mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
           </svg>
           Saving...
         </span>
-        <span *ngIf="!isSaving && lastSavedAt && !saveError" class="text-xs text-green-600 font-medium">Saved ✓</span>
-        <span *ngIf="saveError" class="text-xs text-red-600 font-medium">{{ saveError }}</span>
+        <span *ngIf="!isSaving && lastSavedAt && !saveError" class="text-xs text-sw-success font-medium">Saved ✓</span>
+        <span *ngIf="saveError" class="text-xs text-sw-danger font-medium">{{ saveError }}</span>
       </div>
 
       <!-- Right side: Action buttons -->
@@ -80,8 +80,8 @@
         <!-- New Schedule -->
         <button
           (click)="confirmNewSchedule()"
-          [disabled]="!allLines || allLines.length === 0 || isLoading"
-          class="inline-flex items-center text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md px-3 py-1.5 hover:bg-gray-50 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          [disabled]="!hasScriptData || isLoading"
+          class="inline-flex items-center text-sm font-medium text-sw-text bg-sw-surface border-2 border-sw-border rounded-md px-3 py-1.5 hover:bg-sw-border hover:border-sw-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
           title="Create a new schedule from script data">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
@@ -93,7 +93,7 @@
         <button
           (click)="confirmDeleteCurrentSchedule()"
           [disabled]="isDeleting || !currentSchedule?.id"
-          class="inline-flex items-center text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md px-3 py-1.5 hover:bg-red-50 hover:text-red-600 hover:border-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          class="inline-flex items-center text-sm font-medium text-sw-text bg-sw-surface border-2 border-sw-border rounded-md px-3 py-1.5 hover:bg-sw-surface-2 hover:text-sw-danger hover:border-sw-danger disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
           title="Delete this schedule">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -111,7 +111,7 @@
       </div>
     </div>
 
-    <app-schedule-builder></app-schedule-builder>
+    <app-schedule-builder [pdfService]="pdfService"></app-schedule-builder>
   </div>
 
   <!-- Create Schedule CTA (when no schedule exists) -->
@@ -127,11 +127,11 @@
       </p>
       <button
         (click)="createSchedule()"
-        [disabled]="!allLines || allLines.length === 0"
+        [disabled]="!hasScriptData"
         class="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-3 px-8 rounded-lg transition-colors text-lg">
         Create New Schedule
       </button>
-      <p *ngIf="!allLines || allLines.length === 0" class="text-sm text-gray-400 mt-3">
+      <p *ngIf="!hasScriptData" class="text-sm text-gray-400 mt-3">
         Upload and classify a script first
       </p>
 

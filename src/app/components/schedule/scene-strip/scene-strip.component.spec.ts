@@ -18,6 +18,7 @@ function createMockScene(overrides: Partial<ScheduleScene> = {}): ScheduleScene 
       { characterName: 'ALICE', hasDialogue: true, isVoiceOver: false, isOffScreen: false },
       { characterName: 'BOB', hasDialogue: true, isVoiceOver: false, isOffScreen: false },
     ],
+    descriptions: [],
     oneLiner: '',
     oneLinerSource: 'manual',
     oneLinerEdited: false,
@@ -193,6 +194,53 @@ describe('SceneStripComponent', () => {
       component.editable = false;
       const spy = jest.spyOn(component.timeChanged, 'emit');
       component.decrementTime(new MouseEvent('click'));
+      expect(spy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('one-liner visibility', () => {
+    it('should show one-liner when showOneLiner is true and not compact', () => {
+      component.showOneLiner = true;
+      component.compact = false;
+
+      expect(component.shouldShowOneLiner).toBe(true);
+    });
+
+    it('should hide one-liner when showOneLiner is false', () => {
+      component.showOneLiner = false;
+      component.compact = false;
+
+      expect(component.shouldShowOneLiner).toBe(false);
+    });
+
+    it('should hide one-liner when compact is true', () => {
+      component.showOneLiner = true;
+      component.compact = true;
+
+      expect(component.shouldShowOneLiner).toBe(false);
+    });
+  });
+
+  describe('one-liner change propagation', () => {
+    it('should emit oneLinerChanged with scene ID when editor emits', () => {
+      component.scene = createMockScene({ id: 'scene-test' });
+      const spy = jest.spyOn(component.oneLinerChanged, 'emit');
+
+      component.onOneLinerChanged({ text: 'New one-liner', source: 'manual' });
+
+      expect(spy).toHaveBeenCalledWith({
+        sceneId: 'scene-test',
+        text: 'New one-liner',
+        source: 'manual',
+      });
+    });
+
+    it('should not emit if scene is null', () => {
+      component.scene = null as any;
+      const spy = jest.spyOn(component.oneLinerChanged, 'emit');
+
+      component.onOneLinerChanged({ text: 'New one-liner', source: 'manual' });
+
       expect(spy).not.toHaveBeenCalled();
     });
   });

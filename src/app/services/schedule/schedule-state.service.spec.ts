@@ -17,6 +17,7 @@ function createMockScene(overrides: Partial<ScheduleScene> = {}): ScheduleScene 
     scriptPageStart: 1,
     scriptPageEnd: 3,
     characters: [],
+    descriptions: [],
     oneLiner: '',
     oneLinerSource: 'manual',
     oneLinerEdited: false,
@@ -349,6 +350,75 @@ describe('ScheduleStateService', () => {
 
       service.removeShootDay('nonexistent');
       expect(service.schedule!.shootDays.length).toBe(1);
+    });
+  });
+
+  describe('updateSceneOneLiner', () => {
+    it('should update one-liner on a scene in a shoot day', () => {
+      const scene = createMockScene({ id: 'scene-A', oneLiner: '', oneLinerSource: 'manual', oneLinerEdited: false });
+      const day = createMockDay({ id: 'day-1', scenes: [scene] });
+      const schedule = createMockSchedule({ shootDays: [day] });
+      service.setSchedule(schedule);
+
+      service.updateSceneOneLiner('scene-A', 'John discovers the letter.', 'manual');
+
+      const updated = service.schedule!;
+      const updatedScene = updated.shootDays[0].scenes[0];
+      expect(updatedScene.oneLiner).toBe('John discovers the letter.');
+      expect(updatedScene.oneLinerSource).toBe('manual');
+      expect(updatedScene.oneLinerEdited).toBe(true);
+    });
+
+    it('should update one-liner on an unscheduled scene', () => {
+      const scene = createMockScene({ id: 'scene-B', oneLiner: '' });
+      const schedule = createMockSchedule({ unscheduledScenes: [scene] });
+      service.setSchedule(schedule);
+
+      service.updateSceneOneLiner('scene-B', 'Mary confronts the detective.', 'manual');
+
+      const updated = service.schedule!;
+      expect(updated.unscheduledScenes[0].oneLiner).toBe('Mary confronts the detective.');
+      expect(updated.unscheduledScenes[0].oneLinerEdited).toBe(true);
+    });
+
+    it('should set oneLinerEdited=false for AI-generated one-liners', () => {
+      const scene = createMockScene({ id: 'scene-A', oneLinerEdited: true });
+      const day = createMockDay({ id: 'day-1', scenes: [scene] });
+      const schedule = createMockSchedule({ shootDays: [day] });
+      service.setSchedule(schedule);
+
+      service.updateSceneOneLiner('scene-A', 'AI generated text.', 'ai');
+
+      const updatedScene = service.schedule!.shootDays[0].scenes[0];
+      expect(updatedScene.oneLinerSource).toBe('ai');
+      expect(updatedScene.oneLinerEdited).toBe(false);
+    });
+
+    it('should mark schedule as dirty after one-liner change', () => {
+      const scene = createMockScene({ id: 'scene-A' });
+      const day = createMockDay({ id: 'day-1', scenes: [scene] });
+      const schedule = createMockSchedule({ shootDays: [day] });
+      service.setSchedule(schedule);
+
+      service.updateSceneOneLiner('scene-A', 'New text', 'manual');
+
+      expect(service.isDirty).toBe(true);
+    });
+
+    it('should not modify other scenes', () => {
+      const sceneA = createMockScene({ id: 'A', oneLiner: 'Original A' });
+      const sceneB = createMockScene({ id: 'B', oneLiner: 'Original B' });
+      const day = createMockDay({ id: 'day-1', scenes: [sceneA, sceneB] });
+      const schedule = createMockSchedule({ shootDays: [day] });
+      service.setSchedule(schedule);
+
+      service.updateSceneOneLiner('A', 'Updated A', 'manual');
+
+      expect(service.schedule!.shootDays[0].scenes[1].oneLiner).toBe('Original B');
+    });
+
+    it('should not crash with null schedule', () => {
+      expect(() => service.updateSceneOneLiner('x', 'text', 'manual')).not.toThrow();
     });
   });
 

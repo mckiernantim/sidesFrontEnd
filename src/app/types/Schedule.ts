@@ -86,6 +86,9 @@ export interface ScheduleScene {
   // Characters in this scene (from classify character lines)
   characters: SceneCharacter[];
 
+  // Scene content (for AI one-liner generation)
+  descriptions: string[];  // Action/description lines from the script
+
   // One-liner
   oneLiner: string;
   oneLinerSource: 'ai' | 'manual';

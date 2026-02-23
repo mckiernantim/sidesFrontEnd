@@ -263,6 +263,43 @@ export class ScheduleStateService {
   }
 
   // ─────────────────────────────────────────────
+  // One-Liner Management
+  // ─────────────────────────────────────────────
+
+  /**
+   * Update a scene's one-liner text and metadata.
+   * Searches both shootDays and unscheduledScenes.
+   * Marks schedule dirty → triggers auto-save.
+   */
+  updateSceneOneLiner(
+    sceneId: string,
+    text: string,
+    source: 'manual' | 'ai'
+  ): void {
+    const schedule = this.schedule;
+    if (!schedule) return;
+
+    const updater = (scene: ScheduleScene): ScheduleScene => {
+      if (scene.id !== sceneId) return scene;
+      return {
+        ...scene,
+        oneLiner: text,
+        oneLinerSource: source,
+        oneLinerEdited: source === 'manual',
+      };
+    };
+
+    this.updateSchedule({
+      ...schedule,
+      shootDays: schedule.shootDays.map(day => ({
+        ...day,
+        scenes: day.scenes.map(updater),
+      })),
+      unscheduledScenes: schedule.unscheduledScenes.map(updater),
+    });
+  }
+
+  // ─────────────────────────────────────────────
   // Save State Management
   // ─────────────────────────────────────────────
 
