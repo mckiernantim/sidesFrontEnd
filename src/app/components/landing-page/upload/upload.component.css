@@ -7,9 +7,9 @@
   justify-content: center;
   text-align: center;
   overflow: hidden;
-  background-image: url('/assets/CA_keyart3_cautiontape_social_6.jpeg');
+  background-image: url('/assets/productionBG.png');
   background-size: cover;
-  background-position: center top;
+  background-position: center;
 }
 
 /* Dark cinematic overlay */
