@@ -1,3 +1,35 @@
+<!-- ⚠️ BETA TEST MODE WARNING BANNER ⚠️ -->
+<div class="bg-gradient-to-r from-sw-warning via-yellow-400 to-sw-warning border-b-4 border-yellow-300 shadow-2xl mb-8">
+  <div class="container mx-auto px-4 py-6">
+    <div class="flex flex-col items-center justify-center space-y-2">
+      <div class="flex items-center space-x-3">
+        <svg class="w-10 h-10 text-black animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+        <div class="text-center">
+          <h2 class="text-2xl md:text-3xl font-black text-black font-display uppercase">
+            ⚠️ BETA TEST MODE ⚠️
+          </h2>
+          <p class="text-lg md:text-xl font-bold text-black">
+            ALL SUBSCRIPTIONS ARE TEST MODE - NO REAL CHARGES
+          </p>
+          <div class="mt-2 bg-black bg-opacity-20 rounded px-3 py-2">
+            <p class="text-xs md:text-sm font-semibold text-black">
+              We're testing our Stripe integration to ensure everything works perfectly.
+            </p>
+            <p class="text-xs md:text-sm font-bold text-black mt-1">
+              💳 Test card: <span class="bg-white px-1 rounded font-mono">4242 4242 4242 4242</span>
+            </p>
+          </div>
+        </div>
+        <svg class="w-10 h-10 text-black animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="container mx-auto px-4 py-8 max-w-4xl">
   <!-- Loading spinner -->
   <div *ngIf="isLoading" class="flex justify-center items-center min-h-[400px]">
@@ -36,7 +68,17 @@
 
     <!-- Subscription Section -->
     <div class="mb-10">
-      <h2 class="text-xl font-semibold mb-6 pb-2 border-b border-sw-border text-sw-text">Subscription</h2>
+      <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-sw-border text-sw-text">Subscription</h2>
+
+      <!-- Beta Test Mode Notice -->
+      <div class="bg-yellow-400 border-2 border-yellow-500 rounded-lg p-4 mb-6">
+        <p class="text-black font-black text-center text-sm md:text-base">
+          🚨 TEST MODE: ALL BILLING IS FAKE - NO REAL CHARGES 🚨
+        </p>
+        <p class="text-black font-semibold text-center text-xs md:text-sm mt-2">
+          Testing Stripe integration - Use test card: <span class="bg-white px-2 py-1 rounded font-mono">4242 4242 4242 4242</span>
+        </p>
+      </div>
       
       <!-- Active subscription that will renew -->
       <div *ngIf="isSubscriptionActive() && subscription?.subscription?.willAutoRenew" class="p-6 bg-sw-surface-2 rounded-lg border-2 border-sw-success shadow-md mb-4">
