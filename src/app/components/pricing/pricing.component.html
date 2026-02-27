@@ -18,15 +18,30 @@
               YOUR CARD WILL NOT BE CHARGED - THIS IS FOR TESTING ONLY
             </p>
             <div class="mt-3 bg-black bg-opacity-20 rounded-lg px-4 py-3 max-w-2xl mx-auto">
-              <p class="text-sm md:text-base font-semibold text-black">
-                We're testing our Stripe integration to ensure everything works perfectly. No real charges will be made.
+              <p class="text-sm md:text-base font-bold text-black mb-2">
+                🔧 Why Test Mode?
               </p>
-              <p class="text-sm md:text-base font-bold text-black mt-2">
-                💳 Use test card: <span class="bg-white px-2 py-1 rounded font-mono">4242 4242 4242 4242</span>
+              <p class="text-xs md:text-sm font-semibold text-black mb-3">
+                We're verifying our Stripe payment integration works correctly before going live.
+                This ensures a smooth experience when we launch for real. No actual money will be processed.
               </p>
-              <p class="text-xs text-black mt-1">
-                (Any future date & CVC will work)
-              </p>
+              <div class="bg-white bg-opacity-90 rounded-lg px-3 py-2 border-2 border-black">
+                <p class="text-xs md:text-sm font-bold text-black mb-1">
+                  💳 What's a "Test Card"?
+                </p>
+                <p class="text-xs text-gray-800 mb-2">
+                  Stripe provides special card numbers that simulate real transactions without charging you.
+                  Use this number to test the checkout flow:
+                </p>
+                <div class="bg-gray-100 px-3 py-2 rounded border border-gray-300 text-center">
+                  <p class="text-lg md:text-xl font-mono font-black text-gray-900">
+                    4242 4242 4242 4242
+                  </p>
+                  <p class="text-xs text-gray-600 mt-1">
+                    Any future expiry date • Any 3-digit CVC • Any ZIP code
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
           <svg class="w-12 h-12 text-black animate-pulse" fill="currentColor" viewBox="0 0 20 20">
