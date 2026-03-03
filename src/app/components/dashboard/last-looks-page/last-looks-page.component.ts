@@ -1620,13 +1620,13 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     if (line.calculatedBarY && line.calculatedBarY !== '90px' && parseInt(String(line.calculatedBarY)) !== 90) {
       return String(line.calculatedBarY);
     }
-    
+
     // Find lowest Y position (closest to bottom) of visible text lines
     let lowestYPos = 0;
     for (const pageLine of this.page) {
-      if (pageLine.docPageLineIndex !== line.docPageLineIndex && 
-          pageLine.visible === 'true' && 
-          pageLine.category !== 'page-number' && 
+      if (pageLine.docPageLineIndex !== line.docPageLineIndex &&
+          pageLine.visible === 'true' &&
+          pageLine.category !== 'page-number' &&
           pageLine.category !== 'injected-break' &&
           pageLine.category !== 'callsheet') {
         const yPos = parseInt(String(pageLine.calculatedYpos || pageLine.yPos || '0'));
@@ -1635,13 +1635,303 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         }
       }
     }
-    
+
     // Position CONTINUE bar 55px below last line
     if (lowestYPos > 0) {
       return Math.max(20, lowestYPos - 75) + 'px';
     }
-    
+
     return '90px';
   }
-  
+
+  // Get SVG path for category icons
+  getCategoryIcon(category: string): string {
+    const icons: { [key: string]: string } = {
+      'scene-header': 'M7 20l4-16m2 16l4-16M6 9h14M4 15h14',
+      'action': 'M4 6h16M4 12h16M4 18h16',
+      'character': 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+      'dialogue': 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+      'parenthetical': 'M9 5l7 7-7 7',
+      'transition': 'M13 7l5 5m0 0l-5 5m5-5H6',
+      'shot': 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z',
+      'general': 'M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z'
+    };
+
+    return icons[category] || icons['general'];
+  }
+
+  // ============= TOOLBAR HELPER METHODS =============
+
+  // Check if any selected line has visibility toggled
+  isVisibilityToggled(): boolean {
+    if (this.selectedLineIds.length === 0) return false;
+    const selectedLines = this.page.filter(line => this.selectedLineIds.includes(line.docPageLineIndex));
+    return selectedLines.some(line => line.visible === 'false');
+  }
+
+  // Get tooltip text for visibility button
+  getVisibilityTooltip(): string {
+    if (this.selectedLineIds.length === 0) return 'Toggle Visibility';
+    return this.isVisibilityToggled() ? 'Show Lines' : 'Hide Lines';
+  }
+
+  // Toggle visibility for all selected lines
+  toggleSelectedVisibility(): void {
+    if (this.selectedLineIds.length === 0) return;
+
+    const selectedLines = this.selectedLineIds.map(lineId => {
+      const line = this.page.find(l => l.docPageLineIndex === lineId);
+      const lineIndex = this.page.findIndex(l => l.docPageLineIndex === lineId);
+      return { line, lineIndex };
+    }).filter(item => item.line);
+
+    if (selectedLines.length === 0) return;
+
+    // Determine new visibility state
+    const firstLine = selectedLines[0].line;
+    const newVisibility = firstLine.visible === 'true' ? 'false' : 'true';
+
+    // Record undo for batch operation
+    const batchChanges = selectedLines.map(({ line, lineIndex }) => ({
+      pageIndex: this.currentPageIndex,
+      lineIndex,
+      currentLineState: { ...line },
+      changeDescription: `Toggle visibility: ${line.visible} → ${newVisibility}`
+    }));
+    this.undoService.recordBatchChanges(batchChanges);
+
+    // Update all selected lines
+    selectedLines.forEach(({ line, lineIndex }) => {
+      this.pdfService.updateLine(
+        this.currentPageIndex,
+        line.docPageLineIndex,
+        { ...line, visible: newVisibility }
+      );
+    });
+
+    this.cdRef.detectChanges();
+  }
+
+  // Check if any selected line has start bar
+  hasStartBar(): boolean {
+    if (this.selectedLineIds.length === 0) return false;
+    const selectedLines = this.page.filter(line => this.selectedLineIds.includes(line.docPageLineIndex));
+    return selectedLines.some(line => line.bar === 'bar');
+  }
+
+  // Toggle start bar for selected lines
+  toggleStartBarForSelected(): void {
+    if (this.selectedLineIds.length === 0) return;
+    const firstLine = this.page.find(l => l.docPageLineIndex === this.selectedLineIds[0]);
+    if (firstLine) {
+      // Use existing context menu logic with the first selected line
+      const lineIndex = this.page.findIndex(l => l.docPageLineIndex === firstLine.docPageLineIndex);
+
+      // Record undo
+      this.undoService.recordLineChange(
+        this.currentPageIndex,
+        lineIndex,
+        firstLine,
+        `Toggle start bar`
+      );
+
+      // Toggle the bar
+      if (firstLine.bar === 'bar') {
+        firstLine.bar = 'hideBar';
+        firstLine.calculatedBarY = undefined;
+        firstLine.startTextOffset = undefined;
+      } else {
+        firstLine.bar = 'bar';
+        if (!firstLine.calculatedBarY) {
+          firstLine.calculatedBarY = (parseInt(firstLine.calculatedYpos as string) + 20) + 'px';
+          firstLine.barY = parseInt(firstLine.calculatedBarY) / 1.3;
+        }
+        firstLine.startTextOffset = 10;
+      }
+
+      this.pdfService.updateLine(this.currentPageIndex, lineIndex, firstLine);
+      this.pageUpdate.emit([...this.page]);
+      this.cdRef.detectChanges();
+    }
+  }
+
+  // Check if any selected line has end bar
+  hasEndBar(): boolean {
+    if (this.selectedLineIds.length === 0) return false;
+    const selectedLines = this.page.filter(line => this.selectedLineIds.includes(line.docPageLineIndex));
+    return selectedLines.some(line => line.end === 'END');
+  }
+
+  // Toggle end bar for selected lines
+  toggleEndBarForSelected(): void {
+    if (this.selectedLineIds.length === 0) return;
+    const firstLine = this.page.find(l => l.docPageLineIndex === this.selectedLineIds[0]);
+    if (firstLine) {
+      const lineIndex = this.page.findIndex(l => l.docPageLineIndex === firstLine.docPageLineIndex);
+
+      // Record undo
+      this.undoService.recordLineChange(
+        this.currentPageIndex,
+        lineIndex,
+        firstLine,
+        `Toggle end bar`
+      );
+
+      // Toggle the bar
+      if (firstLine.end === 'END') {
+        firstLine.end = 'hideEnd';
+        firstLine.calculatedEnd = undefined;
+        firstLine.endTextOffset = undefined;
+      } else {
+        firstLine.end = 'END';
+        if (!firstLine.calculatedEnd) {
+          firstLine.calculatedEnd = (parseInt(firstLine.calculatedYpos as string) - 20) + 'px';
+          firstLine.endY = parseInt(firstLine.calculatedEnd) / 1.3;
+        }
+        firstLine.endTextOffset = 10;
+      }
+
+      this.pdfService.updateLine(this.currentPageIndex, lineIndex, firstLine);
+      this.pageUpdate.emit([...this.page]);
+      this.cdRef.detectChanges();
+    }
+  }
+
+  // Check if any selected line has continue top
+  hasContinueTop(): boolean {
+    if (this.selectedLineIds.length === 0) return false;
+    const selectedLines = this.page.filter(line => this.selectedLineIds.includes(line.docPageLineIndex));
+    return selectedLines.some(line => line.cont === 'CONTINUE-TOP');
+  }
+
+  // Toggle continue top for selected lines
+  toggleContinueTopForSelected(): void {
+    if (this.selectedLineIds.length === 0) return;
+    const firstLine = this.page.find(l => l.docPageLineIndex === this.selectedLineIds[0]);
+    if (firstLine) {
+      const lineIndex = this.page.findIndex(l => l.docPageLineIndex === firstLine.docPageLineIndex);
+
+      // Record undo
+      this.undoService.recordLineChange(
+        this.currentPageIndex,
+        lineIndex,
+        firstLine,
+        `Toggle continue top bar`
+      );
+
+      // Toggle the bar
+      if (firstLine.cont === 'CONTINUE-TOP') {
+        firstLine.cont = 'hideCont';
+        firstLine.calculatedBarY = undefined;
+        firstLine.continueTopTextOffset = undefined;
+      } else {
+        if (firstLine.cont === 'CONTINUE') {
+          firstLine.cont = 'hideCont';
+        }
+        firstLine.cont = 'CONTINUE-TOP';
+        if (!firstLine.calculatedBarY) {
+          firstLine.calculatedBarY = '40px';
+          firstLine.barY = 40;
+        }
+        if (!firstLine.continueTopTextOffset) {
+          firstLine.continueTopTextOffset = 10;
+        }
+      }
+
+      this.pdfService.updateLine(this.currentPageIndex, lineIndex, firstLine);
+      this.pageUpdate.emit([...this.page]);
+      this.cdRef.detectChanges();
+    }
+  }
+
+  // Check if any selected line has continue
+  hasContinue(): boolean {
+    if (this.selectedLineIds.length === 0) return false;
+    const selectedLines = this.page.filter(line => this.selectedLineIds.includes(line.docPageLineIndex));
+    return selectedLines.some(line => line.cont === 'CONTINUE');
+  }
+
+  // Toggle continue for selected lines
+  toggleContinueForSelected(): void {
+    if (this.selectedLineIds.length === 0) return;
+    const firstLine = this.page.find(l => l.docPageLineIndex === this.selectedLineIds[0]);
+    if (firstLine) {
+      const lineIndex = this.page.findIndex(l => l.docPageLineIndex === firstLine.docPageLineIndex);
+
+      // Record undo
+      this.undoService.recordLineChange(
+        this.currentPageIndex,
+        lineIndex,
+        firstLine,
+        `Toggle continue bar`
+      );
+
+      // Toggle the bar
+      if (firstLine.cont === 'CONTINUE') {
+        firstLine.cont = 'hideCont';
+        firstLine.calculatedBarY = undefined;
+        firstLine.continueTextOffset = undefined;
+      } else {
+        if (firstLine.cont === 'CONTINUE-TOP') {
+          firstLine.cont = 'hideCont';
+        }
+        firstLine.cont = 'CONTINUE';
+        if (!firstLine.calculatedBarY) {
+          firstLine.calculatedBarY = '90px';
+          firstLine.barY = 90;
+        }
+        if (!firstLine.continueTextOffset) {
+          firstLine.continueTextOffset = 10;
+        }
+      }
+
+      this.pdfService.updateLine(this.currentPageIndex, lineIndex, firstLine);
+      this.pageUpdate.emit([...this.page]);
+      this.cdRef.detectChanges();
+    }
+  }
+
+  // Reset to initial state
+  resetToInitialState(): void {
+    if (confirm('Are you sure you want to reset all changes? This cannot be undone.')) {
+      // Clear undo/redo history
+      this.undoService.reset();
+
+      // Reset page to initial state
+      if (this.initialPageState && this.initialPageState.length > 0) {
+        this.page = JSON.parse(JSON.stringify(this.initialPageState));
+      }
+
+      // Clear selections
+      this.selectedLineIds = [];
+      this.lastSelectedIndex = null;
+      this.selectedLine = null;
+
+      // Emit the reset page
+      this.pageUpdate.emit([...this.page]);
+
+      // Force change detection
+      this.cdRef.detectChanges();
+    }
+  }
+
+  // Save changes
+  saveChanges(): void {
+    // Emit the current page state to parent
+    this.pageUpdate.emit([...this.page]);
+
+    // Update the PDF service with the current page
+    if (this.pdfService.finalDocument?.data) {
+      this.pdfService.finalDocument.data[this.currentPageIndex] = [...this.page];
+      this.pdfService.saveDocumentState();
+    }
+
+    // Show confirmation
+    console.log('Changes saved successfully');
+    alert('Changes saved successfully!');
+
+    // Force change detection
+    this.cdRef.detectChanges();
+  }
+
 }

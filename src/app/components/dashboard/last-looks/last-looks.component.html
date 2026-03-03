@@ -2,28 +2,58 @@
   <div class="flex h-full">
     <!-- Document Viewer (Main Content) -->
     <div class="w-full flex flex-col overflow-hidden min-w-0 h-full">
-      <!-- Pagination Controls -->
-      <div class="bg-sw-surface p-4 border-b border-sw-border">
-        <div class="flex justify-between items-center space-x-2">
-          <button 
-            class="flex-1 px-4 py-2 border border-sw-border text-sw-text-muted rounded-lg hover:border-sw-accent hover:text-sw-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed bg-transparent"
-            (click)="previousPage()" 
-            [disabled]="currentPageIndex === 0">
-            ‹‹ Previous
-          </button>
-          <div class="flex items-center justify-center px-4 text-sw-text-muted font-medium whitespace-nowrap">
-            Page {{currentPageIndex + 1}} of {{pages?.length || 0}}
+      <!-- Simplified Top Bar -->
+      <div class="top-bar bg-sw-surface border-b border-sw-border p-3">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center gap-3">
+            <button
+              class="nav-btn"
+              (click)="previousPage()"
+              [disabled]="currentPageIndex === 0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+            </button>
+            <div class="page-display">
+              Page {{currentPageIndex + 1}} <span class="text-sw-text-subtle">/</span> {{pages?.length || 0}}
+            </div>
+            <button
+              class="nav-btn"
+              (click)="nextPage()"
+              [disabled]="currentPageIndex === (pages?.length - 1)">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </button>
           </div>
-          <button 
-            class="flex-1 px-4 py-2 border border-sw-border text-sw-text-muted rounded-lg hover:border-sw-accent hover:text-sw-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed bg-transparent"
-            (click)="nextPage()" 
-            [disabled]="currentPageIndex === (pages?.length - 1)">
-            Next ››
-          </button>
+
+          <div class="flex items-center gap-4">
+            <div class="mode-indicator">
+              <div class="mode-dot" [class.active]="canEditDocument"></div>
+              <span>{{canEditDocument ? 'Edit Mode' : 'View Mode'}}</span>
+            </div>
+
+            <!-- Edit Mode Toggle Button -->
+            <button
+              (click)="toggleEditMode()"
+              class="edit-toggle-btn"
+              [class.active]="canEditDocument"
+              [attr.title]="canEditDocument ? 'Exit Edit Mode (saves changes)' : 'Enter Edit Mode'">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path *ngIf="!canEditDocument" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                <path *ngIf="canEditDocument" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M5 13l4 4L19 7"></path>
+              </svg>
+              <span class="ml-2">{{ canEditDocument ? 'Save' : 'Edit' }}</span>
+            </button>
+          </div>
         </div>
       </div>
+
+      <!-- Script Page Container -->
       <div class="page-container h-full">
-        <app-last-looks-page 
+        <app-last-looks-page
           [page]="currentPage"
           [canEditDocument]="canEditDocument"
           [selectedLine]="selectedLine"
@@ -39,6 +69,77 @@
           (toggleVisibilityRequest)="handleToggleVisibilityRequest()"
           (pageChange)="handlePageChange($event)">
         </app-last-looks-page>
+      </div>
+
+      <!-- Keyboard Shortcuts Help -->
+      <button class="help-fab" (click)="showInstructions = !showInstructions" *ngIf="canEditDocument" title="Keyboard Shortcuts">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </button>
+
+      <!-- Keyboard Shortcuts Overlay -->
+      <div class="shortcuts-overlay" *ngIf="showInstructions" (click)="showInstructions = false">
+        <div class="shortcuts-panel" (click)="$event.stopPropagation()">
+          <div class="shortcuts-header">
+            <h3>Keyboard Shortcuts</h3>
+            <button class="close-btn" (click)="showInstructions = false">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="shortcuts-content">
+            <div class="shortcut-group">
+              <div class="group-title">Selection</div>
+              <div class="shortcut-item">
+                <kbd>Click</kbd>
+                <span>Select line</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>Ctrl</kbd> + <kbd>Click</kbd>
+                <span>Multi-select</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>Shift</kbd> + <kbd>Click</kbd>
+                <span>Range select</span>
+              </div>
+            </div>
+            <div class="shortcut-group">
+              <div class="group-title">Editing</div>
+              <div class="shortcut-item">
+                <kbd>Double Click</kbd>
+                <span>Edit text</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>Right Click</kbd>
+                <span>Context menu</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>X</kbd>
+                <span>Toggle visibility</span>
+              </div>
+            </div>
+            <div class="shortcut-group">
+              <div class="group-title">History</div>
+              <div class="shortcut-item">
+                <kbd>Ctrl</kbd> + <kbd>Z</kbd>
+                <span>Undo</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>Ctrl</kbd> + <kbd>Y</kbd>
+                <span>Redo</span>
+              </div>
+            </div>
+            <div class="shortcut-group">
+              <div class="group-title">Drag & Drop</div>
+              <div class="shortcut-item">
+                <span class="drag-icon">⋮⋮</span>
+                <span>Drag to reposition lines or bars</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

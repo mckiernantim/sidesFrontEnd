@@ -92,6 +92,7 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   @Input() triggerLastLooksAction: string = '';
   @Input() callsheetPath: string = '';
   @Output() pageUpdate = new EventEmitter<Line[]>();
+  @Output() editModeToggle = new EventEmitter<void>();
   pages: any[];
   hasCallsheet: boolean = false;
   initialDocState: any[];
@@ -610,12 +611,18 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       if (this.editState) {
         this.saveCurrentPageState();
       }
-      
+
       this.currentPageIndex++;
       this.updateDisplayedPage(false); // Pass false to avoid deep cloning
     } else {
     }
   }
+
+  // Toggle edit mode - emits event to parent component
+  toggleEditMode(): void {
+    this.editModeToggle.emit();
+  }
+
   adjustLinesForDisplay(pages) {
     // const lastLinesOfScenes = this.findLastLinesOfScenes(pages);
     // pages.forEach((page, pageIndex, pagesArray) => {

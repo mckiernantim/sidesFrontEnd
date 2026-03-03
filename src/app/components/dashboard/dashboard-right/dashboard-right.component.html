@@ -323,66 +323,6 @@
             </ng-template>
           </div>
 
-          <!-- Sticky Edit Button and Help Tooltip -->
-          @if (lastLooksReady) {
-            <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end space-y-4">
-              <!-- Edit Controls - Only visible in edit mode -->
-              @if (editState) {
-                <div class="flex flex-col space-y-2">
-                  <!-- Undo Button -->
-                  <button 
-                    class="bg-sw-surface-2 hover:bg-sw-border text-sw-text border border-sw-border font-semibold py-2 px-4 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 flex items-center space-x-2"
-                    (click)="handleToolTipClicked('undo')">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                    </svg>
-                    <span>Undo</span>
-                  </button>
-                  
-                  <!-- Reset Document Button -->
-                  <button 
-                    class="bg-sw-warning hover:opacity-90 text-sw-bg font-semibold py-2 px-4 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 flex items-center space-x-2"
-                    (click)="handleToolTipClicked('resetDoc')">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    <span>Reset Document</span>
-                  </button>
-                </div>
-              }
-              
-              <!-- Edit Button -->
-              <button 
-                class="font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 border"
-                (click)="triggerEditMode()"
-                [class.bg-sw-accent]="!editState"
-                [class.text-sw-bg]="!editState"
-                [class.border-sw-accent]="!editState"
-                [class.bg-sw-success]="editState"
-                [class.text-sw-bg]="editState"
-                [class.border-sw-success]="editState">
-                {{ editState ? 'Save Changes' : 'Edit PDF' }}
-              </button>
-              
-              <!-- Help Tooltip - Always visible in edit mode -->
-              @if (editState) {
-                <div class="bg-sw-surface rounded-lg shadow-xl border border-sw-border max-w-sm w-80">
-                  <div class="p-4">
-                    <h3 class="text-lg font-bold mb-3 text-sw-text">Edit Functionality</h3>
-                    <ul class="space-y-2 text-sm text-sw-text-muted">
-                      <li><strong class="text-sw-text">Selection:</strong> Click to select, Ctrl/Cmd+Click for multi-select, Shift+Click for range</li>
-                      <li><strong class="text-sw-text">Edit Text:</strong> Double-click any line to edit</li>
-                      <li><strong class="text-sw-text">Move Lines:</strong> Click and drag selected lines</li>
-                      <li><strong class="text-sw-text">Change Category:</strong> Right-click for context menu</li>
-                      <li><strong class="text-sw-text">Edit Scene Numbers:</strong> Double-click scene numbers</li>
-                      <li><strong class="text-sw-text">Edit Bar Text:</strong> Double-click START/END/CONTINUE text</li>
-                      <li><strong class="text-sw-text">Toggle Visibility:</strong> Press 'X' key on selected lines</li>
-                    </ul>
-                  </div>
-                </div>
-              }
-            </div>
-          }
 
           <app-scene-selection 
             [scenes]="scenes" 
@@ -401,7 +341,8 @@
                 [undoState]="fireUndo"
                 [triggerLastLooksAction]="triggerLastLooksAction"
                 [callsheetPath]="callSheetPath"
-                (pageUpdate)="onPageUpdate($event)">
+                (pageUpdate)="onPageUpdate($event)"
+                (editModeToggle)="triggerEditMode()">
               </app-last-looks>
             </div>
           </div>
