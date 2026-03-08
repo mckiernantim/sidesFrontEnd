@@ -304,8 +304,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
   // Format dates - enhanced for the new structure
   formatDate(dateString: string | null): string {
     if (!dateString) return 'N/A';
-    
+
     const date = new Date(dateString);
+
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid date string:', dateString);
+      return 'N/A';
+    }
+
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',

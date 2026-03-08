@@ -121,13 +121,9 @@
               <p class="font-medium">Current period ends</p>
               <p>{{ formatDate(subscription?.subscription?.currentPeriodEnd) }}</p>
             </div>
-            <div>
-              <p class="font-medium">Documents processed</p>
-              <p>{{ subscription?.usage?.pdfsGenerated || 0 }}</p>
-            </div>
-            <div *ngIf="subscription?.plan">
+            <div *ngIf="subscription?.subscription?.plan">
               <p class="font-medium">Billing</p>
-              <p>{{ formatCurrency(subscription?.plan?.amount) }} per {{ subscription?.plan?.interval }}</p>
+              <p>{{ formatCurrency(subscription?.subscription?.plan?.amount) }} per {{ subscription?.subscription?.plan?.interval }}</p>
             </div>
           </div>
           
@@ -162,13 +158,9 @@
               <p class="font-medium">Access until</p>
               <p>{{ formatDate(subscription?.subscription?.currentPeriodEnd) }}</p>
             </div>
-            <div>
-              <p class="font-medium">Documents processed</p>
-              <p>{{ subscription?.usage?.pdfsGenerated || 0 }}</p>
-            </div>
-            <div *ngIf="subscription?.plan">
+            <div *ngIf="subscription?.subscription?.plan">
               <p class="font-medium">Billing</p>
-              <p>{{ formatCurrency(subscription?.plan?.amount) }} per {{ subscription?.plan?.interval }}</p>
+              <p>{{ formatCurrency(subscription?.subscription?.plan?.amount) }} per {{ subscription?.subscription?.plan?.interval }}</p>
             </div>
           </div>
           

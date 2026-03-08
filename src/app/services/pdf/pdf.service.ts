@@ -757,8 +757,8 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     }
   }
   private applyFinalAttributes(merged: any[], skippedCategories: string[]) {
+    let currentSceneNum = null; // hoisted: must persist across lines so non-header lines inherit the scene
     merged.forEach((line) => {
-      let currentSceneNum = null;
       if (line.category === 'scene-header') {
         currentSceneNum = line.sceneNumberText;
       }
@@ -1845,22 +1845,42 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
 
  
   processSceneHeader(lineInDataTable, lineInScript) {
-    // 86B-86COMITTED86B-86C  < --- strangest example we have founnd
-    // reged for any numbers followed by any ammount of letters and a possible . and then the same thing
+    // V2 output: sceneNumberText is already set and text is clean — nothing to do.
+    // V1 output: scene numbers may be concatenated into text as bookends or trailing-only.
+
+    // 1) BOOKEND: "92INT. PLACE - NIGHT92" → strip both sides
+    // 86B-86COMITTED86B-86C  < --- strangest example we have found
     const bookendPatternRegex = /^(\d+[A-Za-z]*)(.*)(\1)$/;
+    const bookendMatch = lineInDataTable.text.match(bookendPatternRegex);
 
-    const match = lineInDataTable.text.match(bookendPatternRegex);
-
-    if (match) {
-      // Now match[1] and match[3] should be the same, capturing the bookending pattern
-      const sceneNumberText = match[1]; // The bookending pattern (repeated at both ends)
-      const sceneContent = match[2].trim(); // The content of the scene header without the bookending patterns
-      // update text in table ref
+    if (bookendMatch) {
+      const sceneNumberText = bookendMatch[1];
+      const sceneContent = bookendMatch[2].trim();
       lineInDataTable.text = sceneContent;
       lineInDataTable.sceneNumberText = sceneNumberText;
-      // update actual doc in the service
       lineInScript.sceneNumberText = sceneNumberText;
       lineInScript.text = sceneContent;
+      return;
+    }
+
+    // 2) TRAILING-ONLY: "INT. PLACE - NIGHT93" → use sceneNumberText to strip trailing number
+    //    This handles V1 where only the right-margin scene number was concatenated.
+    const snt = lineInDataTable.sceneNumberText;
+    if (snt) {
+      const escapedSnt = snt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const trailingPattern = new RegExp(`\\s*${escapedSnt}\\s*$`);
+      if (trailingPattern.test(lineInDataTable.text)) {
+        const cleaned = lineInDataTable.text.replace(trailingPattern, '').trim();
+        lineInDataTable.text = cleaned;
+        lineInScript.text = cleaned;
+      }
+      // Also check for a leading scene number without bookend: "92 INT. PLACE - NIGHT"
+      const leadingPattern = new RegExp(`^${escapedSnt}\\s+`);
+      if (leadingPattern.test(lineInDataTable.text)) {
+        const cleaned = lineInDataTable.text.replace(leadingPattern, '').trim();
+        lineInDataTable.text = cleaned;
+        lineInScript.text = cleaned;
+      }
     }
   }
 
