@@ -8,20 +8,21 @@ import {
 import { ScheduleScene, formatFifteenMinIncrements } from '../../../types/Schedule';
 
 /**
- * SceneStripComponent — Displays a single scene as a colored strip
- * in the production schedule. This is the basic building block of the
- * schedule board. Each strip shows:
+ * SceneStripComponent — Displays a single scene in two visual modes:
  *
- * - Scene number + INT/EXT badge
- * - Location name
- * - Time of day
- * - Page count (in 8ths)
- * - Estimated shooting time
- * - Character count
- * - Colored left border based on strip color
- * - One-liner editor (when showOneLiner is true and not compact)
+ * CARD mode (showTimeline=false — unscheduled pool):
+ * - Tall, readable vertical card
+ * - Full scene header text (wraps, never truncated)
+ * - Character names listed out
+ * - Page count + flags
+ * - One-liner editor
  *
- * The strip is designed to work with Angular CDK drag-drop.
+ * STRIP mode (showTimeline=true — inside a shoot day):
+ * - Compact horizontal row
+ * - Scene header truncated to fit
+ * - Timeline +/− controls visible
+ *
+ * The component is designed to work with Angular CDK drag-drop.
  */
 @Component({
   selector: 'app-scene-strip',
@@ -81,16 +82,37 @@ export class SceneStripComponent {
   }
 
   /**
-   * CSS class for the INT/EXT badge based on type.
+   * CSS classes for the INT/EXT badge — dark-theme safe colours.
    */
   get intExtBadgeClass(): string {
     if (!this.scene) return '';
     switch (this.scene.intExt) {
-      case 'INT': return 'bg-blue-100 text-blue-800';
-      case 'EXT': return 'bg-green-100 text-green-800';
-      case 'INT/EXT': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'INT':     return 'bg-blue-900 text-blue-200 border border-blue-700';
+      case 'EXT':     return 'bg-emerald-900 text-emerald-200 border border-emerald-700';
+      case 'INT/EXT': return 'bg-violet-900 text-violet-200 border border-violet-700';
+      default:        return 'bg-sw-surface-2 text-sw-text-muted border border-sw-border';
     }
+  }
+
+  /**
+   * Whether we're rendering as a pool card (not inside a shoot day).
+   * Used to switch between the tall card layout and the compact strip layout.
+   */
+  get isCard(): boolean {
+    return !this.showTimeline;
+  }
+
+  /**
+   * Comma-joined character names for the card view.
+   * Shows up to 4 names; appends "+N more" when there are extras.
+   */
+  get characterNames(): string {
+    if (!this.scene?.characters?.length) return '';
+    const names = this.scene.characters.map(c => c.characterName);
+    if (names.length <= 4) return names.join(', ');
+    const shown = names.slice(0, 4);
+    const extra = names.length - 4;
+    return `${shown.join(', ')} +${extra} more`;
   }
 
   /**

@@ -1,23 +1,23 @@
 <!-- Standalone Schedule Page -->
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-sw-bg">
   <!-- Page Header -->
-  <div class="bg-white border-b border-gray-200">
+  <div class="bg-sw-surface border-b border-sw-border">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4">
-          <a routerLink="/" class="text-gray-400 hover:text-gray-600 transition-colors" title="Back to Home">
+          <a routerLink="/" class="text-sw-text-muted hover:text-sw-text transition-colors" title="Back to Home">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
           </a>
           <div>
-            <h1 class="text-2xl font-bold text-gray-900">Production Schedules</h1>
-            <p class="text-sm text-gray-500 mt-0.5">Manage your shooting schedules</p>
+            <h1 class="text-2xl font-bold text-sw-text">Production Schedules</h1>
+            <p class="text-sm text-sw-text-muted mt-0.5">Manage your shooting schedules</p>
           </div>
         </div>
 
         <div class="flex items-center space-x-3">
-          <a routerLink="/profile" class="text-sm text-gray-500 hover:text-gray-700 transition-colors">
+          <a routerLink="/profile" class="text-sm text-sw-text-muted hover:text-sw-text transition-colors">
             ← Back to Profile
           </a>
         </div>
@@ -27,34 +27,34 @@
 
   <!-- Not authenticated state -->
   <div *ngIf="!isAuthenticated" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-    <div class="text-center bg-white rounded-lg shadow-sm border border-gray-200 p-12">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+    <div class="text-center bg-sw-surface rounded-lg border border-sw-border p-12">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-sw-text-subtle mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
       </svg>
-      <h2 class="text-xl font-bold text-gray-900 mb-2">Sign in Required</h2>
-      <p class="text-gray-500 mb-6">You need to be signed in to view and manage your production schedules.</p>
+      <h2 class="text-xl font-bold text-sw-text mb-2">Sign in Required</h2>
+      <p class="text-sw-text-muted mb-6">You need to be signed in to view and manage your production schedules.</p>
     </div>
   </div>
 
   <!-- Route-level loading state (loading a specific schedule by ID) -->
   <div *ngIf="isLoadingRoute" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
     <div class="text-center">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-      <p class="text-gray-500">Loading schedule...</p>
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-sw-accent mx-auto mb-4"></div>
+      <p class="text-sw-text-muted">Loading schedule...</p>
     </div>
   </div>
 
   <!-- Route-level error -->
   <div *ngIf="routeLoadError" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-    <div class="text-center bg-white rounded-lg shadow-sm border border-red-200 p-8">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+    <div class="text-center bg-sw-surface rounded-lg border border-sw-danger/50 p-8">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-sw-danger mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
       </svg>
-      <h2 class="text-lg font-bold text-gray-900 mb-2">Failed to Load Schedule</h2>
-      <p class="text-red-600 mb-4">{{ routeLoadError }}</p>
+      <h2 class="text-lg font-bold text-sw-text mb-2">Failed to Load Schedule</h2>
+      <p class="text-sw-danger mb-4">{{ routeLoadError }}</p>
       <button
         (click)="backToList()"
-        class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-6 rounded-lg transition-colors">
+        class="bg-sw-accent hover:bg-sw-accent-hover text-sw-accent-fg text-sm font-semibold py-2 px-6 rounded-lg transition-colors">
         View All Schedules
       </button>
     </div>
@@ -71,8 +71,8 @@
 
     <!-- Hint: Upload to create new schedules -->
     <div class="mt-6 text-center">
-      <p class="text-sm text-gray-400">
-        To create a new schedule, <a routerLink="/" class="text-indigo-600 hover:text-indigo-700 underline">upload and classify a script</a> first.
+      <p class="text-sm text-sw-text-subtle">
+        To create a new schedule, <a routerLink="/" class="text-sw-accent hover:text-sw-accent-hover underline">upload and classify a script</a> first.
       </p>
     </div>
   </div>

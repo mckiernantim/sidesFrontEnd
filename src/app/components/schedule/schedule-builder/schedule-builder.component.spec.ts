@@ -1,10 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { FormsModule } from '@angular/forms';
 import { ScheduleBuilderComponent } from './schedule-builder.component';
 import { ShootDayCardComponent } from '../shoot-day-card/shoot-day-card.component';
 import { SceneStripComponent } from '../scene-strip/scene-strip.component';
+import { OneLinerEditorComponent } from '../one-liner-editor/one-liner-editor.component';
+import { CastManagerComponent } from '../cast-manager/cast-manager.component';
 import { ScheduleStateService } from '../../../services/schedule/schedule-state.service';
 import { ScheduleService } from '../../../services/schedule/schedule.service';
 import { ScheduleAutoSaveService } from '../../../services/schedule/schedule-auto-save.service';
+import { OneLinerService } from '../../../services/schedule/one-liner.service';
 import {
   ProductionSchedule,
   ScheduleScene,
@@ -35,6 +40,7 @@ function createMockScene(overrides: Partial<ScheduleScene> = {}): ScheduleScene 
     scriptPageStart: 1,
     scriptPageEnd: 3,
     characters: [],
+    descriptions: [],
     oneLiner: '',
     oneLinerSource: 'manual',
     oneLinerEdited: false,
@@ -99,11 +105,14 @@ describe('ScheduleBuilderComponent', () => {
         ScheduleBuilderComponent,
         ShootDayCardComponent,
         SceneStripComponent,
+        OneLinerEditorComponent,
+        CastManagerComponent,
       ],
-      imports: [CommonModule, DragDropModule],
+      imports: [CommonModule, FormsModule, DragDropModule, HttpClientTestingModule],
       providers: [
         ScheduleStateService,
         ScheduleService,
+        OneLinerService,
         { provide: ScheduleAutoSaveService, useClass: MockAutoSaveService },
       ],
     }).compileComponents();
@@ -298,6 +307,73 @@ describe('ScheduleBuilderComponent', () => {
     it('trackBySceneId should return the scene id', () => {
       const scene = createMockScene({ id: 'test-scene' });
       expect(component.trackBySceneId(0, scene)).toBe('test-scene');
+    });
+  });
+
+  describe('tab navigation', () => {
+    beforeEach(() => {
+      stateService.setSchedule(createMockSchedule());
+      fixture.detectChanges();
+    });
+
+    it('should default to schedule tab', () => {
+      expect(component.activeTab).toBe('schedule');
+    });
+
+    it('should switch to cast tab', () => {
+      component.switchTab('cast');
+      expect(component.activeTab).toBe('cast');
+      fixture.detectChanges();
+
+      const castManager = fixture.nativeElement.querySelector('app-cast-manager');
+      expect(castManager).toBeTruthy();
+    });
+
+    it('should switch back to schedule tab', () => {
+      component.switchTab('cast');
+      component.switchTab('schedule');
+      expect(component.activeTab).toBe('schedule');
+      fixture.detectChanges();
+
+      const scheduleView = fixture.nativeElement.querySelector('.schedule-builder');
+      expect(scheduleView).toBeTruthy();
+    });
+
+    it('should show schedule tab content when active', () => {
+      component.switchTab('schedule');
+      fixture.detectChanges();
+
+      const scheduleContent = fixture.nativeElement.textContent;
+      expect(scheduleContent).toContain('NEXT DOOR');
+      expect(scheduleContent).toContain('Unscheduled Scenes');
+    });
+
+    it('should show cast manager when cast tab is active', () => {
+      component.switchTab('cast');
+      fixture.detectChanges();
+
+      const castManager = fixture.nativeElement.querySelector('app-cast-manager');
+      expect(castManager).toBeTruthy();
+    });
+
+    it('should display tab buttons', () => {
+      const tabButtons = fixture.nativeElement.querySelectorAll('.tab-button');
+      expect(tabButtons.length).toBe(2);
+      expect(tabButtons[0].textContent).toContain('Schedule');
+      expect(tabButtons[1].textContent).toContain('Cast Manager');
+    });
+
+    it('should apply active class to active tab button', () => {
+      const tabButtons = fixture.nativeElement.querySelectorAll('.tab-button');
+      expect(tabButtons[0].classList.contains('active')).toBe(true);
+      expect(tabButtons[1].classList.contains('active')).toBe(false);
+
+      component.switchTab('cast');
+      fixture.detectChanges();
+
+      const updatedButtons = fixture.nativeElement.querySelectorAll('.tab-button');
+      expect(updatedButtons[0].classList.contains('active')).toBe(false);
+      expect(updatedButtons[1].classList.contains('active')).toBe(true);
     });
   });
 });

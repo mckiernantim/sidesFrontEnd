@@ -54,6 +54,9 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
   saveError: string | null = null;
   isGeneratingOneLiners: boolean = false;
 
+  // Tab navigation state
+  activeTab: 'schedule' | 'cast' = 'schedule';
+
   private subscriptions: Subscription[] = [];
 
   // Drop list IDs for CDK drag-drop connectivity
@@ -296,6 +299,18 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
 
   trackBySceneId(index: number, scene: ScheduleScene): string {
     return scene.id;
+  }
+
+  // ─────────────────────────────────────────────
+  // Tab Navigation
+  // ─────────────────────────────────────────────
+
+  /**
+   * Switches between Schedule and Cast Manager tabs.
+   */
+  switchTab(tab: 'schedule' | 'cast'): void {
+    this.activeTab = tab;
+    this.cdr.markForCheck();
   }
 
   // ─────────────────────────────────────────────

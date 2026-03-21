@@ -307,7 +307,30 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     }
 
     if (changes['editState']) {
-      this.canEditDocument = changes['editState'].currentValue;
+      const wasEditMode = changes['editState'].previousValue;
+      const isEditMode = changes['editState'].currentValue;
+      this.canEditDocument = isEditMode;
+
+      // When exiting edit mode, re-sync local pages from pdfService
+      // The child component (LastLooksPageComponent) handles the full save in its ngOnChanges,
+      // so we defer our re-sync slightly to ensure the child's save has completed.
+      if (wasEditMode && !isEditMode) {
+        console.log('LastLooks: Exiting edit mode — scheduling page re-sync');
+        setTimeout(() => {
+          if (this.pdf.finalDocument?.data) {
+            console.log('LastLooks: Re-syncing pages from pdfService.finalDocument.data');
+            this.pages = [...this.pdf.finalDocument.data];
+            if (this.pages[this.currentPageIndex]) {
+              this.currentPage = [...this.pages[this.currentPageIndex]];
+            }
+            // Re-process lines for display (recalculate positions if needed)
+            this.processLinesForLastLooks(this.pages);
+            this.cdRef.detectChanges();
+            console.log('LastLooks: Page re-sync complete. Pages:', this.pages.length,
+              'Current page lines:', this.currentPage?.length);
+          }
+        }, 0);
+      }
     }
   }
 
@@ -1272,14 +1295,14 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     this.updateDisplayedPage();
   }
 
-  // Add a method to save changes to the PDF service
+  // Sync local pages state to PDF service (lightweight — no deep copy).
+  // The actual persistent save (saveDocumentState) only happens when
+  // the user explicitly clicks Save or exits edit mode.
   saveChangesToPdfService(): void {
-    // First, ensure all pages in the document are updated
-    this.pdf.finalDocument.data = [...this.pages];
-    
-    // Then call the PDF service's save method
-    this.pdf.saveDocumentState();
-    
+    if (this.pdf.finalDocument?.data) {
+      // Sync all pages to the PDF service's live data
+      this.pdf.finalDocument.data = [...this.pages];
+    }
   }
 
   // Add a method to save the current page state

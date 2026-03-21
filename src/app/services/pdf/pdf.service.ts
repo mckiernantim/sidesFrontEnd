@@ -2089,6 +2089,213 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     return savedState;
   }
 
+  /**
+   * Combine/condense pages by stripping out false (hidden) lines and repaginating.
+   * SAG-AFTRA rules limit audition sides to 8 pages, so this helps casting directors
+   * fit scenes within that limit by removing crossed-out material.
+   *
+   * @param maxPages - Maximum number of pages allowed (default 8 per SAG-AFTRA)
+   * @returns The condensed document data, or null if no condensing was needed
+   */
+  combinePages(maxPages: number = 8): { condensed: boolean; pageCount: number; removedLines: number } {
+    if (!this.finalDocument?.data || this.finalDocument.data.length === 0) {
+      return { condensed: false, pageCount: 0, removedLines: 0 };
+    }
+
+    const originalPageCount = this.finalDocument.data.length;
+
+    // Categories that should always be preserved even if visible is false
+    const alwaysKeepCategories = ['page-number', 'page-number-hidden'];
+    // Categories to always remove during condensing
+    const alwaysRemoveCategories = ['injected-break'];
+
+    // Step 1: Collect all visible lines from all pages (in order), stripping false lines
+    let allVisibleLines: any[] = [];
+    let removedCount = 0;
+
+    for (const page of this.finalDocument.data) {
+      for (const line of page) {
+        // Skip injected breaks
+        if (alwaysRemoveCategories.includes(line.category)) {
+          continue;
+        }
+
+        // Skip false/hidden lines (the core of condensing)
+        if (line.visible === 'false' && !alwaysKeepCategories.includes(line.category)) {
+          removedCount++;
+          continue;
+        }
+
+        // Skip page numbers (we'll re-add them per page)
+        if (line.category === 'page-number' || line.category === 'page-number-hidden') {
+          continue;
+        }
+
+        allVisibleLines.push({ ...line });
+      }
+    }
+
+    if (removedCount === 0) {
+      return { condensed: false, pageCount: originalPageCount, removedLines: 0 };
+    }
+
+    // Step 2: Repaginate the visible lines into new pages
+    // Standard line spacing in raw units and page boundary
+    const LINE_SPACING = 15; // Raw Y units between lines
+    const PAGE_TOP_MARGIN = 50; // Y position of first line on page (raw units)
+    const PAGE_BOTTOM_LIMIT = 780; // Max Y position before page break (raw units)
+
+    let newPages: any[][] = [];
+    let currentPage: any[] = [];
+    let currentY = PAGE_TOP_MARGIN;
+
+    for (let i = 0; i < allVisibleLines.length; i++) {
+      const line = allVisibleLines[i];
+
+      // Scene headers get extra spacing above
+      const isSceneHeader = line.category === 'scene-header';
+      const extraSpace = isSceneHeader && currentY > PAGE_TOP_MARGIN ? 10 : 0;
+
+      const lineY = currentY + extraSpace;
+
+      // Check if we need a page break
+      if (lineY > PAGE_BOTTOM_LIMIT && currentPage.length > 0) {
+        // Finalize current page
+        newPages.push(currentPage);
+        currentPage = [];
+        currentY = PAGE_TOP_MARGIN;
+      }
+
+      // Update line position
+      line.yPos = currentY + extraSpace;
+      line.calculatedYpos = (line.yPos * 1.3) + 'px';
+      line.page = newPages.length + 1; // 1-indexed page number
+      line.docPageIndex = newPages.length;
+      line.docPageLineIndex = currentPage.length;
+
+      // Clear old bar/continue markers (will be recalculated)
+      line.end = 'hideEnd';
+      line.bar = 'hideBar';
+      line.cont = 'hideCont';
+      line.hideCont = 'hideCont';
+      line.hideEnd = 'hideEnd';
+      line.calculatedBarY = undefined;
+      line.calculatedEnd = undefined;
+
+      currentPage.push(line);
+      currentY = line.yPos + LINE_SPACING;
+    }
+
+    // Push the last page
+    if (currentPage.length > 0) {
+      newPages.push(currentPage);
+    }
+
+    // Step 3: Add page numbers to each page
+    for (let pageIdx = 0; pageIdx < newPages.length; pageIdx++) {
+      const page = newPages[pageIdx];
+      // Add a page number line at the top
+      const pageNumLine = {
+        category: 'page-number',
+        class: 'page-number',
+        text: `${pageIdx + 1}.`,
+        pageNumberText: `${pageIdx + 1}.`,
+        visible: 'true',
+        yPos: 30,
+        xPos: 87,
+        calculatedYpos: (30 * 1.3) + 'px',
+        calculatedXpos: (87 * 1.3) + 'px',
+        page: pageIdx + 1,
+        index: -1,
+        sceneIndex: 0,
+        multipleColumn: false,
+        docPageIndex: pageIdx,
+        docPageLineIndex: 0,
+        end: 'hideEnd',
+        bar: 'hideBar',
+        cont: 'hideCont',
+      };
+
+      // Re-index all existing lines on this page
+      page.forEach((line, idx) => {
+        line.docPageLineIndex = idx + 1; // +1 because page number is at index 0
+      });
+
+      page.unshift(pageNumLine);
+    }
+
+    // Step 4: Recalculate scene start/end bars
+    for (let pageIdx = 0; pageIdx < newPages.length; pageIdx++) {
+      const page = newPages[pageIdx];
+      let lastSceneHeader: any = null;
+      let lastVisibleLine: any = null;
+
+      for (const line of page) {
+        if (line.visible !== 'true') continue;
+
+        if (line.category === 'scene-header') {
+          // Mark scene header with a START bar
+          line.bar = 'bar';
+          line.trueScene = 'trueScene';
+          lastSceneHeader = line;
+        }
+
+        if (line.category !== 'page-number' && line.category !== 'page-number-hidden') {
+          lastVisibleLine = line;
+        }
+      }
+
+      // Add END bar to the last visible line on the page if it's the last line of a scene
+      // that continues to the next page, or if the scene ends on this page
+      if (lastVisibleLine && lastSceneHeader) {
+        const nextPage = newPages[pageIdx + 1];
+        if (nextPage) {
+          // Check if scene continues to next page
+          const nextPageFirstContent = nextPage.find(l =>
+            l.category !== 'page-number' && l.category !== 'page-number-hidden' && l.visible === 'true'
+          );
+
+          if (nextPageFirstContent && nextPageFirstContent.sceneNumber === lastSceneHeader.sceneNumber) {
+            // Scene continues — add CONTINUE bar at bottom of current page
+            lastVisibleLine.cont = 'CONTINUE';
+            lastVisibleLine.barY = PAGE_BOTTOM_LIMIT;
+            lastVisibleLine.calculatedBarY = (PAGE_BOTTOM_LIMIT * 1.3) + 'px';
+
+            // Add CONTINUE-TOP bar at top of next page
+            if (nextPageFirstContent) {
+              nextPageFirstContent.cont = 'CONTINUE-TOP';
+              nextPageFirstContent.barY = PAGE_TOP_MARGIN;
+              nextPageFirstContent.calculatedBarY = (PAGE_TOP_MARGIN * 1.3) + 'px';
+            }
+          }
+        }
+      }
+    }
+
+    // Step 5: Update the document
+    this.finalDocument.data = newPages;
+    this.finalDocument.numPages = newPages.length;
+
+    // Update document indexes
+    newPages.forEach((page, pageIndex) => {
+      page.forEach((line, lineIndex) => {
+        line.docPageIndex = pageIndex;
+        line.docPageLineIndex = lineIndex;
+      });
+    });
+
+    // Signal document reorder so parent components refresh
+    this._documentReordered$.next(true);
+
+    console.log(`📄 Combined pages: ${originalPageCount} → ${newPages.length} pages (removed ${removedCount} lines)`);
+
+    return {
+      condensed: true,
+      pageCount: newPages.length,
+      removedLines: removedCount,
+    };
+  }
+
   // Update the loadDocument method to handle custom properties
   loadDocument(document: any) {
     this.finalDocument = document;

@@ -1,0 +1,41 @@
+<div class="disclaimer-toggle-container">
+  <!-- Header -->
+  <div class="disclaimer-header">
+    <span class="disclaimer-label">Legal Disclaimer</span>
+  </div>
+
+  <!-- Apply to All Pages Checkbox -->
+  <div class="disclaimer-option">
+    <label class="checkbox-label">
+      <input
+        type="checkbox"
+        [(ngModel)]="applyToAllPages"
+        (change)="onApplyToAllPagesChange()"
+        [disabled]="isProcessing"
+        class="checkbox-input"
+      />
+      <span class="checkbox-text">Apply to All Pages</span>
+    </label>
+  </div>
+
+  <!-- Toggle Button -->
+  <div class="disclaimer-action">
+    <button
+      class="disclaimer-button"
+      [class.active]="disclaimerActive"
+      [class.processing]="isProcessing"
+      [disabled]="isProcessing"
+      [title]="getButtonTooltip()"
+      (click)="toggleDisclaimer()">
+      <span class="button-icon">{{ disclaimerActive ? '✓' : '+' }}</span>
+      <span class="button-text">{{ getButtonText() }}</span>
+    </button>
+  </div>
+
+  <!-- Disclaimer Preview Text -->
+  <div class="disclaimer-preview">
+    <p class="preview-text">
+      "Performers are not required to learn or memorize lines in advance of their interview."
+    </p>
+  </div>
+</div>

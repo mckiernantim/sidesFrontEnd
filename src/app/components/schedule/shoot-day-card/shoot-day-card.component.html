@@ -1,29 +1,29 @@
-<div class="shoot-day-card bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+<div class="shoot-day-card bg-sw-surface rounded-lg border border-sw-border overflow-hidden">
   <!-- Day Header -->
-  <div class="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100">
+  <div class="flex items-center justify-between p-4 bg-sw-surface-2 border-b border-sw-border">
     <div>
-      <h3 class="text-lg font-bold text-indigo-900">{{ dayLabel }}</h3>
-      <div *ngIf="day?.primaryLocation" class="text-sm text-indigo-700">
+      <h3 class="text-lg font-bold text-sw-text">{{ dayLabel }}</h3>
+      <div *ngIf="day?.primaryLocation" class="text-sm text-sw-text-muted">
         📍 {{ day.primaryLocation }}
       </div>
     </div>
     <div class="flex items-center space-x-4 text-sm">
       <div class="text-center">
-        <div class="font-bold text-indigo-800">{{ formattedPageCount }}</div>
-        <div class="text-xs text-gray-500">pages</div>
+        <div class="font-bold text-sw-accent">{{ formattedPageCount }}</div>
+        <div class="text-xs text-sw-text-subtle">pages</div>
       </div>
       <div class="text-center">
-        <div class="font-bold text-indigo-800">{{ formattedTotalTime }}</div>
-        <div class="text-xs text-gray-500">est. time</div>
+        <div class="font-bold text-sw-accent">{{ formattedTotalTime }}</div>
+        <div class="text-xs text-sw-text-subtle">est. time</div>
       </div>
       <div class="text-center">
-        <div class="font-bold text-indigo-800">{{ day?.scenes?.length || 0 }}</div>
-        <div class="text-xs text-gray-500">scenes</div>
+        <div class="font-bold text-sw-accent">{{ day?.scenes?.length || 0 }}</div>
+        <div class="text-xs text-sw-text-subtle">scenes</div>
       </div>
       <button
         *ngIf="editable"
         (click)="onRemoveDay()"
-        class="text-gray-400 hover:text-red-500 transition-colors ml-2"
+        class="text-sw-text-subtle hover:text-sw-danger transition-colors ml-2"
         title="Remove shoot day">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
@@ -33,20 +33,20 @@
   </div>
 
   <!-- Cast Summary and Actions -->
-  <div class="px-4 py-2 flex items-center justify-between bg-gray-50 border-b">
-    <div class="text-xs text-gray-500">
+  <div class="px-4 py-2 flex items-center justify-between bg-sw-bg border-b border-sw-border">
+    <div class="text-xs text-sw-text-muted">
       {{ castSummary }}
     </div>
     <!-- Generate One-Liners for Day Button -->
     <button
       *ngIf="editable && canGenerateOneLiners"
       (click)="onGenerateDayOneLiners()"
-      class="text-xs bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded-md transition-colors flex items-center space-x-1"
+      class="text-xs bg-sw-surface-2 hover:bg-sw-border text-sw-accent border border-sw-accent px-3 py-1 rounded-md transition-colors flex items-center space-x-1"
       [title]="'Generate AI one-liners for ' + scenesReadyForOneLiners + ' scene(s) in this day'">
       <span>🤖</span>
       <span>Generate One-Liners ({{ scenesReadyForOneLiners }})</span>
     </button>
-    <div *ngIf="editable && !canGenerateOneLiners && day?.scenes?.length > 0" class="text-xs text-amber-600 italic">
+    <div *ngIf="editable && !canGenerateOneLiners && day?.scenes?.length > 0" class="text-xs text-sw-warning italic">
       No scenes ready for AI one-liners
     </div>
   </div>
@@ -82,7 +82,7 @@
     <!-- Empty State -->
     <div
       *ngIf="!day?.scenes?.length"
-      class="text-center py-6 text-gray-400 text-sm italic border-2 border-dashed border-gray-200 rounded-md">
+      class="text-center py-6 text-sw-text-subtle text-sm italic border-2 border-dashed border-sw-border rounded-md">
       Drop scenes here
     </div>
   </div>

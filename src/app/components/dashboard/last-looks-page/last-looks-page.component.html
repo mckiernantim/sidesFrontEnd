@@ -1,6 +1,6 @@
 <!-- last-looks-page.component.html -->
 <main class="last-looks-container">
-    <div class="page shadow-lg border" (click)="showContextMenu && closeContextMenu(); !$event.target.closest('li') && clearSelection()">
+    <div class="page shadow-lg border" (click)="showContextMenu && closeContextMenu(); !$event.target.closest('li') && clearSelection(); !$event.target.closest('.annotation-textbox-edit') && !$event.target.closest('.annotation-canvas-overlay') && deselectAllAnnotations()">
         <!-- Callsheet display section -->
         <div *ngIf="currentPageIndex === 0 && isCallsheetPage(page)" class="callsheet-container">
             <img [src]="page[0].imagePath" 
@@ -254,6 +254,113 @@
                     </li>
                 </ng-container>
             </ul>
+
+            <!-- Annotation Canvas Overlay — arrows & highlights only (edit mode) -->
+            <app-annotation-canvas
+                *ngIf="canEditDocument"
+                [pageWidth]="816"
+                [pageHeight]="1056"
+                [pageIndex]="currentPageIndex"
+                class="annotation-canvas-overlay">
+            </app-annotation-canvas>
+
+            <!-- ═══ ARROW SVG ANNOTATIONS (DOM elements — always visible, both modes) ═══ -->
+            <div class="annotation-arrow-overlay">
+                <ng-container *ngFor="let annotation of getAnnotationsForCurrentPage()">
+                    <svg *ngIf="annotation.type === 'note' || (annotation.type === 'shape' && annotation.style?.shapeType === 'arrow')"
+                         [ngStyle]="getAnnotationPixelStyle(annotation)"
+                         class="annotation-arrow-svg"
+                         [class.selected]="selectedAnnotationId === annotation.annotationId"
+                         [attr.viewBox]="'0 0 ' + (annotation.normalizedWidth * 816) + ' ' + (annotation.normalizedHeight * 1056)"
+                         (click)="canEditDocument && selectAnnotation(annotation.annotationId); $event.stopPropagation()">
+                        <defs>
+                            <marker [id]="'arrow-marker-' + annotation.annotationId"
+                                    markerWidth="10" markerHeight="7"
+                                    refX="10" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7"
+                                         [attr.fill]="annotation.style?.color || '#000000'" />
+                            </marker>
+                        </defs>
+                        <line x1="0" y1="0"
+                              [attr.x2]="annotation.normalizedWidth * 816"
+                              [attr.y2]="annotation.normalizedHeight * 1056"
+                              [attr.stroke]="annotation.style?.color || '#000000'"
+                              [attr.stroke-width]="annotation.style?.strokeWidth || 3"
+                              [attr.marker-end]="'url(#arrow-marker-' + annotation.annotationId + ')'" />
+                    </svg>
+                </ng-container>
+            </div>
+
+            <!-- ═══ TEXT BOX ANNOTATIONS (DOM elements — edit mode) ═══ -->
+            <div class="annotation-textbox-overlay" *ngIf="canEditDocument">
+                <ng-container *ngFor="let annotation of getAnnotationsForCurrentPage()">
+                    <div *ngIf="annotation.type === 'textbox'"
+                         [ngStyle]="getAnnotationPixelStyle(annotation)"
+                         class="annotation-textbox-edit"
+                         [class.editing]="editingTextBoxId === annotation.annotationId"
+                         [class.dragging]="draggingTextBoxId === annotation.annotationId"
+                         [class.selected]="selectedAnnotationId === annotation.annotationId"
+                         (mousedown)="startTextBoxDrag($event, annotation)"
+                         (click)="selectAnnotation(annotation.annotationId); $event.stopPropagation()"
+                         (dblclick)="onTextBoxDoubleClick($event, annotation)">
+
+                        <!-- Editable content (shown when editing) -->
+                        <span *ngIf="editingTextBoxId === annotation.annotationId"
+                              [id]="'textbox-' + annotation.annotationId"
+                              contenteditable="true"
+                              class="textbox-editable"
+                              (input)="onTextBoxInput($event, annotation)"
+                              (keydown)="onTextBoxKeyDown($event)"
+                              (blur)="finishTextBoxEdit()">{{ annotation.text }}</span>
+
+                        <!-- Read-only content (shown when not editing) -->
+                        <span *ngIf="editingTextBoxId !== annotation.annotationId"
+                              class="textbox-display">{{ annotation.text || 'Double-click to type...' }}</span>
+
+                        <!-- Delete button -->
+                        <button class="textbox-delete-btn"
+                                (mousedown)="deleteTextBox($event, annotation)"
+                                title="Delete text box">✕</button>
+                    </div>
+                </ng-container>
+            </div>
+
+            <!-- ═══ ANNOTATION PREVIEW (view mode — NOT edit mode) ═══ -->
+            <div class="annotation-preview-overlay" *ngIf="!canEditDocument">
+                <ng-container *ngFor="let annotation of getAnnotationsForCurrentPage()">
+                    <!-- Text box annotations -->
+                    <div *ngIf="annotation.type === 'textbox'"
+                         [ngStyle]="getAnnotationPixelStyle(annotation)"
+                         class="annotation-preview-item">
+                        {{ annotation.text }}
+                    </div>
+
+                    <!-- Highlight annotations -->
+                    <div *ngIf="annotation.type === 'highlight'"
+                         [ngStyle]="getAnnotationPixelStyle(annotation)"
+                         class="annotation-preview-item">
+                    </div>
+
+                    <!-- Arrow annotations are rendered in the always-visible arrow overlay above -->
+
+                    <!-- Shape annotations (rectangle, etc.) -->
+                    <div *ngIf="annotation.type === 'shape' && annotation.style?.shapeType !== 'arrow'"
+                         [ngStyle]="getAnnotationPixelStyle(annotation)"
+                         class="annotation-preview-shape"
+                         [style.border]="(annotation.style?.strokeWidth || 2) + 'px solid ' + (annotation.style?.color || '#000000')"
+                         [style.backgroundColor]="annotation.style?.fillColor || 'transparent'"
+                         [style.opacity]="annotation.style?.opacity || 1">
+                        {{ annotation.text }}
+                    </div>
+
+                    <!-- Redaction annotations -->
+                    <div *ngIf="annotation.type === 'redaction'"
+                         [ngStyle]="getAnnotationPixelStyle(annotation)"
+                         class="annotation-preview-item">
+                    </div>
+                </ng-container>
+            </div>
+
             <li class="footer">made by Sides-Ways</li>
         </div>
     </div>
@@ -388,6 +495,87 @@
         </button>
 
         <div class="toolbar-section-divider"></div>
+
+        <!-- PHASE 1: ANNOTATION TOOLS -->
+
+        <!-- Scene Marker Tool -->
+        <button class="tool-btn"
+                (click)="insertSceneMarker()"
+                [attr.data-tooltip-left]="'Insert Scene ' + getNextSceneNumber()">
+            <span class="tool-emoji">🎬</span>
+        </button>
+
+        <!-- Text Box Presets Dropdown -->
+        <div class="preset-dropdown-container">
+            <button class="tool-btn"
+                    (click)="togglePresetMenu()"
+                    data-tooltip-left="Text Box Presets">
+                <span class="tool-emoji">📝</span>
+            </button>
+            <div class="preset-menu" *ngIf="showPresetMenu">
+                <button class="preset-item" (click)="insertPreset('series-name')">
+                    Series Name
+                </button>
+                <button class="preset-item" (click)="insertPreset('character-name')">
+                    Character
+                </button>
+                <button class="preset-item" (click)="insertPreset('legal-disclaimer')">
+                    Legal
+                </button>
+            </div>
+        </div>
+
+        <!-- Disclaimer Toggle Tool -->
+        <button class="tool-btn"
+                [class.active]="disclaimerActive"
+                (click)="toggleDisclaimer()"
+                [attr.data-tooltip-left]="disclaimerActive ? 'Remove Disclaimer' : 'Add Disclaimer'">
+            <span class="tool-emoji">⚖️</span>
+        </button>
+
+        <div class="toolbar-section-divider"></div>
+
+        <!-- DRAWING / ANNOTATION TOOLS -->
+
+        <!-- Add Text Box Tool (simple: click to add, type, drag) -->
+        <button class="tool-btn"
+                (click)="addTextBox()"
+                data-tooltip-left="Add Text Box">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
+            </svg>
+        </button>
+
+        <!-- Draw Arrow Tool -->
+        <button class="tool-btn"
+                [class.active]="activeDrawingTool === 'note'"
+                (click)="toggleDrawingTool('note')"
+                data-tooltip-left="Draw Arrow">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7M17 7H7M17 7V17"></path>
+            </svg>
+        </button>
+
+        <!-- Draw Highlight Tool -->
+        <button class="tool-btn"
+                [class.active]="activeDrawingTool === 'highlight'"
+                (click)="toggleDrawingTool('highlight')"
+                data-tooltip-left="Draw Highlight">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+            </svg>
+        </button>
+
+        <div class="toolbar-section-divider"></div>
+
+        <!-- Combine/Condense Pages Tool -->
+        <button class="tool-btn tool-btn-primary"
+                (click)="combinePages()"
+                data-tooltip-left="Condense Pages (remove hidden lines)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+            </svg>
+        </button>
 
         <!-- Reset Tool -->
         <button class="tool-btn tool-btn-danger"

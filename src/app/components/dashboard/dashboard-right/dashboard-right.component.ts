@@ -1677,10 +1677,10 @@ async sendFinalDocumentToServer(finalDocument) {
     }
   }
   triggerEditMode() {
-    if (this.editState) {
-      // We're exiting edit mode, save the document state
-      this.pdf.saveDocumentState();
-    }
+    // Don't call saveDocumentState() here — the child component (LastLooksPageComponent)
+    // handles the full save when editMode changes to false in its ngOnChanges.
+    // Calling it here before the child has synced creates a deep copy that misses
+    // the child's latest local state (annotations, page changes).
     this.editState = !this.editState;
     this.editLastLooksState = this.editState;
   }

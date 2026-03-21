@@ -1,0 +1,149 @@
+.disclaimer-toggle-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background-color: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.disclaimer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.disclaimer-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.disclaimer-option {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #4a90e2;
+}
+
+.checkbox-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.checkbox-text {
+  font-size: 13px;
+  color: #555;
+}
+
+.disclaimer-action {
+  display: flex;
+  align-items: center;
+}
+
+.disclaimer-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #ffffff;
+  border: 2px solid #4a90e2;
+  border-radius: 4px;
+  color: #4a90e2;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.disclaimer-button:hover:not(:disabled) {
+  background-color: #4a90e2;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(74, 144, 226, 0.3);
+}
+
+.disclaimer-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(74, 144, 226, 0.3);
+}
+
+.disclaimer-button.active {
+  background-color: #28a745;
+  border-color: #28a745;
+  color: #ffffff;
+}
+
+.disclaimer-button.active:hover:not(:disabled) {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+.disclaimer-button.processing {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.disclaimer-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.button-icon {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.button-text {
+  font-size: 14px;
+}
+
+.disclaimer-preview {
+  padding: 12px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.preview-text {
+  margin: 0;
+  font-size: 11px;
+  color: #666666;
+  font-style: italic;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .disclaimer-toggle-container {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .disclaimer-button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .preview-text {
+    font-size: 10px;
+  }
+}

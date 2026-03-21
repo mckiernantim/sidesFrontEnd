@@ -10,6 +10,7 @@ import { ScheduleBuilderComponent } from '../../components/schedule/schedule-bui
 import { ScheduleTabComponent } from '../../components/schedule/schedule-tab/schedule-tab.component';
 import { SchedulePageComponent } from '../../components/schedule/schedule-page/schedule-page.component';
 import { OneLinerEditorComponent } from '../../components/schedule/one-liner-editor/one-liner-editor.component';
+import { CastManagerComponent } from '../../components/schedule/cast-manager/cast-manager.component';
 
 import { ScheduleStateService } from '../../services/schedule/schedule-state.service';
 import { ScheduleService } from '../../services/schedule/schedule.service';
@@ -28,6 +29,7 @@ import { OneLinerService } from '../../services/schedule/one-liner.service';
  * - ScheduleTabComponent: Dashboard integration tab container
  * - SchedulePageComponent: Standalone schedule page (profile → schedule deep-link)
  * - OneLinerEditorComponent: Inline one-liner editor for scene strips
+ * - CastManagerComponent: Cast member management with drag-drop reordering
  *
  * Services:
  * - ScheduleStateService: Reactive schedule state management
@@ -42,6 +44,7 @@ import { OneLinerService } from '../../services/schedule/one-liner.service';
     ScheduleTabComponent,
     SchedulePageComponent,
     OneLinerEditorComponent,
+    CastManagerComponent,
   ],
   imports: [
     CommonModule,
@@ -54,6 +57,7 @@ import { OneLinerService } from '../../services/schedule/one-liner.service';
     ScheduleTabComponent,
     ScheduleBuilderComponent,
     SchedulePageComponent,
+    CastManagerComponent,
   ],
   providers: [
     ScheduleStateService,

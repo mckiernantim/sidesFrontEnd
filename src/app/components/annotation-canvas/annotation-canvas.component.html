@@ -1,0 +1,9 @@
+<canvas
+  #annotationCanvas
+  [width]="pageWidth"
+  [height]="pageHeight"
+  (mousedown)="onMouseDown($event)"
+  (mousemove)="onMouseMove($event)"
+  (mouseup)="onMouseUp($event)"
+  class="annotation-canvas"
+></canvas>

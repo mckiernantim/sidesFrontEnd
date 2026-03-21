@@ -4,6 +4,8 @@ import { UndoService } from 'src/app/services/edit/undo.service';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, filter } from 'rxjs/operators';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
+import { AnnotationStateService } from 'src/app/services/annotation/annotation-state.service';
+import { DEFAULT_TEXT_BOX_PRESETS } from 'src/app/types/Annotation';
 import { cloneDeep } from 'lodash';
 
 
@@ -88,7 +90,27 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   private subscription: Subscription;
   private sceneHeaderTextUpdateSubscription: Subscription;
 
-  
+  // Annotation mode properties
+  private documentId: string | null = null;
+  private initialAnnotations: any[] = []; // Store initial annotation state
+
+  // Phase 1: Annotation toolbar state
+  showPresetMenu: boolean = false;
+  disclaimerActive: boolean = false;
+  activeDrawingTool: string | null = null; // Tracks which drawing tool is active ('note', 'highlight', etc.)
+
+  // Simple text box state (DOM-based, not canvas)
+  editingTextBoxId: string | null = null; // Currently editing text box annotation ID
+  draggingTextBoxId: string | null = null; // Currently dragging text box annotation ID
+  textBoxDragStartX: number = 0;
+  textBoxDragStartY: number = 0;
+  textBoxInitialNormX: number = 0;
+  textBoxInitialNormY: number = 0;
+
+  // Unified annotation selection (works for text boxes, arrows, shapes, highlights)
+  selectedAnnotationId: string | null = null;
+  private toolStateSubscription: Subscription | null = null;
+  private annotationsSyncSubscription: Subscription | null = null;
 
   @ViewChild('pdfViewer') pdfViewer: any;
 
@@ -120,7 +142,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   constructor(
     private undoService: UndoService,
     public cdRef: ChangeDetectorRef,
-    private pdfService: PdfService
+    private pdfService: PdfService,
+    private annotationState: AnnotationStateService
   ) {
     // Subscribe to line updates from the service
     this.subscription = this.pdfService.finalDocumentData$.subscribe(update => {
@@ -229,10 +252,62 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       this.cdRef.detectChanges();
     }
   
+    // Handle page index changes - save annotations when changing pages
+    if (changes['currentPageIndex'] && !changes['currentPageIndex'].firstChange) {
+      console.log('Page changed from', changes['currentPageIndex'].previousValue, 'to', changes['currentPageIndex'].currentValue);
+      // Save current state to document when navigating pages
+      if (this.canEditDocument) {
+        this.saveAnnotationsToDocument();
+      }
+    }
+
     // Handle other changes as before...
     if (changes['editMode']) {
-      this.canEditDocument = changes['editMode'].currentValue;
-      console.log('LastLooks editState changed to:', this.canEditDocument);
+      const wasEditMode = changes['editMode'].previousValue;
+      const isEditMode = changes['editMode'].currentValue;
+
+      console.log('========================================');
+      console.log('EDIT MODE CHANGED:', wasEditMode, '->', isEditMode);
+      console.log('========================================');
+
+      this.canEditDocument = isEditMode;
+
+      // Initialize or clean up annotation system based on edit mode
+      if (isEditMode) {
+        console.log('📝 ENABLING EDIT MODE - Loading annotations...');
+        this.initializeAnnotationSystem();
+      } else {
+        console.log('💾 DISABLING EDIT MODE - Performing full save...');
+
+        // === FULL SAVE SEQUENCE (must happen in this order) ===
+
+        // Step 1: Sync current page state to pdfService
+        if (this.pdfService.finalDocument?.data && this.page) {
+          console.log('Step 1: Syncing page', this.currentPageIndex, 'to pdfService (', this.page.length, 'lines)');
+          this.pdfService.finalDocument.data[this.currentPageIndex] = [...this.page];
+        }
+
+        // Step 2: Save annotations to document
+        this.saveAnnotationsToDocument();
+
+        // Step 3: Create a persistent save point (deep copy)
+        this.pdfService.saveDocumentState();
+
+        // Log what we saved
+        if (this.pdfService.finalDocument?.annotations) {
+          console.log('✅ Saved', this.pdfService.finalDocument.annotations.length, 'annotations to document');
+        }
+        console.log('✅ Document state saved. Pages:', this.pdfService.finalDocument?.data?.length);
+
+        // Step 4: Emit page update so parent re-syncs its local state
+        this.pageUpdate.emit([...this.page]);
+
+        // Step 5: Clear annotation state and selection
+        this.selectedAnnotationId = null;
+        this.toolStateSubscription?.unsubscribe();
+        this.annotationsSyncSubscription?.unsubscribe();
+        this.annotationState.clear();
+      }
     }
   
     if (changes['resetDocState'] && changes['resetDocState'].currentValue) {
@@ -283,6 +358,515 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     document.removeEventListener('mouseup', this.handleMouseUp);
     document.removeEventListener('mousemove', this.moveBarText);
     document.removeEventListener('mouseup', this.endBarTextDrag);
+
+    // Clean up annotation system
+    this.toolStateSubscription?.unsubscribe();
+    this.annotationsSyncSubscription?.unsubscribe();
+    if (this.canEditDocument) {
+      this.annotationState.clear();
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // Annotation Mode Methods
+  // ─────────────────────────────────────────────
+
+  /**
+   * Initialize the annotation system for the current document
+   * This is called automatically when edit mode is enabled
+   */
+  private initializeAnnotationSystem(): void {
+    // Use a stable document ID derived from finalDocument name, or generate once and reuse
+    if (!this.documentId) {
+      const docName = this.pdfService.finalDocument?.name || 'untitled';
+      this.documentId = `doc-${docName.replace(/\s+/g, '-').toLowerCase()}`;
+      console.log('Using stable document ID:', this.documentId);
+    }
+
+    try {
+      // Initialize locally first — don't depend on backend API for basic functionality
+      this.annotationState.initializeLocal(this.documentId);
+      console.log('Annotation system initialized locally for document:', this.documentId);
+
+      // Load annotations from saved document state
+      this.loadAnnotationsFromDocument();
+
+      // Store initial annotation state for reset
+      if (this.pdfService.finalDocument?.annotations) {
+        this.initialAnnotations = JSON.parse(JSON.stringify(this.pdfService.finalDocument.annotations));
+      }
+
+      // Subscribe to tool state to pick up canvas-based selections (arrows, shapes, highlights)
+      this.toolStateSubscription?.unsubscribe();
+      this.toolStateSubscription = this.annotationState.toolState$.subscribe(toolState => {
+        if (toolState.selectedAnnotationIds.length > 0) {
+          this.selectedAnnotationId = toolState.selectedAnnotationIds[0];
+        }
+      });
+
+      // Subscribe to annotation changes so that DOM-based overlays (arrows, text boxes)
+      // stay in sync with the canvas-based annotation state.
+      // Debounced to avoid excessive syncs during drag/type operations.
+      this.annotationsSyncSubscription?.unsubscribe();
+      this.annotationsSyncSubscription = this.annotationState.annotations$
+        .pipe(debounceTime(200))
+        .subscribe(() => {
+          this.saveAnnotationsToDocument();
+          this.cdRef.detectChanges();
+        });
+    } catch (error) {
+      console.error('Error initializing annotation system:', error);
+    }
+  }
+
+  /**
+   * Load annotations from the saved document into the annotation system.
+   * Preserves annotationIds so state and document stay in sync.
+   */
+  private loadAnnotationsFromDocument(): void {
+    console.log('📂 loadAnnotationsFromDocument() called');
+
+    // Check if we have saved annotations in the document
+    const savedAnnotations = this.pdfService.finalDocument?.annotations;
+    if (!savedAnnotations || savedAnnotations.length === 0) {
+      console.log('⚠️ No saved annotations found in document');
+      return;
+    }
+
+    console.log('✅ Loading', savedAnnotations.length, 'saved annotations from document');
+
+    // Load each annotation into the local state, PRESERVING the original annotationId.
+    // This is critical — the DOM text box template and the annotation preview both
+    // reference annotations by annotationId from finalDocument.annotations.
+    // If the state Map uses different IDs, updates via updateAnnotation() would fail.
+    let loadedCount = 0;
+    for (const annotation of savedAnnotations) {
+      const annotationId = this.annotationState.addAnnotationLocally({
+        annotationId: annotation.annotationId,   // Preserve the saved ID!
+        type: annotation.type,
+        pageIndex: annotation.pageIndex,
+        normalizedX: annotation.normalizedX,
+        normalizedY: annotation.normalizedY,
+        normalizedWidth: annotation.normalizedWidth,
+        normalizedHeight: annotation.normalizedHeight,
+        text: annotation.text,
+        style: annotation.style,
+      });
+
+      if (annotationId) {
+        loadedCount++;
+      }
+    }
+
+    console.log('✅ LOADED', loadedCount, '/', savedAnnotations.length, 'ANNOTATIONS');
+  }
+
+  // ─────────────────────────────────────────────
+  // Phase 1: Annotation Toolbar Methods
+  // ─────────────────────────────────────────────
+
+  /**
+   * Toggle a drawing tool on/off. When active, the user can draw annotations on the canvas.
+   */
+  toggleDrawingTool(tool: 'note' | 'highlight' | 'shape' | 'redaction'): void {
+    if (this.activeDrawingTool === tool) {
+      // Deactivate
+      this.activeDrawingTool = null;
+      this.annotationState.setActiveTool(null);
+    } else {
+      // Activate
+      this.activeDrawingTool = tool;
+      this.annotationState.setActiveTool(tool);
+    }
+  }
+
+  // ============= SIMPLE TEXT BOX METHODS =============
+
+  /**
+   * Add a new text box to the current page at a default position.
+   * The text box is a DOM element the user can type in and drag around.
+   */
+  async addTextBox(): Promise<void> {
+    const annotationId = await this.annotationState.createAnnotation({
+      type: 'textbox',
+      pageIndex: this.currentPageIndex,
+      normalizedX: 0.1,
+      normalizedY: 0.1,
+      normalizedWidth: 0.35,
+      normalizedHeight: 0.04,
+      text: '',
+      style: {
+        color: '#000000',
+        opacity: 1.0,
+        strokeWidth: 1,
+        fontSize: 16,
+        fontFamily: "'Courier Prime', monospace",
+        fontWeight: '900',
+      }
+    });
+
+    if (annotationId) {
+      // Save to document and immediately enter editing on the new box
+      this.saveAnnotationsToDocument();
+      this.editingTextBoxId = annotationId;
+      this.cdRef.detectChanges();
+
+      // Focus the new text box after render
+      setTimeout(() => {
+        const el = document.getElementById('textbox-' + annotationId);
+        if (el) {
+          el.focus();
+        }
+      }, 50);
+    }
+  }
+
+  /**
+   * Handle double-click on a text box to start editing.
+   */
+  onTextBoxDoubleClick(event: MouseEvent, annotation: any): void {
+    if (!this.canEditDocument) return;
+    event.stopPropagation();
+    event.preventDefault();
+    this.editingTextBoxId = annotation.annotationId;
+    this.cdRef.detectChanges();
+
+    setTimeout(() => {
+      const el = document.getElementById('textbox-' + annotation.annotationId);
+      if (el) {
+        el.focus();
+        // Select all text for easy replacement
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.selectNodeContents(el);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+    }, 10);
+  }
+
+  /**
+   * Handle text input in a text box.
+   */
+  onTextBoxInput(event: Event, annotation: any): void {
+    const target = event.target as HTMLElement;
+    const newText = target.textContent || '';
+
+    // Update the annotation text in the state service (use updateAnnotation, NOT addAnnotationLocally)
+    this.annotationState.updateAnnotation(annotation.annotationId, {
+      text: newText,
+    });
+  }
+
+  /**
+   * Handle keydown in text box (Enter to finish, Escape to cancel).
+   */
+  onTextBoxKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      this.finishTextBoxEdit();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.editingTextBoxId = null;
+    }
+  }
+
+  /**
+   * Finish editing a text box (on blur or Enter).
+   */
+  finishTextBoxEdit(): void {
+    if (this.editingTextBoxId) {
+      this.saveAnnotationsToDocument();
+      this.editingTextBoxId = null;
+      this.cdRef.detectChanges();
+    }
+  }
+
+  /**
+   * Start dragging a text box to reposition it.
+   */
+  startTextBoxDrag(event: MouseEvent, annotation: any): void {
+    if (!this.canEditDocument) return;
+    // Don't start drag if we're editing this text box
+    if (this.editingTextBoxId === annotation.annotationId) return;
+
+    event.stopPropagation();
+    event.preventDefault();
+
+    this.draggingTextBoxId = annotation.annotationId;
+    this.textBoxDragStartX = event.clientX;
+    this.textBoxDragStartY = event.clientY;
+    this.textBoxInitialNormX = annotation.normalizedX;
+    this.textBoxInitialNormY = annotation.normalizedY;
+
+    document.addEventListener('mousemove', this.moveTextBox);
+    document.addEventListener('mouseup', this.endTextBoxDrag);
+  }
+
+  /**
+   * Handle mousemove during text box drag.
+   */
+  moveTextBox = (event: MouseEvent): void => {
+    if (!this.draggingTextBoxId) return;
+
+    const pageWidth = 816;
+    const pageHeight = 1056;
+
+    const deltaX = event.clientX - this.textBoxDragStartX;
+    const deltaY = event.clientY - this.textBoxDragStartY;
+
+    const newNormX = Math.max(0, Math.min(1, this.textBoxInitialNormX + (deltaX / pageWidth)));
+    const newNormY = Math.max(0, Math.min(1, this.textBoxInitialNormY + (deltaY / pageHeight)));
+
+    // Update annotation position in the state service (source of truth during editing).
+    // We also update finalDocument.annotations inline so the DOM text boxes re-render
+    // at the new position without a full saveAnnotationsToDocument() on every frame.
+    this.annotationState.updateAnnotation(this.draggingTextBoxId, {
+      normalizedX: newNormX,
+      normalizedY: newNormY,
+    });
+
+    // Fast inline sync: update the matching entry in finalDocument.annotations directly
+    const docAnnotations = this.pdfService.finalDocument?.annotations;
+    if (docAnnotations) {
+      const docAnn = docAnnotations.find((a: any) => a.annotationId === this.draggingTextBoxId);
+      if (docAnn) {
+        docAnn.normalizedX = newNormX;
+        docAnn.normalizedY = newNormY;
+      }
+    }
+    this.cdRef.detectChanges();
+  };
+
+  /**
+   * End text box drag.
+   */
+  endTextBoxDrag = (event: MouseEvent): void => {
+    document.removeEventListener('mousemove', this.moveTextBox);
+    document.removeEventListener('mouseup', this.endTextBoxDrag);
+
+    // Full sync from state → document now that drag is complete
+    if (this.draggingTextBoxId) {
+      this.saveAnnotationsToDocument();
+    }
+    this.draggingTextBoxId = null;
+  };
+
+  /**
+   * Delete a text box annotation.
+   */
+  deleteTextBox(event: MouseEvent, annotation: any): void {
+    event.stopPropagation();
+    event.preventDefault();
+
+    // Remove from annotation state locally (deleteAnnotation rolls back on API failure,
+    // so we use removeAnnotationLocally for a guaranteed local-only delete)
+    this.annotationState.removeAnnotationLocally(annotation.annotationId);
+    this.saveAnnotationsToDocument();
+    this.cdRef.detectChanges();
+  }
+
+  // ============= ANNOTATION SELECTION & DELETION =============
+
+  /**
+   * Select an annotation (text box, arrow, shape, etc.) so it can be deleted with Delete key.
+   * For text boxes: triggered by click on the text box DOM element.
+   * For canvas annotations (arrows, shapes, highlights): bridged via toolState$ subscription.
+   */
+  selectAnnotation(annotationId: string): void {
+    this.selectedAnnotationId = annotationId;
+    // Also sync to the state service so the canvas knows
+    this.annotationState.selectAnnotations([annotationId]);
+  }
+
+  /**
+   * Deselect all annotations (triggered by clicking empty space).
+   */
+  deselectAllAnnotations(): void {
+    this.selectedAnnotationId = null;
+    this.annotationState.clearSelection();
+  }
+
+  /**
+   * Delete whichever annotation is currently selected (any type).
+   * Called when the user presses Delete or Backspace.
+   */
+  deleteSelectedAnnotation(): void {
+    if (!this.selectedAnnotationId) return;
+
+    const idToDelete = this.selectedAnnotationId;
+
+    // Remove from annotation state and sync to document
+    this.annotationState.removeAnnotationLocally(idToDelete);
+    this.saveAnnotationsToDocument();
+
+    // Clear selection
+    this.selectedAnnotationId = null;
+    this.annotationState.clearSelection();
+
+    this.cdRef.detectChanges();
+    console.log('Deleted annotation:', idToDelete);
+  }
+
+  /**
+   * Toggle the preset menu dropdown
+   */
+  togglePresetMenu(): void {
+    this.showPresetMenu = !this.showPresetMenu;
+  }
+
+  /**
+   * Insert a text box preset annotation
+   */
+  async insertPreset(presetId: string): Promise<void> {
+    const preset = DEFAULT_TEXT_BOX_PRESETS.find(p => p.id === presetId);
+    if (!preset) {
+      console.error('Preset not found:', presetId);
+      return;
+    }
+
+    // Close the preset menu
+    this.showPresetMenu = false;
+
+    // Create the annotation
+    try {
+      const annotationId = await this.annotationState.createAnnotation({
+        type: 'textbox',
+        pageIndex: this.currentPageIndex,
+        normalizedX: preset.normalizedX,
+        normalizedY: preset.normalizedY,
+        normalizedWidth: preset.normalizedWidth || 0.3,
+        normalizedHeight: preset.normalizedHeight || 0.05,
+        text: preset.defaultText,
+        style: preset.style
+      });
+
+      if (annotationId) {
+        console.log('Preset inserted:', presetId, annotationId);
+      }
+    } catch (error) {
+      console.error('Error inserting preset:', error);
+    }
+  }
+
+  /**
+   * Insert a scene marker with auto-incrementing number
+   */
+  async insertSceneMarker(): Promise<void> {
+    const nextSceneNumber = this.getNextSceneNumber();
+    const sceneText = `Scene ${nextSceneNumber}`;
+
+    // Get the scene marker preset for styling
+    const sceneMarkerPreset = DEFAULT_TEXT_BOX_PRESETS.find(p => p.isSceneMarker);
+    if (!sceneMarkerPreset) {
+      console.error('Scene marker preset not found');
+      return;
+    }
+
+    try {
+      const annotationId = await this.annotationState.createAnnotation({
+        type: 'textbox',
+        pageIndex: this.currentPageIndex,
+        normalizedX: sceneMarkerPreset.normalizedX,
+        normalizedY: sceneMarkerPreset.normalizedY,
+        normalizedWidth: sceneMarkerPreset.normalizedWidth || 0.2,
+        normalizedHeight: sceneMarkerPreset.normalizedHeight || 0.05,
+        text: sceneText,
+        style: sceneMarkerPreset.style
+      });
+
+      if (annotationId) {
+        console.log('Scene marker inserted:', sceneText, annotationId);
+      }
+    } catch (error) {
+      console.error('Error inserting scene marker:', error);
+    }
+  }
+
+  /**
+   * Get the next scene marker number
+   */
+  getNextSceneNumber(): number {
+    const allAnnotations = Array.from(this.annotationState.annotations.values());
+    const sceneMarkerPattern = /^Scene (\d+)$/;
+    let highestSceneNumber = 0;
+
+    allAnnotations.forEach(annotation => {
+      if (annotation.type === 'textbox' && annotation.text) {
+        const match = annotation.text.match(sceneMarkerPattern);
+        if (match) {
+          const sceneNumber = parseInt(match[1], 10);
+          if (sceneNumber > highestSceneNumber) {
+            highestSceneNumber = sceneNumber;
+          }
+        }
+      }
+    });
+
+    return highestSceneNumber + 1;
+  }
+
+  /**
+   * Toggle disclaimer on/off
+   */
+  async toggleDisclaimer(): Promise<void> {
+    if (this.disclaimerActive) {
+      await this.removeDisclaimer();
+    } else {
+      await this.insertDisclaimer();
+    }
+  }
+
+  /**
+   * Insert disclaimer annotation on current page
+   */
+  private async insertDisclaimer(): Promise<void> {
+    const preset = DEFAULT_TEXT_BOX_PRESETS.find(p => p.id === 'legal-disclaimer');
+    if (!preset) {
+      console.error('Legal disclaimer preset not found');
+      return;
+    }
+
+    try {
+      const annotationId = await this.annotationState.createAnnotation({
+        type: 'textbox',
+        pageIndex: this.currentPageIndex,
+        normalizedX: preset.normalizedX,
+        normalizedY: preset.normalizedY,
+        normalizedWidth: preset.normalizedWidth || 0.8,
+        normalizedHeight: preset.normalizedHeight || 0.04,
+        text: 'Performers are not required to learn or memorize lines in advance of their interview.',
+        style: preset.style
+      });
+
+      if (annotationId) {
+        this.disclaimerActive = true;
+        console.log('Disclaimer inserted:', annotationId);
+      }
+    } catch (error) {
+      console.error('Error inserting disclaimer:', error);
+    }
+  }
+
+  /**
+   * Remove disclaimer annotation from current page
+   */
+  private async removeDisclaimer(): Promise<void> {
+    const disclaimerText = 'Performers are not required to learn or memorize lines in advance of their interview.';
+    const pageAnnotations = this.annotationState.getAnnotationsForPage(this.currentPageIndex);
+    const disclaimerAnnotation = pageAnnotations.find(
+      a => a.type === 'textbox' && a.text === disclaimerText
+    );
+
+    if (disclaimerAnnotation) {
+      try {
+        await this.annotationState.deleteAnnotation(disclaimerAnnotation.annotationId);
+        this.disclaimerActive = false;
+        console.log('Disclaimer removed');
+      } catch (error) {
+        console.error('Error removing disclaimer:', error);
+      }
+    }
   }
 
   ngAfterViewInit() {
@@ -579,6 +1163,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     if (!this.barTextDragging) return;
 
     // Check if text offset actually changed (minimum drag threshold)
+    let hasOffsetChanged = false;
     const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.barTextDragLineId);
     if (lineIndex !== -1) {
       const line = this.page[lineIndex];
@@ -599,7 +1184,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
           break;
       }
 
-      const hasOffsetChanged = Math.abs(currentOffset - this.barTextInitialOffset) > 2;
+      hasOffsetChanged = Math.abs(currentOffset - this.barTextInitialOffset) > 2;
 
       // If no significant change, revert to original offset
       if (!hasOffsetChanged) {
@@ -624,7 +1209,12 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     document.removeEventListener('mouseup', this.endBarTextDrag);
     document.body.classList.remove('ew-resize-cursor');
 
-    this.pageUpdate.emit([...this.page]);
+    // Only emit page update if the drag actually moved the text.
+    // Emitting on every mouseup causes Angular to re-render the DOM element,
+    // which destroys the dblclick target and prevents double-click editing.
+    if (hasOffsetChanged) {
+      this.pageUpdate.emit([...this.page]);
+    }
 
     this.barTextDragging = false;
     this.barTextDragLineId = null;
@@ -1233,6 +1823,17 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       this.performRedo();
       return;
     }
+
+    // Handle Delete / Backspace to remove selected annotation
+    if ((event.key === 'Delete' || event.key === 'Backspace') && this.selectedAnnotationId) {
+      // Don't delete if user is typing in a text box or bar text input
+      if (this.editingTextBoxId || this.barTextEditingId !== null) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      this.deleteSelectedAnnotation();
+      return;
+    }
     
     // Handle X key to toggle visibility of selected line(s)
     if ((event.key === 'x' || event.key === 'X') && this.selectedLineIds.length > 0) {
@@ -1563,6 +2164,90 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   // ============= UTILITY METHODS =============
 
+  /**
+   * Get annotations for the current page (for preview mode rendering)
+   */
+  getAnnotationsForCurrentPage(): any[] {
+    if (!this.pdfService.finalDocument?.annotations) {
+      return [];
+    }
+
+    return this.pdfService.finalDocument.annotations.filter(
+      annotation => annotation.pageIndex === this.currentPageIndex
+    );
+  }
+
+  /**
+   * Calculate pixel position from normalized coordinates
+   */
+  getAnnotationPixelStyle(annotation: any): any {
+    const pageWidth = 816; // Standard page width
+    const pageHeight = 1056; // Standard page height
+
+    const left = annotation.normalizedX * pageWidth;
+    const top = annotation.normalizedY * pageHeight; // normalizedY is from the top (matches canvas coordinate system)
+    const width = annotation.normalizedWidth * pageWidth;
+    const height = annotation.normalizedHeight * pageHeight;
+
+    // Base styles for all annotation types
+    const baseStyle: any = {
+      position: 'absolute',
+      left: left + 'px',
+      top: top + 'px',
+      width: width + 'px',
+      height: height + 'px',
+      boxSizing: 'border-box',
+      pointerEvents: 'none',
+      zIndex: 10,
+      overflow: 'hidden'
+    };
+
+    // Type-specific styling
+    switch (annotation.type) {
+      case 'textbox':
+        return {
+          position: 'absolute',
+          left: left + 'px',
+          top: top + 'px',
+          width: width + 'px',
+          minHeight: height + 'px',
+          boxSizing: 'border-box',
+          zIndex: 10,
+          overflow: 'visible',
+        };
+
+      case 'highlight':
+        return {
+          ...baseStyle,
+          backgroundColor: annotation.style?.color || '#FFFF00',
+          opacity: annotation.style?.opacity || 0.3,
+        };
+
+      case 'note': // Arrow annotation — rendered as SVG in the template
+      case 'shape':
+        return {
+          ...baseStyle,
+          overflow: 'visible', // SVG arrows/arrowheads extend past bounding box — must not clip
+        };
+
+      case 'redaction':
+        return {
+          ...baseStyle,
+          backgroundColor: '#000000',
+        };
+
+      default:
+        return {
+          ...baseStyle,
+          fontSize: (annotation.style?.fontSize || 14) + 'px',
+          fontFamily: annotation.style?.fontFamily || 'Arial',
+          color: annotation.style?.color || '#000000',
+          whiteSpace: 'pre-wrap',
+          wordWrap: 'break-word',
+        };
+    }
+  }
+
   // Add resetPage method
   resetPage(newPage: Line[]): void {
     console.log('Resetting page with new data:', newPage.length);
@@ -1570,7 +2255,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.selectedLineIds = [];
     this.lastSelectedIndex = null;
     this.selectedLine = null;
-    
+
     // Force change detection
     this.cdRef.detectChanges();
   }
@@ -1891,6 +2576,63 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
+  /**
+   * Combine/condense pages by removing hidden (false) lines and repaginating.
+   * This helps casting directors meet the SAG-AFTRA 8-page limit for audition sides.
+   */
+  combinePages(): void {
+    const totalPages = this.pdfService.finalDocument?.data?.length || 0;
+
+    if (totalPages === 0) {
+      alert('No pages to condense.');
+      return;
+    }
+
+    const confirmMsg = totalPages <= 8
+      ? `Current document has ${totalPages} pages (within 8-page limit).\nCondensing will remove all crossed-out lines and repack pages.\n\nThis cannot be undone. Continue?`
+      : `Current document has ${totalPages} pages (exceeds 8-page SAG-AFTRA limit).\nCondensing will remove all crossed-out lines and try to fit within 8 pages.\n\nThis cannot be undone. Continue?`;
+
+    if (!confirm(confirmMsg)) {
+      return;
+    }
+
+    // Record undo state before combining
+    this.undoService.recordDocumentReorderChange(
+      cloneDeep(this.pdfService.finalDocument.data),
+      'Combine/condense pages'
+    );
+
+    // Run the combine operation
+    const result = this.pdfService.combinePages(8);
+
+    if (!result.condensed) {
+      alert('No hidden lines found to remove. Document is already condensed.');
+      return;
+    }
+
+    // Update local state to reflect the new document
+    const newPages = this.pdfService.finalDocument.data;
+    const newCurrentPageIndex = Math.min(this.currentPageIndex, newPages.length - 1);
+
+    // Emit page change to parent
+    this.currentPageIndex = newCurrentPageIndex;
+    this.page = newPages[newCurrentPageIndex] || [];
+    this.pageUpdate.emit([...this.page]);
+    this.pageChange.emit(newCurrentPageIndex);
+
+    // Save the document state
+    this.pdfService.saveDocumentState();
+
+    // Force change detection
+    this.cdRef.detectChanges();
+
+    const pageReduction = (this.pdfService.finalDocument.data.length <= 8)
+      ? `Now ${newPages.length} pages — within SAG-AFTRA limit! ✅`
+      : `Now ${newPages.length} pages — still exceeds 8-page limit. Consider removing more material.`;
+
+    alert(`Condensed: removed ${result.removedLines} hidden lines.\n${pageReduction}`);
+  }
+
   // Reset to initial state
   resetToInitialState(): void {
     if (confirm('Are you sure you want to reset all changes? This cannot be undone.')) {
@@ -1907,23 +2649,88 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       this.lastSelectedIndex = null;
       this.selectedLine = null;
 
+      // Reset annotations to initial state
+      this.annotationState.clear();
+
+      // Restore initial annotations if they exist
+      if (this.initialAnnotations && this.initialAnnotations.length > 0) {
+        this.pdfService.finalDocument.annotations = JSON.parse(JSON.stringify(this.initialAnnotations));
+        this.loadAnnotationsFromDocument();
+      } else {
+        // No initial annotations, just clear document annotations
+        if (this.pdfService.finalDocument) {
+          this.pdfService.finalDocument.annotations = [];
+          this.pdfService.finalDocument.pageAnnotations = {};
+        }
+      }
+
       // Emit the reset page
       this.pageUpdate.emit([...this.page]);
 
       // Force change detection
       this.cdRef.detectChanges();
+
+      console.log('Reset complete - page and annotations restored to initial state');
     }
   }
 
   // Save changes
-  saveChanges(): void {
-    // Emit the current page state to parent
-    this.pageUpdate.emit([...this.page]);
+  /**
+   * Save annotations from state to document (called internally)
+   */
+  private saveAnnotationsToDocument(): void {
+    console.log('💾 saveAnnotationsToDocument() called');
 
-    // Update the PDF service with the current page
+    if (!this.pdfService.finalDocument) {
+      console.error('❌ No finalDocument exists!');
+      return;
+    }
+
+    // Get all annotations from state
+    const allAnnotations = Array.from(this.annotationState.annotations.values());
+    console.log('📊 Retrieved', allAnnotations.length, 'annotations from state');
+
+    // Save to document — even if empty (user may have deleted all annotations)
+    this.pdfService.finalDocument.annotations = allAnnotations;
+
+    // Also save to a per-page structure for easier backend processing
+    this.pdfService.finalDocument.pageAnnotations = {};
+
+    // Group annotations by page
+    allAnnotations.forEach(annotation => {
+      const pageKey = `page_${annotation.pageIndex}`;
+      if (!this.pdfService.finalDocument.pageAnnotations[pageKey]) {
+        this.pdfService.finalDocument.pageAnnotations[pageKey] = [];
+      }
+      this.pdfService.finalDocument.pageAnnotations[pageKey].push(annotation);
+    });
+
+    console.log('✅ Annotations saved to document:', {
+      totalAnnotations: allAnnotations.length,
+      annotationsByPage: Object.keys(this.pdfService.finalDocument.pageAnnotations).length,
+      annotationDetails: allAnnotations.map(a => ({ type: a.type, text: a.text, page: a.pageIndex }))
+    });
+  }
+
+  saveChanges(): void {
     if (this.pdfService.finalDocument?.data) {
+      // Step 1: Sync current page to pdfService BEFORE saving
+      console.log('saveChanges: Syncing page', this.currentPageIndex, 'to pdfService');
       this.pdfService.finalDocument.data[this.currentPageIndex] = [...this.page];
+
+      // Step 2: Save annotations to document
+      this.saveAnnotationsToDocument();
+
+      // Step 3: Create persistent save point (deep copy)
       this.pdfService.saveDocumentState();
+
+      console.log('Document saved with annotations:', {
+        totalAnnotations: this.pdfService.finalDocument.annotations?.length || 0,
+        annotationsByPage: this.pdfService.finalDocument.pageAnnotations
+      });
+
+      // Step 4: Emit page update so parent re-syncs its local state with saved data
+      this.pageUpdate.emit([...this.page]);
     }
 
     // Show confirmation

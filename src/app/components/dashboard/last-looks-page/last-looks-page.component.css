@@ -113,6 +113,20 @@
     color: #ef4444;
 }
 
+/* Primary Button (Condense) */
+.tool-btn-primary {
+    border: 1px solid transparent;
+}
+
+.tool-btn-primary:hover:not(.disabled) {
+    background-color: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.tool-btn-primary:hover:not(.disabled) svg {
+    color: #3b82f6;
+}
+
 /* Success Button (Save) */
 .tool-btn-success {
     border: 1px solid transparent;
@@ -173,6 +187,76 @@
     height: 1px;
     background-color: #e5e7eb;
     margin: 4px 0;
+}
+
+/* Phase 1: Annotation Toolbar Styles */
+.tool-emoji {
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preset-dropdown-container {
+    position: relative;
+}
+
+.preset-menu {
+    position: absolute;
+    right: calc(100% + 12px);
+    top: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+    min-width: 150px;
+    z-index: 1000;
+    animation: menuSlideIn 0.2s ease-out;
+}
+
+@keyframes menuSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.preset-item {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-radius: 0;
+}
+
+.preset-item:first-child {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.preset-item:last-child {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.preset-item:hover {
+    background-color: #f3f4f6;
+    color: #111827;
+}
+
+.preset-item:active {
+    background-color: #e5e7eb;
 }
 
 /* Selection Badge */
@@ -1051,6 +1135,26 @@ li.page-number {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Annotation Canvas Overlay */
+.annotation-canvas-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 816px;
+    height: 1056px;
+    z-index: 100;
+    pointer-events: auto;
+}
+
+/* Annotation Toolbar Floating Panel */
+.annotation-toolbar-floating {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    z-index: 1000;
+    pointer-events: auto;
+}
+
 .callsheet-error {
     width: 100%;
     height: 100%;
@@ -1421,4 +1525,181 @@ li.page-number {
 
 .omitted-scene-number.right {
     right: 8px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   EDITABLE TEXT BOX OVERLAY (EDIT MODE)
+   ════════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   ARROW SVG OVERLAY (always visible — both edit and view mode)
+   ════════════════════════════════════════════════════════════ */
+
+.annotation-arrow-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Container doesn't block page interactions */
+    z-index: 105; /* Between canvas (100) and text boxes (110) */
+    overflow: visible;
+}
+
+.annotation-arrow-svg {
+    pointer-events: auto; /* Allow clicking arrows to select them */
+    overflow: visible; /* Arrowheads extend past bounding box */
+    cursor: pointer;
+}
+
+.annotation-arrow-svg.selected {
+    filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.8));
+}
+
+.annotation-textbox-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Container doesn't block page interactions */
+    z-index: 110; /* Above the annotation canvas */
+}
+
+.annotation-textbox-edit {
+    pointer-events: auto !important;
+    cursor: grab;
+    border: 1px dashed rgba(0, 0, 0, 0.3);
+    border-radius: 2px;
+    background-color: transparent;
+    font-size: 16pt !important;
+    font-weight: 900 !important;
+    font-family: 'Courier Prime', monospace !important;
+    color: black !important;
+    line-height: normal !important;
+    padding: 2px 5px !important;
+    min-height: 1.4em;
+    overflow: visible !important;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.annotation-textbox-edit:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+}
+
+.annotation-textbox-edit.editing {
+    cursor: text;
+    border-color: #3b82f6;
+    border-style: solid;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    background-color: rgba(255, 255, 255, 0.95);
+}
+
+.annotation-textbox-edit.dragging {
+    cursor: grabbing;
+    opacity: 0.8;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.annotation-textbox-edit.selected {
+    border-color: #3b82f6;
+    border-style: solid;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
+
+.textbox-editable {
+    outline: none;
+    display: block;
+    width: 100%;
+    min-height: 1em;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    font-family: inherit !important;
+    color: inherit !important;
+    line-height: inherit !important;
+    position: static !important;
+}
+
+.textbox-display {
+    display: block;
+    width: 100%;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    font-family: inherit !important;
+    color: inherit !important;
+    line-height: inherit !important;
+    position: static !important;
+}
+
+.textbox-display:empty::before,
+.annotation-textbox-edit .textbox-display:not(:empty) {
+    /* Placeholder handled by Angular template text */
+}
+
+.textbox-delete-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid #ccc;
+    background: white;
+    color: #666;
+    font-size: 10px;
+    line-height: 16px;
+    text-align: center;
+    cursor: pointer;
+    padding: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+    pointer-events: auto;
+    z-index: 120;
+}
+
+.annotation-textbox-edit:hover .textbox-delete-btn {
+    opacity: 1;
+}
+
+.textbox-delete-btn:hover {
+    background: #ef4444;
+    color: white;
+    border-color: #ef4444;
+}
+
+/* ════════════════════════════════════════════════════════════
+   ANNOTATION PREVIEW OVERLAY (NON-EDIT MODE)
+   ════════════════════════════════════════════════════════════ */
+
+.annotation-preview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Don't interfere with page interactions */
+    z-index: 5; /* Below toolbar but above page content */
+}
+
+.annotation-preview-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    line-height: normal;
+    user-select: none;
+    font-size: 16pt !important;
+    font-weight: 900 !important;
+    font-family: 'Courier Prime', monospace !important;
+    color: black !important;
+}
+
+.annotation-preview-arrow {
+    pointer-events: none;
+    overflow: visible;
+}
+
+.annotation-preview-shape {
+    pointer-events: none;
+    user-select: none;
 }
