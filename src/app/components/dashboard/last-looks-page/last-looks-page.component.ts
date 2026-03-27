@@ -2329,6 +2329,98 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     return '90px';
   }
 
+  // ============= SKIPPED SECTION X-BOX METHODS =============
+
+  /**
+   * Compute bounding boxes for each contiguous block of skipped (false/hidden)
+   * content lines on the current page, for rendering SVG X-box overlays.
+   *
+   * Coordinate system:
+   *   - Lines are positioned with CSS `bottom: Npx` on a 1056px-tall page
+   *   - SVG origin is top-left, so:  svgY = PAGE_HEIGHT - bottomPx
+   *
+   * Returns an array of { top, bottom, left, right } objects in SVG pixel space.
+   */
+  getSkippedSections(): Array<{ top: number; bottom: number; left: number; right: number }> {
+    const PAGE_HEIGHT = 1056;
+    const CONTENT_LEFT = 88;   // Slightly outside left content margin (96) for padding
+    const CONTENT_RIGHT = 739; // Slightly outside right content edge (731) for padding
+    const PAD_TOP = 20;        // Top padding — clears text above the first skipped line
+    const PAD_BOTTOM = 4;      // Bottom padding — tight so box doesn't bleed onto next scene
+
+    // Categories that are not "content" and should not affect X-box bounds
+    const EXCLUDED_CATEGORIES = new Set([
+      'page-number',
+      'page-number-hidden',
+      'injected-break',
+      'callsheet',
+    ]);
+
+    const sections: Array<{ top: number; bottom: number; left: number; right: number }> = [];
+
+    // Track the current group of skipped lines
+    let groupMaxYPos: number | null = null; // highest bottom value → highest on page
+    let groupMinYPos: number | null = null; // lowest bottom value → lowest on page
+
+    const flushGroup = () => {
+      if (groupMaxYPos !== null && groupMinYPos !== null) {
+        // Convert CSS bottom coords to SVG top-down coords
+        const svgTop = PAGE_HEIGHT - groupMaxYPos - PAD_TOP;
+        const svgBottom = PAGE_HEIGHT - groupMinYPos + PAD_BOTTOM;
+
+        // Only emit sections with meaningful height
+        if (svgBottom > svgTop + 4) {
+          sections.push({
+            top: Math.max(0, svgTop),
+            bottom: Math.min(PAGE_HEIGHT, svgBottom),
+            left: CONTENT_LEFT,
+            right: CONTENT_RIGHT,
+          });
+        }
+      }
+      groupMaxYPos = null;
+      groupMinYPos = null;
+    };
+
+    for (const line of this.page) {
+      // Skip structural/non-content elements
+      if (EXCLUDED_CATEGORIES.has(line.category)) {
+        continue;
+      }
+
+      // Skip lines that are completely hidden from the DOM
+      if (line.hidden === 'hidden') {
+        continue;
+      }
+
+      const isSkipped = line.visible === 'false' || (line.visible as any) === false;
+
+      if (isSkipped) {
+        // Parse the CSS `bottom` value — always the scaled position (yPos * 1.3).
+        // calculatedYpos is a string like "130px" → parse as number.
+        // If calculatedYpos is absent, compute from raw yPos * 1.3 (same scale factor
+        // used everywhere in the template).
+        const scaledBottom = line.calculatedYpos
+          ? parseInt(String(line.calculatedYpos), 10)
+          : (typeof line.yPos === 'number' ? Math.round(line.yPos * 1.3) : 0);
+        const yPos = scaledBottom;
+
+        if (yPos > 0) {
+          if (groupMaxYPos === null || yPos > groupMaxYPos) groupMaxYPos = yPos;
+          if (groupMinYPos === null || yPos < groupMinYPos) groupMinYPos = yPos;
+        }
+      } else {
+        // Visible line — flush any open group
+        flushGroup();
+      }
+    }
+
+    // Flush final group
+    flushGroup();
+
+    return sections;
+  }
+
   // Get SVG path for category icons
   getCategoryIcon(category: string): string {
     const icons: { [key: string]: string } = {

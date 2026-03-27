@@ -255,6 +255,52 @@
                 </ng-container>
             </ul>
 
+            <!-- ═══ SKIPPED-SECTION X-BOX OVERLAY ═══
+                 Industry-standard diagonal X inside a box for each contiguous block
+                 of skipped (false) content lines. pointer-events: none so edit tools
+                 remain fully functional underneath. -->
+            <svg *ngIf="getSkippedSections().length > 0"
+                 class="skipped-sections-overlay"
+                 viewBox="0 0 816 1056"
+                 width="816"
+                 height="1056"
+                 xmlns="http://www.w3.org/2000/svg"
+                 aria-hidden="true">
+              <ng-container *ngFor="let section of getSkippedSections()">
+                <!-- Border box -->
+                <rect
+                  [attr.x]="section.left"
+                  [attr.y]="section.top"
+                  [attr.width]="section.right - section.left"
+                  [attr.height]="section.bottom - section.top"
+                  fill="none"
+                  stroke="#000000"
+                  stroke-width="5"
+                  opacity="0.5">
+                </rect>
+                <!-- Diagonal: top-left → bottom-right -->
+                <line
+                  [attr.x1]="section.left"
+                  [attr.y1]="section.top"
+                  [attr.x2]="section.right"
+                  [attr.y2]="section.bottom"
+                  stroke="#000000"
+                  stroke-width="5"
+                  opacity="0.5">
+                </line>
+                <!-- Diagonal: top-right → bottom-left -->
+                <line
+                  [attr.x1]="section.right"
+                  [attr.y1]="section.top"
+                  [attr.x2]="section.left"
+                  [attr.y2]="section.bottom"
+                  stroke="#000000"
+                  stroke-width="5"
+                  opacity="0.5">
+                </line>
+              </ng-container>
+            </svg>
+
             <!-- Annotation Canvas Overlay — arrows & highlights only (edit mode) -->
             <app-annotation-canvas
                 *ngIf="canEditDocument"

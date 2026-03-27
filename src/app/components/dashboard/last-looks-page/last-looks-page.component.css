@@ -419,34 +419,23 @@ li.page-number {
     text-decoration-thickness: 1px;
 }
 
-/* Grey background for crossed-out content lines (not scene numbers or page numbers) */
+/* Skipped (false) lines: white background + strikethrough only.
+   The grey-box treatment is replaced by the SVG X-box overlay. */
 li.false:not(.page-number):not(.page-number-text):not(.page-number-hidden) {
     z-index: 2;
+    background-color: white;
 }
 
-li.false:not(.page-number):not(.page-number-text):not(.page-number-hidden)::before {
-    content: '';
+/* SVG X-box overlay — sits above the page content, no pointer events */
+svg.skipped-sections-overlay {
     position: absolute;
-    /* Start at left content margin (96px from page edge) */
-    /* Use negative offset from line's left position to reach 96px mark */
-    left: calc(-1 * (var(--line-left, 96px) - 96px));
-    /* Width spans the content area (approximately 635px) */
-    width: 635px;
-    /* Extend vertically just enough to connect with adjacent crossed-out lines */
-    top: 0px;
-    bottom: -14px;
-    background-color: #d3d3d3;
-    z-index: -1;
+    top: 0;
+    left: 0;
+    width: 816px;
+    height: 1056px;
     pointer-events: none;
-}
-
-/* Scene numbers should NOT have grey background */
-span.false.scene-number-left::before,
-span.false.scene-number-right::before,
-span.scene-number-left.false::before,
-span.scene-number-right.false::before {
-    display: none !important;
-    background: none !important;
+    z-index: 5;
+    overflow: visible;
 }
 
 .legal {
