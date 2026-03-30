@@ -415,15 +415,13 @@ li.page-number {
 }
 
 .false {
-    text-decoration: line-through;
-    text-decoration-thickness: 1px;
+    /* strike-through removed: X-box SVG overlay communicates exclusion */
 }
 
-/* Skipped (false) lines: white background + strikethrough only.
-   The grey-box treatment is replaced by the SVG X-box overlay. */
+/* Skipped (false) lines: light grey background beneath the X-box SVG overlay. */
 li.false:not(.page-number):not(.page-number-text):not(.page-number-hidden) {
     z-index: 2;
-    background-color: white;
+    background-color: #e8e8e8;
 }
 
 /* SVG X-box overlay — sits above skipped (false) content, BELOW visible lines */
