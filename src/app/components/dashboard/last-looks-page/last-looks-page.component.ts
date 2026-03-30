@@ -4,6 +4,8 @@ import { UndoService } from 'src/app/services/edit/undo.service';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, filter } from 'rxjs/operators';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
+import { AnnotationStateService } from 'src/app/services/annotation/annotation-state.service';
+import { DEFAULT_TEXT_BOX_PRESETS } from 'src/app/types/Annotation';
 import { cloneDeep } from 'lodash';
 
 
@@ -88,7 +90,42 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   private subscription: Subscription;
   private sceneHeaderTextUpdateSubscription: Subscription;
 
-  
+  // Annotation mode properties
+  private documentId: string | null = null;
+  private initialAnnotations: any[] = []; // Store initial annotation state
+
+  // Phase 1: Annotation toolbar state
+  showPresetMenu: boolean = false;
+  disclaimerActive: boolean = false;
+  activeDrawingTool: string | null = null; // Tracks which drawing tool is active ('note', 'highlight', etc.)
+
+  // Simple text box state (DOM-based, not canvas)
+  editingTextBoxId: string | null = null; // Currently editing text box annotation ID
+  draggingTextBoxId: string | null = null; // Currently dragging text box annotation ID
+  textBoxDragStartX: number = 0;
+  textBoxDragStartY: number = 0;
+  textBoxInitialNormX: number = 0;
+  textBoxInitialNormY: number = 0;
+
+  // Unified annotation selection (works for text boxes, arrows, shapes, highlights)
+  selectedAnnotationId: string | null = null;
+  private toolStateSubscription: Subscription | null = null;
+  private annotationsSyncSubscription: Subscription | null = null;
+
+  // ═══ X-BOX EDITING STATE ═══
+  // Tracks customizations to each computed skipped-section X-box
+  selectedXboxIndex: number | null = null;
+  xboxOverrides: Map<number, { deleted?: boolean; top?: number; bottom?: number; left?: number; right?: number }> = new Map();
+  private xboxDragging = false;
+  private xboxDragStartX = 0;
+  private xboxDragStartY = 0;
+  private xboxDragInitialTop = 0;
+  private xboxDragInitialLeft = 0;
+  private xboxResizing = false;
+  private xboxResizeEdge: string | null = null;
+  private xboxResizeInitial: { top: number; bottom: number; left: number; right: number } | null = null;
+  private xboxResizeStartX = 0;
+  private xboxResizeStartY = 0;
 
   @ViewChild('pdfViewer') pdfViewer: any;
 
@@ -120,7 +157,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   constructor(
     private undoService: UndoService,
     public cdRef: ChangeDetectorRef,
-    private pdfService: PdfService
+    private pdfService: PdfService,
+    private annotationState: AnnotationStateService
   ) {
     // Subscribe to line updates from the service
     this.subscription = this.pdfService.finalDocumentData$.subscribe(update => {
@@ -229,10 +267,62 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       this.cdRef.detectChanges();
     }
   
+    // Handle page index changes - save annotations when changing pages
+    if (changes['currentPageIndex'] && !changes['currentPageIndex'].firstChange) {
+      console.log('Page changed from', changes['currentPageIndex'].previousValue, 'to', changes['currentPageIndex'].currentValue);
+      // Save current state to document when navigating pages
+      if (this.canEditDocument) {
+        this.saveAnnotationsToDocument();
+      }
+    }
+
     // Handle other changes as before...
     if (changes['editMode']) {
-      this.canEditDocument = changes['editMode'].currentValue;
-      console.log('LastLooks editState changed to:', this.canEditDocument);
+      const wasEditMode = changes['editMode'].previousValue;
+      const isEditMode = changes['editMode'].currentValue;
+
+      console.log('========================================');
+      console.log('EDIT MODE CHANGED:', wasEditMode, '->', isEditMode);
+      console.log('========================================');
+
+      this.canEditDocument = isEditMode;
+
+      // Initialize or clean up annotation system based on edit mode
+      if (isEditMode) {
+        console.log('📝 ENABLING EDIT MODE - Loading annotations...');
+        this.initializeAnnotationSystem();
+      } else {
+        console.log('💾 DISABLING EDIT MODE - Performing full save...');
+
+        // === FULL SAVE SEQUENCE (must happen in this order) ===
+
+        // Step 1: Sync current page state to pdfService
+        if (this.pdfService.finalDocument?.data && this.page) {
+          console.log('Step 1: Syncing page', this.currentPageIndex, 'to pdfService (', this.page.length, 'lines)');
+          this.pdfService.finalDocument.data[this.currentPageIndex] = [...this.page];
+        }
+
+        // Step 2: Save annotations to document
+        this.saveAnnotationsToDocument();
+
+        // Step 3: Create a persistent save point (deep copy)
+        this.pdfService.saveDocumentState();
+
+        // Log what we saved
+        if (this.pdfService.finalDocument?.annotations) {
+          console.log('✅ Saved', this.pdfService.finalDocument.annotations.length, 'annotations to document');
+        }
+        console.log('✅ Document state saved. Pages:', this.pdfService.finalDocument?.data?.length);
+
+        // Step 4: Emit page update so parent re-syncs its local state
+        this.pageUpdate.emit([...this.page]);
+
+        // Step 5: Clear annotation state and selection
+        this.selectedAnnotationId = null;
+        this.toolStateSubscription?.unsubscribe();
+        this.annotationsSyncSubscription?.unsubscribe();
+        this.annotationState.clear();
+      }
     }
   
     if (changes['resetDocState'] && changes['resetDocState'].currentValue) {
@@ -283,6 +373,520 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     document.removeEventListener('mouseup', this.handleMouseUp);
     document.removeEventListener('mousemove', this.moveBarText);
     document.removeEventListener('mouseup', this.endBarTextDrag);
+    document.removeEventListener('mousemove', this.handleXboxDragMove);
+    document.removeEventListener('mouseup', this.handleXboxDragEnd);
+    document.removeEventListener('mousemove', this.handleXboxResizeMove);
+    document.removeEventListener('mouseup', this.handleXboxResizeEnd);
+
+    // Clean up annotation system
+    this.toolStateSubscription?.unsubscribe();
+    this.annotationsSyncSubscription?.unsubscribe();
+    if (this.canEditDocument) {
+      this.annotationState.clear();
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // Annotation Mode Methods
+  // ─────────────────────────────────────────────
+
+  /**
+   * Initialize the annotation system for the current document
+   * This is called automatically when edit mode is enabled
+   */
+  private initializeAnnotationSystem(): void {
+    // Use a stable document ID derived from finalDocument name, or generate once and reuse
+    if (!this.documentId) {
+      const docName = this.pdfService.finalDocument?.name || 'untitled';
+      this.documentId = `doc-${docName.replace(/\s+/g, '-').toLowerCase()}`;
+      console.log('Using stable document ID:', this.documentId);
+    }
+
+    try {
+      // Initialize locally first — don't depend on backend API for basic functionality
+      this.annotationState.initializeLocal(this.documentId);
+      console.log('Annotation system initialized locally for document:', this.documentId);
+
+      // Load annotations from saved document state
+      this.loadAnnotationsFromDocument();
+
+      // Store initial annotation state for reset
+      if (this.pdfService.finalDocument?.annotations) {
+        this.initialAnnotations = JSON.parse(JSON.stringify(this.pdfService.finalDocument.annotations));
+      }
+
+      // Subscribe to tool state to pick up canvas-based selections (arrows, shapes, highlights)
+      this.toolStateSubscription?.unsubscribe();
+      this.toolStateSubscription = this.annotationState.toolState$.subscribe(toolState => {
+        if (toolState.selectedAnnotationIds.length > 0) {
+          this.selectedAnnotationId = toolState.selectedAnnotationIds[0];
+        }
+      });
+
+      // Subscribe to annotation changes so that DOM-based overlays (arrows, text boxes)
+      // stay in sync with the canvas-based annotation state.
+      // Debounced to avoid excessive syncs during drag/type operations.
+      this.annotationsSyncSubscription?.unsubscribe();
+      this.annotationsSyncSubscription = this.annotationState.annotations$
+        .pipe(debounceTime(200))
+        .subscribe(() => {
+          this.saveAnnotationsToDocument();
+          this.cdRef.detectChanges();
+        });
+    } catch (error) {
+      console.error('Error initializing annotation system:', error);
+    }
+  }
+
+  /**
+   * Load annotations from the saved document into the annotation system.
+   * Preserves annotationIds so state and document stay in sync.
+   */
+  private loadAnnotationsFromDocument(): void {
+    console.log('📂 loadAnnotationsFromDocument() called');
+
+    // Check if we have saved annotations in the document
+    const savedAnnotations = this.pdfService.finalDocument?.annotations;
+    if (!savedAnnotations || savedAnnotations.length === 0) {
+      console.log('⚠️ No saved annotations found in document');
+      return;
+    }
+
+    console.log('✅ Loading', savedAnnotations.length, 'saved annotations from document');
+
+    // Load each annotation into the local state, PRESERVING the original annotationId.
+    // This is critical — the DOM text box template and the annotation preview both
+    // reference annotations by annotationId from finalDocument.annotations.
+    // If the state Map uses different IDs, updates via updateAnnotation() would fail.
+    let loadedCount = 0;
+    for (const annotation of savedAnnotations) {
+      const annotationId = this.annotationState.addAnnotationLocally({
+        annotationId: annotation.annotationId,   // Preserve the saved ID!
+        type: annotation.type,
+        pageIndex: annotation.pageIndex,
+        normalizedX: annotation.normalizedX,
+        normalizedY: annotation.normalizedY,
+        normalizedWidth: annotation.normalizedWidth,
+        normalizedHeight: annotation.normalizedHeight,
+        text: annotation.text,
+        style: annotation.style,
+      });
+
+      if (annotationId) {
+        loadedCount++;
+      }
+    }
+
+    console.log('✅ LOADED', loadedCount, '/', savedAnnotations.length, 'ANNOTATIONS');
+  }
+
+  // ─────────────────────────────────────────────
+  // Phase 1: Annotation Toolbar Methods
+  // ─────────────────────────────────────────────
+
+  /**
+   * Toggle a drawing tool on/off. When active, the user can draw annotations on the canvas.
+   */
+  toggleDrawingTool(tool: 'note' | 'highlight' | 'shape' | 'redaction'): void {
+    if (this.activeDrawingTool === tool) {
+      // Deactivate
+      this.activeDrawingTool = null;
+      this.annotationState.setActiveTool(null);
+    } else {
+      // Activate
+      this.activeDrawingTool = tool;
+      this.annotationState.setActiveTool(tool);
+    }
+  }
+
+  // ============= SIMPLE TEXT BOX METHODS =============
+
+  /**
+   * Add a new text box to the current page at a default position.
+   * The text box is a DOM element the user can type in and drag around.
+   */
+  async addTextBox(): Promise<void> {
+    const annotationId = await this.annotationState.createAnnotation({
+      type: 'textbox',
+      pageIndex: this.currentPageIndex,
+      normalizedX: 0.1,
+      normalizedY: 0.1,
+      normalizedWidth: 0.35,
+      normalizedHeight: 0.04,
+      text: '',
+      style: {
+        color: '#000000',
+        opacity: 1.0,
+        strokeWidth: 1,
+        fontSize: 16,
+        fontFamily: "'Courier Prime', monospace",
+        fontWeight: '900',
+      }
+    });
+
+    if (annotationId) {
+      // Save to document and immediately enter editing on the new box
+      this.saveAnnotationsToDocument();
+      this.editingTextBoxId = annotationId;
+      this.cdRef.detectChanges();
+
+      // Focus the new text box after render
+      setTimeout(() => {
+        const el = document.getElementById('textbox-' + annotationId);
+        if (el) {
+          el.focus();
+        }
+      }, 50);
+    }
+  }
+
+  /**
+   * Handle double-click on a text box to start editing.
+   */
+  onTextBoxDoubleClick(event: MouseEvent, annotation: any): void {
+    if (!this.canEditDocument) return;
+    event.stopPropagation();
+    event.preventDefault();
+    this.editingTextBoxId = annotation.annotationId;
+    this.cdRef.detectChanges();
+
+    setTimeout(() => {
+      const el = document.getElementById('textbox-' + annotation.annotationId);
+      if (el) {
+        el.focus();
+        // Select all text for easy replacement
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.selectNodeContents(el);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+    }, 10);
+  }
+
+  /**
+   * Handle text input in a text box.
+   */
+  onTextBoxInput(event: Event, annotation: any): void {
+    const target = event.target as HTMLElement;
+    const newText = target.textContent || '';
+
+    // Update the annotation text in the state service (use updateAnnotation, NOT addAnnotationLocally)
+    this.annotationState.updateAnnotation(annotation.annotationId, {
+      text: newText,
+    });
+  }
+
+  /**
+   * Handle keydown in text box (Enter to finish, Escape to cancel).
+   */
+  onTextBoxKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      this.finishTextBoxEdit();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.editingTextBoxId = null;
+    }
+  }
+
+  /**
+   * Finish editing a text box (on blur or Enter).
+   */
+  finishTextBoxEdit(): void {
+    if (this.editingTextBoxId) {
+      this.saveAnnotationsToDocument();
+      this.editingTextBoxId = null;
+      this.cdRef.detectChanges();
+    }
+  }
+
+  /**
+   * Start dragging a text box to reposition it.
+   */
+  startTextBoxDrag(event: MouseEvent, annotation: any): void {
+    if (!this.canEditDocument) return;
+    // Don't start drag if we're editing this text box
+    if (this.editingTextBoxId === annotation.annotationId) return;
+
+    event.stopPropagation();
+    event.preventDefault();
+
+    this.draggingTextBoxId = annotation.annotationId;
+    this.textBoxDragStartX = event.clientX;
+    this.textBoxDragStartY = event.clientY;
+    this.textBoxInitialNormX = annotation.normalizedX;
+    this.textBoxInitialNormY = annotation.normalizedY;
+
+    document.addEventListener('mousemove', this.moveTextBox);
+    document.addEventListener('mouseup', this.endTextBoxDrag);
+  }
+
+  /**
+   * Handle mousemove during text box drag.
+   */
+  moveTextBox = (event: MouseEvent): void => {
+    if (!this.draggingTextBoxId) return;
+
+    const pageWidth = 816;
+    const pageHeight = 1056;
+
+    const deltaX = event.clientX - this.textBoxDragStartX;
+    const deltaY = event.clientY - this.textBoxDragStartY;
+
+    const newNormX = Math.max(0, Math.min(1, this.textBoxInitialNormX + (deltaX / pageWidth)));
+    const newNormY = Math.max(0, Math.min(1, this.textBoxInitialNormY + (deltaY / pageHeight)));
+
+    // Update annotation position in the state service (source of truth during editing).
+    // We also update finalDocument.annotations inline so the DOM text boxes re-render
+    // at the new position without a full saveAnnotationsToDocument() on every frame.
+    this.annotationState.updateAnnotation(this.draggingTextBoxId, {
+      normalizedX: newNormX,
+      normalizedY: newNormY,
+    });
+
+    // Fast inline sync: update the matching entry in finalDocument.annotations directly
+    const docAnnotations = this.pdfService.finalDocument?.annotations;
+    if (docAnnotations) {
+      const docAnn = docAnnotations.find((a: any) => a.annotationId === this.draggingTextBoxId);
+      if (docAnn) {
+        docAnn.normalizedX = newNormX;
+        docAnn.normalizedY = newNormY;
+      }
+    }
+    this.cdRef.detectChanges();
+  };
+
+  /**
+   * End text box drag.
+   */
+  endTextBoxDrag = (event: MouseEvent): void => {
+    document.removeEventListener('mousemove', this.moveTextBox);
+    document.removeEventListener('mouseup', this.endTextBoxDrag);
+
+    // Full sync from state → document now that drag is complete
+    if (this.draggingTextBoxId) {
+      this.saveAnnotationsToDocument();
+    }
+    this.draggingTextBoxId = null;
+  };
+
+  /**
+   * Delete a text box annotation.
+   */
+  deleteTextBox(event: MouseEvent, annotation: any): void {
+    event.stopPropagation();
+    event.preventDefault();
+
+    // Remove from annotation state locally (deleteAnnotation rolls back on API failure,
+    // so we use removeAnnotationLocally for a guaranteed local-only delete)
+    this.annotationState.removeAnnotationLocally(annotation.annotationId);
+    this.saveAnnotationsToDocument();
+    this.cdRef.detectChanges();
+  }
+
+  // ============= ANNOTATION SELECTION & DELETION =============
+
+  /**
+   * Select an annotation (text box, arrow, shape, etc.) so it can be deleted with Delete key.
+   * For text boxes: triggered by click on the text box DOM element.
+   * For canvas annotations (arrows, shapes, highlights): bridged via toolState$ subscription.
+   */
+  selectAnnotation(annotationId: string): void {
+    this.selectedAnnotationId = annotationId;
+    // Also sync to the state service so the canvas knows
+    this.annotationState.selectAnnotations([annotationId]);
+  }
+
+  /**
+   * Deselect all annotations (triggered by clicking empty space).
+   */
+  deselectAllAnnotations(): void {
+    this.selectedAnnotationId = null;
+    this.selectedXboxIndex = null;
+    this.annotationState.clearSelection();
+  }
+
+  /**
+   * Delete whichever annotation is currently selected (any type).
+   * Called when the user presses Delete or Backspace.
+   */
+  deleteSelectedAnnotation(): void {
+    if (!this.selectedAnnotationId) return;
+
+    const idToDelete = this.selectedAnnotationId;
+
+    // Remove from annotation state and sync to document
+    this.annotationState.removeAnnotationLocally(idToDelete);
+    this.saveAnnotationsToDocument();
+
+    // Clear selection
+    this.selectedAnnotationId = null;
+    this.annotationState.clearSelection();
+
+    this.cdRef.detectChanges();
+    console.log('Deleted annotation:', idToDelete);
+  }
+
+  /**
+   * Toggle the preset menu dropdown
+   */
+  togglePresetMenu(): void {
+    this.showPresetMenu = !this.showPresetMenu;
+  }
+
+  /**
+   * Insert a text box preset annotation
+   */
+  async insertPreset(presetId: string): Promise<void> {
+    const preset = DEFAULT_TEXT_BOX_PRESETS.find(p => p.id === presetId);
+    if (!preset) {
+      console.error('Preset not found:', presetId);
+      return;
+    }
+
+    // Close the preset menu
+    this.showPresetMenu = false;
+
+    // Create the annotation
+    try {
+      const annotationId = await this.annotationState.createAnnotation({
+        type: 'textbox',
+        pageIndex: this.currentPageIndex,
+        normalizedX: preset.normalizedX,
+        normalizedY: preset.normalizedY,
+        normalizedWidth: preset.normalizedWidth || 0.3,
+        normalizedHeight: preset.normalizedHeight || 0.05,
+        text: preset.defaultText,
+        style: preset.style
+      });
+
+      if (annotationId) {
+        console.log('Preset inserted:', presetId, annotationId);
+      }
+    } catch (error) {
+      console.error('Error inserting preset:', error);
+    }
+  }
+
+  /**
+   * Insert a scene marker with auto-incrementing number
+   */
+  async insertSceneMarker(): Promise<void> {
+    const nextSceneNumber = this.getNextSceneNumber();
+    const sceneText = `Scene ${nextSceneNumber}`;
+
+    // Get the scene marker preset for styling
+    const sceneMarkerPreset = DEFAULT_TEXT_BOX_PRESETS.find(p => p.isSceneMarker);
+    if (!sceneMarkerPreset) {
+      console.error('Scene marker preset not found');
+      return;
+    }
+
+    try {
+      const annotationId = await this.annotationState.createAnnotation({
+        type: 'textbox',
+        pageIndex: this.currentPageIndex,
+        normalizedX: sceneMarkerPreset.normalizedX,
+        normalizedY: sceneMarkerPreset.normalizedY,
+        normalizedWidth: sceneMarkerPreset.normalizedWidth || 0.2,
+        normalizedHeight: sceneMarkerPreset.normalizedHeight || 0.05,
+        text: sceneText,
+        style: sceneMarkerPreset.style
+      });
+
+      if (annotationId) {
+        console.log('Scene marker inserted:', sceneText, annotationId);
+      }
+    } catch (error) {
+      console.error('Error inserting scene marker:', error);
+    }
+  }
+
+  /**
+   * Get the next scene marker number
+   */
+  getNextSceneNumber(): number {
+    const allAnnotations = Array.from(this.annotationState.annotations.values());
+    const sceneMarkerPattern = /^Scene (\d+)$/;
+    let highestSceneNumber = 0;
+
+    allAnnotations.forEach(annotation => {
+      if (annotation.type === 'textbox' && annotation.text) {
+        const match = annotation.text.match(sceneMarkerPattern);
+        if (match) {
+          const sceneNumber = parseInt(match[1], 10);
+          if (sceneNumber > highestSceneNumber) {
+            highestSceneNumber = sceneNumber;
+          }
+        }
+      }
+    });
+
+    return highestSceneNumber + 1;
+  }
+
+  /**
+   * Toggle disclaimer on/off
+   */
+  async toggleDisclaimer(): Promise<void> {
+    if (this.disclaimerActive) {
+      await this.removeDisclaimer();
+    } else {
+      await this.insertDisclaimer();
+    }
+  }
+
+  /**
+   * Insert disclaimer annotation on current page
+   */
+  private async insertDisclaimer(): Promise<void> {
+    const preset = DEFAULT_TEXT_BOX_PRESETS.find(p => p.id === 'legal-disclaimer');
+    if (!preset) {
+      console.error('Legal disclaimer preset not found');
+      return;
+    }
+
+    try {
+      const annotationId = await this.annotationState.createAnnotation({
+        type: 'textbox',
+        pageIndex: this.currentPageIndex,
+        normalizedX: preset.normalizedX,
+        normalizedY: preset.normalizedY,
+        normalizedWidth: preset.normalizedWidth || 0.8,
+        normalizedHeight: preset.normalizedHeight || 0.04,
+        text: 'Performers are not required to learn or memorize lines in advance of their interview.',
+        style: preset.style
+      });
+
+      if (annotationId) {
+        this.disclaimerActive = true;
+        console.log('Disclaimer inserted:', annotationId);
+      }
+    } catch (error) {
+      console.error('Error inserting disclaimer:', error);
+    }
+  }
+
+  /**
+   * Remove disclaimer annotation from current page
+   */
+  private async removeDisclaimer(): Promise<void> {
+    const disclaimerText = 'Performers are not required to learn or memorize lines in advance of their interview.';
+    const pageAnnotations = this.annotationState.getAnnotationsForPage(this.currentPageIndex);
+    const disclaimerAnnotation = pageAnnotations.find(
+      a => a.type === 'textbox' && a.text === disclaimerText
+    );
+
+    if (disclaimerAnnotation) {
+      try {
+        await this.annotationState.deleteAnnotation(disclaimerAnnotation.annotationId);
+        this.disclaimerActive = false;
+        console.log('Disclaimer removed');
+      } catch (error) {
+        console.error('Error removing disclaimer:', error);
+      }
+    }
   }
 
   ngAfterViewInit() {
@@ -579,6 +1183,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     if (!this.barTextDragging) return;
 
     // Check if text offset actually changed (minimum drag threshold)
+    let hasOffsetChanged = false;
     const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.barTextDragLineId);
     if (lineIndex !== -1) {
       const line = this.page[lineIndex];
@@ -599,7 +1204,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
           break;
       }
 
-      const hasOffsetChanged = Math.abs(currentOffset - this.barTextInitialOffset) > 2;
+      hasOffsetChanged = Math.abs(currentOffset - this.barTextInitialOffset) > 2;
 
       // If no significant change, revert to original offset
       if (!hasOffsetChanged) {
@@ -624,7 +1229,12 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     document.removeEventListener('mouseup', this.endBarTextDrag);
     document.body.classList.remove('ew-resize-cursor');
 
-    this.pageUpdate.emit([...this.page]);
+    // Only emit page update if the drag actually moved the text.
+    // Emitting on every mouseup causes Angular to re-render the DOM element,
+    // which destroys the dblclick target and prevents double-click editing.
+    if (hasOffsetChanged) {
+      this.pageUpdate.emit([...this.page]);
+    }
 
     this.barTextDragging = false;
     this.barTextDragLineId = null;
@@ -1233,6 +1843,17 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       this.performRedo();
       return;
     }
+
+    // Handle Delete / Backspace to remove selected annotation
+    if ((event.key === 'Delete' || event.key === 'Backspace') && this.selectedAnnotationId) {
+      // Don't delete if user is typing in a text box or bar text input
+      if (this.editingTextBoxId || this.barTextEditingId !== null) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      this.deleteSelectedAnnotation();
+      return;
+    }
     
     // Handle X key to toggle visibility of selected line(s)
     if ((event.key === 'x' || event.key === 'X') && this.selectedLineIds.length > 0) {
@@ -1563,6 +2184,90 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   // ============= UTILITY METHODS =============
 
+  /**
+   * Get annotations for the current page (for preview mode rendering)
+   */
+  getAnnotationsForCurrentPage(): any[] {
+    if (!this.pdfService.finalDocument?.annotations) {
+      return [];
+    }
+
+    return this.pdfService.finalDocument.annotations.filter(
+      annotation => annotation.pageIndex === this.currentPageIndex
+    );
+  }
+
+  /**
+   * Calculate pixel position from normalized coordinates
+   */
+  getAnnotationPixelStyle(annotation: any): any {
+    const pageWidth = 816; // Standard page width
+    const pageHeight = 1056; // Standard page height
+
+    const left = annotation.normalizedX * pageWidth;
+    const top = annotation.normalizedY * pageHeight; // normalizedY is from the top (matches canvas coordinate system)
+    const width = annotation.normalizedWidth * pageWidth;
+    const height = annotation.normalizedHeight * pageHeight;
+
+    // Base styles for all annotation types
+    const baseStyle: any = {
+      position: 'absolute',
+      left: left + 'px',
+      top: top + 'px',
+      width: width + 'px',
+      height: height + 'px',
+      boxSizing: 'border-box',
+      pointerEvents: 'none',
+      zIndex: 10,
+      overflow: 'hidden'
+    };
+
+    // Type-specific styling
+    switch (annotation.type) {
+      case 'textbox':
+        return {
+          position: 'absolute',
+          left: left + 'px',
+          top: top + 'px',
+          width: width + 'px',
+          minHeight: height + 'px',
+          boxSizing: 'border-box',
+          zIndex: 10,
+          overflow: 'visible',
+        };
+
+      case 'highlight':
+        return {
+          ...baseStyle,
+          backgroundColor: annotation.style?.color || '#FFFF00',
+          opacity: annotation.style?.opacity || 0.3,
+        };
+
+      case 'note': // Arrow annotation — rendered as SVG in the template
+      case 'shape':
+        return {
+          ...baseStyle,
+          overflow: 'visible', // SVG arrows/arrowheads extend past bounding box — must not clip
+        };
+
+      case 'redaction':
+        return {
+          ...baseStyle,
+          backgroundColor: '#000000',
+        };
+
+      default:
+        return {
+          ...baseStyle,
+          fontSize: (annotation.style?.fontSize || 14) + 'px',
+          fontFamily: annotation.style?.fontFamily || 'Arial',
+          color: annotation.style?.color || '#000000',
+          whiteSpace: 'pre-wrap',
+          wordWrap: 'break-word',
+        };
+    }
+  }
+
   // Add resetPage method
   resetPage(newPage: Line[]): void {
     console.log('Resetting page with new data:', newPage.length);
@@ -1570,7 +2275,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.selectedLineIds = [];
     this.lastSelectedIndex = null;
     this.selectedLine = null;
-    
+
     // Force change detection
     this.cdRef.detectChanges();
   }
@@ -1620,13 +2325,13 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     if (line.calculatedBarY && line.calculatedBarY !== '90px' && parseInt(String(line.calculatedBarY)) !== 90) {
       return String(line.calculatedBarY);
     }
-    
+
     // Find lowest Y position (closest to bottom) of visible text lines
     let lowestYPos = 0;
     for (const pageLine of this.page) {
-      if (pageLine.docPageLineIndex !== line.docPageLineIndex && 
-          pageLine.visible === 'true' && 
-          pageLine.category !== 'page-number' && 
+      if (pageLine.docPageLineIndex !== line.docPageLineIndex &&
+          pageLine.visible === 'true' &&
+          pageLine.category !== 'page-number' &&
           pageLine.category !== 'injected-break' &&
           pageLine.category !== 'callsheet') {
         const yPos = parseInt(String(pageLine.calculatedYpos || pageLine.yPos || '0'));
@@ -1635,13 +2340,704 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         }
       }
     }
-    
+
     // Position CONTINUE bar 55px below last line
     if (lowestYPos > 0) {
       return Math.max(20, lowestYPos - 75) + 'px';
     }
-    
+
     return '90px';
   }
-  
+
+  // ============= SKIPPED SECTION X-BOX METHODS =============
+
+  /**
+   * Compute bounding boxes for each contiguous block of skipped (false/hidden)
+   * content lines on the current page, for rendering SVG X-box overlays.
+   *
+   * Coordinate system:
+   *   - Lines are positioned with CSS `bottom: Npx` on a 1056px-tall page
+   *   - SVG origin is top-left, so:  svgY = PAGE_HEIGHT - bottomPx
+   *
+   * Returns an array of { top, bottom, left, right } objects in SVG pixel space.
+   */
+  getSkippedSections(): Array<{ top: number; bottom: number; left: number; right: number }> {
+    const PAGE_HEIGHT = 1056;
+    const CONTENT_LEFT = 88;   // Slightly outside left content margin (96) for padding
+    const CONTENT_RIGHT = 739; // Slightly outside right content edge (731) for padding
+    const PAD_TOP = 20;        // Top padding — clears text above the first skipped line
+    const PAD_BOTTOM = 4;      // Bottom padding — tight so box doesn't bleed onto next scene
+
+    // Categories that are not "content" and should not affect X-box bounds
+    const EXCLUDED_CATEGORIES = new Set([
+      'page-number',
+      'page-number-hidden',
+      'injected-break',
+      'callsheet',
+    ]);
+
+    const sections: Array<{ top: number; bottom: number; left: number; right: number }> = [];
+
+    // Track the current group of skipped lines
+    let groupMaxYPos: number | null = null; // highest bottom value → highest on page
+    let groupMinYPos: number | null = null; // lowest bottom value → lowest on page
+
+    const flushGroup = () => {
+      if (groupMaxYPos !== null && groupMinYPos !== null) {
+        // Convert CSS bottom coords to SVG top-down coords
+        const svgTop = PAGE_HEIGHT - groupMaxYPos - PAD_TOP;
+        const svgBottom = PAGE_HEIGHT - groupMinYPos + PAD_BOTTOM;
+
+        // Only emit sections with meaningful height
+        if (svgBottom > svgTop + 4) {
+          sections.push({
+            top: Math.max(0, svgTop),
+            bottom: Math.min(PAGE_HEIGHT, svgBottom),
+            left: CONTENT_LEFT,
+            right: CONTENT_RIGHT,
+          });
+        }
+      }
+      groupMaxYPos = null;
+      groupMinYPos = null;
+    };
+
+    for (const line of this.page) {
+      // Skip structural/non-content elements
+      if (EXCLUDED_CATEGORIES.has(line.category)) {
+        continue;
+      }
+
+      // Skip lines that are completely hidden from the DOM
+      if (line.hidden === 'hidden') {
+        continue;
+      }
+
+      const isSkipped = line.visible === 'false' || (line.visible as any) === false;
+
+      if (isSkipped) {
+        // Parse the CSS `bottom` value — always the scaled position (yPos * 1.3).
+        // calculatedYpos is a string like "130px" → parse as number.
+        // If calculatedYpos is absent, compute from raw yPos * 1.3 (same scale factor
+        // used everywhere in the template).
+        const scaledBottom = line.calculatedYpos
+          ? parseInt(String(line.calculatedYpos), 10)
+          : (typeof line.yPos === 'number' ? Math.round(line.yPos * 1.3) : 0);
+        const yPos = scaledBottom;
+
+        if (yPos > 0) {
+          if (groupMaxYPos === null || yPos > groupMaxYPos) groupMaxYPos = yPos;
+          if (groupMinYPos === null || yPos < groupMinYPos) groupMinYPos = yPos;
+        }
+      } else {
+        // Visible line — flush any open group
+        flushGroup();
+      }
+    }
+
+    // Flush final group
+    flushGroup();
+
+    return sections;
+  }
+
+  // ============= X-BOX EDITING METHODS =============
+
+  /**
+   * Returns the skipped sections with overrides applied (moved, resized, deleted).
+   * Used by the template to render both the SVG X-boxes and the interactive overlays.
+   */
+  getDisplayedSkippedSections(): Array<{ top: number; bottom: number; left: number; right: number; originalIndex: number }> {
+    const baseSections = this.getSkippedSections();
+    return baseSections
+      .map((section, index) => {
+        const override = this.xboxOverrides.get(index);
+        if (override?.deleted) return null;
+        return {
+          top: override?.top ?? section.top,
+          bottom: override?.bottom ?? section.bottom,
+          left: override?.left ?? section.left,
+          right: override?.right ?? section.right,
+          originalIndex: index,
+        };
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== null);
+  }
+
+  /**
+   * Select an X-box for editing. Click on the X-box overlay div.
+   */
+  selectXbox(index: number, event: MouseEvent): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.selectedXboxIndex = index;
+    this.cdRef.detectChanges();
+  }
+
+  /**
+   * Deselect X-box when clicking elsewhere.
+   */
+  deselectXbox(): void {
+    this.selectedXboxIndex = null;
+    this.cdRef.detectChanges();
+  }
+
+  /**
+   * Delete (remove) a specific X-box overlay.
+   */
+  deleteXbox(index: number, event: MouseEvent): void {
+    event.stopPropagation();
+    event.preventDefault();
+    const override = this.xboxOverrides.get(index) || {};
+    override.deleted = true;
+    this.xboxOverrides.set(index, override);
+    if (this.selectedXboxIndex === index) {
+      this.selectedXboxIndex = null;
+    }
+    this.cdRef.detectChanges();
+  }
+
+  /**
+   * Start dragging an X-box to move it.
+   */
+  startXboxDrag(index: number, event: MouseEvent): void {
+    if (!this.canEditDocument) return;
+    // Don't drag if clicking delete button or resize handle
+    if ((event.target as HTMLElement).closest('.xbox-delete-btn') ||
+        (event.target as HTMLElement).closest('.xbox-resize-handle')) {
+      return;
+    }
+
+    event.stopPropagation();
+    event.preventDefault();
+
+    const section = this.getDisplayedSkippedSections().find(s => s.originalIndex === index);
+    if (!section) return;
+
+    this.xboxDragging = true;
+    this.selectedXboxIndex = index;
+    this.xboxDragStartX = event.clientX;
+    this.xboxDragStartY = event.clientY;
+    this.xboxDragInitialTop = section.top;
+    this.xboxDragInitialLeft = section.left;
+
+    document.addEventListener('mousemove', this.handleXboxDragMove);
+    document.addEventListener('mouseup', this.handleXboxDragEnd);
+  }
+
+  handleXboxDragMove = (event: MouseEvent): void => {
+    if (!this.xboxDragging || this.selectedXboxIndex === null) return;
+
+    const deltaX = event.clientX - this.xboxDragStartX;
+    const deltaY = event.clientY - this.xboxDragStartY;
+
+    const section = this.getSkippedSections()[this.selectedXboxIndex];
+    if (!section) return;
+
+    const override = this.xboxOverrides.get(this.selectedXboxIndex) || {};
+    const height = (override.bottom ?? section.bottom) - (override.top ?? section.top);
+    const width = (override.right ?? section.right) - (override.left ?? section.left);
+
+    override.top = Math.max(0, this.xboxDragInitialTop + deltaY);
+    override.bottom = override.top + height;
+    override.left = Math.max(0, this.xboxDragInitialLeft + deltaX);
+    override.right = override.left + width;
+
+    this.xboxOverrides.set(this.selectedXboxIndex, override);
+    this.cdRef.detectChanges();
+  };
+
+  handleXboxDragEnd = (_event: MouseEvent): void => {
+    document.removeEventListener('mousemove', this.handleXboxDragMove);
+    document.removeEventListener('mouseup', this.handleXboxDragEnd);
+    this.xboxDragging = false;
+  };
+
+  /**
+   * Start resizing an X-box from a corner handle.
+   */
+  startXboxResize(index: number, edge: string, event: MouseEvent): void {
+    if (!this.canEditDocument) return;
+    event.stopPropagation();
+    event.preventDefault();
+
+    const section = this.getDisplayedSkippedSections().find(s => s.originalIndex === index);
+    if (!section) return;
+
+    this.xboxResizing = true;
+    this.selectedXboxIndex = index;
+    this.xboxResizeEdge = edge;
+    this.xboxResizeStartX = event.clientX;
+    this.xboxResizeStartY = event.clientY;
+    this.xboxResizeInitial = { top: section.top, bottom: section.bottom, left: section.left, right: section.right };
+
+    document.addEventListener('mousemove', this.handleXboxResizeMove);
+    document.addEventListener('mouseup', this.handleXboxResizeEnd);
+  }
+
+  handleXboxResizeMove = (event: MouseEvent): void => {
+    if (!this.xboxResizing || this.selectedXboxIndex === null || !this.xboxResizeInitial) return;
+
+    const deltaX = event.clientX - this.xboxResizeStartX;
+    const deltaY = event.clientY - this.xboxResizeStartY;
+    const MIN_SIZE = 30;
+
+    const override = this.xboxOverrides.get(this.selectedXboxIndex) || {};
+    const init = this.xboxResizeInitial;
+
+    switch (this.xboxResizeEdge) {
+      case 'top-left':
+        override.top = Math.min(init.top + deltaY, init.bottom - MIN_SIZE);
+        override.left = Math.min(init.left + deltaX, init.right - MIN_SIZE);
+        override.bottom = init.bottom;
+        override.right = init.right;
+        break;
+      case 'top-right':
+        override.top = Math.min(init.top + deltaY, init.bottom - MIN_SIZE);
+        override.right = Math.max(init.right + deltaX, init.left + MIN_SIZE);
+        override.bottom = init.bottom;
+        override.left = init.left;
+        break;
+      case 'bottom-left':
+        override.bottom = Math.max(init.bottom + deltaY, init.top + MIN_SIZE);
+        override.left = Math.min(init.left + deltaX, init.right - MIN_SIZE);
+        override.top = init.top;
+        override.right = init.right;
+        break;
+      case 'bottom-right':
+        override.bottom = Math.max(init.bottom + deltaY, init.top + MIN_SIZE);
+        override.right = Math.max(init.right + deltaX, init.left + MIN_SIZE);
+        override.top = init.top;
+        override.left = init.left;
+        break;
+    }
+
+    this.xboxOverrides.set(this.selectedXboxIndex, override);
+    this.cdRef.detectChanges();
+  };
+
+  handleXboxResizeEnd = (_event: MouseEvent): void => {
+    document.removeEventListener('mousemove', this.handleXboxResizeMove);
+    document.removeEventListener('mouseup', this.handleXboxResizeEnd);
+    this.xboxResizing = false;
+    this.xboxResizeEdge = null;
+    this.xboxResizeInitial = null;
+  };
+
+  // Get SVG path for category icons
+  getCategoryIcon(category: string): string {
+    const icons: { [key: string]: string } = {
+      'scene-header': 'M7 20l4-16m2 16l4-16M6 9h14M4 15h14',
+      'action': 'M4 6h16M4 12h16M4 18h16',
+      'character': 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+      'dialogue': 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+      'parenthetical': 'M9 5l7 7-7 7',
+      'transition': 'M13 7l5 5m0 0l-5 5m5-5H6',
+      'shot': 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z',
+      'general': 'M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z'
+    };
+
+    return icons[category] || icons['general'];
+  }
+
+  // ============= TOOLBAR HELPER METHODS =============
+
+  // Check if any selected line has visibility toggled
+  isVisibilityToggled(): boolean {
+    if (this.selectedLineIds.length === 0) return false;
+    const selectedLines = this.page.filter(line => this.selectedLineIds.includes(line.docPageLineIndex));
+    return selectedLines.some(line => line.visible === 'false');
+  }
+
+  // Get tooltip text for visibility button
+  getVisibilityTooltip(): string {
+    if (this.selectedLineIds.length === 0) return 'Toggle Visibility';
+    return this.isVisibilityToggled() ? 'Show Lines' : 'Hide Lines';
+  }
+
+  // Toggle visibility for all selected lines
+  toggleSelectedVisibility(): void {
+    if (this.selectedLineIds.length === 0) return;
+
+    const selectedLines = this.selectedLineIds.map(lineId => {
+      const line = this.page.find(l => l.docPageLineIndex === lineId);
+      const lineIndex = this.page.findIndex(l => l.docPageLineIndex === lineId);
+      return { line, lineIndex };
+    }).filter(item => item.line);
+
+    if (selectedLines.length === 0) return;
+
+    // Determine new visibility state
+    const firstLine = selectedLines[0].line;
+    const newVisibility = firstLine.visible === 'true' ? 'false' : 'true';
+
+    // Record undo for batch operation
+    const batchChanges = selectedLines.map(({ line, lineIndex }) => ({
+      pageIndex: this.currentPageIndex,
+      lineIndex,
+      currentLineState: { ...line },
+      changeDescription: `Toggle visibility: ${line.visible} → ${newVisibility}`
+    }));
+    this.undoService.recordBatchChanges(batchChanges);
+
+    // Update all selected lines
+    selectedLines.forEach(({ line, lineIndex }) => {
+      this.pdfService.updateLine(
+        this.currentPageIndex,
+        line.docPageLineIndex,
+        { ...line, visible: newVisibility }
+      );
+    });
+
+    this.cdRef.detectChanges();
+  }
+
+  // Check if any selected line has start bar
+  hasStartBar(): boolean {
+    if (this.selectedLineIds.length === 0) return false;
+    const selectedLines = this.page.filter(line => this.selectedLineIds.includes(line.docPageLineIndex));
+    return selectedLines.some(line => line.bar === 'bar');
+  }
+
+  // Toggle start bar for selected lines
+  toggleStartBarForSelected(): void {
+    if (this.selectedLineIds.length === 0) return;
+    const firstLine = this.page.find(l => l.docPageLineIndex === this.selectedLineIds[0]);
+    if (firstLine) {
+      // Use existing context menu logic with the first selected line
+      const lineIndex = this.page.findIndex(l => l.docPageLineIndex === firstLine.docPageLineIndex);
+
+      // Record undo
+      this.undoService.recordLineChange(
+        this.currentPageIndex,
+        lineIndex,
+        firstLine,
+        `Toggle start bar`
+      );
+
+      // Toggle the bar
+      if (firstLine.bar === 'bar') {
+        firstLine.bar = 'hideBar';
+        firstLine.calculatedBarY = undefined;
+        firstLine.startTextOffset = undefined;
+      } else {
+        firstLine.bar = 'bar';
+        if (!firstLine.calculatedBarY) {
+          firstLine.calculatedBarY = (parseInt(firstLine.calculatedYpos as string) + 20) + 'px';
+          firstLine.barY = parseInt(firstLine.calculatedBarY) / 1.3;
+        }
+        firstLine.startTextOffset = 10;
+      }
+
+      this.pdfService.updateLine(this.currentPageIndex, lineIndex, firstLine);
+      this.pageUpdate.emit([...this.page]);
+      this.cdRef.detectChanges();
+    }
+  }
+
+  // Check if any selected line has end bar
+  hasEndBar(): boolean {
+    if (this.selectedLineIds.length === 0) return false;
+    const selectedLines = this.page.filter(line => this.selectedLineIds.includes(line.docPageLineIndex));
+    return selectedLines.some(line => line.end === 'END');
+  }
+
+  // Toggle end bar for selected lines
+  toggleEndBarForSelected(): void {
+    if (this.selectedLineIds.length === 0) return;
+    const firstLine = this.page.find(l => l.docPageLineIndex === this.selectedLineIds[0]);
+    if (firstLine) {
+      const lineIndex = this.page.findIndex(l => l.docPageLineIndex === firstLine.docPageLineIndex);
+
+      // Record undo
+      this.undoService.recordLineChange(
+        this.currentPageIndex,
+        lineIndex,
+        firstLine,
+        `Toggle end bar`
+      );
+
+      // Toggle the bar
+      if (firstLine.end === 'END') {
+        firstLine.end = 'hideEnd';
+        firstLine.calculatedEnd = undefined;
+        firstLine.endTextOffset = undefined;
+      } else {
+        firstLine.end = 'END';
+        if (!firstLine.calculatedEnd) {
+          firstLine.calculatedEnd = (parseInt(firstLine.calculatedYpos as string) - 20) + 'px';
+          firstLine.endY = parseInt(firstLine.calculatedEnd) / 1.3;
+        }
+        firstLine.endTextOffset = 10;
+      }
+
+      this.pdfService.updateLine(this.currentPageIndex, lineIndex, firstLine);
+      this.pageUpdate.emit([...this.page]);
+      this.cdRef.detectChanges();
+    }
+  }
+
+  // Check if any selected line has continue top
+  hasContinueTop(): boolean {
+    if (this.selectedLineIds.length === 0) return false;
+    const selectedLines = this.page.filter(line => this.selectedLineIds.includes(line.docPageLineIndex));
+    return selectedLines.some(line => line.cont === 'CONTINUE-TOP');
+  }
+
+  // Toggle continue top for selected lines
+  toggleContinueTopForSelected(): void {
+    if (this.selectedLineIds.length === 0) return;
+    const firstLine = this.page.find(l => l.docPageLineIndex === this.selectedLineIds[0]);
+    if (firstLine) {
+      const lineIndex = this.page.findIndex(l => l.docPageLineIndex === firstLine.docPageLineIndex);
+
+      // Record undo
+      this.undoService.recordLineChange(
+        this.currentPageIndex,
+        lineIndex,
+        firstLine,
+        `Toggle continue top bar`
+      );
+
+      // Toggle the bar
+      if (firstLine.cont === 'CONTINUE-TOP') {
+        firstLine.cont = 'hideCont';
+        firstLine.calculatedBarY = undefined;
+        firstLine.continueTopTextOffset = undefined;
+      } else {
+        if (firstLine.cont === 'CONTINUE') {
+          firstLine.cont = 'hideCont';
+        }
+        firstLine.cont = 'CONTINUE-TOP';
+        if (!firstLine.calculatedBarY) {
+          firstLine.calculatedBarY = '40px';
+          firstLine.barY = 40;
+        }
+        if (!firstLine.continueTopTextOffset) {
+          firstLine.continueTopTextOffset = 10;
+        }
+      }
+
+      this.pdfService.updateLine(this.currentPageIndex, lineIndex, firstLine);
+      this.pageUpdate.emit([...this.page]);
+      this.cdRef.detectChanges();
+    }
+  }
+
+  // Check if any selected line has continue
+  hasContinue(): boolean {
+    if (this.selectedLineIds.length === 0) return false;
+    const selectedLines = this.page.filter(line => this.selectedLineIds.includes(line.docPageLineIndex));
+    return selectedLines.some(line => line.cont === 'CONTINUE');
+  }
+
+  // Toggle continue for selected lines
+  toggleContinueForSelected(): void {
+    if (this.selectedLineIds.length === 0) return;
+    const firstLine = this.page.find(l => l.docPageLineIndex === this.selectedLineIds[0]);
+    if (firstLine) {
+      const lineIndex = this.page.findIndex(l => l.docPageLineIndex === firstLine.docPageLineIndex);
+
+      // Record undo
+      this.undoService.recordLineChange(
+        this.currentPageIndex,
+        lineIndex,
+        firstLine,
+        `Toggle continue bar`
+      );
+
+      // Toggle the bar
+      if (firstLine.cont === 'CONTINUE') {
+        firstLine.cont = 'hideCont';
+        firstLine.calculatedBarY = undefined;
+        firstLine.continueTextOffset = undefined;
+      } else {
+        if (firstLine.cont === 'CONTINUE-TOP') {
+          firstLine.cont = 'hideCont';
+        }
+        firstLine.cont = 'CONTINUE';
+        if (!firstLine.calculatedBarY) {
+          firstLine.calculatedBarY = '90px';
+          firstLine.barY = 90;
+        }
+        if (!firstLine.continueTextOffset) {
+          firstLine.continueTextOffset = 10;
+        }
+      }
+
+      this.pdfService.updateLine(this.currentPageIndex, lineIndex, firstLine);
+      this.pageUpdate.emit([...this.page]);
+      this.cdRef.detectChanges();
+    }
+  }
+
+  /**
+   * Combine/condense pages by removing hidden (false) lines and repaginating.
+   * This helps casting directors meet the SAG-AFTRA 8-page limit for audition sides.
+   */
+  combinePages(): void {
+    const totalPages = this.pdfService.finalDocument?.data?.length || 0;
+
+    if (totalPages === 0) {
+      alert('No pages to condense.');
+      return;
+    }
+
+    const confirmMsg = totalPages <= 8
+      ? `Current document has ${totalPages} pages (within 8-page limit).\nCondensing will remove all crossed-out lines and repack pages.\n\nThis cannot be undone. Continue?`
+      : `Current document has ${totalPages} pages (exceeds 8-page SAG-AFTRA limit).\nCondensing will remove all crossed-out lines and try to fit within 8 pages.\n\nThis cannot be undone. Continue?`;
+
+    if (!confirm(confirmMsg)) {
+      return;
+    }
+
+    // Record undo state before combining
+    this.undoService.recordDocumentReorderChange(
+      cloneDeep(this.pdfService.finalDocument.data),
+      'Combine/condense pages'
+    );
+
+    // Run the combine operation
+    const result = this.pdfService.combinePages(8);
+
+    if (!result.condensed) {
+      alert('No hidden lines found to remove. Document is already condensed.');
+      return;
+    }
+
+    // Update local state to reflect the new document
+    const newPages = this.pdfService.finalDocument.data;
+    const newCurrentPageIndex = Math.min(this.currentPageIndex, newPages.length - 1);
+
+    // Emit page change to parent
+    this.currentPageIndex = newCurrentPageIndex;
+    this.page = newPages[newCurrentPageIndex] || [];
+    this.pageUpdate.emit([...this.page]);
+    this.pageChange.emit(newCurrentPageIndex);
+
+    // Save the document state
+    this.pdfService.saveDocumentState();
+
+    // Force change detection
+    this.cdRef.detectChanges();
+
+    const pageReduction = (this.pdfService.finalDocument.data.length <= 8)
+      ? `Now ${newPages.length} pages — within SAG-AFTRA limit! ✅`
+      : `Now ${newPages.length} pages — still exceeds 8-page limit. Consider removing more material.`;
+
+    alert(`Condensed: removed ${result.removedLines} hidden lines.\n${pageReduction}`);
+  }
+
+  // Reset to initial state
+  resetToInitialState(): void {
+    if (confirm('Are you sure you want to reset all changes? This cannot be undone.')) {
+      // Clear undo/redo history
+      this.undoService.reset();
+
+      // Reset page to initial state
+      if (this.initialPageState && this.initialPageState.length > 0) {
+        this.page = JSON.parse(JSON.stringify(this.initialPageState));
+      }
+
+      // Clear selections
+      this.selectedLineIds = [];
+      this.lastSelectedIndex = null;
+      this.selectedLine = null;
+
+      // Reset X-box overrides
+      this.xboxOverrides.clear();
+      this.selectedXboxIndex = null;
+
+      // Reset annotations to initial state
+      this.annotationState.clear();
+
+      // Restore initial annotations if they exist
+      if (this.initialAnnotations && this.initialAnnotations.length > 0) {
+        this.pdfService.finalDocument.annotations = JSON.parse(JSON.stringify(this.initialAnnotations));
+        this.loadAnnotationsFromDocument();
+      } else {
+        // No initial annotations, just clear document annotations
+        if (this.pdfService.finalDocument) {
+          this.pdfService.finalDocument.annotations = [];
+          this.pdfService.finalDocument.pageAnnotations = {};
+        }
+      }
+
+      // Emit the reset page
+      this.pageUpdate.emit([...this.page]);
+
+      // Force change detection
+      this.cdRef.detectChanges();
+
+      console.log('Reset complete - page and annotations restored to initial state');
+    }
+  }
+
+  // Save changes
+  /**
+   * Save annotations from state to document (called internally)
+   */
+  private saveAnnotationsToDocument(): void {
+    console.log('💾 saveAnnotationsToDocument() called');
+
+    if (!this.pdfService.finalDocument) {
+      console.error('❌ No finalDocument exists!');
+      return;
+    }
+
+    // Get all annotations from state
+    const allAnnotations = Array.from(this.annotationState.annotations.values());
+    console.log('📊 Retrieved', allAnnotations.length, 'annotations from state');
+
+    // Save to document — even if empty (user may have deleted all annotations)
+    this.pdfService.finalDocument.annotations = allAnnotations;
+
+    // Also save to a per-page structure for easier backend processing
+    this.pdfService.finalDocument.pageAnnotations = {};
+
+    // Group annotations by page
+    allAnnotations.forEach(annotation => {
+      const pageKey = `page_${annotation.pageIndex}`;
+      if (!this.pdfService.finalDocument.pageAnnotations[pageKey]) {
+        this.pdfService.finalDocument.pageAnnotations[pageKey] = [];
+      }
+      this.pdfService.finalDocument.pageAnnotations[pageKey].push(annotation);
+    });
+
+    console.log('✅ Annotations saved to document:', {
+      totalAnnotations: allAnnotations.length,
+      annotationsByPage: Object.keys(this.pdfService.finalDocument.pageAnnotations).length,
+      annotationDetails: allAnnotations.map(a => ({ type: a.type, text: a.text, page: a.pageIndex }))
+    });
+  }
+
+  saveChanges(): void {
+    if (this.pdfService.finalDocument?.data) {
+      // Step 1: Sync current page to pdfService BEFORE saving
+      console.log('saveChanges: Syncing page', this.currentPageIndex, 'to pdfService');
+      this.pdfService.finalDocument.data[this.currentPageIndex] = [...this.page];
+
+      // Step 2: Save annotations to document
+      this.saveAnnotationsToDocument();
+
+      // Step 3: Create persistent save point (deep copy)
+      this.pdfService.saveDocumentState();
+
+      console.log('Document saved with annotations:', {
+        totalAnnotations: this.pdfService.finalDocument.annotations?.length || 0,
+        annotationsByPage: this.pdfService.finalDocument.pageAnnotations
+      });
+
+      // Step 4: Emit page update so parent re-syncs its local state with saved data
+      this.pageUpdate.emit([...this.page]);
+    }
+
+    // Show confirmation
+    console.log('Changes saved successfully');
+    alert('Changes saved successfully!');
+
+    // Force change detection
+    this.cdRef.detectChanges();
+  }
+
 }

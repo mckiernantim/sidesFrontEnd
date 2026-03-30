@@ -317,14 +317,68 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
 
   getCharacters() {
     if (this.allLines) {
-      // GET CHARS
-      this.characters = this.allLines.filter((line) => {
-        return line.category === 'character';
-      });
-      this.characters = [
-        ...new Set(this.characters.map((line) => line.text.replace(/\s/g, ''))),
-      ];
+      // GET CHARS - only those with actual dialogue and valid names
+      const validCharacters: string[] = [];
+      
+      for (let i = 0; i < this.allLines.length; i++) {
+        const line = this.allLines[i];
+        
+        if (line?.category === 'character') {
+          // Check if this character has dialogue following it
+          const hasDialogue = this.characterHasDialogueGlobal(i);
+          
+          if (hasDialogue) {
+            // Clean up character name - remove parentheticals and whitespace
+            const cleanName = line.text.replace(/\s*\(.*\)/, '').replace(/\s/g, '').trim();
+            
+            // Validate the character name to filter out false positives
+            if (this.isValidCharacterName(cleanName) && !validCharacters.includes(cleanName)) {
+              validCharacters.push(cleanName);
+            }
+          }
+        }
+      }
+      
+      this.characters = validCharacters;
     }
+  }
+
+  /**
+   * Check if a character line has dialogue following it (global version without scene limit)
+   */
+  private characterHasDialogueGlobal(characterIndex: number): boolean {
+    // Look at the next few lines after the character line
+    for (let i = characterIndex + 1; i < Math.min(characterIndex + 5, this.allLines.length); i++) {
+      const nextLine = this.allLines[i];
+      if (!nextLine) continue;
+      
+      // If we hit another character or scene-header, this character has no dialogue
+      if (nextLine.category === 'character' || nextLine.category === 'scene-header') {
+        return false;
+      }
+      
+      // If we find dialogue, this is a valid character
+      if (nextLine.category === 'dialog') {
+        return true;
+      }
+      
+      // Parentheticals are okay - keep looking for dialogue
+      if (nextLine.category === 'parenthetical' || nextLine.subCategory === 'parenthetical') {
+        continue;
+      }
+      
+      // Skip page numbers, more, continue markers
+      if (['page-number', 'page-number-hidden', 'more', 'continue', 'continue-top'].includes(nextLine.category)) {
+        continue;
+      }
+      
+      // Description or other content means no dialogue for this character instance
+      if (nextLine.category === 'description') {
+        return false;
+      }
+    }
+    
+    return false;
   }
   getScenes() {
     if (this.individualPages && this.allLines) {
@@ -340,6 +394,8 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
 
         this.processSceneHeader(sceneRefInTable, sceneInActualScript);
         
+        // Extract characters for this scene
+        this.setSceneCharacters(i);
       }
     }
 
@@ -352,6 +408,258 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
         ? (this.allLines[i].pageNumber = 1)
         : this.allLines;
     }
+  }
+
+  /**
+   * Validate if a string is a valid character name
+   * Filters out false positives like "(", "I?", numbers only, etc.
+   */
+  private isValidCharacterName(name: string): boolean {
+    if (!name) return false;
+    
+    const trimmed = name.trim();
+    
+    // Must be at least 2 characters
+    if (trimmed.length < 2) return false;
+    
+    // Must contain at least one letter
+    if (!/[a-zA-Z]/.test(trimmed)) return false;
+    
+    // Should not be mostly punctuation (allow some like apostrophes, hyphens)
+    const letterCount = (trimmed.match(/[a-zA-Z]/g) || []).length;
+    const totalChars = trimmed.length;
+    if (letterCount / totalChars < 0.5) return false;
+    
+    // Filter out common false positive patterns
+    const invalidPatterns = [
+      /^\(.*\)$/, // Just parenthetical like "(V.O.)"
+      /^\?+$/, // Just question marks
+      /^[.,;:!?'"]+$/, // Just punctuation
+      /^I\?$/, // Common misparse
+      /^\d+$/, // Just numbers
+      /^[A-Z]\?$/, // Single letter with question mark
+      /^\.+$/, // Just periods
+      /^-+$/, // Just dashes
+      /^_+$/, // Just underscores
+      /^\s*$/, // Just whitespace
+    ];
+    
+    for (const pattern of invalidPatterns) {
+      if (pattern.test(trimmed)) return false;
+    }
+    
+    // Filter out strings that are too short after removing common suffixes
+    const withoutSuffix = trimmed.replace(/\s*\(.*\)$/, '').trim();
+    if (withoutSuffix.length < 2) return false;
+    
+    return true;
+  }
+
+  /**
+   * Extract unique characters for a specific scene
+   * Only includes characters that have actual dialogue lines (not false positives)
+   */
+  setSceneCharacters(sceneIndex: number) {
+    const scene = this.scenes[sceneIndex];
+    if (!scene || !this.allLines) {
+      scene.characters = [];
+      return;
+    }
+
+    const firstLineIndex = scene.firstLine || scene.index;
+    const lastLineIndex = scene.lastLine || this.allLines.length - 1;
+
+    // Find all character lines within this scene's range that have dialogue
+    const validCharacterNames: string[] = [];
+    
+    for (let i = firstLineIndex; i <= lastLineIndex; i++) {
+      const line = this.allLines[i];
+      
+      if (line?.category === 'character') {
+        // Check if this character has dialogue following it
+        const hasDialogue = this.characterHasDialogue(i, lastLineIndex);
+        
+        if (hasDialogue) {
+          // Clean up character name - remove parentheticals like (V.O.), (CONT'D)
+          const cleanName = line.text.replace(/\s*\(.*\)/, '').trim();
+          
+          // Validate the character name
+          if (this.isValidCharacterName(cleanName) && !validCharacterNames.includes(cleanName)) {
+            validCharacterNames.push(cleanName);
+          }
+        }
+      }
+    }
+
+    scene.characters = validCharacterNames;
+  }
+
+  /**
+   * Check if a character line has dialogue following it
+   * A valid character should have dialog or parenthetical+dialog after it
+   */
+  private characterHasDialogue(characterIndex: number, maxIndex: number): boolean {
+    // Look at the next few lines after the character line
+    for (let i = characterIndex + 1; i <= Math.min(characterIndex + 5, maxIndex); i++) {
+      const nextLine = this.allLines[i];
+      if (!nextLine) continue;
+      
+      // If we hit another character or scene-header, this character has no dialogue
+      if (nextLine.category === 'character' || nextLine.category === 'scene-header') {
+        return false;
+      }
+      
+      // If we find dialogue, this is a valid character
+      if (nextLine.category === 'dialog') {
+        return true;
+      }
+      
+      // Parentheticals are okay - keep looking for dialogue
+      if (nextLine.category === 'parenthetical' || nextLine.subCategory === 'parenthetical') {
+        continue;
+      }
+      
+      // Skip page numbers, more, continue markers
+      if (['page-number', 'page-number-hidden', 'more', 'continue', 'continue-top'].includes(nextLine.category)) {
+        continue;
+      }
+      
+      // Description or other content means no dialogue for this character instance
+      if (nextLine.category === 'description') {
+        return false;
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * Get dialogue line count for each character
+   * Returns a map of character name -> line count
+   */
+  getCharacterLineCounts(): Map<string, number> {
+    const lineCounts = new Map<string, number>();
+    
+    if (!this.allLines) return lineCounts;
+    
+    for (let i = 0; i < this.allLines.length; i++) {
+      const line = this.allLines[i];
+      
+      if (line?.category === 'character') {
+        // Clean up character name
+        const cleanName = line.text.replace(/\s*\(.*\)/, '').trim();
+        
+        // Skip invalid character names
+        if (!this.isValidCharacterName(cleanName)) continue;
+        
+        // Count dialogue lines following this character
+        let dialogueCount = 0;
+        for (let j = i + 1; j < Math.min(i + 50, this.allLines.length); j++) {
+          const nextLine = this.allLines[j];
+          if (!nextLine) continue;
+          
+          // Stop at next character or scene header
+          if (nextLine.category === 'character' || nextLine.category === 'scene-header') {
+            break;
+          }
+          
+          // Count dialogue lines
+          if (nextLine.category === 'dialog') {
+            dialogueCount++;
+          }
+        }
+        
+        if (dialogueCount > 0) {
+          const currentCount = lineCounts.get(cleanName) || 0;
+          lineCounts.set(cleanName, currentCount + dialogueCount);
+        }
+      }
+    }
+    
+    return lineCounts;
+  }
+
+  /**
+   * Get all unique characters across all scenes, sorted by dialogue line count (most lines first)
+   */
+  getAllCharacters(): string[] {
+    if (!this.scenes || this.scenes.length === 0) {
+      return this.characters || [];
+    }
+
+    const allChars = new Set<string>();
+    this.scenes.forEach(scene => {
+      if (scene.characters) {
+        scene.characters.forEach(char => allChars.add(char));
+      }
+    });
+
+    // Get line counts and sort by them
+    const lineCounts = this.getCharacterLineCounts();
+    
+    return Array.from(allChars).sort((a, b) => {
+      const countA = lineCounts.get(a) || 0;
+      const countB = lineCounts.get(b) || 0;
+      return countB - countA; // Descending order (most lines first)
+    });
+  }
+
+  /**
+   * Get characters that share at least one scene with ALL of the selected characters
+   * Used to filter available characters in casting mode
+   */
+  getCharactersInSharedScenes(selectedCharacters: string[]): string[] {
+    if (!this.scenes || selectedCharacters.length === 0) {
+      return this.getAllCharacters();
+    }
+
+    // Find scenes that contain ALL selected characters
+    const scenesWithSelected = this.scenes.filter(scene => {
+      if (!scene.characters || scene.characters.length === 0) return false;
+      return selectedCharacters.every(charName =>
+        scene.characters.some(sceneChar =>
+          sceneChar.toUpperCase() === charName.toUpperCase()
+        )
+      );
+    });
+
+    // Get all characters from those scenes
+    const availableChars = new Set<string>();
+    scenesWithSelected.forEach(scene => {
+      scene.characters?.forEach(char => availableChars.add(char));
+    });
+
+    // Get line counts for sorting
+    const lineCounts = this.getCharacterLineCounts();
+
+    // Return sorted by line count
+    return Array.from(availableChars).sort((a, b) => {
+      const countA = lineCounts.get(a) || 0;
+      const countB = lineCounts.get(b) || 0;
+      return countB - countA; // Descending order
+    });
+  }
+
+  /**
+   * Get scenes that contain specific character(s)
+   * If multiple characters provided, returns scenes containing ALL of them
+   */
+  getScenesForCharacters(characterNames: string[]): any[] {
+    if (!this.scenes || characterNames.length === 0) {
+      return this.scenes || [];
+    }
+
+    return this.scenes.filter(scene => {
+      if (!scene.characters || scene.characters.length === 0) {
+        return false;
+      }
+      // Check if scene contains all selected characters
+      return characterNames.every(charName => 
+        scene.characters.some(sceneChar => 
+          sceneChar.toUpperCase() === charName.toUpperCase()
+        )
+      );
+    });
   }
 
   setLinesInSceneToVisible(sceneArr, breaks) {
@@ -449,8 +757,8 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     }
   }
   private applyFinalAttributes(merged: any[], skippedCategories: string[]) {
+    let currentSceneNum = null; // hoisted: must persist across lines so non-header lines inherit the scene
     merged.forEach((line) => {
-      let currentSceneNum = null;
       if (line.category === 'scene-header') {
         currentSceneNum = line.sceneNumberText;
       }
@@ -1537,22 +1845,42 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
 
  
   processSceneHeader(lineInDataTable, lineInScript) {
-    // 86B-86COMITTED86B-86C  < --- strangest example we have founnd
-    // reged for any numbers followed by any ammount of letters and a possible . and then the same thing
+    // V2 output: sceneNumberText is already set and text is clean — nothing to do.
+    // V1 output: scene numbers may be concatenated into text as bookends or trailing-only.
+
+    // 1) BOOKEND: "92INT. PLACE - NIGHT92" → strip both sides
+    // 86B-86COMITTED86B-86C  < --- strangest example we have found
     const bookendPatternRegex = /^(\d+[A-Za-z]*)(.*)(\1)$/;
+    const bookendMatch = lineInDataTable.text.match(bookendPatternRegex);
 
-    const match = lineInDataTable.text.match(bookendPatternRegex);
-
-    if (match) {
-      // Now match[1] and match[3] should be the same, capturing the bookending pattern
-      const sceneNumberText = match[1]; // The bookending pattern (repeated at both ends)
-      const sceneContent = match[2].trim(); // The content of the scene header without the bookending patterns
-      // update text in table ref
+    if (bookendMatch) {
+      const sceneNumberText = bookendMatch[1];
+      const sceneContent = bookendMatch[2].trim();
       lineInDataTable.text = sceneContent;
       lineInDataTable.sceneNumberText = sceneNumberText;
-      // update actual doc in the service
       lineInScript.sceneNumberText = sceneNumberText;
       lineInScript.text = sceneContent;
+      return;
+    }
+
+    // 2) TRAILING-ONLY: "INT. PLACE - NIGHT93" → use sceneNumberText to strip trailing number
+    //    This handles V1 where only the right-margin scene number was concatenated.
+    const snt = lineInDataTable.sceneNumberText;
+    if (snt) {
+      const escapedSnt = snt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const trailingPattern = new RegExp(`\\s*${escapedSnt}\\s*$`);
+      if (trailingPattern.test(lineInDataTable.text)) {
+        const cleaned = lineInDataTable.text.replace(trailingPattern, '').trim();
+        lineInDataTable.text = cleaned;
+        lineInScript.text = cleaned;
+      }
+      // Also check for a leading scene number without bookend: "92 INT. PLACE - NIGHT"
+      const leadingPattern = new RegExp(`^${escapedSnt}\\s+`);
+      if (leadingPattern.test(lineInDataTable.text)) {
+        const cleaned = lineInDataTable.text.replace(leadingPattern, '').trim();
+        lineInDataTable.text = cleaned;
+        lineInScript.text = cleaned;
+      }
     }
   }
 
@@ -1759,6 +2087,213 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     this.initialFinalDocState = JSON.parse(JSON.stringify(savedState));
     
     return savedState;
+  }
+
+  /**
+   * Combine/condense pages by stripping out false (hidden) lines and repaginating.
+   * SAG-AFTRA rules limit audition sides to 8 pages, so this helps casting directors
+   * fit scenes within that limit by removing crossed-out material.
+   *
+   * @param maxPages - Maximum number of pages allowed (default 8 per SAG-AFTRA)
+   * @returns The condensed document data, or null if no condensing was needed
+   */
+  combinePages(maxPages: number = 8): { condensed: boolean; pageCount: number; removedLines: number } {
+    if (!this.finalDocument?.data || this.finalDocument.data.length === 0) {
+      return { condensed: false, pageCount: 0, removedLines: 0 };
+    }
+
+    const originalPageCount = this.finalDocument.data.length;
+
+    // Categories that should always be preserved even if visible is false
+    const alwaysKeepCategories = ['page-number', 'page-number-hidden'];
+    // Categories to always remove during condensing
+    const alwaysRemoveCategories = ['injected-break'];
+
+    // Step 1: Collect all visible lines from all pages (in order), stripping false lines
+    let allVisibleLines: any[] = [];
+    let removedCount = 0;
+
+    for (const page of this.finalDocument.data) {
+      for (const line of page) {
+        // Skip injected breaks
+        if (alwaysRemoveCategories.includes(line.category)) {
+          continue;
+        }
+
+        // Skip false/hidden lines (the core of condensing)
+        if (line.visible === 'false' && !alwaysKeepCategories.includes(line.category)) {
+          removedCount++;
+          continue;
+        }
+
+        // Skip page numbers (we'll re-add them per page)
+        if (line.category === 'page-number' || line.category === 'page-number-hidden') {
+          continue;
+        }
+
+        allVisibleLines.push({ ...line });
+      }
+    }
+
+    if (removedCount === 0) {
+      return { condensed: false, pageCount: originalPageCount, removedLines: 0 };
+    }
+
+    // Step 2: Repaginate the visible lines into new pages
+    // Standard line spacing in raw units and page boundary
+    const LINE_SPACING = 15; // Raw Y units between lines
+    const PAGE_TOP_MARGIN = 50; // Y position of first line on page (raw units)
+    const PAGE_BOTTOM_LIMIT = 780; // Max Y position before page break (raw units)
+
+    let newPages: any[][] = [];
+    let currentPage: any[] = [];
+    let currentY = PAGE_TOP_MARGIN;
+
+    for (let i = 0; i < allVisibleLines.length; i++) {
+      const line = allVisibleLines[i];
+
+      // Scene headers get extra spacing above
+      const isSceneHeader = line.category === 'scene-header';
+      const extraSpace = isSceneHeader && currentY > PAGE_TOP_MARGIN ? 10 : 0;
+
+      const lineY = currentY + extraSpace;
+
+      // Check if we need a page break
+      if (lineY > PAGE_BOTTOM_LIMIT && currentPage.length > 0) {
+        // Finalize current page
+        newPages.push(currentPage);
+        currentPage = [];
+        currentY = PAGE_TOP_MARGIN;
+      }
+
+      // Update line position
+      line.yPos = currentY + extraSpace;
+      line.calculatedYpos = (line.yPos * 1.3) + 'px';
+      line.page = newPages.length + 1; // 1-indexed page number
+      line.docPageIndex = newPages.length;
+      line.docPageLineIndex = currentPage.length;
+
+      // Clear old bar/continue markers (will be recalculated)
+      line.end = 'hideEnd';
+      line.bar = 'hideBar';
+      line.cont = 'hideCont';
+      line.hideCont = 'hideCont';
+      line.hideEnd = 'hideEnd';
+      line.calculatedBarY = undefined;
+      line.calculatedEnd = undefined;
+
+      currentPage.push(line);
+      currentY = line.yPos + LINE_SPACING;
+    }
+
+    // Push the last page
+    if (currentPage.length > 0) {
+      newPages.push(currentPage);
+    }
+
+    // Step 3: Add page numbers to each page
+    for (let pageIdx = 0; pageIdx < newPages.length; pageIdx++) {
+      const page = newPages[pageIdx];
+      // Add a page number line at the top
+      const pageNumLine = {
+        category: 'page-number',
+        class: 'page-number',
+        text: `${pageIdx + 1}.`,
+        pageNumberText: `${pageIdx + 1}.`,
+        visible: 'true',
+        yPos: 30,
+        xPos: 87,
+        calculatedYpos: (30 * 1.3) + 'px',
+        calculatedXpos: (87 * 1.3) + 'px',
+        page: pageIdx + 1,
+        index: -1,
+        sceneIndex: 0,
+        multipleColumn: false,
+        docPageIndex: pageIdx,
+        docPageLineIndex: 0,
+        end: 'hideEnd',
+        bar: 'hideBar',
+        cont: 'hideCont',
+      };
+
+      // Re-index all existing lines on this page
+      page.forEach((line, idx) => {
+        line.docPageLineIndex = idx + 1; // +1 because page number is at index 0
+      });
+
+      page.unshift(pageNumLine);
+    }
+
+    // Step 4: Recalculate scene start/end bars
+    for (let pageIdx = 0; pageIdx < newPages.length; pageIdx++) {
+      const page = newPages[pageIdx];
+      let lastSceneHeader: any = null;
+      let lastVisibleLine: any = null;
+
+      for (const line of page) {
+        if (line.visible !== 'true') continue;
+
+        if (line.category === 'scene-header') {
+          // Mark scene header with a START bar
+          line.bar = 'bar';
+          line.trueScene = 'trueScene';
+          lastSceneHeader = line;
+        }
+
+        if (line.category !== 'page-number' && line.category !== 'page-number-hidden') {
+          lastVisibleLine = line;
+        }
+      }
+
+      // Add END bar to the last visible line on the page if it's the last line of a scene
+      // that continues to the next page, or if the scene ends on this page
+      if (lastVisibleLine && lastSceneHeader) {
+        const nextPage = newPages[pageIdx + 1];
+        if (nextPage) {
+          // Check if scene continues to next page
+          const nextPageFirstContent = nextPage.find(l =>
+            l.category !== 'page-number' && l.category !== 'page-number-hidden' && l.visible === 'true'
+          );
+
+          if (nextPageFirstContent && nextPageFirstContent.sceneNumber === lastSceneHeader.sceneNumber) {
+            // Scene continues — add CONTINUE bar at bottom of current page
+            lastVisibleLine.cont = 'CONTINUE';
+            lastVisibleLine.barY = PAGE_BOTTOM_LIMIT;
+            lastVisibleLine.calculatedBarY = (PAGE_BOTTOM_LIMIT * 1.3) + 'px';
+
+            // Add CONTINUE-TOP bar at top of next page
+            if (nextPageFirstContent) {
+              nextPageFirstContent.cont = 'CONTINUE-TOP';
+              nextPageFirstContent.barY = PAGE_TOP_MARGIN;
+              nextPageFirstContent.calculatedBarY = (PAGE_TOP_MARGIN * 1.3) + 'px';
+            }
+          }
+        }
+      }
+    }
+
+    // Step 5: Update the document
+    this.finalDocument.data = newPages;
+    this.finalDocument.numPages = newPages.length;
+
+    // Update document indexes
+    newPages.forEach((page, pageIndex) => {
+      page.forEach((line, lineIndex) => {
+        line.docPageIndex = pageIndex;
+        line.docPageLineIndex = lineIndex;
+      });
+    });
+
+    // Signal document reorder so parent components refresh
+    this._documentReordered$.next(true);
+
+    console.log(`📄 Combined pages: ${originalPageCount} → ${newPages.length} pages (removed ${removedCount} lines)`);
+
+    return {
+      condensed: true,
+      pageCount: newPages.length,
+      removedLines: removedCount,
+    };
   }
 
   // Update the loadDocument method to handle custom properties
@@ -2534,18 +3069,37 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     console.log('PdfService: Document state reset complete');
   }
 
+  /**
+   * Clear only selected scenes without resetting the entire document state.
+   * Used when users want to generate more sides from the same document.
+   */
+  clearSelectedScenes(): void {
+    console.log('PdfService: Clearing selected scenes only');
+    this._selectedScenes = [];
+    this.selected = [];
+    this.initialSelection = [];
+    this._sceneOrderUpdated$.next([]);
+  }
+
+  /**
+   * Get the current script name
+   */
+  getScriptName(): string {
+    return this.script || localStorage.getItem('name') || '';
+  }
+
   get watermarkUpdated$(): Subject<{ watermark: string | null, action: 'add' | 'remove' }> {
     return this._watermarkUpdated$;
   }
   
-  watermarkPages(watermark: string, doc: any[]) {
-    console.log('PDF Service: Adding watermark:', watermark);
+  watermarkPages(watermark: string, doc: any[], castingDirector?: string) {
+    console.log('PDF Service: Adding watermark:', watermark, castingDirector ? `(Casting: ${castingDirector})` : '');
 
     // Record undo state before adding watermark (save complete document state)
     if (this.undoService) {
       this.undoService.recordDocumentReorderChange(
         cloneDeep(doc),
-        `Add watermark: "${watermark}"`
+        `Add watermark: "${watermark}"${castingDirector ? ` with casting: ${castingDirector}` : ''}`
       );
     }
 
@@ -2562,12 +3116,17 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     });
 
     // Create the watermark data structure with ONLY 10 repetitions
-    const watermarkData = {
+    const watermarkData: any = {
       actorName: watermark,
       timestamp: timestamp,
       isActive: true,
-      repetitions: 10 // Reduced from 30 to 10
+      repetitions: 10
     };
+
+    // Add casting director if provided
+    if (castingDirector && castingDirector.trim()) {
+      watermarkData.castingDirector = castingDirector.trim();
+    }
 
     doc.forEach((page) => {
       // Store watermark data in the first line of each page
@@ -2577,7 +3136,8 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
           actorName: watermarkData.actorName,
           timestamp: watermarkData.timestamp,
           isActive: watermarkData.isActive,
-          repetitions: watermarkData.repetitions
+          repetitions: watermarkData.repetitions,
+          castingDirector: watermarkData.castingDirector || 'none'
         });
       }
     });

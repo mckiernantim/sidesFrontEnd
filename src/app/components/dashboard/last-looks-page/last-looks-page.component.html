@@ -1,6 +1,6 @@
 <!-- last-looks-page.component.html -->
 <main class="last-looks-container">
-    <div class="page shadow-lg border" (click)="showContextMenu && closeContextMenu(); !$event.target.closest('li') && clearSelection()">
+    <div class="page shadow-lg border" (click)="showContextMenu && closeContextMenu(); !$event.target.closest('li') && clearSelection(); !$event.target.closest('.annotation-textbox-edit') && !$event.target.closest('.annotation-canvas-overlay') && deselectAllAnnotations()">
         <!-- Callsheet display section -->
         <div *ngIf="currentPageIndex === 0 && isCallsheetPage(page)" class="callsheet-container">
             <img [src]="page[0].imagePath" 
@@ -20,6 +20,14 @@
                         </div>
                     </div>
                     
+                    <!-- Casting Director row (if present) - rendered below timestamp -->
+                    <div *ngIf="page[0].watermarkData.castingDirector" class="watermark-casting-row">
+                        <div class="watermark-casting-block" 
+                             *ngFor="let block of getWatermarkBlocks(page[0].watermarkData.repetitions)">
+                            {{ page[0].watermarkData.castingDirector }}
+                        </div>
+                    </div>
+                    
                     <!-- Actor name row -->
                     <div class="watermark-actor-row">
                         <div class="watermark-actor-block" 
@@ -33,6 +41,14 @@
                         <div class="watermark-timestamp-block" 
                              *ngFor="let block of getWatermarkBlocks(page[0].watermarkData.repetitions)">
                             {{ page[0].watermarkData.timestamp }}
+                        </div>
+                    </div>
+                    
+                    <!-- Casting Director row (if present) - rendered below timestamp -->
+                    <div *ngIf="page[0].watermarkData.castingDirector" class="watermark-casting-row">
+                        <div class="watermark-casting-block" 
+                             *ngFor="let block of getWatermarkBlocks(page[0].watermarkData.repetitions)">
+                            {{ page[0].watermarkData.castingDirector }}
                         </div>
                     </div>
                 </div>
@@ -111,6 +127,7 @@
                             (click)="canEditDocument && selectLine(line, $event)"
                             [style.bottom]="line.calculatedYpos"
                             [style.left]="line.calculatedXpos"
+                            [style.--line-left]="line.calculatedXpos"
                             [style.background-color]="editingLine === line.docPageLineIndex ? 'orange' : 'transparent'"
                             (blur)="editingLine === line.docPageLineIndex && saveEdit()"
                             (keydown)="editingLine === line.docPageLineIndex && handleEditKeyDown($event)"
@@ -123,7 +140,8 @@
                             [class]="line.category + ' ' + line.visible + ' ' + line.hidden"
                             [class.selected-line]="isSelectedLine(line, line.docPageLineIndex)"
                             [style.bottom]="line.calculatedYpos"
-                            [style.left]="line.calculatedXpos" 
+                            [style.left]="line.calculatedXpos"
+                            [style.--line-left]="line.calculatedXpos"
                             [textContent]="line.text"> 
                         </li>
                     </ng-template>
@@ -236,40 +254,426 @@
                     </li>
                 </ng-container>
             </ul>
+
+            <!-- ═══ SKIPPED-SECTION X-BOX OVERLAY ═══
+                 Industry-standard diagonal X inside a box for each contiguous block
+                 of skipped (false) content lines. pointer-events: none so edit tools
+                 remain fully functional underneath. Uses getDisplayedSkippedSections()
+                 which applies any user overrides (move, resize, delete). -->
+            <svg *ngIf="getDisplayedSkippedSections().length > 0"
+                 class="skipped-sections-overlay"
+                 viewBox="0 0 816 1056"
+                 width="816"
+                 height="1056"
+                 xmlns="http://www.w3.org/2000/svg"
+                 aria-hidden="true">
+              <ng-container *ngFor="let section of getDisplayedSkippedSections()">
+                <!-- Border box -->
+                <rect
+                  [attr.x]="section.left"
+                  [attr.y]="section.top"
+                  [attr.width]="section.right - section.left"
+                  [attr.height]="section.bottom - section.top"
+                  fill="none"
+                  stroke="#000000"
+                  stroke-width="5"
+                  opacity="0.5">
+                </rect>
+                <!-- Diagonal: top-left → bottom-right -->
+                <line
+                  [attr.x1]="section.left"
+                  [attr.y1]="section.top"
+                  [attr.x2]="section.right"
+                  [attr.y2]="section.bottom"
+                  stroke="#000000"
+                  stroke-width="5"
+                  opacity="0.5">
+                </line>
+                <!-- Diagonal: top-right → bottom-left -->
+                <line
+                  [attr.x1]="section.right"
+                  [attr.y1]="section.top"
+                  [attr.x2]="section.left"
+                  [attr.y2]="section.bottom"
+                  stroke="#000000"
+                  stroke-width="5"
+                  opacity="0.5">
+                </line>
+              </ng-container>
+            </svg>
+
+            <!-- ═══ X-BOX INTERACTIVE CONTROLS (edit mode only) ═══
+                 HTML overlay divs for each X-box section. Provides move, resize,
+                 and delete controls when in edit mode. -->
+            <div *ngIf="canEditDocument && getDisplayedSkippedSections().length > 0"
+                 class="xbox-controls-overlay">
+                <div *ngFor="let section of getDisplayedSkippedSections()"
+                     class="xbox-interactive"
+                     [class.xbox-selected]="selectedXboxIndex === section.originalIndex"
+                     [style.top.px]="section.top"
+                     [style.left.px]="section.left"
+                     [style.width.px]="section.right - section.left"
+                     [style.height.px]="section.bottom - section.top"
+                     (mousedown)="startXboxDrag(section.originalIndex, $event)"
+                     (click)="selectXbox(section.originalIndex, $event)">
+
+                    <!-- Delete button (always visible on hover, prominent when selected) -->
+                    <button class="xbox-delete-btn"
+                            (mousedown)="deleteXbox(section.originalIndex, $event)"
+                            title="Remove this X-box">✕</button>
+
+                    <!-- Resize corner handles (visible when selected) -->
+                    <ng-container *ngIf="selectedXboxIndex === section.originalIndex">
+                        <div class="xbox-resize-handle top-left"
+                             (mousedown)="startXboxResize(section.originalIndex, 'top-left', $event)"></div>
+                        <div class="xbox-resize-handle top-right"
+                             (mousedown)="startXboxResize(section.originalIndex, 'top-right', $event)"></div>
+                        <div class="xbox-resize-handle bottom-left"
+                             (mousedown)="startXboxResize(section.originalIndex, 'bottom-left', $event)"></div>
+                        <div class="xbox-resize-handle bottom-right"
+                             (mousedown)="startXboxResize(section.originalIndex, 'bottom-right', $event)"></div>
+                    </ng-container>
+                </div>
+            </div>
+
+            <!-- Annotation Canvas Overlay — arrows & highlights only (edit mode) -->
+            <app-annotation-canvas
+                *ngIf="canEditDocument"
+                [pageWidth]="816"
+                [pageHeight]="1056"
+                [pageIndex]="currentPageIndex"
+                class="annotation-canvas-overlay">
+            </app-annotation-canvas>
+
+            <!-- ═══ ARROW SVG ANNOTATIONS (DOM elements — always visible, both modes) ═══ -->
+            <div class="annotation-arrow-overlay">
+                <ng-container *ngFor="let annotation of getAnnotationsForCurrentPage()">
+                    <svg *ngIf="annotation.type === 'note' || (annotation.type === 'shape' && annotation.style?.shapeType === 'arrow')"
+                         [ngStyle]="getAnnotationPixelStyle(annotation)"
+                         class="annotation-arrow-svg"
+                         [class.selected]="selectedAnnotationId === annotation.annotationId"
+                         [attr.viewBox]="'0 0 ' + (annotation.normalizedWidth * 816) + ' ' + (annotation.normalizedHeight * 1056)"
+                         (click)="canEditDocument && selectAnnotation(annotation.annotationId); $event.stopPropagation()">
+                        <defs>
+                            <marker [id]="'arrow-marker-' + annotation.annotationId"
+                                    markerWidth="10" markerHeight="7"
+                                    refX="10" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7"
+                                         [attr.fill]="annotation.style?.color || '#000000'" />
+                            </marker>
+                        </defs>
+                        <line x1="0" y1="0"
+                              [attr.x2]="annotation.normalizedWidth * 816"
+                              [attr.y2]="annotation.normalizedHeight * 1056"
+                              [attr.stroke]="annotation.style?.color || '#000000'"
+                              [attr.stroke-width]="annotation.style?.strokeWidth || 3"
+                              [attr.marker-end]="'url(#arrow-marker-' + annotation.annotationId + ')'" />
+                    </svg>
+                </ng-container>
+            </div>
+
+            <!-- ═══ TEXT BOX ANNOTATIONS (DOM elements — edit mode) ═══ -->
+            <div class="annotation-textbox-overlay" *ngIf="canEditDocument">
+                <ng-container *ngFor="let annotation of getAnnotationsForCurrentPage()">
+                    <div *ngIf="annotation.type === 'textbox'"
+                         [ngStyle]="getAnnotationPixelStyle(annotation)"
+                         class="annotation-textbox-edit"
+                         [class.editing]="editingTextBoxId === annotation.annotationId"
+                         [class.dragging]="draggingTextBoxId === annotation.annotationId"
+                         [class.selected]="selectedAnnotationId === annotation.annotationId"
+                         (mousedown)="startTextBoxDrag($event, annotation)"
+                         (click)="selectAnnotation(annotation.annotationId); $event.stopPropagation()"
+                         (dblclick)="onTextBoxDoubleClick($event, annotation)">
+
+                        <!-- Editable content (shown when editing) -->
+                        <span *ngIf="editingTextBoxId === annotation.annotationId"
+                              [id]="'textbox-' + annotation.annotationId"
+                              contenteditable="true"
+                              class="textbox-editable"
+                              (input)="onTextBoxInput($event, annotation)"
+                              (keydown)="onTextBoxKeyDown($event)"
+                              (blur)="finishTextBoxEdit()">{{ annotation.text }}</span>
+
+                        <!-- Read-only content (shown when not editing) -->
+                        <span *ngIf="editingTextBoxId !== annotation.annotationId"
+                              class="textbox-display">{{ annotation.text || 'Double-click to type...' }}</span>
+
+                        <!-- Delete button -->
+                        <button class="textbox-delete-btn"
+                                (mousedown)="deleteTextBox($event, annotation)"
+                                title="Delete text box">✕</button>
+                    </div>
+                </ng-container>
+            </div>
+
+            <!-- ═══ ANNOTATION PREVIEW (view mode — NOT edit mode) ═══ -->
+            <div class="annotation-preview-overlay" *ngIf="!canEditDocument">
+                <ng-container *ngFor="let annotation of getAnnotationsForCurrentPage()">
+                    <!-- Text box annotations -->
+                    <div *ngIf="annotation.type === 'textbox'"
+                         [ngStyle]="getAnnotationPixelStyle(annotation)"
+                         class="annotation-preview-item">
+                        {{ annotation.text }}
+                    </div>
+
+                    <!-- Highlight annotations -->
+                    <div *ngIf="annotation.type === 'highlight'"
+                         [ngStyle]="getAnnotationPixelStyle(annotation)"
+                         class="annotation-preview-item">
+                    </div>
+
+                    <!-- Arrow annotations are rendered in the always-visible arrow overlay above -->
+
+                    <!-- Shape annotations (rectangle, etc.) -->
+                    <div *ngIf="annotation.type === 'shape' && annotation.style?.shapeType !== 'arrow'"
+                         [ngStyle]="getAnnotationPixelStyle(annotation)"
+                         class="annotation-preview-shape"
+                         [style.border]="(annotation.style?.strokeWidth || 2) + 'px solid ' + (annotation.style?.color || '#000000')"
+                         [style.backgroundColor]="annotation.style?.fillColor || 'transparent'"
+                         [style.opacity]="annotation.style?.opacity || 1">
+                        {{ annotation.text }}
+                    </div>
+
+                    <!-- Redaction annotations -->
+                    <div *ngIf="annotation.type === 'redaction'"
+                         [ngStyle]="getAnnotationPixelStyle(annotation)"
+                         class="annotation-preview-item">
+                    </div>
+                </ng-container>
+            </div>
+
             <li class="footer">made by Sides-Ways</li>
         </div>
     </div>
 
-    <!-- Enhanced context menu with category presets -->
-    <div *ngIf="showContextMenu" class="context-menu" [style.left.px]="contextMenuPosition.x" [style.top.px]="contextMenuPosition.y">
-        <ul>
-            <li *ngFor="let choice of categoryPresets" 
+    <!-- Enhanced Modern Context Menu -->
+    <div *ngIf="showContextMenu" class="modern-context-menu" [style.left.px]="contextMenuPosition.x" [style.top.px]="contextMenuPosition.y">
+        <div class="context-menu-header" *ngIf="selectedLineIds.length > 1">
+            <span class="selection-badge">{{ selectedLineIds.length }} lines selected</span>
+        </div>
+
+        <div class="context-menu-section">
+            <div class="section-label">Change Category</div>
+            <button *ngFor="let choice of categoryPresets"
                 (click)="changeLineCategory($event, choice.category, choice.xPos, selectedLine, selectedLineIndex)"
-                class="classification-option">
-                {{ choice.label }}
-                <span *ngIf="selectedLineIds.length > 1" class="text-sm text-gray-500">
-                    ({{ selectedLineIds.length }} selected)
-                </span>
-            </li>
-            <li (click)="editSelectedLineText($event)"
-                class="classification-option text-blue-600">
-                Edit Text
-                <span *ngIf="selectedLineIds.length > 1" class="text-sm text-gray-500">
-                    ({{ selectedLineIds.length }} selected)
-                </span>
-            </li>
-            <li (click)="changeLineCategory($event, 'hidden', '', selectedLine, selectedLineIndex)"
-                class="classification-option text-red-500">
-                Delete
-                <span *ngIf="selectedLineIds.length > 1" class="text-sm text-gray-500">
-                    ({{ selectedLineIds.length }} selected)
-                </span>
-            </li>
-        </ul>
+                class="context-menu-item">
+                <svg class="item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          [attr.d]="getCategoryIcon(choice.category)"></path>
+                </svg>
+                <span class="item-label">{{ choice.label }}</span>
+            </button>
+        </div>
+
+        <div class="context-menu-divider"></div>
+
+        <div class="context-menu-section">
+            <button (click)="editSelectedLineText($event)"
+                class="context-menu-item context-menu-item-primary">
+                <svg class="item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                <span class="item-label">Edit Text</span>
+            </button>
+
+            <button (click)="changeLineCategory($event, 'hidden', '', selectedLine, selectedLineIndex)"
+                class="context-menu-item context-menu-item-danger">
+                <svg class="item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+                <span class="item-label">Delete</span>
+            </button>
+        </div>
     </div>
 
-    <!-- Add a click handler to the page container to clear selection when clicking outside -->
-    <div class="page-background" (click)="clearSelection()">
-        <!-- Your existing page content -->
+    <!-- Vertical Right-Side Toolbar -->
+    <div class="vertical-toolbar" *ngIf="canEditDocument">
+        <!-- Selection Counter -->
+        <div class="selection-badge" *ngIf="selectedLineIds.length > 0">
+            {{selectedLineIds.length}}
+        </div>
+
+        <div class="toolbar-section-divider" *ngIf="selectedLineIds.length > 0"></div>
+
+        <!-- Visibility Tool -->
+        <button class="tool-btn"
+                [class.disabled]="selectedLineIds.length === 0"
+                [class.active]="selectedLineIds.length > 0 && isVisibilityToggled()"
+                (click)="selectedLineIds.length > 0 && toggleSelectedVisibility()"
+                [attr.data-tooltip-left]="getVisibilityTooltip()">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path *ngIf="!isVisibilityToggled()" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                <path *ngIf="isVisibilityToggled()" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+            </svg>
+        </button>
+
+        <!-- Start Bar Tool -->
+        <button class="tool-btn"
+                [class.disabled]="selectedLineIds.length === 0"
+                [class.active]="selectedLineIds.length > 0 && hasStartBar()"
+                (click)="selectedLineIds.length > 0 && toggleStartBarForSelected()"
+                data-tooltip-left="Start Bar">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+            </svg>
+        </button>
+
+        <!-- End Bar Tool -->
+        <button class="tool-btn"
+                [class.disabled]="selectedLineIds.length === 0"
+                [class.active]="selectedLineIds.length > 0 && hasEndBar()"
+                (click)="selectedLineIds.length > 0 && toggleEndBarForSelected()"
+                data-tooltip-left="End Bar">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+            </svg>
+        </button>
+
+        <!-- Continue Top Tool -->
+        <button class="tool-btn"
+                [class.disabled]="selectedLineIds.length === 0"
+                [class.active]="selectedLineIds.length > 0 && hasContinueTop()"
+                (click)="selectedLineIds.length > 0 && toggleContinueTopForSelected()"
+                data-tooltip-left="Continue Top">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
+            </svg>
+        </button>
+
+        <!-- Continue Bottom Tool -->
+        <button class="tool-btn"
+                [class.disabled]="selectedLineIds.length === 0"
+                [class.active]="selectedLineIds.length > 0 && hasContinue()"
+                (click)="selectedLineIds.length > 0 && toggleContinueForSelected()"
+                data-tooltip-left="Continue">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"></path>
+            </svg>
+        </button>
+
+        <div class="toolbar-section-divider"></div>
+
+        <!-- Undo Tool -->
+        <button class="tool-btn"
+                [class.disabled]="!canUndo"
+                (click)="canUndo && performUndo()"
+                data-tooltip-left="Undo (Ctrl+Z)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+            </svg>
+        </button>
+
+        <!-- Redo Tool -->
+        <button class="tool-btn"
+                [class.disabled]="!canRedo"
+                (click)="canRedo && performRedo()"
+                data-tooltip-left="Redo (Ctrl+Y)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10h-10a8 8 0 00-8 8v2m18-10l-6 6m6-6l-6-6"></path>
+            </svg>
+        </button>
+
+        <div class="toolbar-section-divider"></div>
+
+        <!-- PHASE 1: ANNOTATION TOOLS -->
+
+        <!-- Scene Marker Tool -->
+        <button class="tool-btn"
+                (click)="insertSceneMarker()"
+                [attr.data-tooltip-left]="'Insert Scene ' + getNextSceneNumber()">
+            <span class="tool-emoji">🎬</span>
+        </button>
+
+        <!-- Text Box Presets Dropdown -->
+        <div class="preset-dropdown-container">
+            <button class="tool-btn"
+                    (click)="togglePresetMenu()"
+                    data-tooltip-left="Text Box Presets">
+                <span class="tool-emoji">📝</span>
+            </button>
+            <div class="preset-menu" *ngIf="showPresetMenu">
+                <button class="preset-item" (click)="insertPreset('series-name')">
+                    Series Name
+                </button>
+                <button class="preset-item" (click)="insertPreset('character-name')">
+                    Character
+                </button>
+                <button class="preset-item" (click)="insertPreset('legal-disclaimer')">
+                    Legal
+                </button>
+            </div>
+        </div>
+
+        <!-- Disclaimer Toggle Tool -->
+        <button class="tool-btn"
+                [class.active]="disclaimerActive"
+                (click)="toggleDisclaimer()"
+                [attr.data-tooltip-left]="disclaimerActive ? 'Remove Disclaimer' : 'Add Disclaimer'">
+            <span class="tool-emoji">⚖️</span>
+        </button>
+
+        <div class="toolbar-section-divider"></div>
+
+        <!-- DRAWING / ANNOTATION TOOLS -->
+
+        <!-- Add Text Box Tool (simple: click to add, type, drag) -->
+        <button class="tool-btn"
+                (click)="addTextBox()"
+                data-tooltip-left="Add Text Box">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
+            </svg>
+        </button>
+
+        <!-- Draw Arrow Tool -->
+        <button class="tool-btn"
+                [class.active]="activeDrawingTool === 'note'"
+                (click)="toggleDrawingTool('note')"
+                data-tooltip-left="Draw Arrow">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7M17 7H7M17 7V17"></path>
+            </svg>
+        </button>
+
+        <!-- Draw Highlight Tool -->
+        <button class="tool-btn"
+                [class.active]="activeDrawingTool === 'highlight'"
+                (click)="toggleDrawingTool('highlight')"
+                data-tooltip-left="Draw Highlight">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+            </svg>
+        </button>
+
+        <div class="toolbar-section-divider"></div>
+
+        <!-- Combine/Condense Pages Tool -->
+        <button class="tool-btn tool-btn-primary"
+                (click)="combinePages()"
+                data-tooltip-left="Condense Pages (remove hidden lines)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+            </svg>
+        </button>
+
+        <!-- Reset Tool -->
+        <button class="tool-btn tool-btn-danger"
+                (click)="resetToInitialState()"
+                data-tooltip-left="Reset All Changes">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+        </button>
+
+        <!-- Save Changes Tool -->
+        <button class="tool-btn tool-btn-success"
+                (click)="saveChanges()"
+                data-tooltip-left="Save Changes">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+        </button>
     </div>
 </main>

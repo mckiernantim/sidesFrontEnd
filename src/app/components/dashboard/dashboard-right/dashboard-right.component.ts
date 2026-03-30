@@ -178,6 +178,24 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
   // Add a selectedScenes map to track selections
   selectedScenesMap: Map<number, any> = new Map();
 
+  // Scene view mode toggle (Production / Casting / Schedule)
+  viewMode: 'production' | 'casting' | 'schedule' = 'production';
+  selectedCharacters: string[] = [];
+  allCharacters: string[] = [];
+  filteredScenes: any[] = [];
+  
+  // Casting mode table columns - includes characters column
+  castingTableColumns = [
+    { key: 'sceneNumberText', header: 'Scene' },
+    { key: 'text', header: 'Location' },
+    {
+      key: 'characters',
+      header: 'Characters',
+      cell: (item: any) => item.characters?.join(', ') || '-',
+    },
+    { key: 'page', header: 'Page' },
+  ];
+
   showCheckoutModal: boolean = false;
   isCheckingSubscription: boolean = false;
 
@@ -463,6 +481,9 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
         this.pdf.getScenes();
         this.scenes = this.pdf.scenes || [];
         
+        // Initialize casting mode data
+        this.initializeCastingMode();
+        
         // Sync selected array with PDF service's selected scenes
         const pdfSelectedScenes = this.pdf.getSelectedScenes();
         if (pdfSelectedScenes && pdfSelectedScenes.length > 0) {
@@ -498,6 +519,123 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ===== CASTING MODE METHODS =====
+
+  /**
+   * Initialize casting mode data - extract all unique characters
+   */
+  initializeCastingMode() {
+    this.allCharacters = this.pdf.getAllCharacters();
+    this.filteredScenes = [...this.scenes];
+    console.log('Casting mode initialized with', this.allCharacters.length, 'characters (sorted by line count)');
+  }
+
+  /**
+   * Toggle between production mode (scenes by scene number) and casting mode (scenes by character)
+   */
+  /**
+   * Set the view mode to a specific tab.
+   */
+  setViewMode(mode: 'production' | 'casting' | 'schedule') {
+    this.viewMode = mode;
+
+    if (mode === 'production') {
+      this.filteredScenes = [...this.scenes];
+      this.selectedCharacters = [];
+    } else if (mode === 'casting') {
+      this.updateFilteredScenes();
+    }
+    // 'schedule' mode renders <app-schedule-tab> — no scene filtering needed
+
+    console.log('View mode changed to:', this.viewMode);
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Legacy toggle between production and casting (kept for backward compat).
+   */
+  toggleViewMode() {
+    this.setViewMode(this.viewMode === 'production' ? 'casting' : 'production');
+  }
+
+  /**
+   * Handle character selection change
+   */
+  onCharacterSelect(character: string) {
+    const index = this.selectedCharacters.indexOf(character);
+    
+    if (index > -1) {
+      // Remove character from selection
+      this.selectedCharacters.splice(index, 1);
+    } else {
+      // Add character to selection
+      this.selectedCharacters.push(character);
+    }
+    
+    this.updateFilteredScenes();
+    console.log('Selected characters:', this.selectedCharacters);
+  }
+
+  /**
+   * Check if a character is selected
+   */
+  isCharacterSelected(character: string): boolean {
+    return this.selectedCharacters.includes(character);
+  }
+
+  /**
+   * Update filtered scenes based on selected characters
+   */
+  updateFilteredScenes() {
+    if (this.selectedCharacters.length === 0) {
+      // No characters selected - show all scenes
+      this.filteredScenes = [...this.scenes];
+    } else {
+      // Filter scenes containing ALL selected characters
+      this.filteredScenes = this.pdf.getScenesForCharacters(this.selectedCharacters);
+    }
+    
+    console.log('Filtered scenes:', this.filteredScenes.length, 'scenes for characters:', this.selectedCharacters);
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Clear all selected characters
+   */
+  clearCharacterSelection() {
+    this.selectedCharacters = [];
+    this.updateFilteredScenes();
+  }
+
+  /**
+   * Get available characters based on current selection
+   * If characters are selected, only show characters that share scenes with them
+   */
+  get availableCharacters(): string[] {
+    if (this.selectedCharacters.length === 0) {
+      // No selection - show all characters sorted by line count
+      return this.allCharacters;
+    }
+    // Filter to characters that share scenes with selected characters
+    return this.pdf.getCharactersInSharedScenes(this.selectedCharacters);
+  }
+
+  /**
+   * Get the current table columns based on view mode
+   */
+  get currentTableColumns() {
+    return this.viewMode === 'casting' ? this.castingTableColumns : this.tableColumns;
+  }
+
+  /**
+   * Get the current scenes data based on view mode
+   */
+  get currentScenes() {
+    return this.viewMode === 'casting' ? this.filteredScenes : this.scenes;
+  }
+
+  // ===== END CASTING MODE METHODS =====
+
   // lets get lookback tighter  - should be able to refrence lastCharacterIndex
   lookBack(line) {
     let newText = '';
@@ -522,10 +660,18 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     } else this.waterMarkState = false;
   }
   // create preview text for table
-  addWaterMark(line) {
-    this.watermark = line;
-    console.log('Dashboard: Watermark added:', line);
-    this.pdf.watermarkPages(this.watermark, this.pdf.finalDocument.data);
+  addWaterMark(data: string | { actorName: string; castingDirector?: string }) {
+    // Handle both string and object formats
+    if (typeof data === 'string') {
+      this.watermark = data;
+      console.log('Dashboard: Watermark added:', data);
+      this.pdf.watermarkPages(data, this.pdf.finalDocument.data);
+    } else {
+      // Object format with castingDirector
+      this.watermark = data.actorName;
+      console.log('Dashboard: Watermark added:', data.actorName, 'Casting:', data.castingDirector || 'none');
+      this.pdf.watermarkPages(data.actorName, this.pdf.finalDocument.data, data.castingDirector);
+    }
     // Trigger change detection to update the hasWatermark status
     this.cdr.detectChanges();
   }
@@ -771,17 +917,35 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
       .trim()
       .toLowerCase();
 
+    // Get the base data source based on view mode
+    let baseData: any[];
+    if (this.viewMode === 'casting' && this.selectedCharacters.length > 0) {
+      baseData = this.pdf.getScenesForCharacters(this.selectedCharacters);
+    } else {
+      baseData = this.pdf.scenes;
+    }
+
     if (filterValue) {
       // Filter the data based on all properties
-      this.scenes = this.scenes.filter((scene) => {
+      const filteredData = baseData.filter((scene) => {
         return Object.keys(scene).some((key) => {
           const value = scene[key];
           return value && value.toString().toLowerCase().includes(filterValue);
         });
       });
+      
+      if (this.viewMode === 'casting') {
+        this.filteredScenes = filteredData;
+      } else {
+        this.scenes = filteredData;
+      }
     } else {
-      // Reset to original data
-      this.scenes = this.pdf.scenes;
+      // Reset to base data
+      if (this.viewMode === 'casting') {
+        this.filteredScenes = baseData;
+      } else {
+        this.scenes = this.pdf.scenes;
+      }
     }
   }
 
@@ -1199,6 +1363,10 @@ async sendFinalDocumentToServer(finalDocument) {
         lastLooksReady: this.lastLooksReady,
         pdfFinalDocReady: this.pdf.finalDocReady
       });
+    } else {
+      // User is navigating back to scene select - clear selected scenes in the service
+      console.log('Navigating back to scene select - clearing selected scenes in service');
+      this.pdf.clearSelectedScenes();
     }
   }
 
@@ -1509,10 +1677,10 @@ async sendFinalDocumentToServer(finalDocument) {
     }
   }
   triggerEditMode() {
-    if (this.editState) {
-      // We're exiting edit mode, save the document state
-      this.pdf.saveDocumentState();
-    }
+    // Don't call saveDocumentState() here — the child component (LastLooksPageComponent)
+    // handles the full save when editMode changes to false in its ngOnChanges.
+    // Calling it here before the child has synced creates a deep copy that misses
+    // the child's latest local state (annotations, page changes).
     this.editState = !this.editState;
     this.editLastLooksState = this.editState;
   }

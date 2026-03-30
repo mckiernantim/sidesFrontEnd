@@ -44,6 +44,20 @@ export class UploadService {
   private readonly tokenKey = 'pdfBackupToken';
   private pdfUsageSubject = new BehaviorSubject<PdfUsage | null>(null);
   public pdfUsage$ = this.pdfUsageSubject.asObservable();
+
+  // Progress tracking for streaming uploads
+  private scanProgressSubject = new BehaviorSubject<{
+    stage: string;
+    message: string;
+    progress: number;
+    currentPage?: number;
+    totalPages?: number;
+    linesFound?: number;
+    step?: number;
+    totalSteps?: number;
+  } | null>(null);
+  public scanProgress$ = this.scanProgressSubject.asObservable();
+
   _devPdfPath: string = 'MARSHMALLOW_PINK';
   // values from script
   script: string;
@@ -345,9 +359,248 @@ export class UploadService {
       responseType: null,
     };
   }
-  // get classified data => returns observable for stuff to plug into
-  postFile(fileToUpload: File): Observable<any> {
+  // Streaming upload method with progress updates
+  postFileStream(fileToUpload: File): Observable<any> {
     this.resetHttpOptions();
+
+    return from(this.auth.user$).pipe(
+      switchMap((user) => {
+        if (!user) {
+          return throwError(
+            () => new Error('User must be authenticated to upload files')
+          );
+        }
+
+        localStorage.setItem('name', fileToUpload.name.replace(/.pdf/, ''));
+        this.script = localStorage.getItem('name');
+
+        return new Observable<any>((observer) => {
+
+          // Use fetch with streaming response handling
+          fetch(`${this.url}/api/stream`, {
+            method: 'POST',
+            body: (() => {
+              const formData = new FormData();
+              formData.append('script', fileToUpload, fileToUpload.name);
+              formData.append('userEmail', user.email);
+              formData.append('userId', user.uid);
+              formData.append('uploadTime', new Date().toISOString());
+              return formData;
+            })(),
+            credentials: 'include'
+          })
+          .then(response => {
+
+            if (!response.body) {
+              throw new Error('No response body');
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            const readStream = async () => {
+              try {
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) {
+                    console.log('Stream ended');
+                    break;
+                  }
+
+                  const chunk = decoder.decode(value, { stream: true });
+                  buffer += chunk;
+
+                  // Process complete SSE messages
+                  const lines = buffer.split('\n');
+                  buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+                  for (const line of lines) {
+                    if (line.trim() && line.startsWith('data: ')) {
+                      try {
+                        const data = JSON.parse(line.substring(6));
+                        console.log('Received SSE message:', data);
+
+                        switch (data.type) {
+                          case 'connected':
+                            this.scanProgressSubject.next({
+                              stage: 'connected',
+                              message: 'Connecting to secure processing...',
+                              progress: 0,
+                              step: 1,
+                              totalSteps: 15
+                            });
+                            break;
+
+                          case 'validation_complete':
+                            this.scanProgressSubject.next({
+                              stage: 'validation_complete',
+                              message: 'Document validated and secured',
+                              progress: 5,
+                              step: 2,
+                              totalSteps: 15,
+                              ...data.metadata
+                            });
+                            break;
+
+                          case 'progress':
+                            // Enhance progress messages for better UX
+                            let enhancedMessage = data.message;
+                            switch (data.stage) {
+                              case 'started':
+                                enhancedMessage = 'Initializing secure document processing...';
+                                break;
+                              case 'loading':
+                                enhancedMessage = 'Reading your script document...';
+                                break;
+                              case 'loaded':
+                                enhancedMessage = 'PDF file loaded and validated';
+                                break;
+                              case 'flattening':
+                                enhancedMessage = 'Preparing document for secure processing...';
+                                break;
+                              case 'flattened':
+                                enhancedMessage = 'PDF flattened and prepared for scanning';
+                                break;
+                              case 'scanning':
+                                if (data.currentPage && data.totalPages) {
+                                  enhancedMessage = `Analyzing page ${data.currentPage} of ${data.totalPages}...`;
+                                } else {
+                                  enhancedMessage = 'Analyzing script structure and content...';
+                                }
+                                break;
+                              case 'scanned':
+                                enhancedMessage = 'Script content extracted successfully';
+                                break;
+                              case 'sanitizing':
+                                enhancedMessage = 'Cleaning and formatting script data...';
+                                break;
+                              case 'sanitized':
+                                enhancedMessage = 'Text sanitized successfully';
+                                break;
+                              case 'security_scan':
+                                enhancedMessage = 'Performing final security verification...';
+                                break;
+                              case 'security_checked':
+                                enhancedMessage = 'Security verification complete';
+                                break;
+                              case 'classifying':
+                                enhancedMessage = 'Organizing scenes, characters, and dialog...';
+                                break;
+                              case 'ai_validation':
+                                enhancedMessage = 'AI validation in progress...';
+                                break;
+                              default:
+                                enhancedMessage = data.message;
+                            }
+
+                            this.scanProgressSubject.next({
+                              stage: data.stage,
+                              message: enhancedMessage,
+                              progress: data.progress,
+                              currentPage: data.currentPage,
+                              totalPages: data.totalPages,
+                              linesFound: data.linesFound,
+                              step: this.getStepNumber(data.stage),
+                              totalSteps: 15
+                            });
+                            break;
+
+                          case 'complete':
+                            const result = data.data;
+                            this.allLines = result.allLines;
+                            this.firstAndLastLinesOfScenes = result.firstAndLastLinesOfScenes;
+                            this.individualPages = result.individualPages;
+                            this.allChars = result.allChars;
+                            this.title = result.title;
+                            this.lineCount = [];
+                        this.individualPages?.forEach((page) => {
+                          this.lineCount.push(page.filter((item) => item.totalLines));
+                        });
+
+                        this.scanProgressSubject.next({
+                          stage: 'complete',
+                          message: 'Processing complete',
+                          progress: 100
+                        });
+
+                            observer.next(result);
+                            observer.complete();
+                            break;
+
+                          case 'error':
+                            // Enhanced error with full context from Cloud Run
+                            const enhancedError: any = new Error(data.message || 'Streaming scan failed');
+                            enhancedError.code = data.error; // Error code from backend (e.g., 'PROCESSING_ERROR', 'TIMEOUT')
+                            enhancedError.details = data.details; // Additional error details
+                            enhancedError.context = data.context; // Cloud Run error context
+                            enhancedError.operation = 'CLOUD_RUN_PROCESSING';
+                            enhancedError.timestamp = new Date().toISOString();
+                            
+                            this.scanProgressSubject.next({
+                              stage: 'error',
+                              message: data.message || 'Processing failed',
+                              progress: 0
+                            });
+                            
+                            observer.error(enhancedError);
+                            break;
+                        }
+                      } catch (parseError) {
+                        // Ignore parse errors for incomplete chunks
+                      }
+                    }
+                  }
+                }
+              } catch (error) {
+                observer.error(error);
+              }
+            };
+
+            readStream();
+          })
+          .catch(error => {
+            observer.error(new Error('Network error during streaming upload'));
+          });
+
+          // Cleanup function
+          return () => {
+            this.scanProgressSubject.next(null);
+          };
+        });
+      }),
+      catchError((error) => {
+        console.error('Streaming upload error:', {
+          fileName: fileToUpload.name,
+          timestamp: new Date().toISOString(),
+          error: error,
+        });
+        this.resetServiceState();
+        this.scanProgressSubject.next(null);
+        return throwError(() => error);
+      }),
+      finalize(() => {
+        this.resetServiceState();
+      })
+    );
+  }
+
+  // get classified data => returns observable for stuff to plug into
+  // Automatically handles both sync and async responses
+  postFile(fileToUpload: File, enableAiValidation: boolean = false): Observable<any> {
+    this.resetHttpOptions();
+
+    // ========================================
+    // 🆕 AI VALIDATION TRACKING LOG (UPLOAD SERVICE)
+    // ========================================
+    console.log('╔═══════════════════════════════════════════════════════════════');
+    console.log('║ [UPLOAD SERVICE] PREPARING FORM DATA');
+    console.log('╠═══════════════════════════════════════════════════════════════');
+    console.log('║ File:', fileToUpload.name);
+    console.log('║ enableAiValidation parameter:', enableAiValidation);
+    console.log('║ Type:', typeof enableAiValidation);
+    console.log('║ Will append to FormData as:', enableAiValidation.toString());
+    console.log('╚═══════════════════════════════════════════════════════════════');
 
     // Get current user from auth service
     return from(this.auth.user$).pipe(
@@ -367,12 +620,79 @@ export class UploadService {
         formData.append('userEmail', user.email);
         formData.append('userId', user.uid);
         formData.append('uploadTime', new Date().toISOString());
+        // Add AI validation flag
+        formData.append('enableAiValidation', enableAiValidation.toString());
+
+        console.log('╔═══════════════════════════════════════════════════════════════');
+        console.log('║ [UPLOAD SERVICE] FORM DATA PREPARED');
+        console.log('╠═══════════════════════════════════════════════════════════════');
+        console.log('║ FormData contents:');
+        console.log('║   - script:', fileToUpload.name);
+        console.log('║   - userEmail:', user.email);
+        console.log('║   - userId:', user.uid);
+        console.log('║   - enableAiValidation:', enableAiValidation.toString());
+        console.log('║ Posting to:', this.url + '/api');
+        console.log('╚═══════════════════════════════════════════════════════════════');
 
         return this.httpClient
-          .post(this.url + '/api', formData, this.httpOptions)
+          .post(this.url + '/api', formData, {
+            ...this.httpOptions,
+            observe: 'response' // Get full response to check status code
+          })
           .pipe(
-            map((res: any) => {
-              debugger
+            switchMap((response: any) => {
+              const res = response.body;
+              const statusCode = response.status;
+              
+              // Check if this is an async response (has jobId) OR status is 202
+              // Note: Using 202 Accepted instead of 205 because Angular doesn't parse body for 205
+              if ((res && res.jobId && res.status === 'processing') || statusCode === 202) {
+                console.log('Async response detected:', {
+                  statusCode,
+                  jobId: res?.jobId,
+                  fullResponse: res
+                });
+                
+                if (!res || !res.jobId) {
+                  console.error('Async response missing jobId:', res);
+                  return throwError(() => new Error('Backend sent async response without jobId'));
+                }
+                
+                // Store jobId for potential recovery
+                localStorage.setItem('currentJobId', res.jobId);
+                
+                // Emit initial progress
+                this.scanProgressSubject.next({
+                  stage: 'pending',
+                  message: 'Your document is being processed...',
+                  progress: 5,
+                  step: 1,
+                  totalSteps: 15
+                });
+                
+                // Poll until complete
+                return this.pollUntilComplete(res.jobId).pipe(
+                  map((result) => {
+                    // Return raw result (not wrapped) for compatibility
+                    console.log('Async result received:', {
+                      hasTitle: !!result.title,
+                      hasAllLines: !!result.allLines,
+                      allLinesLength: result.allLines?.length,
+                      hasIndividualPages: !!result.individualPages,
+                      pagesLength: result.individualPages?.length,
+                      hasAllChars: !!result.allChars,
+                      charsLength: result.allChars?.length,
+                      hasFirstAndLast: !!result.firstAndLastLinesOfScenes,
+                      firstAndLastLength: result.firstAndLastLinesOfScenes?.length
+                    });
+                    // Return direct format: { title, allLines, allChars, etc }
+                    return result;
+                  })
+                );
+              }
+              
+              // Sync response - process immediately
+              console.log('Sync response detected, processing...');
               let {
                 allLines,
                 allChars,
@@ -390,8 +710,8 @@ export class UploadService {
               this.individualPages.forEach((page) => {
                 this.lineCount.push(page.filter((item) => item.totalLines));
               });
-              debugger
-              return res;
+              // Return raw data for consistency with async path
+              return of(res.data);
             }),
             catchError((error) => {
               console.error('Upload error:', {
@@ -564,6 +884,346 @@ export class UploadService {
     );
   }
 
+  /**
+   * ASYNC CLOUD RUN METHODS
+   * Handle async PDF processing with polling
+   */
+
+  /**
+   * Upload file for async processing (Cloud Run)
+   * Returns jobId immediately for status polling
+   */
+  postFileAsync(fileToUpload: File): Observable<{
+    success: boolean;
+    jobId: string;
+    status: string;
+    message: string;
+    pollingEndpoint?: string;
+    resultEndpoint?: string;
+  }> {
+    this.resetHttpOptions();
+
+    return from(this.auth.user$).pipe(
+      switchMap((user) => {
+        if (!user) {
+          return throwError(
+            () => new Error('User must be authenticated to upload files')
+          );
+        }
+
+        localStorage.setItem('name', fileToUpload.name.replace(/.pdf/, ''));
+        this.script = localStorage.getItem('name');
+
+        const formData: FormData = new FormData();
+        formData.append('script', fileToUpload, fileToUpload.name);
+        formData.append('userEmail', user.email);
+        formData.append('userId', user.uid);
+        formData.append('uploadTime', new Date().toISOString());
+
+        return this.httpClient
+          .post<any>(this.url + '/api/async/upload', formData, {
+            observe: 'response' // Get full response to check status code
+          })
+          .pipe(
+            tap((response) => {
+              const body = response.body;
+              console.log('Async upload response received:', {
+                status: response.status,
+                body: body
+              });
+              
+              // Store jobId for potential recovery
+              if (body && body.jobId) {
+                localStorage.setItem('currentJobId', body.jobId);
+              }
+              
+              // Check for 205 Reset Content - indicates processing started
+              if (response.status === 205) {
+                console.log('205 received - frontend should start polling');
+                // Emit initial scanning progress
+                this.scanProgressSubject.next({
+                  stage: 'pending',
+                  message: 'Your document is being processed...',
+                  progress: 5,
+                  step: 1,
+                  totalSteps: 15
+                });
+              }
+            }),
+            map((response) => response.body), // Extract body for downstream
+            catchError((error) => {
+              console.error('Async upload error:', {
+                userEmail: user.email,
+                fileName: fileToUpload.name,
+                timestamp: new Date().toISOString(),
+                error: error,
+              });
+              this.resetServiceState();
+              return throwError(() => error);
+            })
+          );
+      })
+    );
+  }
+
+  /**
+   * Check job status via polling
+   */
+  checkJobStatus(jobId: string): Observable<{
+    success: boolean;
+    jobId: string;
+    status: 'pending' | 'processing' | 'complete' | 'error';
+    progress: number;
+    progressMessage?: string;
+    error?: string;
+    linesProcessed?: number;
+    completedAt?: string;
+  }> {
+    return this.httpClient
+      .get<any>(`${this.url}/api/async/status/${jobId}`)
+      .pipe(
+        tap((response) => {
+          console.log('✅ Job status response:', response);
+          // Note: Progress updates are handled by pollUntilComplete
+          // to avoid duplicate emissions and ensure proper message selection
+        }),
+        catchError((error) => {
+          console.error('Status check error:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  /**
+   * Get completed job result
+   */
+  getJobResult(jobId: string): Observable<any> {
+    return this.httpClient
+      .get<any>(`${this.url}/api/async/result/${jobId}`)
+      .pipe(
+        map((response) => {
+          console.log('🔍 [getJobResult] Full response:', response);
+          console.log('🔍 [getJobResult] response.data:', response.data);
+          console.log('🔍 [getJobResult] response.data.allLines (first 2):', response.data?.allLines?.slice(0, 2));
+          
+          if (!response.success) {
+            throw new Error(response.error || 'Failed to retrieve result');
+          }
+
+          const result = response.data;
+          console.log('🔍 [getJobResult] result object:', result);
+          console.log('🔍 [getJobResult] result.allLines is Array?', Array.isArray(result.allLines));
+          console.log('🔍 [getJobResult] typeof result:', typeof result);
+          console.log('🔍 [getJobResult] result keys:', Object.keys(result || {}));
+          
+          // Same processing as sync upload
+          this.allLines = result.allLines;
+          console.log('🔍 [getJobResult] AFTER ASSIGNMENT - this.allLines is Array?', Array.isArray(this.allLines));
+          console.log('🔍 [getJobResult] AFTER ASSIGNMENT - this.allLines:', this.allLines);
+          
+          this.firstAndLastLinesOfScenes = result.firstAndLastLinesOfScenes;
+          this.individualPages = result.individualPages;
+          this.allChars = result.allChars;
+          this.title = result.title;
+          this.lineCount = [];
+          this.individualPages?.forEach((page) => {
+            this.lineCount.push(page.filter((item) => item.totalLines));
+          });
+
+          // Clear jobId from localStorage
+          localStorage.removeItem('currentJobId');
+
+          return result;
+        }),
+        catchError((error) => {
+          console.error('Result retrieval error:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  /**
+   * Delete job and cleanup resources
+   */
+  deleteJob(jobId: string): Observable<any> {
+    return this.httpClient
+      .delete<any>(`${this.url}/api/async/job/${jobId}`)
+      .pipe(
+        catchError((error) => {
+          console.error('Job deletion error:', error);
+          // Don't throw - cleanup is best effort
+          return of({ success: false, error: error.message });
+        })
+      );
+  }
+
+  /**
+   * Poll for job completion
+   * Automatically polls every second until complete or error
+   */
+  pollUntilComplete(jobId: string, maxAttempts: number = 120): Observable<any> {
+    let attempts = 0;
+    const totalSteps = 15;
+    
+    return new Observable((observer) => {
+      // Emit initial "scanning" progress
+      this.scanProgressSubject.next({
+        stage: 'scanning',
+        message: 'Scanning your document...',
+        progress: 10,
+        step: 2,
+        totalSteps: totalSteps
+      });
+
+      const interval = setInterval(() => {
+        attempts++;
+        
+        if (attempts > maxAttempts) {
+          clearInterval(interval);
+          this.scanProgressSubject.next(null);
+          observer.error(new Error('Polling timeout - job took too long'));
+          return;
+        }
+
+        this.checkJobStatus(jobId).subscribe({
+          next: (status) => {
+            console.log(`Polling attempt ${attempts}/${maxAttempts}:`, status);
+            
+            // Use actual backend progress when available, fallback to calculated progress only if null/undefined
+            const actualProgress = status.progress ?? 0;
+            const fallbackProgress = Math.min(95, 10 + (attempts * 3));
+            const displayProgress = status.progress !== null && status.progress !== undefined 
+              ? actualProgress 
+              : fallbackProgress;
+            
+            const currentStep = Math.min(totalSteps - 1, 2 + Math.floor((displayProgress / 100) * (totalSteps - 2)));
+            
+            // Use progressMessage from backend if available, otherwise derive from progress
+            let message = status.progressMessage || 'Scanning your document...';
+            
+            // Only override message if backend didn't provide one
+            if (!status.progressMessage && status.status === 'processing') {
+              if (displayProgress < 30) {
+                message = 'Scanning your document...';
+              } else if (displayProgress < 60) {
+                message = 'Classifying scenes and characters...';
+              } else if (displayProgress < 90) {
+                message = 'Finalizing document structure...';
+              } else {
+                message = 'Almost done...';
+              }
+            }
+            debugger
+            // Emit progress for modal updates
+            const progressUpdate = {
+              stage: status.status,
+              message: message,
+              progress: displayProgress,
+              step: currentStep,
+              totalSteps: totalSteps,
+              linesFound: status.linesProcessed
+            };
+            
+            console.log('📊 Emitting progress update:', progressUpdate);
+            this.scanProgressSubject.next(progressUpdate);
+            
+            if (status.status === 'complete') {
+              clearInterval(interval);
+              
+              // Emit "deleting" progress
+              this.scanProgressSubject.next({
+                stage: 'deleting',
+                message: 'Deleting original document from servers...',
+                progress: 98,
+                step: totalSteps - 1,
+                totalSteps: totalSteps
+              });
+              
+              // Get the final result
+              this.getJobResult(jobId).subscribe({
+                next: (result) => {
+                  // Emit final completion
+                  this.scanProgressSubject.next({
+                    stage: 'complete',
+                    message: 'Document ready!',
+                    progress: 100,
+                    step: totalSteps,
+                    totalSteps: totalSteps
+                  });
+                  
+                  setTimeout(() => this.scanProgressSubject.next(null), 500);
+                  
+                  // Delete job after successfully downloading result
+                  this.deleteJob(jobId).subscribe({
+                    next: () => console.log('Job cleanup complete:', jobId),
+                    error: (err) => console.warn('Job cleanup failed (non-fatal):', err)
+                  });
+                  
+                  observer.next(result);
+                  observer.complete();
+                },
+                error: (err) => {
+                  this.scanProgressSubject.next(null);
+                  observer.error(err);
+                }
+              });
+            } else if (status.status === 'error') {
+              clearInterval(interval);
+              this.scanProgressSubject.next(null);
+              observer.error(new Error(status.error || 'Processing failed'));
+            }
+            // Otherwise keep polling (pending/processing)
+          },
+          error: (err) => {
+            clearInterval(interval);
+            this.scanProgressSubject.next(null);
+            observer.error(err);
+          }
+        });
+      }, 1000); // Poll every second
+
+      // Cleanup function
+      return () => {
+        clearInterval(interval);
+      };
+    });
+  }
+
+  /**
+   * Helper to get user-friendly status messages
+   */
+  private getStatusMessage(status: string): string {
+    const messages = {
+      'pending': 'Your document is queued for processing...',
+      'processing': 'Analyzing your script...',
+      'complete': 'Processing complete!',
+      'error': 'An error occurred during processing'
+    };
+    return messages[status] || 'Processing...';
+  }
+
+  // Helper method to get step number for progress tracking
+  private getStepNumber(stage: string): number {
+    const stepMap: { [key: string]: number } = {
+      'connected': 1,
+      'validation_complete': 2,
+      'started': 3,
+      'loading': 4,
+      'loaded': 5,
+      'flattening': 6,
+      'flattened': 7,
+      'scanning': 8,
+      'scanned': 9,
+      'sanitizing': 10,
+      'sanitized': 11,
+      'security_scan': 12,
+      'security_checked': 13,
+      'classifying': 14,
+      'ai_validation': 15
+    };
+    return stepMap[stage] || 0;
+  }
+
   // Add this method to reset service state after upload
   resetServiceState(): void {
     // Reset any state that might prevent subsequent uploads
@@ -574,5 +1234,7 @@ export class UploadService {
     this.individualPages = null;
     this.allChars = null;
     this.title = null;
+    // Reset scan progress
+    this.scanProgressSubject.next(null);
   }
 }

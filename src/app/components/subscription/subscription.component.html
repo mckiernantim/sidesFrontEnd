@@ -1,57 +1,103 @@
-<div class="container mx-auto p-4">
-  <div class="bg-white rounded-lg shadow-md p-6" *ngIf="subscriptionData$ | async as data">
-    <div class="mb-4">
-      <h2 class="text-xl font-bold">Subscription Status</h2>
+<div class="min-h-screen bg-sw-bg">
+  <!-- ⚠️ BETA TEST MODE WARNING BANNER ⚠️ -->
+  <div class="bg-gradient-to-r from-sw-warning via-yellow-400 to-sw-warning border-b-4 border-yellow-300 shadow-2xl">
+    <div class="container mx-auto px-4 py-6">
+      <div class="flex flex-col items-center justify-center space-y-2">
+        <div class="flex items-center space-x-3">
+          <svg class="w-10 h-10 text-black animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+          </svg>
+          <div class="text-center">
+            <h2 class="text-2xl md:text-3xl font-black text-black font-display uppercase">
+              ⚠️ BETA TEST MODE ⚠️
+            </h2>
+            <p class="text-lg md:text-xl font-bold text-black">
+              STRIPE TEST MODE - NO REAL CHARGES
+            </p>
+            <div class="mt-2 bg-white bg-opacity-90 rounded-lg px-3 py-2 border-2 border-black">
+              <p class="text-xs font-bold text-black mb-1">
+                🔧 Testing Payment System
+              </p>
+              <p class="text-xs text-gray-800 mb-2">
+                We're verifying our Stripe integration. Use this test card - it simulates payments but charges $0:
+              </p>
+              <div class="bg-gray-100 px-2 py-1 rounded border border-gray-300 text-center">
+                <p class="text-sm font-mono font-black text-gray-900">
+                  4242 4242 4242 4242
+                </p>
+                <p class="text-xs text-gray-600 mt-1">
+                  Any future date • Any CVC • Any ZIP
+                </p>
+              </div>
+            </div>
+          </div>
+          <svg class="w-10 h-10 text-black animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+          </svg>
+        </div>
+      </div>
     </div>
-    
-    <div class="space-y-4">
-      <div class="inline-block px-3 py-1 rounded-full text-sm font-semibold" 
-           [ngClass]="{
-             'bg-green-100 text-green-800': data.status === 'active',
-             'bg-yellow-100 text-yellow-800': data.status === 'pending',
-             'bg-red-100 text-red-800': data.status === 'canceled'
-           }">
-        {{ data.status === 'active' ? 'Active' : 
-           data.status === 'pending' ? 'Pending' : 
-           data.status === 'canceled' ? 'Canceled' : data.status }}
+  </div>
+
+  <div class="container mx-auto p-4">
+    <div class="bg-sw-surface border-2 border-sw-border rounded-lg shadow-2xl p-6" *ngIf="subscriptionData$ | async as data">
+      <div class="mb-4">
+        <h2 class="text-xl font-bold text-sw-text font-display">Subscription Status (Test Mode)</h2>
       </div>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <p class="text-sm text-gray-500">Plan</p>
-          <p class="font-medium">{{ data.plan }}</p>
-        </div>
-        
-        <div>
-          <p class="text-sm text-gray-500">Price</p>
-          <p class="font-medium">${{ data.price }}/{{ data.interval }}</p>
-        </div>
-        
-        <div>
-          <p class="text-sm text-gray-500">Current Period</p>
-          <p class="font-medium">{{ data.currentPeriodStart | date }} - {{ data.currentPeriodEnd | date }}</p>
-        </div>
-        
-        <div *ngIf="data.cancelAt">
-          <p class="text-sm text-gray-500">Cancels On</p>
-          <p class="font-medium">{{ data.cancelAt | date }}</p>
-        </div>
+
+      <div class="bg-yellow-400 border-2 border-yellow-500 rounded-lg p-3 mb-4">
+        <p class="text-black font-black text-sm text-center">TEST MODE - $0.00 CHARGED</p>
       </div>
-      
-      <div class="mt-6 flex space-x-4">
-        <button 
-          *ngIf="data.status === 'active'"
-          (click)="cancelSubscription()"
-          class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">
-          Cancel Subscription
-        </button>
-        
-        <button 
-          *ngIf="data.status !== 'active'"
-          (click)="reactivateSubscription()"
-          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-          Reactivate Subscription
-        </button>
+
+      <div class="space-y-4">
+        <div class="inline-block px-3 py-1 rounded-full text-sm font-semibold"
+             [ngClass]="{
+               'bg-green-900 text-sw-success border-2 border-sw-success': data.status === 'active',
+               'bg-yellow-900 text-sw-warning border-2 border-sw-warning': data.status === 'pending',
+               'bg-red-900 text-sw-danger border-2 border-sw-danger': data.status === 'canceled'
+             }">
+          {{ data.status === 'active' ? 'Active (Test)' :
+             data.status === 'pending' ? 'Pending (Test)' :
+             data.status === 'canceled' ? 'Canceled (Test)' : data.status + ' (Test)' }}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p class="text-sm text-sw-text-muted">Plan</p>
+            <p class="font-medium text-sw-text">{{ data.plan }} (Beta)</p>
+          </div>
+
+          <div>
+            <p class="text-sm text-sw-text-muted">Price</p>
+            <p class="font-medium text-sw-text">${{ data.price }}/{{ data.interval }} (Test)</p>
+          </div>
+
+          <div>
+            <p class="text-sm text-sw-text-muted">Current Period</p>
+            <p class="font-medium text-sw-text">{{ data.currentPeriodStart | date }} - {{ data.currentPeriodEnd | date }}</p>
+          </div>
+
+          <div *ngIf="data.cancelAt">
+            <p class="text-sm text-sw-text-muted">Cancels On</p>
+            <p class="font-medium text-sw-text">{{ data.cancelAt | date }}</p>
+          </div>
+        </div>
+
+        <div class="mt-6 flex space-x-4">
+          <button
+            *ngIf="data.status === 'active'"
+            (click)="cancelSubscription()"
+            class="px-4 py-2 bg-sw-danger hover:opacity-90 text-white rounded-md transition-all font-bold">
+            Cancel Subscription (Test)
+          </button>
+
+          <button
+            *ngIf="data.status !== 'active'"
+            (click)="reactivateSubscription()"
+            class="px-4 py-2 bg-sw-accent hover:opacity-90 text-sw-bg rounded-md transition-all font-bold">
+            Reactivate Subscription (Test)
+          </button>
+        </div>
       </div>
     </div>
   </div>

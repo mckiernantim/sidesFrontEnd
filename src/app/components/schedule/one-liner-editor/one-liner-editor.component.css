@@ -1,0 +1,272 @@
+/* One-Liner Editor Component Styles */
+
+.one-liner-editor {
+  position: relative;
+  width: 100%;
+  min-height: 32px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.one-liner-editor.compact {
+  min-height: 24px;
+  font-size: 12px;
+}
+
+/* ────────────────────────────────────────────── */
+/* Display Mode */
+/* ────────────────────────────────────────────── */
+
+.one-liner-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background-color: #0D1420; /* sw-surface */
+  border: 1px solid #1E2940; /* sw-border */
+  transition: all 0.2s ease;
+  cursor: default;
+  min-height: 32px;
+}
+
+.one-liner-display.editable {
+  cursor: pointer;
+}
+
+.one-liner-display.editable:hover {
+  background-color: #141C2E; /* sw-surface-2 */
+  border-color: #8B95A8;     /* sw-text-muted — subtle highlight */
+}
+
+.one-liner-display.empty {
+  background-color: #0D1420; /* sw-surface */
+  border-style: dashed;
+  border-color: #1E2940;     /* sw-border */
+}
+
+.one-liner-display.empty.editable:hover {
+  background-color: rgba(196, 255, 0, 0.04);
+  border-color: #C4FF00;     /* sw-accent */
+}
+
+/* Indicator Icon */
+.indicator-icon {
+  flex-shrink: 0;
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* One-Liner Text */
+.one-liner-text {
+  flex: 1;
+  color: #FFFFFF;            /* sw-text */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placeholder-text {
+  flex: 1;
+  color: #545F73;            /* sw-text-subtle */
+  font-style: italic;
+}
+
+/* Regenerate Button */
+.regenerate-btn {
+  flex-shrink: 0;
+  padding: 4px 6px;
+  background-color: #0D1420; /* sw-surface */
+  border: 1px solid #1E2940; /* sw-border */
+  border-radius: 4px;
+  color: #8B95A8;            /* sw-text-muted */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.regenerate-btn:hover:not(:disabled) {
+  background-color: #141C2E; /* sw-surface-2 */
+  border-color: #8B95A8;
+  color: #FFFFFF;            /* sw-text */
+}
+
+.regenerate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ────────────────────────────────────────────── */
+/* Edit Mode */
+/* ────────────────────────────────────────────── */
+
+.one-liner-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edit-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.one-liner-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 2px solid #C4FF00; /* sw-accent */
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  background-color: #141C2E; /* sw-surface-2 */
+  color: #FFFFFF;            /* sw-text */
+  transition: border-color 0.2s ease;
+}
+
+.one-liner-input:focus {
+  border-color: #D6FF3D;     /* sw-accent-hover */
+  box-shadow: 0 0 0 3px rgba(196, 255, 0, 0.12);
+}
+
+.one-liner-input.over-limit {
+  border-color: #FF4B4B;     /* sw-danger */
+}
+
+.one-liner-input.over-limit:focus {
+  box-shadow: 0 0 0 3px rgba(255, 75, 75, 0.15);
+}
+
+/* Character Counter */
+.char-counter {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: #8B95A8;            /* sw-text-muted */
+  font-weight: 500;
+  min-width: 40px;
+  text-align: right;
+}
+
+.char-counter.warning {
+  color: #F59E0B;            /* sw-warning */
+}
+
+.char-counter.error {
+  color: #FF4B4B;            /* sw-danger */
+  font-weight: 600;
+}
+
+/* Edit Actions */
+.edit-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.edit-actions button {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.btn-save {
+  background-color: #C4FF00; /* sw-accent */
+  color: #000000;            /* sw-accent-fg */
+  border-color: #C4FF00;
+}
+
+.btn-save:hover:not(:disabled) {
+  background-color: #D6FF3D; /* sw-accent-hover */
+  border-color: #D6FF3D;
+}
+
+.btn-save:disabled {
+  background-color: #1E2940; /* sw-border */
+  border-color: #1E2940;
+  color: #545F73;            /* sw-text-subtle */
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-cancel {
+  background-color: #0D1420; /* sw-surface */
+  color: #8B95A8;            /* sw-text-muted */
+  border-color: #1E2940;     /* sw-border */
+}
+
+.btn-cancel:hover {
+  background-color: #141C2E; /* sw-surface-2 */
+  border-color: #8B95A8;
+  color: #FFFFFF;            /* sw-text */
+}
+
+/* ────────────────────────────────────────────── */
+/* Generating Overlay */
+/* ────────────────────────────────────────────── */
+
+.generating-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: rgba(13, 20, 32, 0.95); /* sw-surface with opacity */
+  border-radius: 4px;
+  font-size: 12px;
+  color: #8B95A8;            /* sw-text-muted */
+  z-index: 10;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #1E2940; /* sw-border */
+  border-top-color: #C4FF00; /* sw-accent */
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ────────────────────────────────────────────── */
+/* Compact Mode Adjustments */
+/* ────────────────────────────────────────────── */
+
+.one-liner-editor.compact .one-liner-display {
+  padding: 4px 6px;
+  min-height: 24px;
+  font-size: 12px;
+}
+
+.one-liner-editor.compact .one-liner-input {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.one-liner-editor.compact .indicator-icon {
+  font-size: 12px;
+}
+
+.one-liner-editor.compact .regenerate-btn {
+  padding: 3px 5px;
+}
+
+.one-liner-editor.compact .edit-actions button {
+  padding: 3px 10px;
+  font-size: 11px;
+}

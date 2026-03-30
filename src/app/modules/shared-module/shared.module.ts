@@ -18,6 +18,8 @@ import { ErrorDialogComponent } from 'src/app/components/shared/error-dialog/err
 import { SpinnerDialogComponent } from 'src/app/components/shared/spinner-dialog/spinner-dialog.component';
 import { TailwindTableComponent } from '../../components/shared/tailwind-table/tailwind-table.component';
 import { SpinnerComponent } from '../../components/shared/spinner/spinner.component';
+import { UploadProgressModalComponent } from '../../components/shared/upload-progress-modal/upload-progress-modal.component';
+import { DocumentReadyModalComponent } from '../../components/shared/document-ready-modal/document-ready-modal.component';
 
 
 @NgModule({
@@ -34,6 +36,8 @@ import { SpinnerComponent } from '../../components/shared/spinner/spinner.compon
     TailwindTableComponent,
     TailwindTableColumnDirective,
     SpinnerComponent,
+    UploadProgressModalComponent,
+    DocumentReadyModalComponent,
 
     
   ],
@@ -59,6 +63,8 @@ import { SpinnerComponent } from '../../components/shared/spinner/spinner.compon
     TailwindTableComponent,
     TailwindTableColumnDirective,
     SpinnerComponent,
+    UploadProgressModalComponent,
+    DocumentReadyModalComponent,
   ],
   providers: [DatePipe, AsyncPipe, DateFormatPipe],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]

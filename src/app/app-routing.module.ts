@@ -18,6 +18,7 @@ import { TestComponent } from './components/test/test.component';
 import { PricingComponent } from './components/pricing/pricing.component';
 import { ContactComponent } from './components/contact/contact.component';
 import { HowItWorksComponent } from './components/how-it-works/how-it-works.component';
+import { SchedulePageComponent } from './components/schedule/schedule-page/schedule-page.component';
 
 const routes: Routes = [
   { path: 'test', component: TestComponent },
@@ -38,6 +39,8 @@ const routes: Routes = [
   { path: 'Checkout', component: CheckoutComponent },
   { path: 'profile-loader', component: ProfileLoaderComponent },
   { path: 'profile', component: ProfileComponent },
+  { path: 'schedule', component: SchedulePageComponent, canActivate: [AuthGuard] },
+  { path: 'schedule/:id', component: SchedulePageComponent, canActivate: [AuthGuard] },
   { path: 'about', component: AboutComponent },
   { path: 'pricing', component: PricingComponent },
   { path: 'contact', component: ContactComponent },

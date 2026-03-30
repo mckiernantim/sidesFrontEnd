@@ -1,12 +1,15 @@
+/* Profile container with dark theme */
 .profile-container {
-    min-height: calc(100vh - 64px); /* Adjust based on your navbar height */
+    min-height: calc(100vh - 64px);
     max-width: 800px;
     margin: 0 auto;
     padding: 20px;
-  }
+    background-color: var(--sw-bg);
+}
 
 .profile-header {
   margin-bottom: 20px;
+  color: var(--sw-text);
 }
 
 .loading-spinner {
@@ -20,14 +23,16 @@
 }
 
 .subscription-info, .subscription-signup {
-  background-color: #f8f9fa;
-  border-radius: 8px;
+  background-color: var(--sw-surface);
+  border: 1px solid var(--sw-border);
+  border-radius: var(--sw-radius-lg);
   padding: 20px;
   margin-top: 20px;
 }
 
 .subscription-details {
   margin: 20px 0;
+  color: var(--sw-text-muted);
 }
 
 .subscription-actions {
@@ -37,11 +42,12 @@
 }
 
 .active-badge {
-  background-color: #4caf50;
-  color: white;
+  background-color: var(--sw-success);
+  color: var(--sw-bg);
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: var(--sw-radius-sm);
   font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .subscription-benefits {
@@ -58,10 +64,12 @@
   display: flex;
   align-items: center;
   margin-bottom: 10px;
+  color: var(--sw-text-muted);
 }
 
 .subscription-benefits mat-icon {
   margin-right: 10px;
+  color: var(--sw-accent);
 }
 
 .subscription-benefits button {

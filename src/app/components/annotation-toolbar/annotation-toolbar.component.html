@@ -1,0 +1,96 @@
+<div class="annotation-toolbar">
+  <!-- Toolbar Header -->
+  <div class="toolbar-header">
+    <h3 class="toolbar-title">Annotations</h3>
+    <div class="active-layer">{{ getActiveLayerName() }}</div>
+  </div>
+
+  <!-- Drawing Tools Section -->
+  <div class="toolbar-section">
+    <div class="section-label">Tools</div>
+    <div class="tool-buttons">
+      <button
+        *ngFor="let tool of tools"
+        class="tool-button"
+        [class.active]="isToolActive(tool.id)"
+        [title]="tool.tooltip"
+        (click)="selectTool(tool.id)">
+        <span class="tool-icon">{{ tool.icon }}</span>
+        <span class="tool-label">{{ tool.label }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Presets Section -->
+  <div class="toolbar-section">
+    <div class="section-label">Text Box Presets</div>
+    <div class="preset-buttons">
+      <button
+        *ngFor="let preset of presets"
+        class="preset-button"
+        [title]="preset.tooltip"
+        (click)="insertPreset(preset)">
+        {{ preset.label }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Scene Marker Section -->
+  <div class="toolbar-section">
+    <div class="section-label">Scene Markers</div>
+    <div class="scene-marker-container">
+      <button
+        class="scene-marker-button"
+        title="Insert scene marker (auto-incrementing)"
+        (click)="insertSceneMarker()">
+        <span class="scene-marker-icon">🎬</span>
+        <span class="scene-marker-text">Scene {{ getNextSceneNumber() }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Disclaimer Toggle Section -->
+  <div class="toolbar-section">
+    <div class="section-label">Quick Insert</div>
+    <app-disclaimer-toggle
+      [currentPageIndex]="currentPageIndex"
+      [totalPages]="totalPages">
+    </app-disclaimer-toggle>
+  </div>
+
+  <!-- Color Picker Section -->
+  <div class="toolbar-section">
+    <div class="section-label">Color</div>
+    <div class="color-picker-container">
+      <button
+        class="color-swatch-button"
+        [style.background-color]="selectedColor"
+        (click)="toggleColorPicker()"
+        title="Select color">
+      </button>
+      <div class="color-picker" *ngIf="showColorPicker">
+        <button
+          *ngFor="let color of colors"
+          class="color-swatch"
+          [style.background-color]="color"
+          [class.selected]="color === selectedColor"
+          [title]="color"
+          (click)="selectColor(color)">
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions Section -->
+  <div class="toolbar-section">
+    <div class="section-label">Actions</div>
+    <div class="action-buttons">
+      <button
+        class="action-button clear-button"
+        (click)="clearAll()"
+        title="Clear all annotations on this layer">
+        Clear All
+      </button>
+    </div>
+  </div>
+</div>

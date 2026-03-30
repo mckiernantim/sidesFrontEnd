@@ -1,55 +1,84 @@
-<nav class="bg-gray-800 text-white py-4">
-  <div class="container mx-auto px-4">
-    <div class="flex justify-between items-center py-2">
-      <div class="flex items-center">
-        <a [routerLink]="['/']" class="text-xl font-bold text-white">Sides-Ways</a>
-      </div>
-      
-      <div class="hidden md:flex items-center space-x-8">
-        <a routerLink="/" routerLinkActive="text-white" [routerLinkActiveOptions]="{exact: true}" class="text-gray-400 hover:text-white transition-colors">Home</a>
-        <a routerLink="/how-it-works" routerLinkActive="text-white" class="text-gray-400 hover:text-white transition-colors">How It Works</a>
-        <a routerLink="/pricing" routerLinkActive="text-white" class="text-gray-400 hover:text-white transition-colors">Pricing</a>
-        <a routerLink="/about" routerLinkActive="text-white" class="text-gray-400 hover:text-white transition-colors">About</a>
-        <a routerLink="/contact" routerLinkActive="text-white" class="text-gray-400 hover:text-white transition-colors">Contact</a>
-      </div>
-      
-      <div class="flex items-center space-x-4">
-        <ng-container *ngIf="!isLoggedIn; else loggedInTemplate">
-          <button (click)="signIn()" class="text-gray-400 hover:text-white transition-colors">Login</button>
-        </ng-container>
-        
-        <ng-template #loggedInTemplate>
-          <div class="relative" (click)="toggleUserMenu()" (clickOutside)="closeUserMenu()">
-            <button class="flex items-center space-x-2 focus:outline-none">
-              <img [src]="userAvatar || 'assets/default-avatar.png'" alt="User avatar" class="w-8 h-8 rounded-full object-cover">
-              <span class="text-gray-300">{{ username }}</span>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-              </svg>
-            </button>
-            
-            <div *ngIf="isUserMenuOpen" class="absolute right-0 mt-2 w-48 bg-gray-700 rounded-md shadow-lg py-1 z-10">
-              <a [routerLink]="['/profile']" class="block px-4 py-2 text-gray-300 hover:bg-gray-600 hover:text-white">Profile</a>
-              <a [routerLink]="['/settings']" class="block px-4 py-2 text-gray-300 hover:bg-gray-600 hover:text-white">Settings</a>
-              <a (click)="logout()" class="block px-4 py-2 text-gray-300 hover:bg-gray-600 hover:text-white">Logout</a>
-            </div>
-          </div>
-        </ng-template>
-      </div>
-      
-      <button class="md:hidden focus:outline-none" (click)="toggleMobileMenu()">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+<nav class="sw-nav">
+  <div class="sw-nav__inner">
+
+    <!-- Logo -->
+    <a [routerLink]="['/']" class="sw-nav__logo">
+      SIDES<span class="sw-nav__logo-bolt">⚡</span>WAYS
+      <span class="sw-nav__logo-mark">~&gt;~&gt;</span>
+    </a>
+
+    <!-- Desktop links -->
+    <ul class="sw-nav__links">
+      <li><a routerLink="/how-it-works" routerLinkActive="sw-nav__link--active" class="sw-nav__link">Features</a></li>
+      <li><a routerLink="/pricing"      routerLinkActive="sw-nav__link--active" class="sw-nav__link">Pricing</a></li>
+      <li><a routerLink="/about"        routerLinkActive="sw-nav__link--active" class="sw-nav__link">Useage</a></li>
+      <li><a routerLink="/contact"      routerLinkActive="sw-nav__link--active" class="sw-nav__link">Contact</a></li>
+    </ul>
+
+    <!-- Right side: script badge + auth -->
+    <div class="sw-nav__right">
+
+      <!-- Current script badge (logged in + script loaded) -->
+      <a
+        *ngIf="currentScriptName && isLoggedIn"
+        [routerLink]="['/dashboard']"
+        class="sw-nav__script-badge"
+        [title]="'Open ' + currentScriptName + ' in Dashboard'">
+        <svg class="sw-nav__script-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
-      </button>
+        <span class="sw-nav__script-name">{{ currentScriptName }}</span>
+        <svg class="sw-nav__script-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd"
+            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+            clip-rule="evenodd" />
+        </svg>
+      </a>
+
+      <!-- Logged out -->
+      <ng-container *ngIf="!isLoggedIn; else loggedInTemplate">
+        <button (click)="signIn()" class="sw-nav__signin">Sign In</button>
+      </ng-container>
+
+      <!-- Logged in: avatar + dropdown -->
+      <ng-template #loggedInTemplate>
+        <div class="sw-nav__user" (click)="toggleUserMenu()" (clickOutside)="closeUserMenu()">
+          <button class="sw-nav__user-btn">
+            <img [src]="userAvatar || 'assets/default-avatar.png'" alt="User avatar" class="sw-nav__avatar">
+            <span class="sw-nav__username">{{ username }}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="sw-nav__chevron" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clip-rule="evenodd" />
+            </svg>
+          </button>
+
+          <div *ngIf="isUserMenuOpen" class="sw-nav__dropdown">
+            <a [routerLink]="['/profile']"  class="sw-nav__dropdown-item">Profile</a>
+            <a [routerLink]="['/dashboard']" class="sw-nav__dropdown-item">Dashboard</a>
+            <button (click)="logout()"      class="sw-nav__dropdown-item sw-nav__dropdown-item--danger">Logout</button>
+          </div>
+        </div>
+      </ng-template>
     </div>
-    
-    <div *ngIf="isMobileMenuOpen" class="md:hidden py-4">
-      <a href="#" class="block py-2 text-gray-400 hover:text-white">Home</a>
-      <a href="#" class="block py-2 text-gray-400 hover:text-white">Features</a>
-      <a href="#" class="block py-2 text-gray-400 hover:text-white">Pricing</a>
-      <a href="#" class="block py-2 text-gray-400 hover:text-white">About</a>
-      <a href="#" class="block py-2 text-gray-400 hover:text-white">Contact</a>
-    </div>
+
+    <!-- Mobile hamburger -->
+    <button class="sw-nav__hamburger" (click)="toggleMobileMenu()" aria-label="Toggle menu">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </button>
+
+  </div>
+
+  <!-- Mobile menu drawer -->
+  <div *ngIf="isMobileMenuOpen" class="sw-nav__mobile">
+    <a routerLink="/how-it-works" class="sw-nav__mobile-link">Features</a>
+    <a routerLink="/pricing"      class="sw-nav__mobile-link">Pricing</a>
+    <a routerLink="/about"        class="sw-nav__mobile-link">Useage</a>
+    <a routerLink="/contact"      class="sw-nav__mobile-link">Contact</a>
+    <button *ngIf="!isLoggedIn" (click)="signIn()" class="sw-nav__mobile-signin">Sign In</button>
+    <button *ngIf="isLoggedIn"  (click)="logout()" class="sw-nav__mobile-link">Logout</button>
   </div>
 </nav>

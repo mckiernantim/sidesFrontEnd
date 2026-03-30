@@ -1,21 +1,67 @@
-<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-    <div class="text-center mb-6">
-      <h2 class="text-2xl font-bold text-gray-800">Checkout Summary</h2>
-      <p class="text-gray-600">Please review your selection before proceeding</p>
+<div class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+  <div class="bg-sw-surface border border-sw-border rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <!-- ⚠️ BETA TEST MODE WARNING ⚠️ -->
+    <div class="bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 border-b-4 border-yellow-500 px-6 py-4 rounded-t-lg">
+      <div class="flex flex-col items-center justify-center space-y-2">
+        <div class="flex items-center space-x-2">
+          <svg class="w-8 h-8 text-black animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+          </svg>
+          <div class="text-center">
+            <p class="text-black font-black text-lg uppercase">⚠️ BETA TEST MODE ⚠️</p>
+            <p class="text-black font-bold text-sm">STRIPE IN TEST MODE</p>
+            <p class="text-red-900 font-bold text-xs">NO REAL CHARGES</p>
+          </div>
+          <svg class="w-8 h-8 text-black animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="bg-white bg-opacity-90 rounded-lg px-3 py-3 border-2 border-black">
+          <p class="text-xs font-bold text-black mb-1">
+            🔧 Testing Payment Integration
+          </p>
+          <p class="text-xs text-gray-800 mb-2">
+            We're verifying our Stripe integration works correctly. Use this test card number - it simulates a real transaction but charges $0:
+          </p>
+          <div class="bg-gray-100 px-2 py-2 rounded border border-gray-300 text-center">
+            <p class="text-sm font-mono font-black text-gray-900">
+              4242 4242 4242 4242
+            </p>
+            <p class="text-xs text-gray-600 mt-1">
+              Any future date • Any CVC • Any ZIP
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <div class="p-6">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-sw-text font-display">Checkout Summary</h2>
+        <p class="text-sw-text-muted mt-1">Please review your selection before proceeding</p>
+      </div>
 
     <!-- Selected Scenes -->
     <div class="mb-6">
-      <h3 class="text-lg font-bold mb-2">Selected Scenes:</h3>
+      <h3 class="text-lg font-bold mb-2 text-sw-text">Selected Scenes:</h3>
       <ul class="space-y-2">
-        <li *ngFor="let scene of selectedScenes" class="p-2 bg-gray-50 rounded border border-gray-200">
-          <span class="font-medium">{{ scene.sceneNumberText }}:</span> {{ scene.text }}
+        <li *ngFor="let scene of selectedScenes" class="p-2 bg-sw-surface-2 rounded border border-sw-border text-sw-text">
+          <span class="font-medium text-sw-accent">{{ scene.sceneNumberText }}:</span> {{ scene.text }}
         </li>
       </ul>
       <div class="mt-4 text-center">
-        <h2 class="text-xl font-bold text-green-600">Total: FREE FOR BETA</h2>
-        <p class="text-sm text-gray-500">Note: Stripe will process a test payment. Your card will not be charged.</p>
+        <div class="bg-yellow-400 border-2 border-yellow-500 rounded-lg p-4 mb-3">
+          <p class="text-black font-black text-2xl uppercase">FREE FOR BETA</p>
+          <p class="text-red-900 font-bold text-lg mt-1">TEST MODE ONLY</p>
+        </div>
+        <div class="bg-sw-surface-2 border-2 border-sw-info rounded-lg p-3">
+          <p class="text-sw-info font-bold text-sm">
+            💳 Stripe will process a TEST payment
+          </p>
+          <p class="text-sw-text-muted text-xs mt-1">
+            Your card will NOT be charged - this is for testing only
+          </p>
+        </div>
       </div>
     </div>
 
@@ -23,16 +69,16 @@
     <div class="mb-6">
       <div class="flex items-center justify-between">
         <label class="flex items-center space-x-2">
-          <input type="checkbox" [(ngModel)]="agreeToTerms" class="form-checkbox h-4 w-4 text-blue-600">
-          <span class="text-gray-700">I agree to the Terms of Service</span>
+          <input type="checkbox" [(ngModel)]="agreeToTerms" class="form-checkbox h-4 w-4 accent-sw-accent">
+          <span class="text-sw-text">I agree to the Terms of Service</span>
         </label>
-        <button (click)="toggleTerms()" class="text-blue-500 hover:underline text-sm">
+        <button (click)="toggleTerms()" class="text-sw-accent hover:opacity-80 text-sm transition-opacity">
           {{ showTerms ? 'Hide Terms' : 'Show Terms' }}
         </button>
       </div>
       
-      <div *ngIf="showTerms" class="mt-4 p-4 bg-gray-50 rounded border border-gray-200 text-sm text-gray-700 max-h-40 overflow-y-auto">
-        <h4 class="font-bold mb-2">Terms of Service</h4>
+      <div *ngIf="showTerms" class="mt-4 p-4 bg-sw-surface-2 rounded border border-sw-border text-sm text-sw-text-muted max-h-40 overflow-y-auto">
+        <h4 class="font-bold mb-2 text-sw-text">Terms of Service</h4>
         <p>By using our service, you agree to the following terms:</p>
         <ul class="list-disc pl-5 mt-2 space-y-1">
           <li>You have the right to use the uploaded script for the purpose of generating sides.</li>
@@ -44,22 +90,23 @@
       </div>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="flex space-x-4">
-      <button 
-        (click)="onClose()" 
-        class="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none transition-colors"
-      >
-        Cancel
-      </button>
-      <button 
-        (click)="proceedToCheckout()" 
-        [disabled]="!agreeToTerms" 
-        [class.opacity-50]="!agreeToTerms"
-        class="flex-1 py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none transition-colors disabled:cursor-not-allowed"
-      >
-        Get My Sides
-      </button>
+      <!-- Action Buttons -->
+      <div class="flex space-x-4">
+        <button
+          (click)="onClose()"
+          class="flex-1 py-2 px-4 bg-sw-surface-2 text-sw-text border border-sw-border rounded hover:bg-sw-border focus:outline-none transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          (click)="proceedToCheckout()"
+          [disabled]="!agreeToTerms"
+          [class.opacity-50]="!agreeToTerms"
+          class="flex-1 py-2 px-4 bg-sw-accent text-sw-bg font-bold rounded hover:opacity-90 focus:outline-none transition-colors disabled:cursor-not-allowed"
+        >
+          Get My Sides (TEST)
+        </button>
+      </div>
     </div>
   </div>
-</div> 
+</div>

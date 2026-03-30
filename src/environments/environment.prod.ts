@@ -30,13 +30,32 @@ export const environment = {
   // },
   // url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
   password:"NOTEWORTHY",
-  maintenanceMode: true
+  maintenanceMode: false
 };
 
 export const environmentProd = environment;
 
 // Helper function to get the right environment
 export function getConfig(isProd = false) {
+  // Check if we're on the dev staging URL
+  if (typeof window !== 'undefined' && window.location.hostname === 'scriptthing-dev.web.app') {
+    // DEV STAGING CONFIG
+    return {
+      ...environment,
+      firebaseConfig: {
+        apiKey: "AIzaSyCr0Gemya880xoOnAYWtTcZWssg5Uc2HY0",
+        authDomain: "scriptthing-dev.firebaseapp.com",
+        projectId: "scriptthing-dev",
+        storageBucket: "scriptthing-dev.firebasestorage.app",
+        messagingSenderId: "401150394674",
+        appId: "1:401150394674:web:760ffe3a546b2d01a8d72b",
+        measurementId: "G-1JF7DG5L5H"
+      },
+      url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com'
+    };
+  }
+
+  // PRODUCTION CONFIG (default)
   return environment;
 }
 

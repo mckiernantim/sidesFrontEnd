@@ -1,0 +1,21 @@
+.annotation-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  cursor: default;
+  /* Default: pass-through — let clicks reach lines/text underneath.
+     Only capture events when a drawing tool is active or canvas
+     annotations need interaction. */
+  pointer-events: none;
+}
+
+/* When a drawing tool is active, the canvas MUST capture events for drawing */
+.annotation-canvas.canvas-interactive {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+.annotation-canvas:hover {
+  /* Visual feedback when hovering */
+}

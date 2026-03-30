@@ -1,24 +1,30 @@
+/* Complete Component - New Design System */
 
-
-
-/* TODO(mdc-migration): The following rule targets internal classes of card that may no longer apply for the MDC version. */
-mat-mdc-card {
-    margin-bottom:50px
+/* Ensure proper spacing and centering */
+.complete-container {
+  min-height: 85vh;
 }
 
-.indent {
-    margin: 3%
-}
-.complete-card {
-     color: var(--black)!important;
-     background: var(--white) !important;
-}
-.mat-mdc-card-header {
-  display: flex;
-  padding: 16px 16px 0;
-  flex-direction: row;
-  align-content: center;
-  justify-content: space-around;
-  align-items: stretch;
+/* Subtle animation for the countdown timer */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(196, 255, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(196, 255, 0, 0.5);
+  }
 }
 
+.document-delete-timer {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Button hover effects */
+button:not(:disabled):hover {
+  filter: brightness(1.05);
+}
+
+/* Star rating hover effect */
+button svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}

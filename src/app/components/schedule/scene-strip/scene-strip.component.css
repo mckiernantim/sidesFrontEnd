@@ -1,0 +1,64 @@
+/* ── STRIP MODE (inside a shoot day) ─────────────────────────── */
+
+.scene-strip {
+  background-color: #0D1420; /* sw-surface */
+  border-color: #1E2940;     /* sw-border */
+}
+
+.scene-strip:hover {
+  background-color: #141C2E; /* sw-surface-2 */
+}
+
+.scene-strip.cdk-drag-preview {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  opacity: 0.95;
+}
+
+.scene-strip.cdk-drag-placeholder {
+  opacity: 0.3;
+  background-color: #141C2E; /* sw-surface-2 */
+  border-style: dashed;
+  border-color: #C4FF00;     /* sw-accent */
+}
+
+
+/* ── CARD MODE (unscheduled pool) ────────────────────────────── */
+
+.scene-card {
+  background-color: #0D1420; /* sw-surface */
+  border: 1px solid #1E2940; /* sw-border */
+  border-radius: 8px;
+  padding: 14px 14px 12px 14px;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.scene-card:hover {
+  background-color: #141C2E; /* sw-surface-2 */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.scene-card.cdk-drag-preview {
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.6);
+  opacity: 0.95;
+  border-radius: 8px;
+}
+
+.scene-card.cdk-drag-placeholder {
+  opacity: 0.25;
+  background-color: #141C2E;
+  border-style: dashed;
+  border-color: #C4FF00;
+}
+
+/* Scene header headline — the star of the card */
+.scene-card-header {
+  font-size: 15px;
+  font-weight: 700;
+  color: #FFFFFF;            /* sw-text */
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  /* Allow wrapping — no truncation */
+  white-space: normal;
+  word-break: break-word;
+  margin-top: 4px;
+}

@@ -1,124 +1,191 @@
-<div class="bg-gray-100 min-h-screen" [@fadeInOut]>
+<div class="bg-sw-bg min-h-screen" [@fadeInOut]>
+  <!-- ⚠️ BETA TEST MODE WARNING BANNER ⚠️ -->
+  <div class="bg-gradient-to-r from-sw-warning via-yellow-400 to-sw-warning border-4 border-yellow-300 shadow-2xl">
+    <div class="container mx-auto px-4 py-6">
+      <div class="flex flex-col items-center justify-center space-y-3">
+        <div class="flex items-center space-x-4">
+          <svg class="w-12 h-12 text-black animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+          </svg>
+          <div class="text-center">
+            <h2 class="text-3xl md:text-4xl font-black text-black font-display tracking-tight uppercase">
+              ⚠️ BETA TEST MODE ⚠️
+            </h2>
+            <p class="text-xl md:text-2xl font-bold text-black mt-2">
+              STRIPE IS IN TEST MODE - ALL CHARGES ARE FAKE
+            </p>
+            <p class="text-lg md:text-xl font-bold text-red-900 mt-1">
+              YOUR CARD WILL NOT BE CHARGED - THIS IS FOR TESTING ONLY
+            </p>
+            <div class="mt-3 bg-black bg-opacity-20 rounded-lg px-4 py-3 max-w-2xl mx-auto">
+              <p class="text-sm md:text-base font-bold text-black mb-2">
+                🔧 Why Test Mode?
+              </p>
+              <p class="text-xs md:text-sm font-semibold text-black mb-3">
+                We're verifying our Stripe payment integration works correctly before going live.
+                This ensures a smooth experience when we launch for real. No actual money will be processed.
+              </p>
+              <div class="bg-white bg-opacity-90 rounded-lg px-3 py-2 border-2 border-black">
+                <p class="text-xs md:text-sm font-bold text-black mb-1">
+                  💳 What's a "Test Card"?
+                </p>
+                <p class="text-xs text-gray-800 mb-2">
+                  Stripe provides special card numbers that simulate real transactions without charging you.
+                  Use this number to test the checkout flow:
+                </p>
+                <div class="bg-gray-100 px-3 py-2 rounded border border-gray-300 text-center">
+                  <p class="text-lg md:text-xl font-mono font-black text-gray-900">
+                    4242 4242 4242 4242
+                  </p>
+                  <p class="text-xs text-gray-600 mt-1">
+                    Any future expiry date • Any 3-digit CVC • Any ZIP code
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <svg class="w-12 h-12 text-black animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Hero Section -->
-  <div class="bg-blue-500 text-white py-12">
+  <div class="bg-gradient-to-br from-sw-bg via-sw-surface to-sw-bg text-white py-16 border-b-4 border-sw-accent">
     <div class="container mx-auto px-4 text-center">
-      <h1 class="text-4xl md:text-5xl font-bold mb-3">Simple, Transparent Pricing</h1>
-      <p class="text-lg md:text-xl max-w-2xl mx-auto mb-6">
+      <h1 class="text-4xl md:text-5xl font-bold mb-4 text-sw-text font-display tracking-tight">
+        <span class="sw-arrow">~&gt;~&gt;</span>
+        SIMPLE, <span class="text-sw-accent">TRANSPARENT</span> PRICING
+        <span class="sw-arrow">~&gt;~&gt;</span>
+      </h1>
+      <p class="text-lg md:text-xl max-w-2xl mx-auto mb-6 text-sw-text-muted">
         One affordable plan for unlimited sides generation.
       </p>
-      
+
       <!-- Compact testimonial -->
-      <div class="max-w-xl mx-auto bg-white/10 backdrop-blur-sm rounded-lg p-4 mt-4 text-white border border-white/20">
+      <div class="max-w-xl mx-auto bg-sw-surface-2 backdrop-blur-sm rounded-lg p-6 mt-6 text-white border-2 border-sw-border shadow-lg">
         <div class="flex items-center text-center">
-          <svg class="h-6 w-6 text-white/80 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+          <svg class="h-6 w-6 text-sw-accent mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
             <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
           </svg>
-          <p class="text-sm italic text-white/90 mx-2">
+          <p class="text-sm italic text-sw-text-muted mx-2">
             Sides-Ways has completely transformed our production workflow. What used to take hours now takes minutes.
           </p>
-          <svg class="h-6 w-6 text-white/80 ml-2 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+          <svg class="h-6 w-6 text-sw-accent ml-2 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
             <path d="M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.57-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z" />
           </svg>
         </div>
-        <p class="text-xs text-white/80 mt-1">— Alexander Yellen, Director of Photography</p>
+        <p class="text-xs text-sw-text-subtle mt-2">— Alexander Yellen, Director of Photography</p>
       </div>
     </div>
   </div>
 
   <!-- Pricing Section -->
-  <section class="container mx-auto px-4 py-12">
+  <section class="container mx-auto px-4 py-16">
     <div class="max-w-3xl mx-auto">
       <!-- Loading State -->
       <div *ngIf="isLoading" class="flex justify-center items-center py-8">
-        <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-600"></div>
+        <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-sw-accent"></div>
       </div>
 
       <!-- Pricing Card -->
-      <div *ngIf="!isLoading" class="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div class="bg-gray-800 text-white p-6 text-center">
-          <h2 class="text-3xl font-bold">Professional Plan</h2>
-          <div class="mt-4 flex items-center justify-center">
-            <span class="text-5xl font-bold">$20</span>
-            <span class="ml-2 text-xl">/week</span>
-          </div>
-          <p class="mt-2 text-blue-100">Cancel anytime</p>
+      <div *ngIf="!isLoading" class="bg-sw-surface rounded-lg shadow-2xl overflow-hidden border-2 border-sw-border">
+        <!-- BETA TEST MODE NOTICE -->
+        <div class="bg-yellow-400 border-b-4 border-yellow-500 px-6 py-4">
+          <p class="text-center text-black font-black text-lg md:text-xl uppercase">
+            🚨 TEST MODE: NO REAL CHARGES WILL BE MADE 🚨
+          </p>
         </div>
-        
+
+        <div class="bg-gradient-to-br from-sw-surface-2 to-sw-surface text-white p-8 text-center border-b-4 border-sw-accent">
+          <h2 class="text-3xl font-bold text-sw-text mb-2">Professional Plan</h2>
+          <div class="mt-6 flex items-center justify-center">
+            <span class="text-6xl font-bold text-sw-accent">$20</span>
+            <span class="ml-3 text-2xl text-sw-text-muted">/week</span>
+          </div>
+          <p class="mt-4 text-sw-text-subtle font-medium">Cancel anytime</p>
+          <div class="mt-4 bg-yellow-400 text-black px-4 py-2 rounded-lg inline-block">
+            <p class="font-bold text-sm">BETA PRICING - NOT FINAL</p>
+          </div>
+        </div>
+
         <div class="p-8">
           <ul class="space-y-4">
             <li class="flex items-start">
-              <svg class="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              <svg class="h-6 w-6 text-sw-success mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
               </svg>
-              <span>Unlimited sides generation</span>
+              <span class="text-sw-text">Unlimited sides generation</span>
             </li>
             <li class="flex items-start">
-              <svg class="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              <svg class="h-6 w-6 text-sw-success mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
               </svg>
-              <span>Advanced formatting options</span>
+              <span class="text-sw-text">Advanced formatting options</span>
             </li>
             <li class="flex items-start">
-              <svg class="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              <svg class="h-6 w-6 text-sw-success mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
               </svg>
-              <span>Priority processing</span>
+              <span class="text-sw-text">Priority processing</span>
             </li>
             <li class="flex items-start">
-              <svg class="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              <svg class="h-6 w-6 text-sw-success mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
               </svg>
-              <span>Email support</span>
+              <span class="text-sw-text">Email support</span>
             </li>
           </ul>
-          
+
           <div class="mt-8">
             <ng-container *ngIf="(user$ | async) as user; else signInTemplate">
               <ng-container *ngIf="(subscriptionStatus$ | async) as status">
                 <div *ngIf="status.active" class="text-center">
-                  <div class="bg-green-100 text-green-800 px-4 py-2 rounded-md mb-4">
-                    <p class="font-semibold">You're subscribed!</p>
-                    <p class="text-sm">Your subscription is active until {{ formatDate(status.subscription?.currentPeriodEnd) }}</p>
+                  <div class="bg-sw-surface-2 border-2 border-sw-success text-sw-text px-6 py-4 rounded-lg mb-4 shadow-md">
+                    <p class="font-bold text-sw-success text-lg">You're subscribed!</p>
+                    <p class="text-sm text-sw-text-muted mt-1">Your subscription is active until {{ formatDate(status.subscription?.currentPeriodEnd) }}</p>
                   </div>
-                  <button 
-                    (click)="manageSubscription()" 
-                    class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-md transition-colors">
+                  <button
+                    (click)="manageSubscription()"
+                    class="w-full bg-sw-accent hover:opacity-90 text-sw-bg font-bold py-4 px-6 rounded-lg transition-all shadow-md">
                     Manage Subscription
                   </button>
                 </div>
                 <div *ngIf="!status.active" class="text-center">
-                  <button 
-                    (click)="subscribe()" 
-                    class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-md transition-colors">
+                  <button
+                    (click)="subscribe()"
+                    class="w-full bg-sw-accent hover:opacity-90 text-sw-bg font-bold py-4 px-6 rounded-lg transition-all shadow-md">
                     Subscribe Now
                   </button>
-                  <div class="mt-4 relative px-8">
-                    <svg class="h-6 w-6 text-blue-500 absolute top-0 left-0" fill="currentColor" viewBox="0 0 24 24">
+                  <div class="mt-6 relative px-8">
+                    <svg class="h-6 w-6 text-sw-accent absolute top-0 left-0" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
                     </svg>
-                    <p class="text-gray-600 italic">Invest in your production workflow today and save hours of time tomorrow.</p>
-                    <svg class="h-6 w-6 text-blue-500 absolute bottom-0 right-0" fill="currentColor" viewBox="0 0 24 24">
+                    <p class="text-sw-text-muted italic">Invest in your production workflow today and save hours of time tomorrow.</p>
+                    <svg class="h-6 w-6 text-sw-accent absolute bottom-0 right-0" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.57-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z" />
                     </svg>
                   </div>
                 </div>
               </ng-container>
             </ng-container>
-            
+
             <ng-template #signInTemplate>
               <div class="text-center">
-                <p class="mb-4 text-gray-600">Sign in to subscribe to our service</p>
-                <button 
-                  (click)="signIn()" 
-                  class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-md transition-colors">
+                <p class="mb-4 text-sw-text-muted">Sign in to subscribe to our service</p>
+                <button
+                  (click)="signIn()"
+                  class="w-full bg-sw-accent hover:opacity-90 text-sw-bg font-bold py-4 px-6 rounded-lg transition-all shadow-md">
                   Sign In to Continue
                 </button>
-                <div class="mt-4 relative px-8">
-                  <svg class="h-6 w-6 text-blue-500 absolute top-0 left-0" fill="currentColor" viewBox="0 0 24 24">
+                <div class="mt-6 relative px-8">
+                  <svg class="h-6 w-6 text-sw-accent absolute top-0 left-0" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
                   </svg>
-                  <p class="text-gray-600 italic">Invest in your production workflow today and save hours of time tomorrow.</p>
-                  <svg class="h-6 w-6 text-blue-500 absolute bottom-0 right-0" fill="currentColor" viewBox="0 0 24 24">
+                  <p class="text-sw-text-muted italic">Invest in your production workflow today and save hours of time tomorrow.</p>
+                  <svg class="h-6 w-6 text-sw-accent absolute bottom-0 right-0" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.57-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z" />
                   </svg>
                 </div>
@@ -129,31 +196,35 @@
       </div>
 
       <!-- FAQ Section -->
-      <div class="mt-16">
-        <h3 class="text-2xl font-bold text-center mb-8 text-indigo-800">Frequently Asked Questions</h3>
-        
+      <div class="mt-20">
+        <h3 class="text-3xl font-bold text-center mb-10 text-sw-text">
+          <span class="sw-arrow">~&gt;</span>
+          FREQUENTLY ASKED <span class="text-sw-accent">QUESTIONS</span>
+          <span class="sw-arrow">~&gt;</span>
+        </h3>
+
         <div class="space-y-6">
-          <div class="bg-white p-6 rounded-lg shadow-md">
-            <h4 class="text-lg font-semibold mb-2 text-indigo-700">Can I cancel my subscription at any time?</h4>
-            <p class="text-gray-700">Yes, you can cancel your subscription at any time. You'll continue to have access until the end of your current billing period.</p>
+          <div class="bg-sw-surface p-6 rounded-lg shadow-lg border-2 border-sw-border">
+            <h4 class="text-lg font-semibold mb-3 text-sw-accent">Can I cancel my subscription at any time?</h4>
+            <p class="text-sw-text-muted">Yes, you can cancel your subscription at any time. You'll continue to have access until the end of your current billing period.</p>
           </div>
-          
-          <div class="bg-white p-6 rounded-lg shadow-md">
-            <h4 class="text-lg font-semibold mb-2 text-indigo-700">How does the weekly billing work?</h4>
-            <p class="text-gray-700">You'll be charged $20 every week until you cancel. Your subscription will automatically renew each week.</p>
+
+          <div class="bg-sw-surface p-6 rounded-lg shadow-lg border-2 border-sw-border">
+            <h4 class="text-lg font-semibold mb-3 text-sw-accent">How does the weekly billing work?</h4>
+            <p class="text-sw-text-muted">You'll be charged $20 every week until you cancel. Your subscription will automatically renew each week.</p>
           </div>
-          
-          <div class="bg-white p-6 rounded-lg shadow-md">
-            <h4 class="text-lg font-semibold mb-2 text-indigo-700">Is there a limit to how many sides I can generate?</h4>
-            <p class="text-gray-700">No, with the Professional Plan, you can generate unlimited sides during your subscription period.</p>
+
+          <div class="bg-sw-surface p-6 rounded-lg shadow-lg border-2 border-sw-border">
+            <h4 class="text-lg font-semibold mb-3 text-sw-accent">Is there a limit to how many sides I can generate?</h4>
+            <p class="text-sw-text-muted">No, with the Professional Plan, you can generate unlimited sides during your subscription period.</p>
           </div>
-          
-          <div class="bg-white p-6 rounded-lg shadow-md">
-            <h4 class="text-lg font-semibold mb-2 text-indigo-700">What payment methods do you accept?</h4>
-            <p class="text-gray-700">We accept all major credit cards through our secure payment processor, Stripe.</p>
+
+          <div class="bg-sw-surface p-6 rounded-lg shadow-lg border-2 border-sw-border">
+            <h4 class="text-lg font-semibold mb-3 text-sw-accent">What payment methods do you accept?</h4>
+            <p class="text-sw-text-muted">We accept all major credit cards through our secure payment processor, Stripe.</p>
           </div>
         </div>
       </div>
     </div>
   </section>
-</div> 
+</div>

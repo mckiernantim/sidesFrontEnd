@@ -1,0 +1,73 @@
+<!-- One-Liner Editor Component -->
+<div class="one-liner-editor" [class.compact]="compact" [class.editing]="isEditing">
+
+  <!-- Display Mode -->
+  <div
+    *ngIf="!isEditing"
+    class="one-liner-display"
+    [class.empty]="!oneLiner"
+    [class.editable]="editable"
+    (click)="enterEditMode()"
+    [title]="editable ? 'Click to edit' : (oneLiner || '')">
+
+    <!-- Indicator Icon -->
+    <span
+      class="indicator-icon"
+      *ngIf="indicatorIcon"
+      [title]="indicatorTooltip">
+      {{ indicatorIcon }}
+    </span>
+
+    <!-- One-Liner Text or Placeholder -->
+    <span class="one-liner-text" *ngIf="oneLiner; else placeholder">
+      {{ oneLiner }}
+    </span>
+
+    <ng-template #placeholder>
+      <span class="placeholder-text">{{ placeholderText }}</span>
+    </ng-template>
+  </div>
+
+  <!-- Edit Mode -->
+  <div *ngIf="isEditing" class="one-liner-edit">
+    <div class="edit-container">
+      <!-- Input Field -->
+      <input
+        type="text"
+        class="one-liner-input"
+        [(ngModel)]="editValue"
+        [placeholder]="placeholderText"
+        (keydown)="onKeyDown($event)"
+        (blur)="onBlur()"
+        [class.over-limit]="isOverLimit"
+        maxlength="120"
+        autofocus />
+
+      <!-- Character Counter -->
+      <span
+        class="char-counter"
+        [class.warning]="editValue.length > 80"
+        [class.error]="isOverLimit">
+        {{ charCount }}
+      </span>
+    </div>
+
+    <!-- Edit Actions -->
+    <div class="edit-actions">
+      <button
+        class="btn-save"
+        (click)="saveOneLiner()"
+        [disabled]="isOverLimit"
+        title="Save (Enter)">
+        Save
+      </button>
+      <button
+        class="btn-cancel"
+        (click)="cancelEdit()"
+        title="Cancel (Esc)">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+</div>

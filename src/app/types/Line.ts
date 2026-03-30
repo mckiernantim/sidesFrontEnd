@@ -37,6 +37,8 @@ export interface Line {
     pattern: string;
     fullText: string;
     isActive: boolean;
+    castingDirector?: string;
+    repetitions?: number;
   },
   draftColorText?:string
   pageNumberText?:string,

@@ -1,0 +1,113 @@
+<div class="cast-manager">
+  <!-- Header -->
+  <div class="cast-manager-header">
+    <h2 class="title">Cast Manager</h2>
+    <p class="subtitle" *ngIf="castMembers.length > 0">
+      {{ castMembers.length }} {{ castMembers.length === 1 ? 'character' : 'characters' }}
+    </p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="castMembers.length === 0" class="empty-state">
+    <div class="empty-icon">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+      </svg>
+    </div>
+    <p class="empty-message">No cast members found</p>
+    <p class="empty-hint">Create a schedule from your script to auto-populate the cast list.</p>
+  </div>
+
+  <!-- Cast Table -->
+  <div *ngIf="castMembers.length > 0" class="cast-table-container">
+    <table class="cast-table">
+      <thead>
+        <tr>
+          <th class="col-drag"></th>
+          <th class="col-cast-number">#</th>
+          <th class="col-character">Character</th>
+          <th class="col-actor">Actor Name</th>
+          <th class="col-category">Category</th>
+          <th class="col-scenes">Scenes</th>
+          <th class="col-pages">Pages</th>
+        </tr>
+      </thead>
+      <tbody
+        cdkDropList
+        (cdkDropListDropped)="onCastDrop($event)"
+        [cdkDropListData]="castMembers"
+      >
+        <tr
+          *ngFor="let member of castMembers; trackBy: trackByCastMemberId"
+          cdkDrag
+          class="cast-row"
+          [attr.data-cast-id]="member.id"
+        >
+          <!-- Drag Handle -->
+          <td class="col-drag">
+            <div class="drag-handle" cdkDragHandle>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="4" y1="8" x2="20" y2="8"></line>
+                <line x1="4" y1="16" x2="20" y2="16"></line>
+              </svg>
+            </div>
+          </td>
+
+          <!-- Cast Number -->
+          <td class="col-cast-number">
+            <span class="cast-number">{{ member.castNumber }}</span>
+          </td>
+
+          <!-- Character Name -->
+          <td class="col-character">
+            <span class="character-name">{{ member.characterName }}</span>
+          </td>
+
+          <!-- Actor Name (Editable) -->
+          <td class="col-actor">
+            <input
+              type="text"
+              class="actor-input"
+              [value]="member.actorName || ''"
+              (blur)="updateActorName(member.id, $any($event.target).value)"
+              placeholder="Enter actor name"
+              [attr.aria-label]="'Actor name for ' + member.characterName"
+            />
+          </td>
+
+          <!-- Category Dropdown -->
+          <td class="col-category">
+            <select
+              class="category-select"
+              [value]="member.category"
+              (change)="updateCategory(member.id, $any($event.target).value)"
+              [attr.aria-label]="'Category for ' + member.characterName"
+            >
+              <option *ngFor="let category of castCategories" [value]="category">
+                {{ getCategoryLabel(category) }}
+              </option>
+            </select>
+          </td>
+
+          <!-- Scene Count -->
+          <td class="col-scenes">
+            <span class="scene-count">{{ getSceneCount(member) }}</span>
+          </td>
+
+          <!-- Page Count -->
+          <td class="col-pages">
+            <span class="page-count">{{ formatPageCount(getPageCount(member)) }}</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Drag Placeholder (shown during drag) -->
+  <ng-template #dragPlaceholder>
+    <div class="drag-placeholder">Moving cast member...</div>
+  </ng-template>
+</div>

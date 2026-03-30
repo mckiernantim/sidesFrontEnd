@@ -1,6 +1,10 @@
 import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { AuthService } from 'src/app/services/auth/auth.service';
 import { StripeService } from 'src/app/services/stripe/stripe.service';
+import { ScheduleApiService, ScheduleSummary } from 'src/app/services/schedule/schedule-api.service';
+import { PdfService } from 'src/app/services/pdf/pdf.service';
+import { FunDataService } from 'src/app/services/fundata/fundata.service';
+import { AccurateStats, FunStats } from 'src/app/types/FunData';
 import { Router, NavigationEnd } from '@angular/router';
 import { User } from '@angular/fire/auth';
 import { 
@@ -28,6 +32,19 @@ export class ProfileComponent implements OnInit, OnDestroy {
   // Subscription data - now contains everything from the consolidated API
   subscription: SubscriptionStatus | null = null;
   
+  // Schedule data
+  savedSchedules: ScheduleSummary[] = [];
+  isLoadingSchedules = false;
+  scheduleError: string | null = null;
+  
+  // Current script data
+  currentScriptName: string = '';
+
+  // FunData
+  accurateStats: AccurateStats | null = null;
+  funStats: FunStats | null = null;
+  isLoadingFunData = false;
+
   // UI state
   isLoading = true;
   error: string | null = null;
@@ -49,11 +66,17 @@ export class ProfileComponent implements OnInit, OnDestroy {
   constructor(
     private auth: AuthService,
     private stripe: StripeService,
+    private scheduleApi: ScheduleApiService,
+    private pdfService: PdfService,
+    private funDataService: FunDataService,
     private router: Router
   ) {}
 
   ngOnInit() {
     console.log('Profile component initialized');
+    
+    // Check for active script in PdfService
+    this.currentScriptName = this.pdfService.getScriptName();
     
     // Subscribe to auth state changes
     this.authSubscription = this.auth.user$.subscribe(user => {
@@ -61,6 +84,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
       if (user) {
         console.log('User is authenticated, loading subscription data');
         this.loadSubscriptionData();
+        this.loadSavedSchedules();
+        this.loadFunData();
       } else {
         console.log('User is not authenticated');
         this.isLoading = false;
@@ -77,6 +102,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
       // Reload data if user is authenticated
       if (this.user) {
         this.loadSubscriptionData();
+        this.loadSavedSchedules();
+        this.loadFunData();
       }
     });
   }
@@ -277,8 +304,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
   // Format dates - enhanced for the new structure
   formatDate(dateString: string | null): string {
     if (!dateString) return 'N/A';
-    
+
     const date = new Date(dateString);
+
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid date string:', dateString);
+      return 'N/A';
+    }
+
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -361,5 +395,83 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const date = payment.date ? this.formatDate(payment.date) : '';
     
     return `Last payment ${status}: ${amount} on ${date}`;
+  }
+
+  // ─────────────────────────────────────────────
+  // Current Script
+  // ─────────────────────────────────────────────
+
+  /**
+   * Navigate to the dashboard to work with the currently loaded script (sides).
+   */
+  navigateToDashboard(): void {
+    this.router.navigate(['/dashboard']);
+  }
+
+  // ─────────────────────────────────────────────
+  // Schedules
+  // ─────────────────────────────────────────────
+
+  /**
+   * Load saved production schedules for the authenticated user.
+   */
+  loadSavedSchedules(): void {
+    this.isLoadingSchedules = true;
+    this.scheduleError = null;
+    this.scheduleApi.listSchedules().subscribe({
+      next: (response) => {
+        this.savedSchedules = response.schedules || [];
+        this.isLoadingSchedules = false;
+      },
+      error: (err) => {
+        console.error('Profile: Failed to load saved schedules:', err);
+        this.savedSchedules = [];
+        this.scheduleError = err?.message || 'Failed to load schedules. Please try again.';
+        this.isLoadingSchedules = false;
+      },
+    });
+  }
+
+  /**
+   * Navigate to a specific schedule by ID.
+   */
+  openSchedule(scheduleId: string): void {
+    this.router.navigate(['/schedule', scheduleId]);
+  }
+
+  /**
+   * Navigate to the schedules overview page.
+   */
+  viewAllSchedules(): void {
+    this.router.navigate(['/schedule']);
+  }
+
+  // ─────────────────────────────────────────────
+  // FunData
+  // ─────────────────────────────────────────────
+
+  /**
+   * Load fun data stats for the authenticated user.
+   */
+  loadFunData(): void {
+    if (!this.user) {
+      this.accurateStats = null;
+      this.funStats = null;
+      return;
+    }
+    this.isLoadingFunData = true;
+    this.funDataService.getStats().subscribe({
+      next: (response) => {
+        this.accurateStats = response.stats.accurate;
+        this.funStats = response.stats.fun;
+        this.isLoadingFunData = false;
+      },
+      error: (err) => {
+        console.error('Profile: Failed to load fun data:', err);
+        this.accurateStats = null;
+        this.funStats = null;
+        this.isLoadingFunData = false;
+      },
+    });
   }
 }

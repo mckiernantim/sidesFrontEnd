@@ -1,50 +1,118 @@
+<!-- ⚠️ BETA TEST MODE WARNING BANNER ⚠️ -->
+<div class="bg-gradient-to-r from-sw-warning via-yellow-400 to-sw-warning border-b-4 border-yellow-300 shadow-2xl mb-8">
+  <div class="container mx-auto px-4 py-6">
+    <div class="flex flex-col items-center justify-center space-y-2">
+      <div class="flex items-center space-x-3">
+        <svg class="w-10 h-10 text-black animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+        <div class="text-center">
+          <h2 class="text-2xl md:text-3xl font-black text-black font-display uppercase">
+            ⚠️ BETA TEST MODE ⚠️
+          </h2>
+          <p class="text-lg md:text-xl font-bold text-black">
+            ALL SUBSCRIPTIONS ARE TEST MODE - NO REAL CHARGES
+          </p>
+          <div class="mt-2 bg-white bg-opacity-90 rounded-lg px-3 py-2 border-2 border-black">
+            <p class="text-xs font-bold text-black mb-1">
+              🔧 Testing Payment Integration
+            </p>
+            <p class="text-xs text-gray-800 mb-2">
+              We're verifying our Stripe integration works correctly before going live. Use this test card number to simulate transactions:
+            </p>
+            <div class="bg-gray-100 px-2 py-1 rounded border border-gray-300 text-center">
+              <p class="text-sm font-mono font-black text-gray-900">
+                4242 4242 4242 4242
+              </p>
+              <p class="text-xs text-gray-600 mt-1">
+                Any future date • Any CVC • Any ZIP
+              </p>
+            </div>
+          </div>
+        </div>
+        <svg class="w-10 h-10 text-black animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="container mx-auto px-4 py-8 max-w-4xl">
   <!-- Loading spinner -->
   <div *ngIf="isLoading" class="flex justify-center items-center min-h-[400px]">
-    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sw-accent"></div>
   </div>
-  
+
   <!-- Error message -->
-  <div *ngIf="error" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 text-center">
-    <h3 class="font-bold text-lg mb-2">Error</h3>
-    <p>{{ error }}</p>
+  <div *ngIf="error" class="bg-sw-surface border-l-4 border-sw-danger text-sw-text p-4 mb-4 text-center rounded-lg">
+    <h3 class="font-bold text-lg mb-2 text-sw-danger">Error</h3>
+    <p class="text-sw-text-muted">{{ error }}</p>
     <div class="mt-4">
-      <button 
-        (click)="loadSubscriptionData()" 
-        class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+      <button
+        (click)="loadSubscriptionData()"
+        class="bg-sw-danger hover:opacity-90 text-white font-medium py-2 px-4 rounded-md transition-all shadow-md"
       >
         Try Again
       </button>
     </div>
   </div>
-  
+
   <!-- Not logged in state -->
-  <div *ngIf="!isLoading && !user" class="bg-white rounded-lg shadow-md p-8 text-center">
-    <h1 class="text-2xl font-bold mb-6">Sign In to View Your Profile</h1>
-    <p class="mb-8 text-gray-600">You need to be signed in to view your profile and manage your subscription.</p>
-    <button 
-      (click)="signIn()" 
-      class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-md transition-colors"
+  <div *ngIf="!isLoading && !user" class="bg-sw-surface border border-sw-border rounded-lg shadow-lg p-8 text-center">
+    <h1 class="text-2xl font-bold mb-6 text-sw-text">Sign In to View Your Profile</h1>
+    <p class="mb-8 text-sw-text-muted">You need to be signed in to view your profile and manage your subscription.</p>
+    <button
+      (click)="signIn()"
+      class="bg-sw-accent hover:opacity-90 text-sw-bg font-bold py-3 px-6 rounded-md transition-all shadow-md"
     >
       Sign in with Google
     </button>
   </div>
-  
+
   <!-- Profile content (logged in) -->
-  <div *ngIf="!isLoading && user && !error" class="bg-white rounded-lg shadow-md p-8 mx-auto max-w-3xl">
-    <h1 class="text-2xl font-bold mb-8 text-center">Your Profile</h1>
-    
+  <div *ngIf="!isLoading && user && !error" class="bg-sw-surface border border-sw-border rounded-lg shadow-lg p-8 mx-auto max-w-3xl">
+    <h1 class="text-2xl font-bold mb-8 text-center text-sw-text">Your Profile</h1>
+
     <!-- Subscription Section -->
     <div class="mb-10">
-      <h2 class="text-xl font-semibold mb-6 pb-2 border-b border-gray-200">Subscription</h2>
+      <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-sw-border text-sw-text">Subscription</h2>
+
+      <!-- Beta Test Mode Notice -->
+      <div class="bg-yellow-400 border-2 border-yellow-500 rounded-lg p-4 mb-6">
+        <p class="text-black font-black text-center text-sm md:text-base mb-2">
+          🚨 TEST MODE: ALL BILLING IS FAKE - NO REAL CHARGES 🚨
+        </p>
+        <div class="bg-white bg-opacity-90 rounded px-3 py-2 mt-2">
+          <p class="text-xs font-bold text-black text-center mb-1">
+            We're testing our payment system with Stripe's test mode.
+          </p>
+          <p class="text-xs text-gray-800 text-center mb-2">
+            Use this test card number (simulates transactions, charges $0):
+          </p>
+          <div class="bg-gray-100 px-2 py-1 rounded border border-gray-300 text-center">
+            <p class="text-sm font-mono font-black text-gray-900">
+              4242 4242 4242 4242
+            </p>
+            <p class="text-xs text-gray-600">
+              Any future date • Any CVC • Any ZIP
+            </p>
+          </div>
+        </div>
+      </div>
       
       <!-- Active subscription that will renew -->
-      <div *ngIf="isSubscriptionActive() && subscription?.subscription?.willAutoRenew" class="p-6 bg-green-50 rounded-lg border border-green-100 mb-4">
+      <div *ngIf="isSubscriptionActive() && subscription?.subscription?.willAutoRenew" class="p-6 bg-sw-surface-2 rounded-lg border-2 border-sw-success shadow-md mb-4">
         <div class="flex flex-col">
-          <div class="text-green-800 font-medium mb-2">Your subscription is active</div>
-          
+          <div class="text-sw-success font-semibold mb-2 flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+            Your subscription is active
+          </div>
+
           <!-- Subscription details -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm text-green-700">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm text-sw-text-muted">
             <div>
               <p class="font-medium">Member since</p>
               <p>{{ formatDate(subscription?.subscription?.originalStartDate) }}</p>
@@ -53,20 +121,16 @@
               <p class="font-medium">Current period ends</p>
               <p>{{ formatDate(subscription?.subscription?.currentPeriodEnd) }}</p>
             </div>
-            <div>
-              <p class="font-medium">Documents processed</p>
-              <p>{{ subscription?.usage?.pdfsGenerated || 0 }}</p>
-            </div>
-            <div *ngIf="subscription?.plan">
+            <div *ngIf="subscription?.subscription?.plan">
               <p class="font-medium">Billing</p>
-              <p>{{ formatCurrency(subscription?.plan?.amount) }} per {{ subscription?.plan?.interval }}</p>
+              <p>{{ formatCurrency(subscription?.subscription?.plan?.amount) }} per {{ subscription?.subscription?.plan?.interval }}</p>
             </div>
           </div>
           
           <div class="flex justify-end">
-            <button 
-              (click)="manageSubscription()" 
-              class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+            <button
+              (click)="manageSubscription()"
+              class="bg-sw-accent hover:opacity-90 text-sw-bg font-semibold py-2 px-4 rounded-md transition-all shadow-md"
             >
               Manage Subscription
             </button>
@@ -75,14 +139,17 @@
       </div>
       
       <!-- Active subscription that will be canceled -->
-      <div *ngIf="isSubscriptionCanceling()" class="p-6 bg-orange-50 rounded-lg border border-orange-100 mb-4">
+      <div *ngIf="isSubscriptionCanceling()" class="p-6 bg-sw-surface-2 rounded-lg border-2 border-sw-warning shadow-md mb-4">
         <div class="flex flex-col">
-          <div class="text-orange-800 font-medium mb-2">
+          <div class="text-sw-warning font-semibold mb-2 flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+            </svg>
             Your subscription is {{ subscription?.subscription?.status === 'active' ? 'active' : 'canceled' }} but will not renew
           </div>
-          
+
           <!-- Subscription details -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm text-orange-700">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm text-sw-text-muted">
             <div>
               <p class="font-medium">Member since</p>
               <p>{{ formatDate(subscription?.subscription?.originalStartDate) }}</p>
@@ -91,27 +158,23 @@
               <p class="font-medium">Access until</p>
               <p>{{ formatDate(subscription?.subscription?.currentPeriodEnd) }}</p>
             </div>
-            <div>
-              <p class="font-medium">Documents processed</p>
-              <p>{{ subscription?.usage?.pdfsGenerated || 0 }}</p>
-            </div>
-            <div *ngIf="subscription?.plan">
+            <div *ngIf="subscription?.subscription?.plan">
               <p class="font-medium">Billing</p>
-              <p>{{ formatCurrency(subscription?.plan?.amount) }} per {{ subscription?.plan?.interval }}</p>
+              <p>{{ formatCurrency(subscription?.subscription?.plan?.amount) }} per {{ subscription?.subscription?.plan?.interval }}</p>
             </div>
           </div>
           
           <div class="flex justify-between mt-2">
-            <button 
-              (click)="handleNewSubscription()" 
-              class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+            <button
+              (click)="handleNewSubscription()"
+              class="bg-sw-success hover:opacity-90 text-sw-bg font-semibold py-2 px-4 rounded-md transition-all shadow-md"
             >
               Renew Subscription
             </button>
-            
-            <button 
-              (click)="manageSubscription()" 
-              class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+
+            <button
+              (click)="manageSubscription()"
+              class="bg-sw-accent hover:opacity-90 text-sw-bg font-semibold py-2 px-4 rounded-md transition-all shadow-md"
             >
               Manage Subscription
             </button>
@@ -120,11 +183,11 @@
       </div>
       
       <!-- Canceled subscription -->
-      <div *ngIf="!isSubscriptionActive() && subscription?.subscription?.status === 'canceled'" class="p-6 bg-yellow-50 rounded-lg border border-yellow-100 mb-4">
+      <div *ngIf="!isSubscriptionActive() && subscription?.subscription?.status === 'canceled'" class="p-6 bg-sw-surface-2 rounded-lg border-2 border-sw-warning shadow-md mb-4">
         <div class="flex flex-col">
-          <div class="text-yellow-800 font-medium mb-2">Your subscription has been canceled</div>
-          
-          <div class="text-sm text-yellow-700 mb-4">
+          <div class="text-sw-warning font-semibold mb-2">Your subscription has been canceled</div>
+
+          <div class="text-sm text-sw-text-muted mb-4">
             <div *ngIf="subscription?.subscription?.originalStartDate">
               Your subscription started on {{ formatDate(subscription?.subscription?.originalStartDate) }}
             </div>
@@ -132,11 +195,11 @@
               and ended on {{ formatDate(subscription?.subscription?.currentPeriodEnd) }}
             </div>
           </div>
-          
+
           <div class="flex justify-end">
-            <button 
-              (click)="handleNewSubscription()" 
-              class="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+            <button
+              (click)="handleNewSubscription()"
+              class="bg-sw-warning hover:opacity-90 text-sw-bg font-semibold py-2 px-4 rounded-md transition-all shadow-md"
             >
               Restart Subscription
             </button>
@@ -145,66 +208,235 @@
       </div>
       
       <!-- No subscription yet or pending subscription -->
-      <div *ngIf="!isSubscriptionActive() && subscription?.subscription?.status !== 'canceled'" class="p-6 bg-blue-50 rounded-lg border border-blue-100">
-        <h3 class="text-xl font-semibold mb-4 text-blue-800">Upgrade to Premium</h3>
-        
+      <div *ngIf="!isSubscriptionActive() && subscription?.subscription?.status !== 'canceled'" class="p-6 bg-sw-surface-2 rounded-lg border-2 border-sw-accent shadow-md">
+        <h3 class="text-xl font-semibold mb-4 text-sw-accent">Upgrade to Premium</h3>
+
         <!-- Show pending message if status is pending -->
-        <div *ngIf="subscription?.subscription?.status === 'pending'" class="mb-4 p-3 bg-yellow-50 border border-yellow-100 rounded text-yellow-800">
+        <div *ngIf="subscription?.subscription?.status === 'pending'" class="mb-4 p-3 bg-sw-surface-2 border-2 border-sw-warning rounded text-sw-warning">
           <p>Your subscription is currently being processed. This may take a few moments.</p>
           <p class="mt-2 text-sm">If this status persists for more than a few minutes, please refresh the page or contact support.</p>
           
           <div class="mt-4 flex justify-between">
-            <button 
-              (click)="refreshSubscriptionStatus()" 
-              class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+            <button
+              (click)="refreshSubscriptionStatus()"
+              class="bg-sw-accent hover:opacity-90 text-sw-bg font-semibold py-2 px-4 rounded-md transition-all shadow-md"
             >
               Refresh Status
             </button>
-            
-            <button 
-              (click)="manageSubscription()" 
-              class="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+
+            <button
+              (click)="manageSubscription()"
+              class="bg-sw-warning hover:opacity-90 text-sw-bg font-semibold py-2 px-4 rounded-md transition-all shadow-md"
             >
               Manage Subscription
             </button>
           </div>
         </div>
-        
+
         <!-- Benefits list -->
         <div class="mb-6">
-          <h4 class="font-medium text-blue-800 mb-2">Premium Benefits:</h4>
-          <ul class="list-disc pl-5 space-y-1 text-blue-700">
+          <h4 class="font-medium text-sw-accent mb-2">Premium Benefits:</h4>
+          <ul class="list-disc pl-5 space-y-1 text-sw-text-muted">
             <li *ngFor="let benefit of benefits">{{ benefit }}</li>
           </ul>
         </div>
         
         <div class="flex justify-between items-center">
-          <p class="text-xl font-bold text-blue-800">$20 per week</p>
-          <button 
-            (click)="handleNewSubscription()" 
+          <p class="text-xl font-bold text-sw-accent">$20 per week</p>
+          <button
+            (click)="handleNewSubscription()"
             [disabled]="subscription?.subscription?.status === 'pending'"
             [ngClass]="{'opacity-50 cursor-not-allowed': subscription?.subscription?.status === 'pending'}"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition-colors"
+            class="bg-sw-accent hover:opacity-90 text-sw-bg font-bold py-2 px-6 rounded-md transition-all shadow-md"
           >
             {{ subscription?.subscription?.status === 'pending' ? 'Processing...' : 'Subscribe Now' }}
           </button>
         </div>
       </div>
     </div>
-    
+
+    <!-- Current Script Section -->
+    <div class="mt-10" *ngIf="currentScriptName">
+      <h2 class="text-xl font-semibold mb-6 pb-2 border-b border-sw-border text-sw-text">Current Script</h2>
+      <div
+        (click)="navigateToDashboard()"
+        class="flex items-center justify-between p-5 bg-sw-surface-2 rounded-lg border-2 border-sw-border hover:border-sw-accent hover:bg-sw-border cursor-pointer transition-all group shadow-md">
+        <div class="flex items-center gap-4">
+          <div class="flex-shrink-0 w-10 h-10 bg-sw-surface group-hover:bg-sw-border rounded-lg flex items-center justify-center transition-colors">
+            <svg class="w-5 h-5 text-sw-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <div>
+            <p class="font-semibold text-sw-text group-hover:text-sw-accent transition-colors">{{ currentScriptName }}</p>
+            <p class="text-sm text-sw-text-subtle">Open in Dashboard for sides selection</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 text-sw-accent group-hover:text-sw-accent">
+          <span class="text-sm font-medium hidden sm:inline">Go to Dashboard</span>
+          <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- My Schedules Section -->
+    <div class="mt-10">
+      <div class="flex items-center justify-between mb-6 pb-2 border-b border-sw-border">
+        <h2 class="text-xl font-semibold text-sw-text">My Schedules</h2>
+        <button
+          *ngIf="savedSchedules.length > 0"
+          (click)="viewAllSchedules()"
+          class="text-sm text-sw-accent hover:opacity-80 font-medium transition-all">
+          View All →
+        </button>
+      </div>
+
+      <!-- Loading schedules -->
+      <div *ngIf="isLoadingSchedules" class="flex items-center justify-center py-8">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-sw-accent mr-3"></div>
+        <span class="text-sm text-sw-text-subtle">Loading schedules...</span>
+      </div>
+
+      <!-- Error loading schedules -->
+      <div *ngIf="!isLoadingSchedules && scheduleError" class="p-4 bg-sw-surface-2 rounded-lg border-2 border-sw-danger text-center mb-3">
+        <p class="text-sm text-sw-danger mb-2">{{ scheduleError }}</p>
+        <button
+          (click)="loadSavedSchedules()"
+          class="text-xs text-sw-danger hover:opacity-80 font-medium underline">
+          Retry
+        </button>
+      </div>
+
+      <!-- No schedules yet -->
+      <div *ngIf="!isLoadingSchedules && !scheduleError && savedSchedules.length === 0" class="p-6 bg-sw-surface-2 rounded-lg border border-sw-border text-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-sw-text-subtle mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <p class="text-sw-text-muted mb-3">No production schedules yet.</p>
+        <p class="text-sm text-sw-text-subtle">
+          Upload and classify a script to create your first shooting schedule.
+        </p>
+      </div>
+
+      <!-- Schedule list -->
+      <div *ngIf="!isLoadingSchedules && savedSchedules.length > 0" class="space-y-3">
+        <div
+          *ngFor="let schedule of savedSchedules"
+          (click)="openSchedule(schedule.id)"
+          class="flex items-center justify-between p-4 bg-sw-surface-2 rounded-lg border-2 border-sw-border hover:border-sw-accent hover:bg-sw-border cursor-pointer transition-all group shadow-md">
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-sw-text truncate group-hover:text-sw-accent">
+              {{ schedule.projectTitle || 'Untitled Schedule' }}
+            </p>
+            <div class="flex items-center space-x-3 mt-1">
+              <span class="text-xs text-sw-text-muted">{{ schedule.sceneCount }} scenes</span>
+              <span class="text-xs text-sw-text-subtle">·</span>
+              <span class="text-xs text-sw-text-muted">{{ schedule.shootDayCount }} shoot days</span>
+              <span class="text-xs text-sw-text-subtle">·</span>
+              <span class="text-xs text-sw-text-muted">{{ schedule.castCount }} cast</span>
+            </div>
+            <p class="text-xs text-sw-text-subtle mt-1">
+              Updated {{ formatRelativeDate(schedule.updatedAt) }}
+            </p>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-sw-text-subtle group-hover:text-sw-accent flex-shrink-0 ml-3" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Your Stats Section -->
+    <div class="mt-10">
+      <h2 class="text-xl font-semibold mb-6 pb-2 border-b border-sw-border text-sw-text">Your Stats</h2>
+
+      <!-- Loading fun data -->
+      <div *ngIf="isLoadingFunData" class="flex items-center justify-center py-8">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-sw-accent mr-3"></div>
+        <span class="text-sm text-sw-text-subtle">Loading stats...</span>
+      </div>
+
+      <!-- Stats content -->
+      <div *ngIf="!isLoadingFunData && accurateStats">
+        <!-- Accurate Stats -->
+        <div class="mb-6">
+          <h3 class="text-sm font-semibold text-sw-text-muted uppercase tracking-wider mb-3">Activity</h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-sw-surface-2 rounded-lg p-4 border-2 border-sw-border text-center shadow-md">
+              <p class="text-2xl font-bold text-sw-accent">{{ accurateStats.sidesCreated }}</p>
+              <p class="text-xs text-sw-text-muted mt-1">Sides Created</p>
+            </div>
+            <div class="bg-sw-surface-2 rounded-lg p-4 border-2 border-sw-border text-center shadow-md">
+              <p class="text-2xl font-bold text-sw-accent">{{ accurateStats.linesCrawled | number }}</p>
+              <p class="text-xs text-sw-text-muted mt-1">Lines Crawled</p>
+            </div>
+            <div class="bg-sw-surface-2 rounded-lg p-4 border-2 border-sw-border text-center shadow-md">
+              <p class="text-2xl font-bold text-sw-accent">{{ accurateStats.pagesGenerated }}</p>
+              <p class="text-xs text-sw-text-muted mt-1">Pages Not Made by Hand</p>
+            </div>
+            <div class="bg-sw-surface-2 rounded-lg p-4 border-2 border-sw-border text-center shadow-md">
+              <p class="text-2xl font-bold text-sw-accent">{{ accurateStats.scriptsProcessed }}</p>
+              <p class="text-xs text-sw-text-muted mt-1">Scripts Processed</p>
+            </div>
+            <div class="bg-sw-surface-2 rounded-lg p-4 border-2 border-sw-border text-center shadow-md">
+              <p class="text-2xl font-bold text-sw-accent">{{ accurateStats.scenesFound }}</p>
+              <p class="text-xs text-sw-text-muted mt-1">Scenes Found</p>
+            </div>
+            <div class="bg-sw-surface-2 rounded-lg p-4 border-2 border-sw-border text-center shadow-md">
+              <p class="text-2xl font-bold text-sw-accent">{{ accurateStats.charactersDiscovered }}</p>
+              <p class="text-xs text-sw-text-muted mt-1">Characters Discovered</p>
+            </div>
+            <div class="bg-sw-surface-2 rounded-lg p-4 border-2 border-sw-border text-center shadow-md">
+              <p class="text-2xl font-bold text-sw-accent">{{ accurateStats.schedulesCreated }}</p>
+              <p class="text-xs text-sw-text-muted mt-1">Schedules Created</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fun Stats -->
+        <div *ngIf="funStats">
+          <h3 class="text-sm font-semibold text-sw-text-muted uppercase tracking-wider mb-3">Fun Stuff</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-sw-surface-2 rounded-lg p-5 border-2 border-sw-success text-center shadow-md">
+              <p class="text-3xl font-bold text-sw-success">{{ funStats.minutesSaved }}</p>
+              <p class="text-sm text-sw-text mt-1 font-medium">Minutes Saved</p>
+              <p class="text-xs text-sw-text-muted mt-0.5">vs doing it by hand</p>
+            </div>
+            <div class="bg-sw-surface-2 rounded-lg p-5 border-2 border-sw-warning text-center shadow-md">
+              <p class="text-3xl font-bold text-sw-warning">{{ funStats.circlesNotDrawn | number }}</p>
+              <p class="text-sm text-sw-text mt-1 font-medium">Circles Not Drawn</p>
+              <p class="text-xs text-sw-text-muted mt-0.5">character appearances auto-tracked</p>
+            </div>
+            <div class="bg-sw-surface-2 rounded-lg p-5 border-2 border-sw-accent text-center shadow-md">
+              <p class="text-3xl font-bold text-sw-accent">{{ funStats.cigarettesNotSmoked }}</p>
+              <p class="text-sm text-sw-text mt-1 font-medium">Cigarettes Not Smoked</p>
+              <p class="text-xs text-sw-text-muted mt-0.5">stressful breaks you didn't need</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- No data yet -->
+        <div *ngIf="accurateStats.scriptsProcessed === 0 && accurateStats.sidesCreated === 0" class="mt-4 p-4 bg-sw-surface-2 rounded-lg border border-sw-border text-center">
+          <p class="text-sm text-sw-text-muted">Upload and process a script to start tracking your stats!</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Account Settings Section -->
     <div class="mt-10">
-      <h2 class="text-xl font-semibold mb-6 pb-2 border-b border-gray-200">Account Settings</h2>
-      <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+      <h2 class="text-xl font-semibold mb-6 pb-2 border-b border-sw-border text-sw-text">Account Settings</h2>
+      <div class="bg-sw-surface-2 p-6 rounded-lg border-2 border-sw-border shadow-md">
         <div *ngIf="user" class="mb-6">
-          <p class="text-sm text-gray-600 mb-1">Email</p>
-          <p class="font-medium text-lg">{{ user.email }}</p>
+          <p class="text-sm text-sw-text-muted mb-1">Email</p>
+          <p class="font-medium text-lg text-sw-text">{{ user.email }}</p>
         </div>
-        
-        <div class="mt-6 pt-4 border-t border-gray-200">
-          <button 
+
+        <div class="mt-6 pt-4 border-t border-sw-border">
+          <button
             (click)="logout()"
-            class="border border-red-600 text-red-600 hover:bg-red-50 font-medium py-2 px-4 rounded-md transition-colors"
+            class="border-2 border-sw-danger text-sw-danger hover:bg-sw-surface-2 font-semibold py-2 px-4 rounded-md transition-all shadow-md"
           >
             Sign Out
           </button>

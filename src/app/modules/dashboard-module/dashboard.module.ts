@@ -12,9 +12,13 @@ import { AddCallsheetComponent } from '../../components/add-callsheet/add-callsh
 import { ToolTipComponent } from '../../components/shared/tool-tip/tool-tip.component';
 import { AddWatermarkComponent } from '../../components/add-watermark/add-watermark.component';
 import { SharedModule } from '../shared-module/shared.module';
+import { ScheduleModule } from '../schedule-module/schedule.module';
 import { CheckoutComponent } from 'src/app/components/checkout/checkout.component';
 import { SceneSelectionComponent } from '../../components/dashboard/scene-selection/scene-selection.component';
 import { CheckoutModalComponent } from '../../components/dashboard/checkout-modal/checkout-modal.component';
+import { AnnotationCanvasComponent } from '../../components/annotation-canvas/annotation-canvas.component';
+import { AnnotationToolbarComponent } from '../../components/annotation-toolbar/annotation-toolbar.component';
+import { DisclaimerToggleComponent } from '../../components/annotation-toolbar/disclaimer-toggle/disclaimer-toggle.component';
 
 @NgModule({
   declarations: [
@@ -27,7 +31,10 @@ import { CheckoutModalComponent } from '../../components/dashboard/checkout-moda
     AddWatermarkComponent,
     CheckoutComponent,
     SceneSelectionComponent,
-    CheckoutModalComponent
+    CheckoutModalComponent,
+    AnnotationCanvasComponent,
+    AnnotationToolbarComponent,
+    DisclaimerToggleComponent
   ],
   imports: [
     CommonModule,
@@ -35,7 +42,8 @@ import { CheckoutModalComponent } from '../../components/dashboard/checkout-moda
     ReactiveFormsModule,
     RouterModule,
     SharedModule,
-    DragDropModule
+    DragDropModule,
+    ScheduleModule
   ],
   exports: [
     DashboardComponent,

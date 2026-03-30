@@ -33,7 +33,9 @@ export class PdfGenerationService {
       callSheetPath: finalDocument.callSheetPath,
       callSheet: finalDocument.callSheet, // Legacy property
       hasCallSheet: finalDocument.hasCallSheet,
-      dataLength: finalDocument.data?.length || 0
+      dataLength: finalDocument.data?.length || 0,
+      annotationsCount: finalDocument.annotations?.length || 0,
+      pageAnnotationsCount: Object.keys(finalDocument.pageAnnotations || {}).length
     });
     
     return from(getAuth().currentUser?.getIdToken() || Promise.reject('No user')).pipe(
@@ -45,7 +47,9 @@ export class PdfGenerationService {
           name: finalDocument.name,
           email: finalDocument.email,
           callSheetPath: finalDocument.callSheetPath, // Fixed: use callSheetPath instead of callSheet
-          userId: finalDocument.userId
+          userId: finalDocument.userId,
+          annotations: finalDocument.annotations || [], // Include annotations
+          pageAnnotations: finalDocument.pageAnnotations || {} // Include page-indexed annotations
         };
         
         console.log('Request body being sent to server:', requestBody);
