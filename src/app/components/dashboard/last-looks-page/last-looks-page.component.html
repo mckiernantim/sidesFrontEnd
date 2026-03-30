@@ -258,15 +258,16 @@
             <!-- ═══ SKIPPED-SECTION X-BOX OVERLAY ═══
                  Industry-standard diagonal X inside a box for each contiguous block
                  of skipped (false) content lines. pointer-events: none so edit tools
-                 remain fully functional underneath. -->
-            <svg *ngIf="getSkippedSections().length > 0"
+                 remain fully functional underneath. Uses getDisplayedSkippedSections()
+                 which applies any user overrides (move, resize, delete). -->
+            <svg *ngIf="getDisplayedSkippedSections().length > 0"
                  class="skipped-sections-overlay"
                  viewBox="0 0 816 1056"
                  width="816"
                  height="1056"
                  xmlns="http://www.w3.org/2000/svg"
                  aria-hidden="true">
-              <ng-container *ngFor="let section of getSkippedSections()">
+              <ng-container *ngFor="let section of getDisplayedSkippedSections()">
                 <!-- Border box -->
                 <rect
                   [attr.x]="section.left"
@@ -300,6 +301,40 @@
                 </line>
               </ng-container>
             </svg>
+
+            <!-- ═══ X-BOX INTERACTIVE CONTROLS (edit mode only) ═══
+                 HTML overlay divs for each X-box section. Provides move, resize,
+                 and delete controls when in edit mode. -->
+            <div *ngIf="canEditDocument && getDisplayedSkippedSections().length > 0"
+                 class="xbox-controls-overlay">
+                <div *ngFor="let section of getDisplayedSkippedSections()"
+                     class="xbox-interactive"
+                     [class.xbox-selected]="selectedXboxIndex === section.originalIndex"
+                     [style.top.px]="section.top"
+                     [style.left.px]="section.left"
+                     [style.width.px]="section.right - section.left"
+                     [style.height.px]="section.bottom - section.top"
+                     (mousedown)="startXboxDrag(section.originalIndex, $event)"
+                     (click)="selectXbox(section.originalIndex, $event)">
+
+                    <!-- Delete button (always visible on hover, prominent when selected) -->
+                    <button class="xbox-delete-btn"
+                            (mousedown)="deleteXbox(section.originalIndex, $event)"
+                            title="Remove this X-box">✕</button>
+
+                    <!-- Resize corner handles (visible when selected) -->
+                    <ng-container *ngIf="selectedXboxIndex === section.originalIndex">
+                        <div class="xbox-resize-handle top-left"
+                             (mousedown)="startXboxResize(section.originalIndex, 'top-left', $event)"></div>
+                        <div class="xbox-resize-handle top-right"
+                             (mousedown)="startXboxResize(section.originalIndex, 'top-right', $event)"></div>
+                        <div class="xbox-resize-handle bottom-left"
+                             (mousedown)="startXboxResize(section.originalIndex, 'bottom-left', $event)"></div>
+                        <div class="xbox-resize-handle bottom-right"
+                             (mousedown)="startXboxResize(section.originalIndex, 'bottom-right', $event)"></div>
+                    </ng-container>
+                </div>
+            </div>
 
             <!-- Annotation Canvas Overlay — arrows & highlights only (edit mode) -->
             <app-annotation-canvas

@@ -112,6 +112,21 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   private toolStateSubscription: Subscription | null = null;
   private annotationsSyncSubscription: Subscription | null = null;
 
+  // ═══ X-BOX EDITING STATE ═══
+  // Tracks customizations to each computed skipped-section X-box
+  selectedXboxIndex: number | null = null;
+  xboxOverrides: Map<number, { deleted?: boolean; top?: number; bottom?: number; left?: number; right?: number }> = new Map();
+  private xboxDragging = false;
+  private xboxDragStartX = 0;
+  private xboxDragStartY = 0;
+  private xboxDragInitialTop = 0;
+  private xboxDragInitialLeft = 0;
+  private xboxResizing = false;
+  private xboxResizeEdge: string | null = null;
+  private xboxResizeInitial: { top: number; bottom: number; left: number; right: number } | null = null;
+  private xboxResizeStartX = 0;
+  private xboxResizeStartY = 0;
+
   @ViewChild('pdfViewer') pdfViewer: any;
 
   // Temporary workaround to convert GCS URL to Firebase Storage URL
@@ -358,6 +373,10 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     document.removeEventListener('mouseup', this.handleMouseUp);
     document.removeEventListener('mousemove', this.moveBarText);
     document.removeEventListener('mouseup', this.endBarTextDrag);
+    document.removeEventListener('mousemove', this.handleXboxDragMove);
+    document.removeEventListener('mouseup', this.handleXboxDragEnd);
+    document.removeEventListener('mousemove', this.handleXboxResizeMove);
+    document.removeEventListener('mouseup', this.handleXboxResizeEnd);
 
     // Clean up annotation system
     this.toolStateSubscription?.unsubscribe();
@@ -684,6 +703,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
    */
   deselectAllAnnotations(): void {
     this.selectedAnnotationId = null;
+    this.selectedXboxIndex = null;
     this.annotationState.clearSelection();
   }
 
@@ -2421,6 +2441,189 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     return sections;
   }
 
+  // ============= X-BOX EDITING METHODS =============
+
+  /**
+   * Returns the skipped sections with overrides applied (moved, resized, deleted).
+   * Used by the template to render both the SVG X-boxes and the interactive overlays.
+   */
+  getDisplayedSkippedSections(): Array<{ top: number; bottom: number; left: number; right: number; originalIndex: number }> {
+    const baseSections = this.getSkippedSections();
+    return baseSections
+      .map((section, index) => {
+        const override = this.xboxOverrides.get(index);
+        if (override?.deleted) return null;
+        return {
+          top: override?.top ?? section.top,
+          bottom: override?.bottom ?? section.bottom,
+          left: override?.left ?? section.left,
+          right: override?.right ?? section.right,
+          originalIndex: index,
+        };
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== null);
+  }
+
+  /**
+   * Select an X-box for editing. Click on the X-box overlay div.
+   */
+  selectXbox(index: number, event: MouseEvent): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.selectedXboxIndex = index;
+    this.cdRef.detectChanges();
+  }
+
+  /**
+   * Deselect X-box when clicking elsewhere.
+   */
+  deselectXbox(): void {
+    this.selectedXboxIndex = null;
+    this.cdRef.detectChanges();
+  }
+
+  /**
+   * Delete (remove) a specific X-box overlay.
+   */
+  deleteXbox(index: number, event: MouseEvent): void {
+    event.stopPropagation();
+    event.preventDefault();
+    const override = this.xboxOverrides.get(index) || {};
+    override.deleted = true;
+    this.xboxOverrides.set(index, override);
+    if (this.selectedXboxIndex === index) {
+      this.selectedXboxIndex = null;
+    }
+    this.cdRef.detectChanges();
+  }
+
+  /**
+   * Start dragging an X-box to move it.
+   */
+  startXboxDrag(index: number, event: MouseEvent): void {
+    if (!this.canEditDocument) return;
+    // Don't drag if clicking delete button or resize handle
+    if ((event.target as HTMLElement).closest('.xbox-delete-btn') ||
+        (event.target as HTMLElement).closest('.xbox-resize-handle')) {
+      return;
+    }
+
+    event.stopPropagation();
+    event.preventDefault();
+
+    const section = this.getDisplayedSkippedSections().find(s => s.originalIndex === index);
+    if (!section) return;
+
+    this.xboxDragging = true;
+    this.selectedXboxIndex = index;
+    this.xboxDragStartX = event.clientX;
+    this.xboxDragStartY = event.clientY;
+    this.xboxDragInitialTop = section.top;
+    this.xboxDragInitialLeft = section.left;
+
+    document.addEventListener('mousemove', this.handleXboxDragMove);
+    document.addEventListener('mouseup', this.handleXboxDragEnd);
+  }
+
+  handleXboxDragMove = (event: MouseEvent): void => {
+    if (!this.xboxDragging || this.selectedXboxIndex === null) return;
+
+    const deltaX = event.clientX - this.xboxDragStartX;
+    const deltaY = event.clientY - this.xboxDragStartY;
+
+    const section = this.getSkippedSections()[this.selectedXboxIndex];
+    if (!section) return;
+
+    const override = this.xboxOverrides.get(this.selectedXboxIndex) || {};
+    const height = (override.bottom ?? section.bottom) - (override.top ?? section.top);
+    const width = (override.right ?? section.right) - (override.left ?? section.left);
+
+    override.top = Math.max(0, this.xboxDragInitialTop + deltaY);
+    override.bottom = override.top + height;
+    override.left = Math.max(0, this.xboxDragInitialLeft + deltaX);
+    override.right = override.left + width;
+
+    this.xboxOverrides.set(this.selectedXboxIndex, override);
+    this.cdRef.detectChanges();
+  };
+
+  handleXboxDragEnd = (_event: MouseEvent): void => {
+    document.removeEventListener('mousemove', this.handleXboxDragMove);
+    document.removeEventListener('mouseup', this.handleXboxDragEnd);
+    this.xboxDragging = false;
+  };
+
+  /**
+   * Start resizing an X-box from a corner handle.
+   */
+  startXboxResize(index: number, edge: string, event: MouseEvent): void {
+    if (!this.canEditDocument) return;
+    event.stopPropagation();
+    event.preventDefault();
+
+    const section = this.getDisplayedSkippedSections().find(s => s.originalIndex === index);
+    if (!section) return;
+
+    this.xboxResizing = true;
+    this.selectedXboxIndex = index;
+    this.xboxResizeEdge = edge;
+    this.xboxResizeStartX = event.clientX;
+    this.xboxResizeStartY = event.clientY;
+    this.xboxResizeInitial = { top: section.top, bottom: section.bottom, left: section.left, right: section.right };
+
+    document.addEventListener('mousemove', this.handleXboxResizeMove);
+    document.addEventListener('mouseup', this.handleXboxResizeEnd);
+  }
+
+  handleXboxResizeMove = (event: MouseEvent): void => {
+    if (!this.xboxResizing || this.selectedXboxIndex === null || !this.xboxResizeInitial) return;
+
+    const deltaX = event.clientX - this.xboxResizeStartX;
+    const deltaY = event.clientY - this.xboxResizeStartY;
+    const MIN_SIZE = 30;
+
+    const override = this.xboxOverrides.get(this.selectedXboxIndex) || {};
+    const init = this.xboxResizeInitial;
+
+    switch (this.xboxResizeEdge) {
+      case 'top-left':
+        override.top = Math.min(init.top + deltaY, init.bottom - MIN_SIZE);
+        override.left = Math.min(init.left + deltaX, init.right - MIN_SIZE);
+        override.bottom = init.bottom;
+        override.right = init.right;
+        break;
+      case 'top-right':
+        override.top = Math.min(init.top + deltaY, init.bottom - MIN_SIZE);
+        override.right = Math.max(init.right + deltaX, init.left + MIN_SIZE);
+        override.bottom = init.bottom;
+        override.left = init.left;
+        break;
+      case 'bottom-left':
+        override.bottom = Math.max(init.bottom + deltaY, init.top + MIN_SIZE);
+        override.left = Math.min(init.left + deltaX, init.right - MIN_SIZE);
+        override.top = init.top;
+        override.right = init.right;
+        break;
+      case 'bottom-right':
+        override.bottom = Math.max(init.bottom + deltaY, init.top + MIN_SIZE);
+        override.right = Math.max(init.right + deltaX, init.left + MIN_SIZE);
+        override.top = init.top;
+        override.left = init.left;
+        break;
+    }
+
+    this.xboxOverrides.set(this.selectedXboxIndex, override);
+    this.cdRef.detectChanges();
+  };
+
+  handleXboxResizeEnd = (_event: MouseEvent): void => {
+    document.removeEventListener('mousemove', this.handleXboxResizeMove);
+    document.removeEventListener('mouseup', this.handleXboxResizeEnd);
+    this.xboxResizing = false;
+    this.xboxResizeEdge = null;
+    this.xboxResizeInitial = null;
+  };
+
   // Get SVG path for category icons
   getCategoryIcon(category: string): string {
     const icons: { [key: string]: string } = {
@@ -2740,6 +2943,10 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       this.selectedLineIds = [];
       this.lastSelectedIndex = null;
       this.selectedLine = null;
+
+      // Reset X-box overrides
+      this.xboxOverrides.clear();
+      this.selectedXboxIndex = null;
 
       // Reset annotations to initial state
       this.annotationState.clear();

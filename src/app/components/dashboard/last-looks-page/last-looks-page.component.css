@@ -426,7 +426,7 @@ li.false:not(.page-number):not(.page-number-text):not(.page-number-hidden) {
     background-color: white;
 }
 
-/* SVG X-box overlay — sits above the page content, no pointer events */
+/* SVG X-box overlay — sits above skipped (false) content, BELOW visible lines */
 svg.skipped-sections-overlay {
     position: absolute;
     top: 0;
@@ -434,8 +434,21 @@ svg.skipped-sections-overlay {
     width: 816px;
     height: 1056px;
     pointer-events: none;
-    z-index: 5;
+    z-index: 3;
     overflow: visible;
+}
+
+/* ═══ Z-INDEX FIX: Ensure visible content lines sit ABOVE the SVG X-box overlay ═══
+   SVG overlay is at z-index 3.  Visible lines must be higher so text editing,
+   clicking, dragging, and all other interactions work reliably beneath the X's. */
+.screenbox li.true:not(.page-number):not(.page-number-hidden):not(.page-number-text) {
+    z-index: 6;
+}
+
+/* In edit mode, ALL lines (including crossed-out) need a high z-index
+   so the user can interact with them (re-select, toggle visibility, etc.) */
+.edit-mode li:not(.page-number):not(.page-number-hidden):not(.page-number-text) {
+    z-index: 10 !important;
 }
 
 .legal {
@@ -1437,6 +1450,118 @@ li.page-number {
 /* Legacy UI styles removed - now using vertical toolbar */
 
 /* Bar controls - DEPRECATED: Now using vertical toolbar */
+/* ═══════════════════════════════════════════════════════════
+   X-BOX INTERACTIVE CONTROLS (edit mode only)
+   Provides move, resize, delete for each skipped-section X-box.
+   ═══════════════════════════════════════════════════════════ */
+
+.xbox-controls-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 816px;
+    height: 1056px;
+    pointer-events: none;   /* Container doesn't block — children opt-in */
+    z-index: 4;             /* Between SVG overlay (3) and visible lines (6+) */
+}
+
+.xbox-interactive {
+    position: absolute;
+    pointer-events: auto;   /* Each X-box is individually clickable */
+    cursor: grab;
+    border: 2px solid transparent;
+    border-radius: 2px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    box-sizing: border-box;
+}
+
+.xbox-interactive:hover {
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.xbox-interactive:active {
+    cursor: grabbing;
+}
+
+.xbox-interactive.xbox-selected {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* X-box delete button */
+.xbox-delete-btn {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid #ef4444;
+    background: white;
+    color: #ef4444;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    cursor: pointer;
+    padding: 0;
+    opacity: 0;
+    transition: opacity 0.15s, background-color 0.15s, color 0.15s;
+    pointer-events: auto;
+    z-index: 120;
+}
+
+.xbox-interactive:hover .xbox-delete-btn,
+.xbox-interactive.xbox-selected .xbox-delete-btn {
+    opacity: 1;
+}
+
+.xbox-delete-btn:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* X-box resize handles (corners) */
+.xbox-resize-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: white;
+    border: 2px solid #3b82f6;
+    border-radius: 2px;
+    pointer-events: auto;
+    z-index: 120;
+}
+
+.xbox-resize-handle.top-left {
+    top: -5px;
+    left: -5px;
+    cursor: nwse-resize;
+}
+
+.xbox-resize-handle.top-right {
+    top: -5px;
+    right: -5px;
+    cursor: nesw-resize;
+}
+
+.xbox-resize-handle.bottom-left {
+    bottom: -5px;
+    left: -5px;
+    cursor: nesw-resize;
+}
+
+.xbox-resize-handle.bottom-right {
+    bottom: -5px;
+    right: -5px;
+    cursor: nwse-resize;
+}
+
+.xbox-resize-handle:hover {
+    background: #3b82f6;
+}
+
 /* ===== OMITTED SCENE STYLING ===== */
 /* Hollywood-style crossed out scene box */
 .omitted-scene-container {

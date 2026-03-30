@@ -82,6 +82,16 @@ export class AnnotationCanvasComponent implements OnInit, AfterViewInit, OnDestr
     private coordService: CoordinateService
   ) {}
 
+  /**
+   * Canvas only captures pointer-events when a drawing tool is active
+   * or an annotation drag/resize is in progress.
+   * Otherwise, events pass through to lines/text underneath.
+   */
+  get isCanvasInteractive(): boolean {
+    const toolState = this.annotationState.toolState;
+    return !!(toolState.activeTool) || this.isDraggingAnnotation || this.isResizingAnnotation;
+  }
+
   ngOnInit(): void {
     // Subscribe to annotation changes
     this.annotationState.annotations$

@@ -6,4 +6,5 @@
   (mousemove)="onMouseMove($event)"
   (mouseup)="onMouseUp($event)"
   class="annotation-canvas"
+  [class.canvas-interactive]="isCanvasInteractive"
 ></canvas>
