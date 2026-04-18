@@ -561,6 +561,29 @@ describe('PdfService', () => {
         if (desc61) expect(desc61.visible).toBe('false');
       });
 
+      it('doubled page clears bar/end/cont markers on hidden (other-scene) lines', () => {
+        // Give scene 61's header a bar and an end marker to verify they get cleared
+        const header61Line = page1.find((l: any) => l.category === 'scene-header' && l.sceneNumberText === '61');
+        header61Line.bar = 'bar';
+        header61Line.end = 'END';
+        header61Line.cont = 'CONTINUE';
+        seedDocument([page0, page1]);
+
+        service.reorderScenes([
+          { sceneNumberText: '61', firstLine: 1396, lastLine: 1403 },
+          { sceneNumberText: '59', firstLine: 1356, lastLine: 1394 },
+        ]);
+
+        const third = service.finalDocument.data[2];
+        const cloned61Header = third.find(
+          (l: any) => l.category === 'scene-header' && l.sceneNumberText === '61'
+        );
+        expect(cloned61Header?.visible).toBe('false');
+        expect(cloned61Header?.bar).toBe('hideBar');
+        expect(cloned61Header?.end).toBe('hideEnd');
+        expect(cloned61Header?.cont).toBe('hideCont');
+      });
+
       it('docPageIndex values are re-stamped sequentially (0, 1, 2)', () => {
         service.reorderScenes([
           { sceneNumberText: '61', firstLine: 1396, lastLine: 1403 },

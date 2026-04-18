@@ -1157,6 +1157,9 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
         //   lines explicitly labelled as another scene                     → visible: 'false'
         //   unlabelled lines outside the current scene's index range       → visible: 'false'
         //   lines with no index and no sceneNumberText (e.g. injected-break) → unchanged
+        // For every line that ends up hidden, also clear bar / end / cont markers so
+        // the template's *ngIf checks (line.bar === 'bar', line.end === 'END', etc.)
+        // do not render decoration bars on the crossed-out slot.
         const doubledPage = usedPage.map((line: any) => {
           const cloned = { ...line };
           if (lineInCurrentScene(cloned)) {
@@ -1165,6 +1168,12 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
             cloned.visible = 'false';
           } else if (sceneFirstLine != null && sceneLastLine != null && cloned.index != null) {
             cloned.visible = 'false';
+          }
+          // Clear decoration markers on any hidden clone so bars are not rendered.
+          if (cloned.visible === 'false') {
+            if (cloned.cont === 'CONTINUE-TOP' || cloned.cont === 'CONTINUE') cloned.cont = 'hideCont';
+            if (cloned.bar === 'bar')  cloned.bar  = 'hideBar';
+            if (cloned.end === 'END')  cloned.end  = 'hideEnd';
           }
           cloned.isDoubledPage = true;
           return cloned;

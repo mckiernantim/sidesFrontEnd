@@ -452,9 +452,18 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Spread into a new array so Angular's change detection always sees a new
-    // reference — critical when doubled pages have been inserted (array grew)
-    this.pages = [...this.pdf.finalDocument.data];
+    // Deep-spread every page into new arrays of new line objects.
+    // This guarantees Angular sees fresh object references for every line,
+    // so *ngIf / property-binding expressions (line.bar, line.end, line.cont,
+    // line.visible, …) are always re-evaluated after a reorder — even when the
+    // underlying line objects were mutated in-place by reorderScenes.
+    this.pages = this.pdf.finalDocument.data.map(page =>
+      page.map((line: any) => ({ ...line }))
+    );
+
+    // Mirror the spread into finalDocument.data so the service and the component
+    // stay in sync with the same new references.
+    this.pdf.finalDocument.data = this.pages;
 
     // Keep this.doc in sync so findFirstLineOfNextPage() uses current order
     this.doc = this.pages;
@@ -462,8 +471,8 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     // Reset to first page
     this.currentPageIndex = 0;
 
-    // Set current page to first page (new array ref so child re-renders)
-    this.currentPage = [...(this.pages[0] || [])];
+    // Set current page (new array of new line objects so child always re-renders)
+    this.currentPage = [...this.pages[0]];
 
     // Re-process lines for the new document order
     this.processLinesForLastLooks(this.pages);
