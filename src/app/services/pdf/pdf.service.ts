@@ -1134,13 +1134,19 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
 
         // Step 1 — update the original shared page: cross out ALL lines belonging
         // to the current scene so they appear struck-through in the other scene's slot.
-        // Also clear any CONTINUE / CONTINUE-TOP markers on those crossed-out lines so
-        // the continuation bar is not rendered even when the line is hidden.
+        // Also clear CONTINUE, CONTINUE-TOP, START bar, and END bar markers so none
+        // of those decorations render on a hidden/crossed-out line.
         usedPage.forEach((line: any) => {
           if (lineInCurrentScene(line)) {
             line.visible = 'false';
             if (line.cont === 'CONTINUE-TOP' || line.cont === 'CONTINUE') {
               line.cont = 'hideCont';
+            }
+            if (line.bar === 'bar') {
+              line.bar = 'hideBar';
+            }
+            if (line.end === 'END') {
+              line.end = 'hideEnd';
             }
           }
         });

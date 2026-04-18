@@ -509,6 +509,24 @@ describe('PdfService', () => {
         expect(contTopLine.cont).toBe('hideCont');
       });
 
+      it('START bar and END bar are cleared on crossed-out lines in the original page', () => {
+        // Add a line with bar:'bar' and a line with end:'END' to page1 (the shared page)
+        page1.push(makeLine({ index: 1395, sceneNumberText: '59', bar: 'bar',  visible: 'true' }));
+        page1.push(makeLine({ index: 1396, sceneNumberText: '59', end: 'END',  visible: 'true' }));
+        seedDocument([page0, page1]);
+
+        service.reorderScenes([
+          { sceneNumberText: '61', firstLine: 1396, lastLine: 1403 },
+          { sceneNumberText: '59', firstLine: 1356, lastLine: 1394 },
+        ]);
+
+        const first = service.finalDocument.data[0];
+        const barLine = first.find((l: any) => l.index === 1395);
+        const endLine = first.find((l: any) => l.index === 1396);
+        expect(barLine?.bar).toBe('hideBar');
+        expect(endLine?.end).toBe('hideEnd');
+      });
+
       it('second page is scene 59 OWN page (its start)', () => {
         service.reorderScenes([
           { sceneNumberText: '61', firstLine: 1396, lastLine: 1403 },
