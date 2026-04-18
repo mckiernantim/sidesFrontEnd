@@ -447,31 +447,35 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     }
   }
   private handleDocumentReorder(): void {
-    
+
     if (!this.pdf.finalDocument?.data) {
       return;
     }
-  
-    // FIXED: Reset to first page (index 0) as requested
+
+    // Spread into a new array so Angular's change detection always sees a new
+    // reference — critical when doubled pages have been inserted (array grew)
+    this.pages = [...this.pdf.finalDocument.data];
+
+    // Keep this.doc in sync so findFirstLineOfNextPage() uses current order
+    this.doc = this.pages;
+
+    // Reset to first page
     this.currentPageIndex = 0;
-    
-    // Update pages with new order from PDF service
-    this.pages = this.pdf.finalDocument.data;
-    
-    // Set current page to first page
-    this.currentPage = this.pages[0] || [];
-    
+
+    // Set current page to first page (new array ref so child re-renders)
+    this.currentPage = [...(this.pages[0] || [])];
+
     // Re-process lines for the new document order
     this.processLinesForLastLooks(this.pages);
-    
+
     // Clear any selections since we're on a new page order
     this.selectedLine = null;
     this.selectedLines = [];
     this.isMultipleSelection = false;
-    
+
     // Force change detection
     this.cdRef.detectChanges();
-    
+
   }
   handlePageUpdate(updatedPage: any) {
 
@@ -1052,10 +1056,11 @@ export class LastLooksComponent implements OnInit, OnDestroy {
       }, 100);
     }
   }
-  public   refreshDocument(): void {
+  public refreshDocument(): void {
     if (this.pdf.finalDocument?.data) {
-      this.pages = this.pdf.finalDocument.data;
-      this.currentPage = this.pages[this.currentPageIndex] || [];
+      this.pages = [...this.pdf.finalDocument.data];
+      this.doc = this.pages;
+      this.currentPage = [...(this.pages[this.currentPageIndex] || [])];
       this.processLinesForLastLooks(this.pages);
       this.cdRef.detectChanges();
     }
