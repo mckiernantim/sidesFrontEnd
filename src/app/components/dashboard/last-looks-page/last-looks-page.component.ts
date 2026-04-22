@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, HostListener, OnDestroy, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, HostListener, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef, NgZone } from '@angular/core';
 import { Line } from 'src/app/types/Line';
 import { UndoService } from 'src/app/services/edit/undo.service';
 import { Subject, Subscription } from 'rxjs';
@@ -6,7 +6,23 @@ import { debounceTime, filter } from 'rxjs/operators';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
 import { AnnotationStateService } from 'src/app/services/annotation/annotation-state.service';
 import { DEFAULT_TEXT_BOX_PRESETS } from 'src/app/types/Annotation';
+import { XboxData } from 'src/app/types/Xbox';
 import { cloneDeep } from 'lodash';
+
+/** Sentinel offset for freestanding Xbox originalIndex values to distinguish them from auto-computed ones. */
+const FREESTANDING_INDEX_OFFSET = 10000;
+
+// Page bounds used when clamping dragged bars so they can't be moved off the page.
+// Match the fixed letter-size portrait dimensions used by the rest of this component
+// (see text box / highlight drag constants and the skipped-sections SVG viewBox).
+const PAGE_WIDTH = 816;
+const PAGE_HEIGHT = 1056;
+// Vertical safety margin so bars remain fully visible on the page.
+const BAR_Y_MARGIN = 10;
+// Horizontal safety margin for bar text. Accounts for the .bar-span's
+// ~15px left/right margin plus a small buffer so the text never visually
+// crosses the page edge.
+const BAR_TEXT_X_MARGIN = 30;
 
 
 @Component({
@@ -63,6 +79,16 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   dragLineId: number | null = null;
   dragType: 'line' | 'end' | 'continue' | 'continue-top' = 'line';
   initialPosition: { x: number; y: number } = { x: 0, y: 0 };
+  // Cached line reference + index for the active drag. Avoids an O(n)
+  // findIndex on every mousemove.
+  private dragLineRef: Line | null = null;
+  private dragLineIndex: number = -1;
+  // rAF handle so we coalesce high-frequency mousemove events into one
+  // per-frame model update + change detection pass.
+  private dragRafHandle: number | null = null;
+  private pendingDragEvent: MouseEvent | null = null;
+  private pendingBarTextEvent: MouseEvent | null = null;
+  private barTextRafHandle: number | null = null;
 
   // Bar text dragging
   barTextDragging: boolean = false;
@@ -70,6 +96,13 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   barTextDragLineId: number | null = null;
   barTextDragType: 'start' | 'end' | 'continue' | 'continue-top' | null = null;
   barTextInitialOffset: number = 0;
+  // Measured width of the currently-dragged bar-text element, used to clamp its
+  // left offset so it can't be dragged past the right edge of the page.
+  private barTextElementWidth: number = 0;
+  // Cached line ref + index for the active bar-text drag, mirroring the
+  // bar/line drag cache — avoids an O(n) findIndex on every mousemove.
+  private barTextLineRef: Line | null = null;
+  private barTextLineIndex: number = -1;
 
   // Bar text editing
   barTextEditingId: number | null = null;
@@ -101,6 +134,12 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   // Simple text box state (DOM-based, not canvas)
   editingTextBoxId: string | null = null; // Currently editing text box annotation ID
+  /**
+   * Initial text snapshot captured ONCE when entering edit mode. The contenteditable span
+   * binds to this (not annotation.text), so subsequent change-detection cycles triggered by
+   * onTextBoxInput don't rewrite the DOM and reset the user's caret.
+   */
+  editingTextBoxInitial: string = '';
   draggingTextBoxId: string | null = null; // Currently dragging text box annotation ID
   textBoxDragStartX: number = 0;
   textBoxDragStartY: number = 0;
@@ -111,6 +150,13 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   selectedAnnotationId: string | null = null;
   private toolStateSubscription: Subscription | null = null;
   private annotationsSyncSubscription: Subscription | null = null;
+  private annotationCreationSubscription: Subscription | null = null;
+  private undoRedoSubscription: Subscription | null = null;
+  /**
+   * Deep-cloned snapshot of finalDocument.annotations immediately after the last settled
+   * mutation. Used to detect user-initiated creates on annotations$ and to seed undo items.
+   */
+  private lastAnnotationSnapshot: any[] | null = null;
 
   // ═══ X-BOX EDITING STATE ═══
   // Tracks customizations to each computed skipped-section X-box
@@ -126,6 +172,10 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   private xboxResizeInitial: { top: number; bottom: number; left: number; right: number } | null = null;
   private xboxResizeStartX = 0;
   private xboxResizeStartY = 0;
+  /** When the active drag/resize targets a freestanding xbox, this holds its UUID; otherwise null. */
+  private activeFreestandingId: string | null = null;
+  /** Deep-cloned snapshot of finalDocument.xboxes taken at mousedown, used to record undo at mouseup. */
+  private xboxGestureXboxesSnapshot: XboxData[] | null = null;
 
   @ViewChild('pdfViewer') pdfViewer: any;
 
@@ -158,7 +208,9 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     private undoService: UndoService,
     public cdRef: ChangeDetectorRef,
     private pdfService: PdfService,
-    private annotationState: AnnotationStateService
+    private annotationState: AnnotationStateService,
+    private el: ElementRef,
+    private ngZone: NgZone
   ) {
     // Subscribe to line updates from the service
     this.subscription = this.pdfService.finalDocumentData$.subscribe(update => {
@@ -203,6 +255,28 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     if (this.editMode) {
       this.canEditDocument = true;
     }
+
+    // When undo/redo restores xboxes, our local xboxOverrides Map becomes stale and the template
+    // needs a kick to re-read finalDocument.xboxes. Re-sync on every undo/redo.
+    this.undoRedoSubscription = this.undoService.undoRedo$.subscribe(({ item }) => {
+      const type = (item as any)?.type;
+      if (type === 'xbox-change') {
+        this.loadXboxOverridesFromDocument();
+        this.selectedXboxIndex = null;
+        this.cdRef.detectChanges();
+      } else if (type === 'annotation-change') {
+        // finalDocument.annotations was restored by UndoService; re-seed local annotation state
+        // from it so the canvas and DOM overlays (highlights, textboxes, etc.) re-render.
+        this.reloadAnnotationStateFromDocument();
+        // Reset baseline so the creation detector doesn't interpret the restore as a new create.
+        this.lastAnnotationSnapshot = cloneDeep(
+          ((this.pdfService.finalDocument as any)?.annotations || [])
+        );
+        this.selectedAnnotationId = null;
+        this.annotationState.clearSelection();
+        this.cdRef.detectChanges();
+      }
+    });
   }
   
   ngOnChanges(changes: SimpleChanges): void {
@@ -274,6 +348,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       if (this.canEditDocument) {
         this.saveAnnotationsToDocument();
       }
+      this.loadXboxOverridesFromDocument();
     }
 
     // Handle other changes as before...
@@ -373,14 +448,21 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     document.removeEventListener('mouseup', this.handleMouseUp);
     document.removeEventListener('mousemove', this.moveBarText);
     document.removeEventListener('mouseup', this.endBarTextDrag);
-    document.removeEventListener('mousemove', this.handleXboxDragMove);
-    document.removeEventListener('mouseup', this.handleXboxDragEnd);
-    document.removeEventListener('mousemove', this.handleXboxResizeMove);
-    document.removeEventListener('mouseup', this.handleXboxResizeEnd);
+    if (this.dragRafHandle !== null) {
+      cancelAnimationFrame(this.dragRafHandle);
+      this.dragRafHandle = null;
+    }
+    if (this.barTextRafHandle !== null) {
+      cancelAnimationFrame(this.barTextRafHandle);
+      this.barTextRafHandle = null;
+    }
+    this.detachXboxDocumentListeners();
 
     // Clean up annotation system
     this.toolStateSubscription?.unsubscribe();
     this.annotationsSyncSubscription?.unsubscribe();
+    this.annotationCreationSubscription?.unsubscribe();
+    this.undoRedoSubscription?.unsubscribe();
     if (this.canEditDocument) {
       this.annotationState.clear();
     }
@@ -433,6 +515,33 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
           this.saveAnnotationsToDocument();
           this.cdRef.detectChanges();
         });
+
+      // Seed the undo baseline now that the initial load completed — anything added to
+      // annotations$ AFTER this point is treated as a user create and gets its own undo item.
+      this.lastAnnotationSnapshot = cloneDeep(
+        ((this.pdfService.finalDocument as any)?.annotations || [])
+      );
+
+      // Detect user-initiated CREATES (e.g. canvas-drawn highlights, arrows, shapes) and
+      // record the pre-create snapshot so undo can remove the new annotation atomically.
+      // We only fire on id-set growth, NOT on updates — updates (drag/text) record their
+      // own snapshots at mutation time.
+      this.annotationCreationSubscription?.unsubscribe();
+      this.annotationCreationSubscription = this.annotationState.annotations$
+        .pipe(debounceTime(50))
+        .subscribe((annotationsMap) => {
+          const prevIds = new Set((this.lastAnnotationSnapshot || []).map((a: any) => a.annotationId));
+          const currentIds = Array.from(annotationsMap.keys());
+          let hasCreate = false;
+          for (const id of currentIds) {
+            if (!prevIds.has(id)) { hasCreate = true; break; }
+          }
+          if (hasCreate && this.lastAnnotationSnapshot) {
+            this.undoService.recordAnnotationChange(this.lastAnnotationSnapshot, 'Create annotation');
+          }
+          // Advance baseline to the post-mutation state so the next create comparison is accurate.
+          this.lastAnnotationSnapshot = Array.from(annotationsMap.values()).map((a: any) => cloneDeep(a));
+        });
     } catch (error) {
       console.error('Error initializing annotation system:', error);
     }
@@ -478,6 +587,40 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     console.log('✅ LOADED', loadedCount, '/', savedAnnotations.length, 'ANNOTATIONS');
+  }
+
+  /**
+   * Rebuild the annotation-state Map from whatever is currently in finalDocument.annotations.
+   * Used by the undoRedo$ subscription after an `annotation-change` item restores the
+   * document — we need the state service to match the document so canvas/DOM re-renders.
+   */
+  private reloadAnnotationStateFromDocument(): void {
+    const saved: any[] = ((this.pdfService.finalDocument as any)?.annotations || []);
+
+    // Remove any annotations that are no longer present in the document.
+    const savedIds = new Set(saved.map(a => a.annotationId));
+    const currentIds = Array.from(this.annotationState.annotations.keys());
+    for (const id of currentIds) {
+      if (!savedIds.has(id)) {
+        this.annotationState.removeAnnotationLocally(id);
+      }
+    }
+
+    // Upsert everything in the saved list (addAnnotationLocally updates in place when the id
+    // already exists, so this covers both restores of deleted items and geometry rewinds).
+    for (const annotation of saved) {
+      this.annotationState.addAnnotationLocally({
+        annotationId: annotation.annotationId,
+        type: annotation.type,
+        pageIndex: annotation.pageIndex,
+        normalizedX: annotation.normalizedX,
+        normalizedY: annotation.normalizedY,
+        normalizedWidth: annotation.normalizedWidth,
+        normalizedHeight: annotation.normalizedHeight,
+        text: annotation.text,
+        style: annotation.style,
+      });
+    }
   }
 
   // ─────────────────────────────────────────────
@@ -528,6 +671,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       // Save to document and immediately enter editing on the new box
       this.saveAnnotationsToDocument();
       this.editingTextBoxId = annotationId;
+      // Snapshot initial text exactly once so the contenteditable doesn't re-render on every input.
+      this.editingTextBoxInitial = '';
       this.cdRef.detectChanges();
 
       // Focus the new text box after render
@@ -548,6 +693,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     event.stopPropagation();
     event.preventDefault();
     this.editingTextBoxId = annotation.annotationId;
+    // Snapshot initial text exactly once so the contenteditable doesn't re-render on every input.
+    this.editingTextBoxInitial = annotation.text || '';
     this.cdRef.detectChanges();
 
     setTimeout(() => {
@@ -587,6 +734,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     } else if (event.key === 'Escape') {
       event.preventDefault();
       this.editingTextBoxId = null;
+      this.editingTextBoxInitial = '';
     }
   }
 
@@ -597,6 +745,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     if (this.editingTextBoxId) {
       this.saveAnnotationsToDocument();
       this.editingTextBoxId = null;
+      this.editingTextBoxInitial = '';
       this.cdRef.detectChanges();
     }
   }
@@ -678,11 +827,136 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     event.stopPropagation();
     event.preventDefault();
 
+    // Record pre-change snapshot for undo/redo (atomic — restores the entire annotations array).
+    this.recordAnnotationUndoSnapshot('Delete text box');
+
     // Remove from annotation state locally (deleteAnnotation rolls back on API failure,
     // so we use removeAnnotationLocally for a guaranteed local-only delete)
     this.annotationState.removeAnnotationLocally(annotation.annotationId);
     this.saveAnnotationsToDocument();
+    this.lastAnnotationSnapshot = cloneDeep(((this.pdfService.finalDocument as any)?.annotations || []));
     this.cdRef.detectChanges();
+  }
+
+  // ============= HIGHLIGHT DRAG + DELETE (DOM overlays over the canvas) =============
+
+  /** Currently dragging highlight annotation id (null when not dragging). */
+  draggingHighlightId: string | null = null;
+  private highlightDragStartX: number = 0;
+  private highlightDragStartY: number = 0;
+  private highlightInitialNormX: number = 0;
+  private highlightInitialNormY: number = 0;
+
+  /**
+   * Start dragging a highlight annotation via its DOM hit-area. Mirrors startTextBoxDrag
+   * so the canvas-painted highlight fill visually follows the move as the underlying
+   * annotation's normalized coords update.
+   */
+  startHighlightDrag(event: MouseEvent, annotation: any): void {
+    if (!this.canEditDocument) return;
+    // Don't start a drag if the user clicked the delete button (it has its own handler).
+    if ((event.target as HTMLElement)?.classList.contains('highlight-delete-btn')) return;
+
+    event.stopPropagation();
+    event.preventDefault();
+
+    // Take a pre-drag snapshot so the drag commit can be undone atomically.
+    this.highlightDragPreSnapshot = cloneDeep(((this.pdfService.finalDocument as any)?.annotations || []));
+
+    this.draggingHighlightId = annotation.annotationId;
+    this.selectedAnnotationId = annotation.annotationId;
+    this.annotationState.selectAnnotations([annotation.annotationId]);
+    this.highlightDragStartX = event.clientX;
+    this.highlightDragStartY = event.clientY;
+    this.highlightInitialNormX = annotation.normalizedX;
+    this.highlightInitialNormY = annotation.normalizedY;
+
+    document.addEventListener('mousemove', this.moveHighlight);
+    document.addEventListener('mouseup', this.endHighlightDrag);
+  }
+
+  private highlightDragPreSnapshot: any[] | null = null;
+
+  private moveHighlight = (event: MouseEvent): void => {
+    if (!this.draggingHighlightId) return;
+
+    const pageWidth = 816;
+    const pageHeight = 1056;
+    // Compensate for any CSS scale on the page container so cursor and highlight stay aligned.
+    const scale = this.getPageScale();
+    const deltaX = (event.clientX - this.highlightDragStartX) / scale;
+    const deltaY = (event.clientY - this.highlightDragStartY) / scale;
+
+    const newNormX = Math.max(0, Math.min(1, this.highlightInitialNormX + (deltaX / pageWidth)));
+    const newNormY = Math.max(0, Math.min(1, this.highlightInitialNormY + (deltaY / pageHeight)));
+
+    this.annotationState.updateAnnotation(this.draggingHighlightId, {
+      normalizedX: newNormX,
+      normalizedY: newNormY,
+    });
+
+    // Keep finalDocument.annotations in sync so the DOM overlay position updates inline.
+    const docAnnotations = (this.pdfService.finalDocument as any)?.annotations;
+    if (docAnnotations) {
+      const docAnn = docAnnotations.find((a: any) => a.annotationId === this.draggingHighlightId);
+      if (docAnn) {
+        docAnn.normalizedX = newNormX;
+        docAnn.normalizedY = newNormY;
+      }
+    }
+    this.cdRef.detectChanges();
+  };
+
+  private endHighlightDrag = (_event: MouseEvent): void => {
+    document.removeEventListener('mousemove', this.moveHighlight);
+    document.removeEventListener('mouseup', this.endHighlightDrag);
+
+    if (this.draggingHighlightId) {
+      // Only record the undo snapshot if the highlight actually moved.
+      const current = ((this.pdfService.finalDocument as any)?.annotations || []).find(
+        (a: any) => a.annotationId === this.draggingHighlightId
+      );
+      const movedFromSnapshot = this.highlightDragPreSnapshot?.find(
+        (a: any) => a.annotationId === this.draggingHighlightId
+      );
+      const moved = current && movedFromSnapshot &&
+        (current.normalizedX !== movedFromSnapshot.normalizedX ||
+         current.normalizedY !== movedFromSnapshot.normalizedY);
+
+      if (moved && this.highlightDragPreSnapshot) {
+        this.undoService.recordAnnotationChange(this.highlightDragPreSnapshot, 'Move highlight');
+      }
+      this.saveAnnotationsToDocument();
+      this.lastAnnotationSnapshot = cloneDeep(((this.pdfService.finalDocument as any)?.annotations || []));
+    }
+
+    this.draggingHighlightId = null;
+    this.highlightDragPreSnapshot = null;
+  };
+
+  /**
+   * Delete a highlight annotation via its overlay delete button.
+   */
+  deleteHighlight(event: MouseEvent, annotation: any): void {
+    event.stopPropagation();
+    event.preventDefault();
+
+    // Snapshot BEFORE mutation so undo can restore the deleted highlight atomically.
+    this.recordAnnotationUndoSnapshot('Delete highlight');
+
+    this.annotationState.removeAnnotationLocally(annotation.annotationId);
+    this.saveAnnotationsToDocument();
+    this.lastAnnotationSnapshot = cloneDeep(((this.pdfService.finalDocument as any)?.annotations || []));
+    this.cdRef.detectChanges();
+  }
+
+  /**
+   * Take a snapshot of the current finalDocument.annotations array and push it onto the
+   * undo stack. Intended to be called BEFORE mutating annotations (create/drag/delete).
+   */
+  private recordAnnotationUndoSnapshot(description: string): void {
+    const current = cloneDeep(((this.pdfService.finalDocument as any)?.annotations || []));
+    this.undoService.recordAnnotationChange(current, description);
   }
 
   // ============= ANNOTATION SELECTION & DELETION =============
@@ -961,6 +1235,10 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.dragStartY = event.clientY;
     this.dragLineId = line.docPageLineIndex;
     this.dragType = type;
+    // Cache the line so the high-frequency mousemove handler doesn't do an
+    // O(n) findIndex on every event.
+    this.dragLineRef = line;
+    this.dragLineIndex = lineIndex;
 
     // Add grab cursor to body
     document.body.classList.add('grab-cursor');
@@ -992,48 +1270,60 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     document.addEventListener('mouseup', this.handleMouseUp);
   }
 
-  // Handle mouse move
+  // Handle mouse move. We coalesce high-frequency pointer events into at most
+  // one model update + change detection pass per animation frame. Before the
+  // rAF trampoline, unthrottled mousemoves could trigger cdRef.detectChanges()
+  // many times per frame, which stalled drag performance on busy pages.
   handleMouseMove = (event: MouseEvent): void => {
     if (!this.mouseDragging) return;
-    
-    // Calculate delta from start
+    this.pendingDragEvent = event;
+    if (this.dragRafHandle !== null) return;
+    this.dragRafHandle = requestAnimationFrame(() => {
+      this.dragRafHandle = null;
+      const pending = this.pendingDragEvent;
+      this.pendingDragEvent = null;
+      if (!pending || !this.mouseDragging) return;
+      this.applyDragPosition(pending);
+    });
+  };
+
+  private applyDragPosition(event: MouseEvent): void {
+    const line = this.dragLineRef;
+    if (!line) return;
+
     const deltaX = event.clientX - this.dragStartX;
     const deltaY = event.clientY - this.dragStartY;
-    
-    // Calculate new position: INITIAL + DELTA
     const newX = this.initialPosition.x + deltaX;
-    const newY = this.initialPosition.y - deltaY; // Invert Y for bottom-based coordinates
-    
-    // Find the line
-    const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.dragLineId);
-    if (lineIndex === -1) return;
-    
-    const line = this.page[lineIndex];
-    
-    // Update position based on type
+    const newY = this.initialPosition.y - deltaY; // invert Y (bottom-anchored)
+
     switch (this.dragType) {
       case 'line':
         line.calculatedXpos = Math.max(0, newX) + 'px';
         line.calculatedYpos = Math.max(0, newY) + 'px';
         break;
       case 'end':
-        line.calculatedEnd = Math.max(0, newY) + 'px';
+        line.calculatedEnd = this.clampBarY(newY) + 'px';
         break;
       case 'continue':
-        line.calculatedBarY = Math.max(0, newY) + 'px';
-        break;
       case 'continue-top':
-        line.calculatedBarY = Math.max(0, newY) + 'px';
+        line.calculatedBarY = this.clampBarY(newY) + 'px';
         break;
     }
-    
-    // Force update
+
     this.cdRef.detectChanges();
-  };
+  }
 
   // Handle mouse up
   handleMouseUp = (event: MouseEvent): void => {
     if (!this.mouseDragging) return;
+
+    // Cancel any queued rAF so the final commit below isn't overwritten by a
+    // stale mid-drag model update.
+    if (this.dragRafHandle !== null) {
+      cancelAnimationFrame(this.dragRafHandle);
+      this.dragRafHandle = null;
+    }
+    this.pendingDragEvent = null;
 
     // Remove event listeners
     document.removeEventListener('mousemove', this.handleMouseMove);
@@ -1048,16 +1338,21 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     const finalX = this.initialPosition.x + deltaX;
     const finalY = this.initialPosition.y - deltaY;
 
-    // Find the line
-    const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.dragLineId);
-    if (lineIndex === -1) return;
-
-    const line = this.page[lineIndex];
+    const line = this.dragLineRef;
+    const lineIndex = this.dragLineIndex;
+    if (!line || lineIndex === -1) {
+      this.mouseDragging = false;
+      this.dragLineId = null;
+      this.dragLineRef = null;
+      this.dragLineIndex = -1;
+      return;
+    }
 
     // Check if position actually changed (minimum drag threshold)
     const hasPositionChanged = Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2;
 
-    // Set final position and store raw values
+    // Set final position and store raw values. Bar/end positions are clamped
+    // to page bounds so a moved bar can't extend the document's layout.
     switch (this.dragType) {
       case 'line':
         line.calculatedXpos = Math.max(0, finalX) + 'px';
@@ -1065,15 +1360,19 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         line.xPos = Math.max(0, finalX);
         line.yPos = Math.max(0, finalY);
         break;
-      case 'end':
-        line.calculatedEnd = Math.max(0, finalY) + 'px';
-        line.endY = Math.max(0, finalY);
+      case 'end': {
+        const boundedY = this.clampBarY(finalY);
+        line.calculatedEnd = boundedY + 'px';
+        line.endY = boundedY;
         break;
+      }
       case 'continue':
-      case 'continue-top':
-        line.calculatedBarY = Math.max(0, finalY) + 'px';
-        line.barY = Math.max(0, finalY);
+      case 'continue-top': {
+        const boundedY = this.clampBarY(finalY);
+        line.calculatedBarY = boundedY + 'px';
+        line.barY = boundedY;
         break;
+      }
     }
 
     // Only emit events and update if position actually changed
@@ -1096,6 +1395,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     // Clear dragging state
     this.mouseDragging = false;
     this.dragLineId = null;
+    this.dragLineRef = null;
+    this.dragLineIndex = -1;
 
     this.cdRef.detectChanges();
   };
@@ -1128,38 +1429,65 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.barTextDragStartX = event.clientX;
     this.barTextDragLineId = line.docPageLineIndex;
     this.barTextDragType = type;
-    
-    switch (type) {
-      case 'start':
-        this.barTextInitialOffset = line.startTextOffset || 0;
-        break;
-      case 'end':
-        this.barTextInitialOffset = line.endTextOffset || 0;
-        break;
-      case 'continue':
-        this.barTextInitialOffset = line.continueTextOffset || 0;
-        break;
-      case 'continue-top':
-        this.barTextInitialOffset = line.continueTopTextOffset || 0;
-        break;
-    }
-    
+    this.barTextLineRef = line;
+    this.barTextLineIndex = lineIndex;
+
+    // Capture the rendered width AND current left position of the bar-text
+    // element. The left position matters because several bar-text spans render
+    // from a CSS default (e.g. the END span uses `left: 90%` when
+    // `endTextOffset` is falsy). If we used the stored offset (0) as the drag
+    // starting point, the first mousemove would snap the text from its visible
+    // position (e.g. 700px) all the way to 0, making the drag feel like it
+    // "teleports" / stops responding.
+    const targetEl = event.currentTarget as HTMLElement | null;
+    this.barTextElementWidth = targetEl?.offsetWidth || 0;
+    const renderedLeft = targetEl?.offsetLeft ?? 0;
+
+    const storedOffset = (() => {
+      switch (type) {
+        case 'start': return line.startTextOffset;
+        case 'end': return line.endTextOffset;
+        case 'continue': return line.continueTextOffset;
+        case 'continue-top': return line.continueTopTextOffset;
+      }
+    })();
+
+    // Prefer the persisted numeric offset; fall back to the element's current
+    // rendered left so the drag tracks the cursor from the visible position.
+    this.barTextInitialOffset =
+      typeof storedOffset === 'number' && storedOffset > 0
+        ? storedOffset
+        : renderedLeft;
+
     document.addEventListener('mousemove', this.moveBarText);
     document.addEventListener('mouseup', this.endBarTextDrag);
     document.body.classList.add('ew-resize-cursor');
   }
 
+  // Bar-text mousemove. Coalesces to one update per animation frame and, crucially,
+  // does NOT emit `pageUpdate` on every pixel — parent+PdfService propagation
+  // only runs once on mouseup (see endBarTextDrag), which removes the drag-time
+  // stall caused by syncing the full page into PdfService on each event.
   moveBarText = (event: MouseEvent): void => {
     if (!this.barTextDragging) return;
-    
+    this.pendingBarTextEvent = event;
+    if (this.barTextRafHandle !== null) return;
+    this.barTextRafHandle = requestAnimationFrame(() => {
+      this.barTextRafHandle = null;
+      const pending = this.pendingBarTextEvent;
+      this.pendingBarTextEvent = null;
+      if (!pending || !this.barTextDragging) return;
+      this.applyBarTextOffset(pending);
+    });
+  };
+
+  private applyBarTextOffset(event: MouseEvent): void {
+    const line = this.barTextLineRef;
+    if (!line) return;
+
     const deltaX = event.clientX - this.barTextDragStartX;
-    const newOffset = this.barTextInitialOffset + deltaX;
-    
-    const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.barTextDragLineId);
-    if (lineIndex === -1) return;
-    
-    const line = this.page[lineIndex];
-    
+    const newOffset = this.clampBarTextOffset(this.barTextInitialOffset + deltaX);
+
     switch (this.barTextDragType) {
       case 'start':
         line.startTextOffset = newOffset;
@@ -1174,19 +1502,26 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         line.continueTopTextOffset = newOffset;
         break;
     }
-    
+
     this.cdRef.detectChanges();
-    this.pageUpdate.emit([...this.page]);
-  };
+  }
 
   endBarTextDrag = (event: MouseEvent): void => {
     if (!this.barTextDragging) return;
 
+    // Flush any pending rAF so the commit below isn't overwritten by a stale
+    // mid-drag update.
+    if (this.barTextRafHandle !== null) {
+      cancelAnimationFrame(this.barTextRafHandle);
+      this.barTextRafHandle = null;
+    }
+    this.pendingBarTextEvent = null;
+
     // Check if text offset actually changed (minimum drag threshold)
     let hasOffsetChanged = false;
-    const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.barTextDragLineId);
-    if (lineIndex !== -1) {
-      const line = this.page[lineIndex];
+    const line = this.barTextLineRef;
+    const lineIndex = this.barTextLineIndex;
+    if (line && lineIndex !== -1) {
       let currentOffset = 0;
 
       switch (this.barTextDragType) {
@@ -1239,7 +1574,36 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.barTextDragging = false;
     this.barTextDragLineId = null;
     this.barTextDragType = null;
+    this.barTextElementWidth = 0;
+    this.barTextLineRef = null;
+    this.barTextLineIndex = -1;
   };
+
+  /**
+   * Clamp a bar/end Y position (in the page's bottom/top coordinate space) so
+   * the bar stays fully inside the PAGE_HEIGHT viewport. Prevents bars from
+   * being dragged off the page, which would expand the rendered document width
+   * and xzoom in the final PDF.
+   */
+  private clampBarY(y: number): number {
+    const maxY = PAGE_HEIGHT - BAR_Y_MARGIN;
+    if (!Number.isFinite(y)) return 0;
+    return Math.min(maxY, Math.max(0, y));
+  }
+
+  /**
+   * Clamp a bar-text left offset so the text stays inside the page. Uses the
+   * measured bar-text element width (captured on drag start) to compute the
+   * right edge; falls back to a conservative page-relative margin when the
+   * element width is unknown.
+   */
+  private clampBarTextOffset(offset: number): number {
+    if (!Number.isFinite(offset)) return 0;
+    const textWidth = this.barTextElementWidth > 0 ? this.barTextElementWidth : 0;
+    const maxOffset = PAGE_WIDTH - textWidth - BAR_TEXT_X_MARGIN;
+    const bounded = Math.min(maxOffset, Math.max(0, offset));
+    return bounded < 0 ? 0 : bounded;
+  }
 
   // ============= BAR TEXT EDITING METHODS =============
 
@@ -1854,6 +2218,33 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       this.deleteSelectedAnnotation();
       return;
     }
+
+    // Handle Delete / Backspace to remove selected X-box (skipped-section overlay)
+    if ((event.key === 'Delete' || event.key === 'Backspace') && this.selectedXboxIndex !== null) {
+      // Don't hijack delete/backspace while the user is editing text anywhere.
+      if (
+        this.editingTextBoxId ||
+        this.barTextEditingId !== null ||
+        this.editingLine !== null ||
+        this.editingSceneNumber !== null
+      ) {
+        return;
+      }
+      // Also bail if focus is inside a contenteditable/input/textarea so typing
+      // in those still deletes characters instead of the xbox.
+      const target = event.target as HTMLElement | null;
+      if (target) {
+        const tag = (target.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || target.isContentEditable) {
+          return;
+        }
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      this.deleteSelectedXbox();
+      return;
+    }
     
     // Handle X key to toggle visibility of selected line(s)
     if ((event.key === 'x' || event.key === 'X') && this.selectedLineIds.length > 0) {
@@ -2402,6 +2793,16 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       groupMinYPos = null;
     };
 
+    // Lines inside a freestanding xbox are "owned" by that xbox — exclude them from auto
+    // grouping so we don't double-render (once as freestanding, once as auto-computed).
+    const freestandingRanges: Array<{ top: number; bottom: number }> =
+      ((this.pdfService.finalDocument as any)?.xboxes || [])
+        .filter((x: XboxData) => x.pageIndex === this.currentPageIndex && x.isFreestanding)
+        .map((x: XboxData) => ({ top: x.top, bottom: x.bottom }));
+
+    const isInsideAnyFreestanding = (svgTop: number): boolean =>
+      freestandingRanges.some(r => svgTop >= r.top && svgTop <= r.bottom);
+
     for (const line of this.page) {
       // Skip structural/non-content elements
       if (EXCLUDED_CATEGORIES.has(line.category)) {
@@ -2426,6 +2827,13 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         const yPos = scaledBottom;
 
         if (yPos > 0) {
+          const svgTopOfLine = PAGE_HEIGHT - yPos;
+          // Skip this line if it's already covered by a freestanding xbox, and treat it as a
+          // "visible line" boundary so it flushes any open auto group.
+          if (isInsideAnyFreestanding(svgTopOfLine)) {
+            flushGroup();
+            continue;
+          }
           if (groupMaxYPos === null || yPos > groupMaxYPos) groupMaxYPos = yPos;
           if (groupMinYPos === null || yPos < groupMinYPos) groupMinYPos = yPos;
         }
@@ -2447,9 +2855,10 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
    * Returns the skipped sections with overrides applied (moved, resized, deleted).
    * Used by the template to render both the SVG X-boxes and the interactive overlays.
    */
-  getDisplayedSkippedSections(): Array<{ top: number; bottom: number; left: number; right: number; originalIndex: number }> {
+  getDisplayedSkippedSections(): Array<{ top: number; bottom: number; left: number; right: number; originalIndex: number; isFreestanding: boolean; freestandingId?: string }> {
     const baseSections = this.getSkippedSections();
-    return baseSections
+
+    const autoSections = baseSections
       .map((section, index) => {
         const override = this.xboxOverrides.get(index);
         if (override?.deleted) return null;
@@ -2459,9 +2868,26 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
           left: override?.left ?? section.left,
           right: override?.right ?? section.right,
           originalIndex: index,
+          isFreestanding: false,
+          freestandingId: undefined as string | undefined,
         };
       })
       .filter((s): s is NonNullable<typeof s> => s !== null);
+
+    const freestandingXboxes: XboxData[] = ((this.pdfService.finalDocument as any)?.xboxes || [])
+      .filter((x: XboxData) => x.pageIndex === this.currentPageIndex && x.isFreestanding);
+
+    const freestandingSections = freestandingXboxes.map((xbox, i) => ({
+      top: xbox.top,
+      bottom: xbox.bottom,
+      left: xbox.left,
+      right: xbox.right,
+      originalIndex: FREESTANDING_INDEX_OFFSET + i,
+      isFreestanding: true,
+      freestandingId: xbox.id,
+    }));
+
+    return [...autoSections, ...freestandingSections];
   }
 
   /**
@@ -2483,14 +2909,55 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
-   * Delete (remove) a specific X-box overlay.
+   * Delete the currently-selected X-box via keyboard (Delete/Backspace). Mirrors
+   * the click-driven `deleteXbox` path but has no MouseEvent to stopPropagation
+   * on, so it goes straight to `deleteXboxByIndex`.
+   */
+  deleteSelectedXbox(): void {
+    if (this.selectedXboxIndex === null) return;
+    this.deleteXboxByIndex(this.selectedXboxIndex);
+  }
+
+  /**
+   * Delete (remove) a specific X-box overlay. Handles both auto-computed and freestanding.
+   * Also reveals any lines currently hidden by the box (visible → 'true'), recording undo.
    */
   deleteXbox(index: number, event: MouseEvent): void {
     event.stopPropagation();
     event.preventDefault();
-    const override = this.xboxOverrides.get(index) || {};
-    override.deleted = true;
-    this.xboxOverrides.set(index, override);
+    this.deleteXboxByIndex(index);
+  }
+
+  /**
+   * Shared implementation for X-box removal. Called by both the click handler
+   * (`deleteXbox`) and the keyboard handler (`deleteSelectedXbox`).
+   */
+  private deleteXboxByIndex(index: number): void {
+    const displayedSections = this.getDisplayedSkippedSections();
+    const displayedIdx = displayedSections.findIndex(s => s.originalIndex === index);
+    const section = displayedIdx !== -1 ? displayedSections[displayedIdx] : null;
+    if (!section || !this.pdfService.finalDocument) return;
+
+    const preXboxesSnapshot = cloneDeep(((this.pdfService.finalDocument as any).xboxes || []) as XboxData[]);
+
+    // Remove the xbox itself FIRST so the subsequent line-recompute reflects the deletion
+    if (index >= FREESTANDING_INDEX_OFFSET) {
+      const freeId = section.freestandingId;
+      if (freeId) {
+        const all: XboxData[] = ((this.pdfService.finalDocument as any).xboxes || []);
+        (this.pdfService.finalDocument as any).xboxes = all.filter(x => x.id !== freeId);
+      }
+    } else {
+      const override = this.xboxOverrides.get(index) || {};
+      override.deleted = true;
+      this.xboxOverrides.set(index, override);
+      this.persistXboxOverridesToDocument();
+    }
+
+    // Recompute line visibility against remaining xboxes + record atomic undo
+    // (passing sectionIndex 0 is fine — applyXboxBoundsToLines no longer uses it for filtering.)
+    this.applyXboxBoundsToLines(0, preXboxesSnapshot);
+
     if (this.selectedXboxIndex === index) {
       this.selectedXboxIndex = null;
     }
@@ -2498,11 +2965,70 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
+   * Looks up the live freestanding XboxData by id in finalDocument.xboxes, returning a direct reference
+   * so mutations persist. Returns null if not found.
+   */
+  private findFreestandingXboxById(id: string): XboxData | null {
+    const all: XboxData[] = ((this.pdfService.finalDocument as any)?.xboxes || []);
+    return all.find(x => x.id === id) || null;
+  }
+
+  /**
+   * Add a freestanding X-box to the current page at a default location.
+   * Lines beneath the new box become visible: 'false' immediately, with undo recorded.
+   */
+  addXbox(): void {
+    if (!this.canEditDocument) return;
+    if (!this.pdfService.finalDocument) return;
+
+    const DEFAULT_TOP = 400;
+    const DEFAULT_BOTTOM = 600;
+    const DEFAULT_LEFT = 88;
+    const DEFAULT_RIGHT = 739;
+
+    const doc = this.pdfService.finalDocument as any;
+    const preSnapshot = cloneDeep((doc.xboxes || []) as XboxData[]);
+
+    const newXbox: XboxData = {
+      id: `free-${this.currentPageIndex}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`,
+      pageIndex: this.currentPageIndex,
+      top: DEFAULT_TOP,
+      bottom: DEFAULT_BOTTOM,
+      left: DEFAULT_LEFT,
+      right: DEFAULT_RIGHT,
+      isFreestanding: true,
+    };
+
+    if (!doc.xboxes) doc.xboxes = [];
+    doc.xboxes.push(newXbox);
+
+    // Toggle lines that fall beneath the new xbox + record atomic xbox-change undo
+    const displayedSections = this.getDisplayedSkippedSections();
+    const displayedIdx = displayedSections.findIndex(s => s.freestandingId === newXbox.id);
+    if (displayedIdx !== -1) {
+      this.applyXboxBoundsToLines(displayedIdx, preSnapshot);
+    }
+
+    this.selectedXboxIndex = displayedIdx !== -1 ? displayedSections[displayedIdx].originalIndex : null;
+    this.cdRef.detectChanges();
+  }
+
+  /**
+   * Returns the CSS scale factor currently applied to the .page element.
+   * Mouse clientX/Y deltas must be divided by this before applying to SVG coords.
+   */
+  private getPageScale(): number {
+    const pageEl = this.el.nativeElement.querySelector('.page') as HTMLElement | null;
+    if (!pageEl) return 1;
+    const rect = pageEl.getBoundingClientRect();
+    return rect.width / 816;
+  }
+
+  /**
    * Start dragging an X-box to move it.
    */
   startXboxDrag(index: number, event: MouseEvent): void {
     if (!this.canEditDocument) return;
-    // Don't drag if clicking delete button or resize handle
     if ((event.target as HTMLElement).closest('.xbox-delete-btn') ||
         (event.target as HTMLElement).closest('.xbox-resize-handle')) {
       return;
@@ -2516,42 +3042,15 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
     this.xboxDragging = true;
     this.selectedXboxIndex = index;
+    this.activeFreestandingId = section.isFreestanding ? (section.freestandingId ?? null) : null;
     this.xboxDragStartX = event.clientX;
     this.xboxDragStartY = event.clientY;
     this.xboxDragInitialTop = section.top;
     this.xboxDragInitialLeft = section.left;
+    this.xboxGestureXboxesSnapshot = cloneDeep(((this.pdfService.finalDocument as any)?.xboxes || []) as XboxData[]);
 
-    document.addEventListener('mousemove', this.handleXboxDragMove);
-    document.addEventListener('mouseup', this.handleXboxDragEnd);
+    this.attachXboxDocumentListeners();
   }
-
-  handleXboxDragMove = (event: MouseEvent): void => {
-    if (!this.xboxDragging || this.selectedXboxIndex === null) return;
-
-    const deltaX = event.clientX - this.xboxDragStartX;
-    const deltaY = event.clientY - this.xboxDragStartY;
-
-    const section = this.getSkippedSections()[this.selectedXboxIndex];
-    if (!section) return;
-
-    const override = this.xboxOverrides.get(this.selectedXboxIndex) || {};
-    const height = (override.bottom ?? section.bottom) - (override.top ?? section.top);
-    const width = (override.right ?? section.right) - (override.left ?? section.left);
-
-    override.top = Math.max(0, this.xboxDragInitialTop + deltaY);
-    override.bottom = override.top + height;
-    override.left = Math.max(0, this.xboxDragInitialLeft + deltaX);
-    override.right = override.left + width;
-
-    this.xboxOverrides.set(this.selectedXboxIndex, override);
-    this.cdRef.detectChanges();
-  };
-
-  handleXboxDragEnd = (_event: MouseEvent): void => {
-    document.removeEventListener('mousemove', this.handleXboxDragMove);
-    document.removeEventListener('mouseup', this.handleXboxDragEnd);
-    this.xboxDragging = false;
-  };
 
   /**
    * Start resizing an X-box from a corner handle.
@@ -2566,63 +3065,251 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
     this.xboxResizing = true;
     this.selectedXboxIndex = index;
+    this.activeFreestandingId = section.isFreestanding ? (section.freestandingId ?? null) : null;
     this.xboxResizeEdge = edge;
     this.xboxResizeStartX = event.clientX;
     this.xboxResizeStartY = event.clientY;
     this.xboxResizeInitial = { top: section.top, bottom: section.bottom, left: section.left, right: section.right };
+    this.xboxGestureXboxesSnapshot = cloneDeep(((this.pdfService.finalDocument as any)?.xboxes || []) as XboxData[]);
 
-    document.addEventListener('mousemove', this.handleXboxResizeMove);
-    document.addEventListener('mouseup', this.handleXboxResizeEnd);
+    this.attachXboxDocumentListeners();
   }
 
-  handleXboxResizeMove = (event: MouseEvent): void => {
-    if (!this.xboxResizing || this.selectedXboxIndex === null || !this.xboxResizeInitial) return;
+  /**
+   * Registers mousemove/mouseup on document OUTSIDE Angular's zone for perf,
+   * then re-enters the zone on each update to guarantee change detection fires.
+   */
+  private attachXboxDocumentListeners(): void {
+    this.ngZone.runOutsideAngular(() => {
+      document.addEventListener('mousemove', this.onXboxDocMouseMove);
+      document.addEventListener('mouseup',   this.onXboxDocMouseUp);
+    });
+  }
 
-    const deltaX = event.clientX - this.xboxResizeStartX;
-    const deltaY = event.clientY - this.xboxResizeStartY;
-    const MIN_SIZE = 30;
+  private detachXboxDocumentListeners(): void {
+    document.removeEventListener('mousemove', this.onXboxDocMouseMove);
+    document.removeEventListener('mouseup',   this.onXboxDocMouseUp);
+  }
 
-    const override = this.xboxOverrides.get(this.selectedXboxIndex) || {};
-    const init = this.xboxResizeInitial;
+  private onXboxDocMouseMove = (event: MouseEvent): void => {
+    if (!this.xboxResizing && !this.xboxDragging) return;
+    if (this.selectedXboxIndex === null) return;
 
-    switch (this.xboxResizeEdge) {
-      case 'top-left':
-        override.top = Math.min(init.top + deltaY, init.bottom - MIN_SIZE);
-        override.left = Math.min(init.left + deltaX, init.right - MIN_SIZE);
-        override.bottom = init.bottom;
-        override.right = init.right;
-        break;
-      case 'top-right':
-        override.top = Math.min(init.top + deltaY, init.bottom - MIN_SIZE);
-        override.right = Math.max(init.right + deltaX, init.left + MIN_SIZE);
-        override.bottom = init.bottom;
-        override.left = init.left;
-        break;
-      case 'bottom-left':
-        override.bottom = Math.max(init.bottom + deltaY, init.top + MIN_SIZE);
-        override.left = Math.min(init.left + deltaX, init.right - MIN_SIZE);
-        override.top = init.top;
-        override.right = init.right;
-        break;
-      case 'bottom-right':
-        override.bottom = Math.max(init.bottom + deltaY, init.top + MIN_SIZE);
-        override.right = Math.max(init.right + deltaX, init.left + MIN_SIZE);
-        override.top = init.top;
-        override.left = init.left;
-        break;
+    const scale = this.getPageScale();
+
+    if (this.xboxResizing && this.xboxResizeInitial) {
+      const deltaX = (event.clientX - this.xboxResizeStartX) / scale;
+      const deltaY = (event.clientY - this.xboxResizeStartY) / scale;
+      const MIN_SIZE = 30;
+      const init = this.xboxResizeInitial;
+
+      let top = init.top, bottom = init.bottom, left = init.left, right = init.right;
+
+      switch (this.xboxResizeEdge) {
+        case 'top-left':
+          top  = Math.min(init.top  + deltaY, init.bottom - MIN_SIZE);
+          left = Math.min(init.left + deltaX, init.right  - MIN_SIZE);
+          break;
+        case 'top-right':
+          top   = Math.min(init.top   + deltaY, init.bottom - MIN_SIZE);
+          right = Math.max(init.right + deltaX, init.left   + MIN_SIZE);
+          break;
+        case 'bottom-left':
+          bottom = Math.max(init.bottom + deltaY, init.top   + MIN_SIZE);
+          left   = Math.min(init.left   + deltaX, init.right - MIN_SIZE);
+          break;
+        case 'bottom-right':
+          bottom = Math.max(init.bottom + deltaY, init.top  + MIN_SIZE);
+          right  = Math.max(init.right  + deltaX, init.left + MIN_SIZE);
+          break;
+      }
+
+      this.writeXboxBounds(top, bottom, left, right);
+    } else if (this.xboxDragging) {
+      const deltaX = (event.clientX - this.xboxDragStartX) / scale;
+      const deltaY = (event.clientY - this.xboxDragStartY) / scale;
+
+      const current = this.getDisplayedSkippedSections().find(s => s.originalIndex === this.selectedXboxIndex);
+      if (!current) return;
+      const height = current.bottom - current.top;
+      const width  = current.right  - current.left;
+
+      const top    = Math.max(0, this.xboxDragInitialTop  + deltaY);
+      const bottom = top + height;
+      const left   = Math.max(0, this.xboxDragInitialLeft + deltaX);
+      const right  = left + width;
+
+      this.writeXboxBounds(top, bottom, left, right);
     }
 
-    this.xboxOverrides.set(this.selectedXboxIndex, override);
-    this.cdRef.detectChanges();
+    this.ngZone.run(() => this.cdRef.detectChanges());
   };
 
-  handleXboxResizeEnd = (_event: MouseEvent): void => {
-    document.removeEventListener('mousemove', this.handleXboxResizeMove);
-    document.removeEventListener('mouseup', this.handleXboxResizeEnd);
-    this.xboxResizing = false;
-    this.xboxResizeEdge = null;
-    this.xboxResizeInitial = null;
+  /**
+   * Routes new bounds to the correct storage: freestanding xboxes are mutated directly on
+   * finalDocument.xboxes, auto-computed xboxes go through the xboxOverrides Map.
+   */
+  private writeXboxBounds(top: number, bottom: number, left: number, right: number): void {
+    if (this.selectedXboxIndex === null) return;
+
+    if (this.activeFreestandingId) {
+      const live = this.findFreestandingXboxById(this.activeFreestandingId);
+      if (live) {
+        live.top = top;
+        live.bottom = bottom;
+        live.left = left;
+        live.right = right;
+      }
+    } else {
+      const override = this.xboxOverrides.get(this.selectedXboxIndex) || {};
+      override.top = top;
+      override.bottom = bottom;
+      override.left = left;
+      override.right = right;
+      this.xboxOverrides.set(this.selectedXboxIndex, override);
+    }
+  }
+
+  private onXboxDocMouseUp = (): void => {
+    this.detachXboxDocumentListeners();
+    this.ngZone.run(() => {
+      const wasActive = this.xboxResizing || this.xboxDragging;
+      const finalXboxIndex = this.selectedXboxIndex;
+
+      if (this.xboxResizing) {
+        this.xboxResizing = false;
+        this.xboxResizeEdge = null;
+        this.xboxResizeInitial = null;
+      } else if (this.xboxDragging) {
+        this.xboxDragging = false;
+      }
+
+      if (wasActive && finalXboxIndex !== null) {
+        // Persist overrides to finalDocument.xboxes FIRST so applyXboxBoundsToLines sees the post-change
+        // xbox state; then record the atomic xbox-change undo item against the mousedown snapshot.
+        this.persistXboxOverridesToDocument();
+        const displayedSections = this.getDisplayedSkippedSections();
+        const displayedIdx = displayedSections.findIndex(s => s.originalIndex === finalXboxIndex);
+        if (displayedIdx !== -1) {
+          this.applyXboxBoundsToLines(displayedIdx, this.xboxGestureXboxesSnapshot || []);
+        }
+      }
+
+      this.activeFreestandingId = null;
+      this.xboxGestureXboxesSnapshot = null;
+      this.cdRef.detectChanges();
+    });
   };
+
+  // ============= X-BOX PERSIST / LOAD METHODS =============
+
+  private persistXboxOverridesToDocument(): void {
+    if (!this.pdfService.finalDocument) return;
+    const baseSections = this.getSkippedSections();
+    const xboxes: XboxData[] = baseSections
+      .map((section: { top: number; bottom: number; left: number; right: number }, index: number) => {
+        const override = this.xboxOverrides.get(index);
+        if (override?.deleted) return null;
+        return {
+          id: `auto-${this.currentPageIndex}-${index}`,
+          pageIndex: this.currentPageIndex,
+          top: override?.top ?? section.top,
+          bottom: override?.bottom ?? section.bottom,
+          left: override?.left ?? section.left,
+          right: override?.right ?? section.right,
+          isFreestanding: false,
+        } as XboxData;
+      })
+      .filter((x): x is XboxData => x !== null);
+
+    const otherXboxes: XboxData[] = ((this.pdfService.finalDocument as any).xboxes || [])
+      .filter((x: XboxData) => x.pageIndex !== this.currentPageIndex || x.isFreestanding);
+    (this.pdfService.finalDocument as any).xboxes = [...otherXboxes, ...xboxes];
+  }
+
+  private loadXboxOverridesFromDocument(): void {
+    if (!this.pdfService.finalDocument) return;
+    this.xboxOverrides.clear();
+    const saved: XboxData[] = ((this.pdfService.finalDocument as any).xboxes || [])
+      .filter((x: XboxData) => x.pageIndex === this.currentPageIndex && !x.isFreestanding);
+    saved.forEach((xbox, index) => {
+      this.xboxOverrides.set(index, {
+        top: xbox.top,
+        bottom: xbox.bottom,
+        left: xbox.left,
+        right: xbox.right,
+      });
+    });
+  }
+
+  // ============= X-BOX APPLY BOUNDS TO LINES =============
+
+  /**
+   * Recomputes line.visible for every line on the current page based on whether the line falls
+   * inside the union of ALL current xboxes (auto + freestanding). Checking against all boxes
+   * is essential: if we only compared against the resized box, every line under OTHER xboxes
+   * would be forced back to visible, collapsing them off the page.
+   *
+   * @param sectionIndex index in getDisplayedSkippedSections() of the box that triggered this
+   *                     (kept for API compatibility; no longer used for filtering).
+   * @param previousXboxesSnapshot optional deep-cloned finalDocument.xboxes state from BEFORE this
+   *                               change — when provided, we record an atomic xbox-change undo item
+   *                               so undo restores both xboxes AND lines together.
+   */
+  private applyXboxBoundsToLines(
+    sectionIndex: number,
+    previousXboxesSnapshot?: XboxData[]
+  ): void {
+    const sections = this.getDisplayedSkippedSections();
+    if (sections.length === 0 && !previousXboxesSnapshot) return;
+
+    const EXCLUDED_CATEGORIES = new Set([
+      'page-number', 'page-number-hidden', 'injected-break', 'callsheet'
+    ]);
+
+    const lineChanges: any[] = [];
+
+    this.page.forEach((line: any, lineIndex: number) => {
+      if (EXCLUDED_CATEGORIES.has(line.category)) return;
+      if (line.hidden === 'hidden') return;
+      const yPos = parseInt(line.calculatedYpos || '0', 10);
+      if (yPos === 0) return;
+
+      const lineSvgTop = 1056 - yPos;
+      const isInsideAnyXbox = sections.some(s =>
+        lineSvgTop >= s.top && lineSvgTop <= s.bottom
+      );
+      const newVisibility = isInsideAnyXbox ? 'false' : 'true';
+
+      if (line.visible !== newVisibility) {
+        lineChanges.push({
+          pageIndex: this.currentPageIndex,
+          lineIndex,
+          previousLineState: cloneDeep(line),
+        });
+        line.visible = newVisibility;
+      }
+    });
+
+    const xboxesMutated = !!previousXboxesSnapshot;
+    const anyChange = lineChanges.length > 0 || xboxesMutated;
+    if (!anyChange) return;
+
+    if (xboxesMutated && this.undoService && typeof (this.undoService as any).recordXboxChange === 'function') {
+      (this.undoService as any).recordXboxChange(previousXboxesSnapshot!, lineChanges);
+    } else if (lineChanges.length > 0 && this.undoService && typeof this.undoService.recordBatchChanges === 'function') {
+      this.undoService.recordBatchChanges(
+        lineChanges.map(c => ({ ...c, currentLineState: c.previousLineState }))
+      );
+    }
+
+    if (lineChanges.length > 0) {
+      this.pageUpdate.emit([...this.page]);
+      if (this.pdfService.finalDocument?.data) {
+        this.pdfService.finalDocument.data[this.currentPageIndex] = [...this.page];
+      }
+    }
+  }
 
   // Get SVG path for category icons
   getCategoryIcon(category: string): string {
