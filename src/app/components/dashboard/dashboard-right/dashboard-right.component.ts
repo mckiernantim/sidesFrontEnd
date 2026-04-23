@@ -1139,6 +1139,8 @@ private resolveCallSheetPath(): { callSheetPathToSend: string | null; hasCallShe
       console.log('Subscription dialog closed with result:', result);
       if (result === 'subscription_success') {
         // User successfully subscribed, proceed with checkout
+        this.editState = false;
+        this.editLastLooksState = false;
         this.showCheckoutModal = true;
       }
       clearInterval(subscriptionCheck);
@@ -1154,6 +1156,8 @@ private resolveCallSheetPath(): { callSheetPathToSend: string | null; hasCallShe
               console.log('Subscription became active, closing modal and proceeding with checkout');
               clearInterval(subscriptionCheck);
               subscriptionDialog.close();
+              this.editState = false;
+              this.editLastLooksState = false;
               this.showCheckoutModal = true;
             }
           },
@@ -1381,6 +1385,8 @@ private resolveCallSheetPath(): { callSheetPathToSend: string | null; hasCallShe
         if (subscriptionStatus.active) {
           console.log('User has active subscription, proceeding with checkout');
           // User has active subscription, proceed with checkout
+          this.editState = false;
+          this.editLastLooksState = false;
           this.showCheckoutModal = true;
         } else {
           console.log('User does not have active subscription, showing subscription required dialog');
