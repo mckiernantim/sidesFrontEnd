@@ -988,100 +988,31 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
       });
     });
   }
-// Complete sendFinalDocumentToServer method for dashboard-right.component.ts
-
 async sendFinalDocumentToServer(finalDocument) {
   try {
-    this.logAnalyticsEvent('pdf_generation_started', {
-      documentName: this.script,
-      hasCallsheet: !!this.callSheetPath,
-      sceneCount: this.selected.length,
-    });
-
     const user = await firstValueFrom(this.auth.user$);
     if (!user) {
-      this.handleError(
-        'Authentication required',
-        'Please sign in to generate a PDF'
-      );
+      this.handleError('Authentication required', 'Please sign in to generate a PDF');
       return;
     }
 
-    // Get callsheet data from localStorage
-    const callsheetData = localStorage.getItem('callsheetData');
-    let parsedCallsheetData = null;
-    
-    if (callsheetData) {
-      try {
-        parsedCallsheetData = JSON.parse(callsheetData);
-        console.log('Parsed callsheet data from localStorage:', parsedCallsheetData);
-      } catch (e) {
-        console.warn('Failed to parse callsheet data from localStorage:', e);
-      }
-    }
-    // Determine callsheet path - prioritize parsed data, then fallback to legacy
-    let callSheetPathToSend = null;
-    let hasCallSheet = false;
+    const { callSheetPathToSend, hasCallSheet } = this.resolveCallSheetPath();
 
-    if (parsedCallsheetData?.imageUrl) {
-      // Use the Firebase Storage path for PDF processing
-      callSheetPathToSend = parsedCallsheetData.imageUrl;
-      hasCallSheet = true;
-      console.log('Using Firebase Storage callsheet path from parsed data:', callSheetPathToSend);
-    } else if (this.callSheetPath) {
-      // Fallback to legacy callsheet path
-      callSheetPathToSend = this.callSheetPath;
-      hasCallSheet = true;
-      console.log('Using legacy callsheet path:', callSheetPathToSend);
-    } else {
-      // Check legacy localStorage
-      const legacyCallSheetPath = localStorage.getItem('callSheetPath');
-      if (legacyCallSheetPath) {
-        callSheetPathToSend = legacyCallSheetPath;
-        hasCallSheet = true;
-        console.log('Using legacy callsheet path from localStorage:', callSheetPathToSend);
-      }
-    }
-
-    // Set flag to prevent callsheet re-insertion during server processing
     this.pdf.setServerProcessingFlag(true);
-    
-    // Create a copy of the document without the callsheet for server processing
-    // This ensures the callsheet appears in UI preview but not in the generated PDF
-    console.log('=== PREPARING DOCUMENT FOR SERVER ===');
-    this.pdf.debugDocumentStructure(finalDocument, 'Original finalDocument');
-    
+
     const documentToSend = this.pdf.createDocumentCopyWithoutCallsheet(finalDocument);
-    
-    // Add user data to the document
     documentToSend.name = this.script;
     documentToSend.email = user.email;
     documentToSend.userId = user.uid;
-
-    documentToSend.callSheetPath = callSheetPathToSend;  // IMPORTANT: Original path for PDF processing
+    documentToSend.callSheetPath = callSheetPathToSend;
     documentToSend.hasCallSheet = hasCallSheet;
-    
-    console.log('=== FINAL DOCUMENT READY FOR SERVER ===');
-    this.pdf.debugDocumentStructure(documentToSend, 'Document to send');
-    this.pdf.debugCallsheetPath(documentToSend, 'Document to send');
-    console.log('Document metadata:', {
-      callSheetPath: documentToSend.callSheetPath,
-      hasCallSheet: documentToSend.hasCallSheet
-    });
-    
-    console.log('Sending document to server:', {
+
+    this.logAnalyticsEvent('pdf_generation_started', {
       documentName: this.script,
-      userId: user.uid,
-      callSheetPath: callSheetPathToSend,
-      hasCallSheet: hasCallSheet,
+      hasCallsheet: hasCallSheet,
       sceneCount: this.selected.length,
-      originalDocumentPages: finalDocument?.data?.length || 0,
-      documentPagesWithoutCallsheet: documentToSend?.data?.length || 0,
-      // Don't log the actual document data as it's large
-      hasDocumentData: !!finalDocument?.data
     });
 
-    // Open loading dialog
     const loadingDialog = this.dialog.open(TailwindDialogComponent, {
       data: {
         title: 'Generating Your PDF',
@@ -1107,85 +1038,84 @@ async sendFinalDocumentToServer(finalDocument) {
       }
     });
 
-    // Generate PDF
     this.upload.generatePdf(documentToSend).subscribe({
       next: (response: any) => {
         loadingDialog.close();
-        
-        // Reset server processing flag
         this.pdf.setServerProcessingFlag(false);
 
         console.log('PDF generation response:', response);
 
-        if (response && response.status === 'complete') {
-          // Store the new token and expiration time
-          if (response.token && response.expirationTime) {
-            console.log('Storing PDF token:', response.token);
-            this.token.setToken(response.token, response.expirationTime);
-            console.log('Token stored:', {
-              token: response.token,
-              expires: new Date(response.expirationTime).toISOString(),
-            });
-          }
-
-          this.logAnalyticsEvent('pdf_generation_success', {
-            documentName: this.script,
-            includedCallSheet: hasCallSheet,
-            callsheetType: parsedCallsheetData?.fileType || 'unknown'
-          });
-
-          // Store document name
-          localStorage.setItem('name', this.script);
-
-          // Navigate to complete page
-          this.router.navigate(['/complete']);
-        } else if (response && response.needsSubscription) {
-          this.handleSubscriptionRequired(documentToSend);
-        } else {
-          console.error('Unexpected response format:', response);
-          this.handleError(
-            'PDF Generation Failed',
-            'Received an invalid response from the server'
-          );
+        // Backend accepted the job. The upload service resolves only once the
+        // server reports complete (or throws on error), so any response here
+        // means the document is ready to download.
+        if (response?.token && response?.expirationTime) {
+          this.token.setToken(response.token, response.expirationTime);
         }
+
+        localStorage.setItem('name', this.script);
+
+        this.logAnalyticsEvent('pdf_generation_success', {
+          documentName: this.script,
+          includedCallSheet: hasCallSheet,
+        });
+
+        this.router.navigate(['/complete']);
       },
       error: (error) => {
         loadingDialog.close();
-        
-        // Reset server processing flag
         this.pdf.setServerProcessingFlag(false);
 
         console.error('PDF generation error:', error);
         this.logAnalyticsEvent('pdf_generation_error', {
           documentName: this.script,
-          errorMessage: error.message || 'Unknown error',
+          errorMessage: error?.message || 'Unknown error',
           includedCallSheet: hasCallSheet,
-          callsheetType: parsedCallsheetData?.fileType || 'unknown'
         });
 
-        if (error.status === 403 && error.error?.needsSubscription) {
+        if (error?.status === 403 && error?.error?.needsSubscription) {
           this.handleSubscriptionRequired(documentToSend);
         } else {
           this.handleError(
             'PDF Generation Failed',
-            error.message ||
-              'An error occurred while generating your PDF. Please try again.'
+            error?.message || 'An error occurred while generating your PDF. Please try again.'
           );
         }
       },
     });
   } catch (error) {
     this.dialog.closeAll();
-    
-    // Reset server processing flag
     this.pdf.setServerProcessingFlag(false);
-    
     console.error('Error in sendFinalDocumentToServer:', error);
     this.handleError(
       'PDF Generation Failed',
-      error.message || 'An unexpected error occurred'
+      error?.message || 'An unexpected error occurred'
     );
   }
+}
+
+private resolveCallSheetPath(): { callSheetPathToSend: string | null; hasCallSheet: boolean } {
+  const stored = localStorage.getItem('callsheetData');
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      if (parsed?.imageUrl) {
+        return { callSheetPathToSend: parsed.imageUrl, hasCallSheet: true };
+      }
+    } catch (e) {
+      console.warn('Failed to parse callsheet data from localStorage:', e);
+    }
+  }
+
+  if (this.callSheetPath) {
+    return { callSheetPathToSend: this.callSheetPath, hasCallSheet: true };
+  }
+
+  const legacy = localStorage.getItem('callSheetPath');
+  if (legacy) {
+    return { callSheetPathToSend: legacy, hasCallSheet: true };
+  }
+
+  return { callSheetPathToSend: null, hasCallSheet: false };
 }
 
   private handleSubscriptionRequired(documentToSend) {
@@ -1209,6 +1139,8 @@ async sendFinalDocumentToServer(finalDocument) {
       console.log('Subscription dialog closed with result:', result);
       if (result === 'subscription_success') {
         // User successfully subscribed, proceed with checkout
+        this.editState = false;
+        this.editLastLooksState = false;
         this.showCheckoutModal = true;
       }
       clearInterval(subscriptionCheck);
@@ -1224,6 +1156,8 @@ async sendFinalDocumentToServer(finalDocument) {
               console.log('Subscription became active, closing modal and proceeding with checkout');
               clearInterval(subscriptionCheck);
               subscriptionDialog.close();
+              this.editState = false;
+              this.editLastLooksState = false;
               this.showCheckoutModal = true;
             }
           },
@@ -1251,29 +1185,28 @@ async sendFinalDocumentToServer(finalDocument) {
 
   private handleStripeReturn() {
     // Check if we have a pending document to generate
-    if (this.pdf.finalDocument) {
-      this.openFinalSpinner();
-      this.stripe.getSubscriptionStatus(this.userData.uid).subscribe({
-        next: (status) => {
-          if (status.active) {
-            // Subscription is active, generate PDF
-            this.sendFinalDocumentToServer(this.pdf.finalDocument);
-          } else {
-            this.handleError(
-              'Subscription Required',
-              'Your subscription could not be verified. Please try again.'
-            );
-          }
-        },
-        error: (error) => {
-          console.error('Error checking subscription:', error);
+    if (!this.pdf.finalDocument) return;
+
+    this.stripe.getSubscriptionStatus(this.userData.uid).subscribe({
+      next: (status) => {
+        if (status.active) {
+          // sendFinalDocumentToServer owns its own loading dialog.
+          this.sendFinalDocumentToServer(this.pdf.finalDocument);
+        } else {
           this.handleError(
-            'Subscription Check Failed',
-            'Could not verify your subscription status. Please try again.'
+            'Subscription Required',
+            'Your subscription could not be verified. Please try again.'
           );
-        },
-      });
-    }
+        }
+      },
+      error: (error) => {
+        console.error('Error checking subscription:', error);
+        this.handleError(
+          'Subscription Check Failed',
+          'Could not verify your subscription status. Please try again.'
+        );
+      },
+    });
   }
 
   waterMarkPages(watermark, doc) {
@@ -1452,6 +1385,8 @@ async sendFinalDocumentToServer(finalDocument) {
         if (subscriptionStatus.active) {
           console.log('User has active subscription, proceeding with checkout');
           // User has active subscription, proceed with checkout
+          this.editState = false;
+          this.editLastLooksState = false;
           this.showCheckoutModal = true;
         } else {
           console.log('User does not have active subscription, showing subscription required dialog');
@@ -1471,32 +1406,32 @@ async sendFinalDocumentToServer(finalDocument) {
   }
 
   handleCheckout(confirmed: boolean): void {
-    if (confirmed) {
-      // Close the modal first
+    if (!confirmed) {
       this.showCheckoutModal = false;
-
-      console.log('Checkout confirmed, preparing document...');
-
-      // Use the existing method to prepare and send the document
-      if (this.pdf.finalDocument) {
-        this.prepFinalDocument(!!this.callsheet);
-        this.openFinalSpinner();
-        this.sendFinalDocumentToServer(this.pdf.finalDocument);
-      } else {
-        console.error('No final document available');
-        this.dialog.open(IssueComponent, {
-          width: '400px',
-          data: {
-            error: true,
-            errorDetails: 'Document preparation failed',
-            errorReason: 'No final document available',
-          },
-        });
-      }
-    } else {
-      // Just close the modal if not confirmed
-      this.showCheckoutModal = false;
+      return;
     }
+
+    this.showCheckoutModal = false;
+    console.log('Checkout confirmed, preparing document...');
+
+    if (!this.pdf.finalDocument) {
+      console.error('No final document available');
+      this.dialog.open(IssueComponent, {
+        width: '400px',
+        data: {
+          error: true,
+          errorDetails: 'Document preparation failed',
+          errorReason: 'No final document available',
+        },
+      });
+      return;
+    }
+
+    // sendFinalDocumentToServer owns its own loading dialog and the
+    // navigation to /complete on success, so we don't need a separate
+    // spinner here.
+    this.prepFinalDocument(!!this.callsheet);
+    this.sendFinalDocumentToServer(this.pdf.finalDocument);
   }
 
   closeCheckoutModal(): void {
