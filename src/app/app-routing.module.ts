@@ -19,6 +19,7 @@ import { PricingComponent } from './components/pricing/pricing.component';
 import { ContactComponent } from './components/contact/contact.component';
 import { HowItWorksComponent } from './components/how-it-works/how-it-works.component';
 import { SchedulePageComponent } from './components/schedule/schedule-page/schedule-page.component';
+import { HelpCenterComponent } from './components/help-center/help-center.component';
 
 const routes: Routes = [
   { path: 'test', component: TestComponent },
@@ -45,6 +46,7 @@ const routes: Routes = [
   { path: 'pricing', component: PricingComponent },
   { path: 'contact', component: ContactComponent },
   { path: 'how-it-works', component: HowItWorksComponent },
+  { path: 'help', component: HelpCenterComponent },
   { path: "**", component:FourOfourComponent}
  ];
 

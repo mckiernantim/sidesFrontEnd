@@ -1,0 +1,76 @@
+<div class="sw-help" [@fadeInOut]>
+
+  <!-- Hero -->
+  <section class="sw-hero">
+    <div class="sw-hero__overlay"></div>
+    <div class="sw-hero__content">
+      <h1 class="sw-hero__headline">
+        HELP <span class="sw-accent-text">CENTER</span>
+      </h1>
+      <p class="sw-hero__subhead">
+        Answers about uploading scripts, scanning, scene selection,<br>
+        sides generation, security, and billing.
+      </p>
+      <a routerLink="/contact" class="sw-btn-cta">Still need help? Contact us</a>
+    </div>
+  </section>
+
+  <!-- Quick links -->
+  <nav class="sw-help__quicknav" aria-label="Help Center sections">
+    <div class="sw-help__quicknav-inner">
+      <a
+        *ngFor="let section of sections"
+        [href]="'#' + section.id"
+        (click)="scrollToSection(section.id, $event)"
+        class="sw-help__quicklink"
+        [attr.aria-label]="'Jump to ' + section.title + ' section'">
+        {{ section.title }}
+      </a>
+    </div>
+  </nav>
+
+  <!-- FAQ sections -->
+  <main class="sw-section">
+    <div class="sw-help__content">
+
+      <section
+        *ngFor="let section of sections; let last = last"
+        [id]="section.id"
+        class="sw-help__section"
+        [class.sw-help__section--last]="last">
+
+        <!-- Section header -->
+        <header class="sw-help__section-header">
+          <h2 class="sw-help__section-title">
+            <span class="sw-arrow">~&gt;~&gt;</span>
+            {{ section.title }}
+          </h2>
+          <p class="sw-help__section-summary">{{ section.summary }}</p>
+        </header>
+
+        <!-- FAQ items -->
+        <dl class="sw-help__faq-list">
+          <div
+            *ngFor="let item of section.items"
+            class="sw-help__faq-item">
+            <dt class="sw-help__faq-question">{{ item.question }}</dt>
+            <dd class="sw-help__faq-answer">{{ item.answer }}</dd>
+          </div>
+        </dl>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Bottom CTA -->
+  <section class="sw-bottom-cta">
+    <h2 class="sw-bottom-cta__title">Still have questions?</h2>
+    <p class="sw-bottom-cta__body">
+      Reach our team at <a href="mailto:support@sides-ways.com">support&#64;sides-ways.com</a>
+      with any question that is not covered here.
+    </p>
+    <a routerLink="/contact" class="sw-btn-cta">Contact Us</a>
+  </section>
+
+</div>

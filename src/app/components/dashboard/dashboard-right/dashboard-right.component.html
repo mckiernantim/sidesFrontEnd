@@ -36,14 +36,11 @@
                 </button>
                 <button
                   type="button"
-                  (click)="setViewMode('schedule')"
-                  class="px-4 py-2 text-sm font-semibold rounded-md transition-all duration-150 uppercase tracking-wide"
-                  [class.bg-sw-accent]="viewMode === 'schedule'"
-                  [class.text-sw-bg]="viewMode === 'schedule'"
-                  [class.shadow-md]="viewMode === 'schedule'"
-                  [class.text-sw-text-muted]="viewMode !== 'schedule'"
-                  [class.hover:text-sw-text]="viewMode !== 'schedule'">
+                  disabled
+                  class="px-4 py-2 text-sm font-semibold rounded-md uppercase tracking-wide opacity-50 cursor-not-allowed text-sw-text-muted flex items-center gap-2"
+                  title="Coming soon">
                   Schedule
+                  <span class="text-xs font-bold bg-sw-surface-2 border border-sw-border text-sw-text-subtle px-1.5 py-0.5 rounded">Soon</span>
                 </button>
               </div>
 
@@ -77,10 +74,10 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
                 </svg>
-                Select Character{{ selectedCharacters.length > 1 ? 's' : '' }}
+                Select Speaking Character{{ selectedCharacters.length > 1 ? 's' : '' }}
               </h3>
               <p class="text-xs text-sw-text-muted mb-3">
-                Click characters to filter scenes. Select multiple to find scenes with all selected characters.
+                Click characters to filter scenes. Select multiple to find scenes with all selected speaking characters. 
               </p>
               <div class="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                 <button 

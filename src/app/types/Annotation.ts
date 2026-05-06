@@ -73,6 +73,14 @@ export interface AnnotationStyle {
   fillOpacity?: number;       // For shapes
   strokeDashArray?: number[]; // For dashed lines [dash, gap]
   shapeType?: ShapeType;      // For shape annotations
+  // Which corner of the bounding box is the arrow tail.
+  // Derived from raw draw direction so arrows render the way they were drawn.
+  // 'tl' = tail top-left → head bottom-right (default)
+  // 'tr' = tail top-right → head bottom-left
+  // 'bl' = tail bottom-left → head top-right
+  // 'br' = tail bottom-right → head top-left
+  arrowStartCorner?: 'tl' | 'tr' | 'bl' | 'br';
+  arrowRotationDegrees?: number;
 }
 
 /**

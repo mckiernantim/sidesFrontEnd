@@ -10,8 +10,9 @@ import {
   timeout,
   finalize,
   BehaviorSubject,
+  timer,
 } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, first } from 'rxjs/operators';
 import {
   HttpClient,
   HttpHeaders,
@@ -164,80 +165,173 @@ export class UploadService {
 
   generatePdf(finalDocument: any): Observable<PdfGenerationResponse> {
     console.log('=== UPLOAD SERVICE: GENERATING PDF ===');
-    console.log('Document structure:', {
-      name: finalDocument.name,
-      email: finalDocument.email,
-      userId: finalDocument.userId,
-      callSheetPath: finalDocument.callSheetPath,
-      callSheet: finalDocument.callSheet, // Legacy property
-      hasCallSheet: finalDocument.hasCallSheet,
-      dataLength: finalDocument.data?.length || 0
-    });
-    
-    return from(getAuth().currentUser?.getIdToken() || Promise.reject('No user')).pipe(
-      switchMap((token) => {
-        console.log('Got auth token, sending request to server');
-        
-        const requestBody = {
-          data: finalDocument.data,
-          name: finalDocument.name,
-          email: finalDocument.email,
-          callSheetPath: finalDocument.callSheetPath, // Fixed: use callSheetPath instead of callSheet
-          userId: finalDocument.userId
-        };
-        
-        console.log('Request body being sent to server:', requestBody);
-        
-        return this.httpClient.post<PdfResponse>(
-          this.url + '/pdf', 
-          requestBody,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
+    return new Observable<PdfGenerationResponse>((observer) => {
+      let cancelled = false;
+
+      this.runPdfGeneration(finalDocument)
+        .then((response) => {
+          if (cancelled) return;
+          console.log('[generatePdf] DONE, emitting to component:', response);
+
+          if (response?.token) {
+            localStorage.setItem(this.tokenKey, response.token);
+            if (response.expirationTime) {
+              localStorage.setItem('pdfTokenExpires', response.expirationTime.toString());
             }
           }
-        );
-      }),
-      tap((response) => {
-        console.log('Response received from server:', response);
-        
-        // Store the token from the response body
-        if (response && response.token) {
-          localStorage.setItem(this.tokenKey, response.token);
-          
-          // Also store the expiration time
-          if (response.expirationTime) {
-            localStorage.setItem('pdfTokenExpires', response.expirationTime.toString());
+          if (response?.usage) {
+            this.pdfUsageSubject.next({
+              pdfsGenerated: response.usage.pdfsGenerated,
+              lastGeneration: Timestamp.fromMillis(response.usage.lastGeneration),
+              currentPeriodStart: Timestamp.fromMillis(response.usage.currentPeriodStart),
+              currentPeriodEnd: Timestamp.fromMillis(response.usage.currentPeriodEnd),
+              usageLimit: response.usage.usageLimit,
+            });
           }
-        }
 
-        // Update PDF usage if available
-        if (response && response.usage) {
-          const pdfUsage: PdfUsage = {
-            pdfsGenerated: response.usage.pdfsGenerated,
-            lastGeneration: Timestamp.fromMillis(response.usage.lastGeneration),
-            currentPeriodStart: Timestamp.fromMillis(response.usage.currentPeriodStart),
-            currentPeriodEnd: Timestamp.fromMillis(response.usage.currentPeriodEnd),
-            usageLimit: response.usage.usageLimit
-          };
-          this.pdfUsageSubject.next(pdfUsage);
-        }
-      }),
-      catchError((error) => {
-        console.error('Error in generatePdf:', error);
+          observer.next(response as PdfGenerationResponse);
+          observer.complete();
+        })
+        .catch((error) => {
+          if (cancelled) return;
+          console.error('[generatePdf] error:', error);
+          observer.error(error);
+        });
 
-        if (error.status === 403 && error.error?.needsSubscription) {
-          console.log('Subscription needed, handling subscription flow');
-          return this.handleSubscriptionFlow(
-            finalDocument,
-            error.error.checkoutUrl
-          );
-        }
+      return () => { cancelled = true; };
+    });
+  }
 
-        return throwError(() => error);
-      })
-    );
+  /**
+   * One linear PDF flow:
+   *   1. POST /pdf  -> get pdfToken (202 async) or final body (legacy sync).
+   *   2. If async, poll GET /api/pdf-status/:pdfToken every 2s until status != 'processing'.
+   *   3. Return the final response body.
+   */
+  private async runPdfGeneration(finalDocument: any): Promise<any> {
+    const authToken = await (getAuth().currentUser?.getIdToken() ?? Promise.reject(new Error('No authenticated user')));
+    const annotations = finalDocument.annotations || [];
+    const pageAnnotations = finalDocument.pageAnnotations || this.groupAnnotationsByPage(annotations);
+    const dataWithAnnotations = this.attachAnnotationsToPages(finalDocument.data, annotations);
+
+    const requestBody = {
+      data: dataWithAnnotations,
+      name: finalDocument.name,
+      email: finalDocument.email,
+      callSheetPath: finalDocument.callSheetPath,
+      userId: finalDocument.userId,
+      annotations,
+      pageAnnotations,
+      annotationMetadata: {
+        count: annotations.length,
+        types: annotations.reduce((acc: Record<string, number>, annotation: any) => {
+          const type = annotation?.type || 'unknown';
+          acc[type] = (acc[type] || 0) + 1;
+          return acc;
+        }, {}),
+      },
+    };
+    console.log('[generatePdf] POST /pdf', {
+      annotationCount: annotations.length,
+      pageAnnotationCount: Object.keys(pageAnnotations).length,
+    });
+
+    const postResp = await fetch(`${this.url}/pdf`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    const postBody = await postResp.json().catch(() => ({}));
+    console.log(`[generatePdf] POST /pdf -> HTTP ${postResp.status}`, postBody);
+
+    if (postResp.status === 403 && postBody?.needsSubscription) {
+      const subErr: any = new Error('Subscription required');
+      subErr.status = 403;
+      subErr.error = postBody;
+      throw subErr;
+    }
+    if (!postResp.ok && postResp.status !== 202) {
+      const err: any = new Error(postBody?.error || postBody?.message || `PDF request failed (${postResp.status})`);
+      err.status = postResp.status;
+      err.error = postBody;
+      throw err;
+    }
+
+    const isAsync = postResp.status === 202 || postBody?.status === 'processing';
+    if (!isAsync) {
+      return postBody;
+    }
+
+    const pdfToken = postBody?.pdfToken || postBody?.token;
+    if (!pdfToken) {
+      throw new Error('PDF server accepted the job but returned no pdfToken');
+    }
+    console.log('[generatePdf] polling /api/pdf-status for token', pdfToken);
+
+    const statusUrl = `${this.url}/api/pdf-status/${pdfToken}`;
+    const deadline = Date.now() + 180_000;
+    let attempt = 0;
+
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, attempt === 0 ? 1000 : 2000));
+      attempt += 1;
+
+      let statusResp: Response;
+      try {
+        statusResp = await fetch(statusUrl, {
+          headers: { 'Authorization': `Bearer ${authToken}` },
+        });
+      } catch (netErr) {
+        console.warn(`[generatePdf] poll ${attempt} network error, retrying`, netErr);
+        continue;
+      }
+
+      const statusBody: any = await statusResp.json().catch(() => ({}));
+      console.log(`[generatePdf] poll ${attempt} -> HTTP ${statusResp.status} status=${statusBody?.status}`);
+
+      if (statusResp.status === 404) continue;
+      if (!statusResp.ok) {
+        if (statusResp.status === 401 || statusResp.status === 403) {
+          const err: any = new Error('Unauthorized polling PDF status');
+          err.status = statusResp.status;
+          throw err;
+        }
+        continue;
+      }
+
+      if (statusBody?.status === 'complete') return statusBody;
+      if (statusBody?.status === 'error') {
+        throw new Error(statusBody.errorMessage || 'PDF generation failed');
+      }
+    }
+
+    throw new Error('PDF generation timed out after 3 minutes');
+  }
+
+  private groupAnnotationsByPage(annotations: any[]): Record<string, any[]> {
+    return annotations.reduce((grouped: Record<string, any[]>, annotation: any) => {
+      const key = `page_${annotation.pageIndex}`;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(annotation);
+      return grouped;
+    }, {});
+  }
+
+  private attachAnnotationsToPages(data: any[][], annotations: any[]): any[][] {
+    if (!Array.isArray(data)) return data;
+    const annotationsByPage = this.groupAnnotationsByPage(annotations);
+    return data.map((page, pageIndex) => {
+      if (!Array.isArray(page)) return page;
+      const pageCopy = page.map(line => ({ ...line }));
+      if (pageCopy[0]) {
+        pageCopy[0].annotations = annotationsByPage[`page_${pageIndex}`] || [];
+      }
+      return pageCopy;
+    });
   }
 
   downloadPdf(

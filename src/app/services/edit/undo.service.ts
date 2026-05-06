@@ -61,8 +61,31 @@ export interface LinePositionChangeUndoItem {
   changeDescription?: string;
 }
 
+export interface XboxChangeUndoItem {
+  type: 'xbox-change';
+  /** Deep-cloned snapshot of pdfService.finalDocument.xboxes BEFORE the change. */
+  previousXboxes: any[];
+  /** Line visibility snapshots that accompanied this xbox change (so undo is atomic). */
+  lineChanges: {
+    pageIndex: number;
+    lineIndex: number;
+    previousLineState: Line;
+    changeDescription?: string;
+  }[];
+  timestamp: number;
+  changeDescription?: string;
+}
+
+export interface AnnotationChangeUndoItem {
+  type: 'annotation-change';
+  /** Deep-cloned snapshot of pdfService.finalDocument.annotations BEFORE the change. */
+  previousAnnotations: any[];
+  timestamp: number;
+  changeDescription?: string;
+}
+
 // Union type for all possible undo items
-export type AnyUndoItem = UndoStackItem | SceneOrderUndoItem | DocumentReorderUndoItem | SceneReorderUndoItem | BatchLineChangeUndoItem | LinePositionChangeUndoItem;
+export type AnyUndoItem = UndoStackItem | SceneOrderUndoItem | DocumentReorderUndoItem | SceneReorderUndoItem | BatchLineChangeUndoItem | LinePositionChangeUndoItem | XboxChangeUndoItem | AnnotationChangeUndoItem;
 
 @Injectable({
   providedIn: 'root',
@@ -271,12 +294,19 @@ export class UndoService {
 
     const undoItem = this.undoStack.pop()!;
 
-    // Add to redo stack
-    this.redoStack.push(undoItem);
+    // Most undo handlers can redo by replaying the same item. Snapshot-based handlers
+    // create their own redo item after capturing current state.
+    if (!this.isXboxChangeUndoItem(undoItem) && !this.isAnnotationChangeUndoItem(undoItem)) {
+      this.redoStack.push(undoItem);
+    }
 
     // Handle different types of undo items
     if (this.isLinePositionChangeUndoItem(undoItem)) {
       this.handleLinePositionChangeUndo(undoItem as LinePositionChangeUndoItem);
+    } else if (this.isXboxChangeUndoItem(undoItem)) {
+      this.handleXboxChangeUndo(undoItem as XboxChangeUndoItem);
+    } else if (this.isAnnotationChangeUndoItem(undoItem)) {
+      this.handleAnnotationChangeUndo(undoItem as AnnotationChangeUndoItem);
     } else if (this.isBatchLineChangeUndoItem(undoItem)) {
       this.handleBatchLineChangeUndo(undoItem as BatchLineChangeUndoItem);
     } else if (this.isSceneReorderUndoItem(undoItem)) {
@@ -311,6 +341,10 @@ export class UndoService {
     if (this.isLinePositionChangeUndoItem(redoItem)) {
       // Handle line position change redo
       this.handleLinePositionChangeRedo(redoItem as LinePositionChangeUndoItem);
+    } else if (this.isXboxChangeUndoItem(redoItem)) {
+      this.handleXboxChangeRedo(redoItem as XboxChangeUndoItem);
+    } else if (this.isAnnotationChangeUndoItem(redoItem)) {
+      this.handleAnnotationChangeRedo(redoItem as AnnotationChangeUndoItem);
     } else if (this.isBatchLineChangeUndoItem(redoItem)) {
       // Handle batch line changes redo
       this.handleBatchLineChangeRedo(redoItem as BatchLineChangeUndoItem);
@@ -362,6 +396,162 @@ export class UndoService {
 
   private isLinePositionChangeUndoItem(item: AnyUndoItem): item is LinePositionChangeUndoItem {
     return (item as LinePositionChangeUndoItem).type === 'line-position-change';
+  }
+
+  private isXboxChangeUndoItem(item: AnyUndoItem): item is XboxChangeUndoItem {
+    return (item as XboxChangeUndoItem).type === 'xbox-change';
+  }
+
+  private isAnnotationChangeUndoItem(item: AnyUndoItem): item is AnnotationChangeUndoItem {
+    return (item as AnnotationChangeUndoItem).type === 'annotation-change';
+  }
+
+  /**
+   * Record a snapshot of the entire annotations array BEFORE a mutation (create/delete/move).
+   * Atomic restore on undo/redo — components must re-sync their local annotation state when
+   * they observe an `annotation-change` event on `undoRedo$`.
+   */
+  recordAnnotationChange(previousAnnotations: any[], description?: string): void {
+    const item: AnnotationChangeUndoItem = {
+      type: 'annotation-change',
+      previousAnnotations: cloneDeep(previousAnnotations || []),
+      timestamp: Date.now(),
+      changeDescription: description,
+    };
+    this.undoStack.push(item);
+    this.redoStack = [];
+    this.trimStackIfNeeded();
+  }
+
+  private handleAnnotationChangeUndo(undoItem: AnnotationChangeUndoItem): void {
+    if (!this.pdfService || !this.pdfService.finalDocument) return;
+
+    // Capture current state for redo BEFORE mutating.
+    const currentAnnotations = cloneDeep((this.pdfService.finalDocument as any).annotations || []);
+    const redoItem: AnnotationChangeUndoItem = {
+      type: 'annotation-change',
+      previousAnnotations: currentAnnotations,
+      timestamp: Date.now(),
+      changeDescription: undoItem.changeDescription,
+    };
+    this.redoStack.push(redoItem);
+
+    // Restore previous annotations on the document; components resync via undoRedo$ subscription.
+    (this.pdfService.finalDocument as any).annotations = cloneDeep(undoItem.previousAnnotations);
+  }
+
+  private handleAnnotationChangeRedo(redoItem: AnnotationChangeUndoItem): void {
+    if (!this.pdfService || !this.pdfService.finalDocument) return;
+
+    const currentAnnotations = cloneDeep((this.pdfService.finalDocument as any).annotations || []);
+    const undoItem: AnnotationChangeUndoItem = {
+      type: 'annotation-change',
+      previousAnnotations: currentAnnotations,
+      timestamp: Date.now(),
+      changeDescription: redoItem.changeDescription,
+    };
+    this.undoStack.push(undoItem);
+
+    (this.pdfService.finalDocument as any).annotations = cloneDeep(redoItem.previousAnnotations);
+  }
+
+  /**
+   * Record an atomic xbox change: snapshot of the xboxes array PLUS any line visibility changes
+   * that accompany it. Undo/redo restores both together so the xbox geometry and its crossed-out
+   * lines never fall out of sync.
+   */
+  recordXboxChange(
+    previousXboxes: any[],
+    lineChanges: { pageIndex: number; lineIndex: number; previousLineState: Line; changeDescription?: string }[],
+    description?: string
+  ): void {
+    const item: XboxChangeUndoItem = {
+      type: 'xbox-change',
+      previousXboxes: cloneDeep(previousXboxes || []),
+      lineChanges: lineChanges.map(c => ({
+        pageIndex: c.pageIndex,
+        lineIndex: c.lineIndex,
+        previousLineState: cloneDeep(c.previousLineState),
+        changeDescription: c.changeDescription,
+      })),
+      timestamp: Date.now(),
+      changeDescription: description,
+    };
+    this.undoStack.push(item);
+    // New user action clears redo stack (matches recordBatchChanges behavior).
+    this.redoStack = [];
+    this.trimStackIfNeeded();
+  }
+
+  private handleXboxChangeUndo(undoItem: XboxChangeUndoItem): void {
+    if (!this.pdfService || !this.pdfService.finalDocument) return;
+
+    // Capture current state for redo BEFORE we mutate anything
+    const currentXboxes = cloneDeep((this.pdfService.finalDocument as any).xboxes || []);
+    const redoLineChanges = undoItem.lineChanges.map(change => {
+      const currentPage = this.pdfService.finalDocument?.data?.[change.pageIndex];
+      const currentLine = currentPage && currentPage[change.lineIndex];
+      return {
+        ...change,
+        previousLineState: currentLine ? cloneDeep(currentLine) : change.previousLineState,
+      };
+    });
+    const redoItem: XboxChangeUndoItem = {
+      type: 'xbox-change',
+      previousXboxes: currentXboxes,
+      lineChanges: redoLineChanges,
+      timestamp: Date.now(),
+      changeDescription: undoItem.changeDescription,
+    };
+    this.redoStack.push(redoItem);
+
+    // Restore xboxes array
+    (this.pdfService.finalDocument as any).xboxes = cloneDeep(undoItem.previousXboxes);
+
+    // Restore each line's visible/etc state
+    undoItem.lineChanges.forEach(change => {
+      this.restoreLineState({
+        pageIndex: change.pageIndex,
+        lineIndex: change.lineIndex,
+        previousLineState: change.previousLineState,
+        timestamp: undoItem.timestamp,
+        changeDescription: change.changeDescription,
+      } as UndoStackItem);
+    });
+  }
+
+  private handleXboxChangeRedo(redoItem: XboxChangeUndoItem): void {
+    if (!this.pdfService || !this.pdfService.finalDocument) return;
+
+    const currentXboxes = cloneDeep((this.pdfService.finalDocument as any).xboxes || []);
+    const undoLineChanges = redoItem.lineChanges.map(change => {
+      const currentPage = this.pdfService.finalDocument?.data?.[change.pageIndex];
+      const currentLine = currentPage && currentPage[change.lineIndex];
+      return {
+        ...change,
+        previousLineState: currentLine ? cloneDeep(currentLine) : change.previousLineState,
+      };
+    });
+    const undoItem: XboxChangeUndoItem = {
+      type: 'xbox-change',
+      previousXboxes: currentXboxes,
+      lineChanges: undoLineChanges,
+      timestamp: Date.now(),
+      changeDescription: redoItem.changeDescription,
+    };
+    this.undoStack.push(undoItem);
+
+    (this.pdfService.finalDocument as any).xboxes = cloneDeep(redoItem.previousXboxes);
+
+    redoItem.lineChanges.forEach(change => {
+      this.restoreLineState({
+        pageIndex: change.pageIndex,
+        lineIndex: change.lineIndex,
+        previousLineState: change.previousLineState,
+        timestamp: redoItem.timestamp,
+        changeDescription: change.changeDescription,
+      } as UndoStackItem);
+    });
   }
 
   /**

@@ -1,11 +1,12 @@
 export const environment = {
   production: true,
-  
+
   // ⚠️⚠️⚠️ CRITICAL: CHANGE TO REAL STRIPE PRODUCTION KEY BEFORE GOING LIVE! ⚠️⚠️⚠️
   // Current key is TEST mode - will NOT process real payments!
   // Replace with: pk_live_... (your real production publishable key)
   stripe: 'pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ',
-  
+  contactFunctionUrl: 'https://us-central1-scriptthing.cloudfunctions.net/contactUs',
+
   firebaseConfig:{
     apiKey: "AIzaSyBXD5kQfAS4lrmSJxYAuEUq8sxvXgWmCio",
     authDomain: "scriptthing.firebaseapp.com",
@@ -51,7 +52,8 @@ export function getConfig(isProd = false) {
         appId: "1:401150394674:web:760ffe3a546b2d01a8d72b",
         measurementId: "G-1JF7DG5L5H"
       },
-      url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com'
+      url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
+      contactFunctionUrl: 'https://us-central1-scriptthing-dev.cloudfunctions.net/contactUs'
     };
   }
 

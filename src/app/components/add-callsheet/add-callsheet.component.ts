@@ -153,23 +153,12 @@ private async testPdfSetup(): Promise<boolean> {
             });
     }
 
-    // Temporary workaround to convert GCS URL to Firebase Storage URL
+    // Backend uploads files with makePublic() — the GCS URL (storage.googleapis.com) is
+    // already publicly accessible via IAM. Converting to Firebase format would route
+    // requests through Firebase Security Rules instead, which aren't deployed to the dev
+    // project. Return the URL unchanged.
     private convertToFirebaseUrl(gcsUrl: string): string {
-        if (!gcsUrl || !gcsUrl.includes('storage.googleapis.com')) {
-            return gcsUrl;
-        }
-        
-        // Extract bucket and path from GCS URL
-        const url = new URL(gcsUrl);
-        const pathParts = url.pathname.split('/');
-        const bucket = pathParts[1];
-        const path = pathParts.slice(2).join('/');
-        
-        // Decode the path first to avoid double-encoding
-        const decodedPath = decodeURIComponent(path);
-        
-        // Convert to Firebase Storage download URL
-        return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(decodedPath)}?alt=media`;
+        return gcsUrl;
     }
 
     private handleUploadResponse(response: CallsheetUploadResponse, fileName: string): void {
@@ -182,6 +171,7 @@ private async testPdfSetup(): Promise<boolean> {
             // Convert URLs to Firebase Storage format if needed
             const imageUrl = this.convertToFirebaseUrl(response.imageUrl);
             const previewUrl = this.convertToFirebaseUrl(response.previewUrl);
+            console.log('Callsheet URLs after conversion:', { imageUrl, previewUrl });
             
             // Create callsheet data object with URLs from backend
             this.callsheet = {
