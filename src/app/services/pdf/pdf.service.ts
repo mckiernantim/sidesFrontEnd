@@ -3045,8 +3045,13 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     console.log('Has callsheet in passed document:', hasCallsheetInDocument);
     
     if (!hasCallsheetInDocument) {
-      console.log('No callsheet found in document, returning as-is');
-      return document;
+      console.log('No callsheet found in document, returning annotated copy');
+      const result = {
+        ...document,
+        data: this.attachAnnotationsToDocumentData(document.data, document.annotations || []),
+        pageAnnotations: document.pageAnnotations || this.groupAnnotationsByPage(document.annotations || [])
+      };
+      return result;
     }
 
     console.log('Creating document copy without callsheet for server processing');
@@ -3081,11 +3086,24 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
       }
     }
 
+    const annotationsWithoutCallsheet = (document.annotations || [])
+      .filter((annotation: any) => annotation.pageIndex > 0)
+      .map((annotation: any) => ({
+        ...annotation,
+        pageIndex: annotation.pageIndex - 1
+      }));
+    const annotatedDocumentData = this.attachAnnotationsToDocumentData(
+      documentDataWithoutCallsheet,
+      annotationsWithoutCallsheet
+    );
+
     // Return a new document object with the callsheet removed
     const result = {
       ...document,
-      data: documentDataWithoutCallsheet,
-      numPages: documentDataWithoutCallsheet.length
+      data: annotatedDocumentData,
+      annotations: annotationsWithoutCallsheet,
+      pageAnnotations: this.groupAnnotationsByPage(annotationsWithoutCallsheet),
+      numPages: annotatedDocumentData.length
     };
     
     console.log('=== DOCUMENT COPY CREATED SUCCESSFULLY ===');
@@ -3113,6 +3131,28 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
            firstPage.length > 0 && 
            firstPage[0] && 
            firstPage[0].type === 'callsheet';
+  }
+
+  private groupAnnotationsByPage(annotations: any[]): Record<string, any[]> {
+    return annotations.reduce((grouped: Record<string, any[]>, annotation: any) => {
+      const key = `page_${annotation.pageIndex}`;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(annotation);
+      return grouped;
+    }, {});
+  }
+
+  private attachAnnotationsToDocumentData(data: any[][], annotations: any[]): any[][] {
+    if (!Array.isArray(data)) return data;
+    const annotationsByPage = this.groupAnnotationsByPage(annotations);
+    return data.map((page, pageIndex) => {
+      if (!Array.isArray(page)) return page;
+      const pageCopy = page.map(line => ({ ...line }));
+      if (pageCopy[0]) {
+        pageCopy[0].annotations = annotationsByPage[`page_${pageIndex}`] || [];
+      }
+      return pageCopy;
+    });
   }
 
   /**

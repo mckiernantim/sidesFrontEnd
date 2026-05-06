@@ -9,10 +9,11 @@
 
     <!-- Desktop links -->
     <ul class="sw-nav__links">
-      <li><a routerLink="/how-it-works" routerLinkActive="sw-nav__link--active" class="sw-nav__link">Features</a></li>
+      <li><a routerLink="/how-it-works" routerLinkActive="sw-nav__link--active" class="sw-nav__link">How It Works</a></li>
       <li><a routerLink="/pricing"      routerLinkActive="sw-nav__link--active" class="sw-nav__link">Pricing</a></li>
-      <li><a routerLink="/about"        routerLinkActive="sw-nav__link--active" class="sw-nav__link">Useage</a></li>
+      <li><a routerLink="/about"        routerLinkActive="sw-nav__link--active" class="sw-nav__link">About</a></li>
       <li><a routerLink="/contact"      routerLinkActive="sw-nav__link--active" class="sw-nav__link">Contact</a></li>
+      <li><a routerLink="/help"         routerLinkActive="sw-nav__link--active" class="sw-nav__link">Help</a></li>
     </ul>
 
     <!-- Right side: script badge + auth -->
@@ -78,6 +79,7 @@
     <a routerLink="/pricing"      class="sw-nav__mobile-link">Pricing</a>
     <a routerLink="/about"        class="sw-nav__mobile-link">Useage</a>
     <a routerLink="/contact"      class="sw-nav__mobile-link">Contact</a>
+    <a routerLink="/help"         class="sw-nav__mobile-link">Help</a>
     <button *ngIf="!isLoggedIn" (click)="signIn()" class="sw-nav__mobile-signin">Sign In</button>
     <button *ngIf="isLoggedIn"  (click)="logout()" class="sw-nav__mobile-link">Logout</button>
   </div>

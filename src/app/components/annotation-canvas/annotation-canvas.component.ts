@@ -475,6 +475,16 @@ export class AnnotationCanvasComponent implements OnInit, AfterViewInit, OnDestr
     // Get default style for this annotation type
     const defaultStyle = DEFAULT_ANNOTATION_STYLES[type] || DEFAULT_ANNOTATION_STYLES.note;
 
+    // For arrow types, record which corner the user started drawing from so
+    // we can render the arrowhead at the correct end after box normalisation.
+    const isArrow =
+      type === 'note' ||
+      (type === 'shape' && defaultStyle.shapeType === 'arrow');
+
+    const arrowStartCorner: 'tl' | 'tr' | 'bl' | 'br' | undefined = isArrow
+      ? this.getArrowStartCorner(start, end)
+      : undefined;
+
     // Create annotation
     this.annotationState.createAnnotation({
       type,
@@ -484,8 +494,42 @@ export class AnnotationCanvasComponent implements OnInit, AfterViewInit, OnDestr
       normalizedWidth: clampedBox.normalizedWidth,
       normalizedHeight: clampedBox.normalizedHeight,
       text: type === 'textbox' ? 'New Text' : '',
-      style: { ...defaultStyle },
+      style: { ...defaultStyle, ...(arrowStartCorner ? { arrowStartCorner } : {}) },
     });
+  }
+
+  /**
+   * Determine which corner of the normalised bounding box corresponds to the
+   * raw draw start point. The box normalisation always produces positive
+   * width/height, so we need to re-derive the corner from the original points.
+   */
+  private getArrowStartCorner(
+    start: CanvasPoint,
+    end: CanvasPoint
+  ): 'tl' | 'tr' | 'bl' | 'br' {
+    const drawnRight = end.canvasX >= start.canvasX;
+    const drawnDown  = end.canvasY >= start.canvasY;
+    if ( drawnRight &&  drawnDown) return 'tl';
+    if (!drawnRight &&  drawnDown) return 'tr';
+    if ( drawnRight && !drawnDown) return 'bl';
+    return 'br';
+  }
+
+  /**
+   * Resolve the pixel start (tail) and end (head) of an arrow from its
+   * bounding box and the stored arrowStartCorner.
+   */
+  private getArrowEndpoints(
+    box: { canvasX: number; canvasY: number; canvasWidth: number; canvasHeight: number },
+    corner: 'tl' | 'tr' | 'bl' | 'br' = 'tl'
+  ): { x1: number; y1: number; x2: number; y2: number } {
+    const { canvasX: x, canvasY: y, canvasWidth: w, canvasHeight: h } = box;
+    switch (corner) {
+      case 'tl': return { x1: x,   y1: y,   x2: x+w, y2: y+h };
+      case 'tr': return { x1: x+w, y1: y,   x2: x,   y2: y+h };
+      case 'bl': return { x1: x,   y1: y+h, x2: x+w, y2: y   };
+      case 'br': return { x1: x+w, y1: y+h, x2: x,   y2: y   };
+    }
   }
 
   // ─────────────────────────────────────────────
@@ -597,30 +641,14 @@ export class AnnotationCanvasComponent implements OnInit, AfterViewInit, OnDestr
           }
           ctx.strokeRect(box.canvasX, box.canvasY, box.canvasWidth, box.canvasHeight);
         } else if (style.shapeType === 'arrow') {
-          this.drawArrow(
-            ctx,
-            box.canvasX,
-            box.canvasY,
-            box.canvasX + box.canvasWidth,
-            box.canvasY + box.canvasHeight,
-            style.color || '#000000',
-            style.strokeWidth || 2
-          );
+          // Arrow committed annotations are rendered as DOM SVG — skip canvas render
+          return;
         }
         break;
 
       case 'note':
-        // Note type is used for arrows (context arrows)
-        this.drawArrow(
-          ctx,
-          box.canvasX,
-          box.canvasY,
-          box.canvasX + box.canvasWidth,
-          box.canvasY + box.canvasHeight,
-          style.color || '#000000',
-          style.strokeWidth || 3
-        );
-        break;
+        // Arrow committed annotations are rendered as DOM SVG — skip canvas render
+        return;
 
       case 'textbox':
         // Draw text background

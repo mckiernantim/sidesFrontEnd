@@ -30,6 +30,7 @@ export const environment = {
   stripe: 'pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ',
   firebaseConfig: devFirebaseConfig,
   url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
+  contactFunctionUrl: 'https://us-central1-scriptthing-dev.cloudfunctions.net/contactUs',
   password:"NOTEWORTHY",
   maintenanceMode: false
 };
@@ -40,8 +41,9 @@ export const environmentProd = {
   stripe: 'pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ',
   firebaseConfig: prodFirebaseConfig,
   url: 'https://sides3.herokuapp.com',
+  contactFunctionUrl: 'https://us-central1-scriptthing.cloudfunctions.net/contactUs',
   password: "NOTEWORTHY",
-  maintenanceMode: false 
+  maintenanceMode: false
 };
 
 /**
@@ -110,6 +112,7 @@ export function getConfig(isProd = false) {
       production: true,
       firebaseConfig: prodFirebaseConfig,
       url: 'https://sides3.herokuapp.com',
+      contactFunctionUrl: 'https://us-central1-scriptthing.cloudfunctions.net/contactUs',
       stripe: 'pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ'
     };
   }

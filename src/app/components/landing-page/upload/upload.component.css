@@ -1,151 +1,32 @@
-/* ── Hero ────────────────────────────────────────────────────────────────── */
-.sw-hero {
-  position: relative;
-  min-height: 520px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  overflow: hidden;
-  background-image: url('/assets/productionBG.png');
-  background-size: cover;
-  background-position: center;
-}
-
-/* Dark cinematic overlay */
-.sw-hero__overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(6, 10, 20, 0.72) 0%,
-    rgba(6, 10, 20, 0.82) 60%,
-    rgba(6, 10, 20, 1)    100%
-  );
-  z-index: 1;
-}
-
-.sw-hero__content {
-  position: relative;
-  z-index: 2;
-  max-width: 860px;
-  padding: 5rem 2rem 6rem;
-}
-
-.sw-hero__headline {
-  font-family: var(--sw-font-display);
-  font-size: clamp(3rem, 8vw, 6rem);
-  font-weight: 900;
-  text-transform: uppercase;
-  color: var(--sw-text);
-  line-height: 1.0;
-  letter-spacing: -0.01em;
-  margin: 0 0 1.5rem;
-}
-
-.sw-hero__subhead {
-  font-family: var(--sw-font-body);
-  font-size: clamp(1rem, 2vw, 1.25rem);
-  color: var(--sw-text-muted);
-  line-height: 1.6;
-  margin: 0 0 2.5rem;
-}
-
-/* ── Accent text (neon yellow-green) ─────────────────────────────────────── */
-.sw-accent-text {
-  color: var(--sw-accent);
-  font-style: italic;
-}
-
-/* ── Primary CTA button ──────────────────────────────────────────────────── */
-.sw-btn-cta {
-  display: inline-block;
-  font-family: var(--sw-font-body);
-  font-size: 1rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--sw-accent-fg);
-  background-color: var(--sw-accent);
-  border: none;
-  border-radius: 999px;
-  padding: 1rem 2.5rem;
-  cursor: pointer;
-  text-decoration: none;
-  transition: background-color 0.15s, transform 0.1s;
-}
-
-.sw-btn-cta:hover {
-  background-color: var(--sw-accent-hover);
-  transform: translateY(-1px);
-}
-
-.sw-btn-cta:active {
-  transform: translateY(0);
-}
-
-/* ── Section wrapper ─────────────────────────────────────────────────────── */
-.sw-section {
-  padding: 2rem 1.5rem;
-  background-color: var(--sw-bg);
-}
-
-/* Dark card surface */
-.sw-card {
-  max-width: 920px;
-  margin: 0 auto;
-  background-color: var(--sw-surface);
-  border: 1px solid var(--sw-border);
-  border-radius: var(--sw-radius-xl);
-  padding: 3rem 3.5rem;
-}
-
-/* ── Section headings ────────────────────────────────────────────────────── */
-.sw-section-heading {
-  font-family: var(--sw-font-display);
-  font-size: clamp(1.25rem, 3vw, 1.75rem);
-  font-weight: 800;
-  text-transform: uppercase;
-  color: var(--sw-text);
-  text-align: center;
-  letter-spacing: 0.05em;
-  margin: 0 0 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-/* Decorative arrows */
-.sw-arrow {
-  font-family: cursive, sans-serif;
-  color: var(--sw-accent);
-  font-style: normal;
-  font-size: 0.9em;
-  opacity: 0.85;
-}
-
 /* ── Security layout ─────────────────────────────────────────────────────── */
 .sw-security {
   display: flex;
-  align-items: flex-start;
-  gap: 3rem;
+  align-items: center;
+  gap: clamp(1.25rem, 4vw, 3rem);
 }
 
+/* Square frame; overflow + scale() crops off baked-in "internal padding" in the PNGs. */
 .sw-security__image {
-  flex-shrink: 0;
-  width: 180px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  --sw-bot-crop-zoom: 1.38;
+  flex: 0 0 auto;
+  width: min(100%, clamp(200px, 32vw, 300px));
+  max-width: 320px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  display: block;
+  align-self: center;
+  background: transparent;
 }
 
 .sw-security__image img {
-  width: 160px;
-  height: 160px;
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  filter: brightness(0) invert(1) opacity(0.9);
+  object-position: center;
+  background: transparent;
+  transform: scale(var(--sw-bot-crop-zoom));
+  transform-origin: center center;
 }
 
 .sw-security__body {
@@ -207,14 +88,24 @@
 }
 
 .sw-step__image {
-  margin-bottom: 1.25rem;
+  --sw-bot-crop-zoom: 1.08;
+  width: min(100%, clamp(120px, 19.5vw, 165px));
+  aspect-ratio: 1;
+  overflow: hidden;
+  margin: 0 auto 1.25rem;
+  display: block;
+  background: transparent;
 }
 
 .sw-step__image img {
-  width: 160px;
-  height: 160px;
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  filter: brightness(0) invert(1) opacity(0.9);
+  object-position: center;
+  background: transparent;
+  transform: scale(var(--sw-bot-crop-zoom));
+  transform-origin: center center;
 }
 
 .sw-step__title {
@@ -238,50 +129,6 @@
 .sw-step__body strong {
   color: var(--sw-text);
   font-weight: 700;
-}
-
-/* ── Bottom CTA ──────────────────────────────────────────────────────────── */
-.sw-bottom-cta {
-  padding: 4rem 2rem 5rem;
-  text-align: center;
-  background-color: var(--sw-bg);
-}
-
-.sw-bottom-cta__title {
-  font-family: var(--sw-font-display);
-  font-size: clamp(1.75rem, 4vw, 2.5rem);
-  font-weight: 800;
-  text-transform: uppercase;
-  color: var(--sw-accent);
-  margin: 0 0 0.75rem;
-}
-
-.sw-bottom-cta__body {
-  font-family: var(--sw-font-body);
-  font-size: 1rem;
-  color: var(--sw-text-muted);
-  margin: 0 0 1.5rem;
-  line-height: 1.6;
-}
-
-.sw-bottom-cta__link {
-  font-family: var(--sw-font-body);
-  font-size: 0.9375rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--sw-accent);
-  background: none;
-  border: none;
-  border-bottom: 2px solid var(--sw-accent);
-  padding-bottom: 2px;
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
-}
-
-.sw-bottom-cta__link:hover {
-  color: var(--sw-accent-hover);
-  border-color: var(--sw-accent-hover);
 }
 
 /* ── Maintenance banner ──────────────────────────────────────────────────── */
@@ -506,15 +353,17 @@
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .sw-card {
-    padding: 2rem 1.5rem;
-  }
-
   .sw-security {
     flex-direction: column;
     align-items: center;
     text-align: center;
     gap: 1.5rem;
+  }
+
+  .sw-security__image {
+    flex: none;
+    width: min(88vw, 300px);
+    max-width: 100%;
   }
 
   .sw-security__list li {

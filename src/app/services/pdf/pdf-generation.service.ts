@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Observable, throwError, from } from 'rxjs';
-import { catchError, tap, switchMap } from 'rxjs/operators';
+import { Observable, throwError, from, timer } from 'rxjs';
+import { catchError, tap, switchMap, first, map } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { getAuth } from 'firebase/auth';
 import { PdfGenerationResponse, PdfResponse } from '../../types/user';
@@ -63,6 +63,13 @@ export class PdfGenerationService {
               'Content-Type': 'application/json'
             }
           }
+        ).pipe(
+          switchMap((response: any) => {
+            if (response.status === 'processing') {
+              return this.pollForPdfCompletion(response.pdfToken || response.token);
+            }
+            return [response];
+          })
         );
       }),
       tap((response) => {
@@ -99,6 +106,21 @@ export class PdfGenerationService {
         }
 
         return throwError(() => error);
+      })
+    );
+  }
+
+  private pollForPdfCompletion(pdfToken: string): Observable<PdfResponse> {
+    return timer(2000, 3000).pipe(
+      switchMap(() =>
+        this.httpClient.get<any>(`${this.url}/api/pdf-status/${pdfToken}`)
+      ),
+      first((response: any) => response.status !== 'processing'),
+      map((response: any) => {
+        if (response.status === 'error') {
+          throw new Error(response.errorMessage || 'PDF generation failed');
+        }
+        return response as PdfResponse;
       })
     );
   }

@@ -190,7 +190,7 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     { key: 'text', header: 'Location' },
     {
       key: 'characters',
-      header: 'Characters',
+      header: 'Speaking Characters',
       cell: (item: any) => item.characters?.join(', ') || '-',
     },
     { key: 'page', header: 'Page' },
@@ -1299,6 +1299,7 @@ private resolveCallSheetPath(): { callSheetPathToSend: string | null; hasCallShe
     } else {
       // User is navigating back to scene select - clear selected scenes in the service
       console.log('Navigating back to scene select - clearing selected scenes in service');
+      this.undoService.clearHistory();
       this.pdf.clearSelectedScenes();
     }
   }

@@ -285,66 +285,15 @@
     <div class="mt-10">
       <div class="flex items-center justify-between mb-6 pb-2 border-b border-sw-border">
         <h2 class="text-xl font-semibold text-sw-text">My Schedules</h2>
-        <button
-          *ngIf="savedSchedules.length > 0"
-          (click)="viewAllSchedules()"
-          class="text-sm text-sw-accent hover:opacity-80 font-medium transition-all">
-          View All →
-        </button>
+        <span class="text-xs font-bold bg-sw-surface-2 border border-sw-border text-sw-text-subtle px-2 py-1 rounded uppercase tracking-wide">Coming Soon</span>
       </div>
 
-      <!-- Loading schedules -->
-      <div *ngIf="isLoadingSchedules" class="flex items-center justify-center py-8">
-        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-sw-accent mr-3"></div>
-        <span class="text-sm text-sw-text-subtle">Loading schedules...</span>
-      </div>
-
-      <!-- Error loading schedules -->
-      <div *ngIf="!isLoadingSchedules && scheduleError" class="p-4 bg-sw-surface-2 rounded-lg border-2 border-sw-danger text-center mb-3">
-        <p class="text-sm text-sw-danger mb-2">{{ scheduleError }}</p>
-        <button
-          (click)="loadSavedSchedules()"
-          class="text-xs text-sw-danger hover:opacity-80 font-medium underline">
-          Retry
-        </button>
-      </div>
-
-      <!-- No schedules yet -->
-      <div *ngIf="!isLoadingSchedules && !scheduleError && savedSchedules.length === 0" class="p-6 bg-sw-surface-2 rounded-lg border border-sw-border text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-sw-text-subtle mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+      <div class="p-8 bg-sw-surface-2 rounded-lg border border-sw-border text-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-sw-text-subtle mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
-        <p class="text-sw-text-muted mb-3">No production schedules yet.</p>
-        <p class="text-sm text-sw-text-subtle">
-          Upload and classify a script to create your first shooting schedule.
-        </p>
-      </div>
-
-      <!-- Schedule list -->
-      <div *ngIf="!isLoadingSchedules && savedSchedules.length > 0" class="space-y-3">
-        <div
-          *ngFor="let schedule of savedSchedules"
-          (click)="openSchedule(schedule.id)"
-          class="flex items-center justify-between p-4 bg-sw-surface-2 rounded-lg border-2 border-sw-border hover:border-sw-accent hover:bg-sw-border cursor-pointer transition-all group shadow-md">
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold text-sw-text truncate group-hover:text-sw-accent">
-              {{ schedule.projectTitle || 'Untitled Schedule' }}
-            </p>
-            <div class="flex items-center space-x-3 mt-1">
-              <span class="text-xs text-sw-text-muted">{{ schedule.sceneCount }} scenes</span>
-              <span class="text-xs text-sw-text-subtle">·</span>
-              <span class="text-xs text-sw-text-muted">{{ schedule.shootDayCount }} shoot days</span>
-              <span class="text-xs text-sw-text-subtle">·</span>
-              <span class="text-xs text-sw-text-muted">{{ schedule.castCount }} cast</span>
-            </div>
-            <p class="text-xs text-sw-text-subtle mt-1">
-              Updated {{ formatRelativeDate(schedule.updatedAt) }}
-            </p>
-          </div>
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-sw-text-subtle group-hover:text-sw-accent flex-shrink-0 ml-3" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-          </svg>
-        </div>
+        <p class="text-sw-text font-semibold mb-2">Production Scheduling</p>
+        <p class="text-sm text-sw-text-muted">Full scheduling tools are on the way. Stay tuned.</p>
       </div>
     </div>
 
