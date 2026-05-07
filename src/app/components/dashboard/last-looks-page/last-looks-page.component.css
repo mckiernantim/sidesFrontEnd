@@ -64,7 +64,7 @@
     border: none;
     background: transparent;
     border-radius: 8px;
-    cursor: pointer;
+    cursor: grab;
     transition: all 0.15s ease;
 }
 
@@ -235,7 +235,7 @@
     font-size: 13px;
     font-weight: 500;
     color: #374151;
-    cursor: pointer;
+    cursor: grab;
     transition: all 0.15s ease;
     border-radius: 0;
 }
@@ -347,6 +347,8 @@
     min-width: 816px;
     height: 100%;
     position: relative;
+    z-index: 0;
+    isolation: isolate;
 }
 
 /* Sacred screenplay elements */
@@ -447,13 +449,6 @@ svg.skipped-sections-overlay {
    so the user can interact with them (re-select, toggle visibility, etc.) */
 .edit-mode li:not(.page-number):not(.page-number-hidden):not(.page-number-text) {
     z-index: 10 !important;
-}
-
-/* Hidden (false) lines in edit mode must NOT intercept mouse events —
-   the Xbox interactive overlay (z-index 11) sits directly above them
-   and needs unobstructed pointer access for drag and resize. */
-.edit-mode li.false:not(.page-number):not(.page-number-hidden):not(.page-number-text) {
-    pointer-events: none !important;
 }
 
 .legal {
@@ -816,7 +811,6 @@ span.CONTINUE {
 
 .context-menu-item {
     display: flex;
-    flex-direction: row;
     align-items: center;
     width: 100%;
     padding: 10px 12px;
@@ -1151,9 +1145,6 @@ li.page-number {
     width: 816px;
     height: 1056px;
     z-index: 100;
-    /* Host must be pass-through so bars/lines beneath stay draggable/clickable.
-       The inner <canvas> toggles its own pointer-events via .canvas-interactive when a
-       drawing tool is active, which lets drawing still work on top of everything. */
     pointer-events: none;
 }
 
@@ -1471,14 +1462,13 @@ li.page-number {
     width: 816px;
     height: 1056px;
     pointer-events: none;   /* Container doesn't block — children opt-in */
-    z-index: 115;           /* Above annotation canvas (100), arrows (105), and text boxes (110) */
+    z-index: 115;           /* Above annotation/edit overlays so X-box controls receive events */
 }
 
 .xbox-interactive {
     position: absolute;
-    /* Body is pass-through so lines beneath stay editable (reclassify, select, etc.).
-       Only the resize handles and delete button opt back in via pointer-events: auto. */
-    pointer-events: none;
+    pointer-events: auto !important; /* Each X-box is individually clickable */
+    cursor: grab;
     border: 2px solid transparent;
     border-radius: 2px;
     transition: border-color 0.15s, box-shadow 0.15s;
@@ -1487,6 +1477,11 @@ li.page-number {
 
 .xbox-interactive:hover {
     border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.xbox-interactive:active {
+    cursor: grabbing;
 }
 
 .xbox-interactive.xbox-selected {
@@ -1511,13 +1506,14 @@ li.page-number {
     text-align: center;
     cursor: pointer;
     padding: 0;
-    opacity: 0.85;
+    opacity: 0;
     transition: opacity 0.15s, background-color 0.15s, color 0.15s;
     pointer-events: auto;
-    z-index: 130;
+    z-index: 120;
 }
 
-.xbox-delete-btn:hover {
+.xbox-interactive:hover .xbox-delete-btn,
+.xbox-interactive.xbox-selected .xbox-delete-btn {
     opacity: 1;
 }
 
@@ -1526,23 +1522,16 @@ li.page-number {
     color: white;
 }
 
-/* X-box resize handles (corners) — always visible in edit mode */
+/* X-box resize handles (corners) */
 .xbox-resize-handle {
     position: absolute;
-    width: 14px;
-    height: 14px;
+    width: 10px;
+    height: 10px;
     background: white;
     border: 2px solid #3b82f6;
-    border-radius: 3px;
+    border-radius: 2px;
     pointer-events: auto;
-    z-index: 130;
-    opacity: 0.7;
-    transition: opacity 0.15s, background-color 0.15s, transform 0.1s;
-}
-
-.xbox-interactive:hover .xbox-resize-handle {
-    opacity: 1;
-    transform: scale(1.2);
+    z-index: 120;
 }
 
 .xbox-resize-handle.top-left {
@@ -1667,18 +1656,134 @@ li.page-number {
     width: 100%;
     height: 100%;
     pointer-events: none; /* Container doesn't block page interactions */
-    z-index: 105; /* Between canvas (100) and text boxes (110) */
+    z-index: 130; /* Above X-box controls so arrows remain editable */
     overflow: visible;
 }
 
-.annotation-arrow-svg {
-    pointer-events: auto; /* Allow clicking arrows to select them */
-    overflow: visible; /* Arrowheads extend past bounding box */
-    cursor: pointer;
+.annotation-arrow-edit {
+    pointer-events: auto !important;
+    cursor: grab;
+    overflow: visible !important;
 }
 
-.annotation-arrow-svg.selected {
+.annotation-arrow-edit.dragging {
+    cursor: grabbing;
+}
+
+.annotation-arrow-edit.selected {
     filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.8));
+}
+
+.annotation-arrow-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible; /* Arrowheads extend past bounding box */
+    pointer-events: none;
+}
+
+.arrow-delete-btn {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid #ef4444;
+    background: white;
+    color: #ef4444;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    cursor: pointer;
+    padding: 0;
+    pointer-events: auto;
+    z-index: 120;
+}
+
+.arrow-delete-btn:hover {
+    background: #ef4444;
+    color: white;
+}
+
+.arrow-rotate-btn {
+    position: absolute;
+    top: -10px;
+    right: 18px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid #3b82f6;
+    background: white;
+    color: #3b82f6;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    cursor: grab;
+    padding: 0;
+    pointer-events: auto;
+    z-index: 120;
+}
+
+.arrow-rotate-btn:hover {
+    background: #3b82f6;
+    color: white;
+}
+
+.arrow-rotate-btn:active {
+    cursor: grabbing;
+}
+
+.arrow-resize-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    margin-top: -5px;
+    background: white;
+    border: 2px solid #3b82f6;
+    border-radius: 50%;
+    pointer-events: auto;
+    z-index: 120;
+}
+
+.arrow-resize-handle-start {
+    cursor: move;
+}
+
+.arrow-resize-handle-end {
+    cursor: nwse-resize;
+}
+
+.arrow-resize-handle:hover {
+    background: #3b82f6;
+}
+
+/* DOM hit-areas for highlights — canvas draws fill at z-index 100; this layer must receive drag/delete. */
+.annotation-highlight-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 108;
+}
+
+.annotation-highlight-edit {
+    pointer-events: auto !important;
+    cursor: grab;
+    background: transparent !important;
+    box-sizing: border-box;
+}
+
+.annotation-highlight-edit.dragging {
+    cursor: grabbing;
+}
+
+.annotation-highlight-edit.selected {
+    box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.7);
 }
 
 .annotation-textbox-overlay {
@@ -1688,11 +1793,12 @@ li.page-number {
     width: 100%;
     height: 100%;
     pointer-events: none; /* Container doesn't block page interactions */
-    z-index: 110; /* Above the annotation canvas */
+    z-index: 140; /* Above X-box controls and arrows */
 }
 
 .annotation-textbox-edit {
     pointer-events: auto !important;
+    position: relative; /* Required so .textbox-delete-btn (position:absolute) anchors to this box */
     cursor: grab;
     border: 1px dashed rgba(0, 0, 0, 0.3);
     border-radius: 2px;
@@ -1705,6 +1811,8 @@ li.page-number {
     padding: 2px 5px !important;
     min-height: 1.4em;
     overflow: visible !important;
+    user-select: none; /* Prevent browser text-selection from hijacking mousedown drag */
+    -webkit-user-select: none;
     transition: border-color 0.15s, box-shadow 0.15s;
 }
 
@@ -1718,8 +1826,9 @@ li.page-number {
     border-color: #3b82f6;
     border-style: solid;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-    /* Transparent while typing so the user can see the document content underneath. */
-    background-color: transparent;
+    background-color: rgba(255, 255, 255, 0.95);
+    user-select: text; /* Re-enable text selection while the box is in edit mode */
+    -webkit-user-select: text;
 }
 
 .annotation-textbox-edit.dragging {
@@ -1794,79 +1903,22 @@ li.page-number {
     border-color: #ef4444;
 }
 
-/* ════════════════════════════════════════════════════════════
-   HIGHLIGHT ANNOTATION DOM OVERLAY (EDIT MODE)
-   The yellow fill itself is painted on the annotation-canvas below.
-   These DOM hit-areas sit on top to provide drag-to-move and a
-   delete button, but must be visually transparent so the canvas
-   fill shows through.
-   ════════════════════════════════════════════════════════════ */
-.annotation-highlight-overlay {
+.textbox-resize-handle {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 816px;
-    height: 1056px;
-    z-index: 105; /* above annotation-canvas (10) and lines (10), below xbox controls (115) */
-    pointer-events: none;
-}
-
-.annotation-highlight-edit {
-    /* Inline [ngStyle] from getAnnotationPixelStyle() sets backgroundColor/opacity for the
-       preview path — force-transparent here so the canvas-painted yellow remains visible. */
-    background-color: transparent !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    cursor: grab;
-    border: 1px dashed transparent;
-    border-radius: 2px;
-    transition: border-color 0.15s;
-}
-
-.annotation-highlight-edit:hover {
-    border-color: rgba(234, 179, 8, 0.9);
-}
-
-.annotation-highlight-edit.dragging {
-    cursor: grabbing;
-    border-color: rgba(234, 179, 8, 0.9);
-    border-style: solid;
-}
-
-.annotation-highlight-edit.selected {
-    border-color: #3b82f6;
-    border-style: solid;
-}
-
-.highlight-delete-btn {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    border: 1px solid #ccc;
+    right: -6px;
+    bottom: -6px;
+    width: 12px;
+    height: 12px;
     background: white;
-    color: #666;
-    font-size: 10px;
-    line-height: 16px;
-    text-align: center;
-    cursor: pointer;
-    padding: 0;
-    opacity: 0;
-    transition: opacity 0.15s;
+    border: 2px solid #3b82f6;
+    border-radius: 2px;
+    cursor: nwse-resize;
     pointer-events: auto;
     z-index: 120;
 }
 
-.annotation-highlight-edit:hover .highlight-delete-btn {
-    opacity: 0.9;
-}
-
-.highlight-delete-btn:hover {
-    background: #ef4444;
-    color: white;
-    border-color: #ef4444;
+.textbox-resize-handle:hover {
+    background: #3b82f6;
 }
 
 /* ════════════════════════════════════════════════════════════
