@@ -581,9 +581,6 @@ export class UploadService {
                               case 'classifying':
                                 enhancedMessage = 'Organizing scenes, characters, and dialog...';
                                 break;
-                              case 'ai_validation':
-                                enhancedMessage = 'AI validation in progress...';
-                                break;
                               default:
                                 enhancedMessage = data.message;
                             }
@@ -596,7 +593,7 @@ export class UploadService {
                               totalPages: data.totalPages,
                               linesFound: data.linesFound,
                               step: this.getStepNumber(data.stage),
-                              totalSteps: 15
+                              totalSteps: 14
                             });
                             break;
 
@@ -681,20 +678,8 @@ export class UploadService {
 
   // get classified data => returns observable for stuff to plug into
   // Automatically handles both sync and async responses
-  postFile(fileToUpload: File, enableAiValidation: boolean = false): Observable<any> {
+  postFile(fileToUpload: File): Observable<any> {
     this.resetHttpOptions();
-
-    // ========================================
-    // 🆕 AI VALIDATION TRACKING LOG (UPLOAD SERVICE)
-    // ========================================
-    console.log('╔═══════════════════════════════════════════════════════════════');
-    console.log('║ [UPLOAD SERVICE] PREPARING FORM DATA');
-    console.log('╠═══════════════════════════════════════════════════════════════');
-    console.log('║ File:', fileToUpload.name);
-    console.log('║ enableAiValidation parameter:', enableAiValidation);
-    console.log('║ Type:', typeof enableAiValidation);
-    console.log('║ Will append to FormData as:', enableAiValidation.toString());
-    console.log('╚═══════════════════════════════════════════════════════════════');
 
     // Get current user from auth service
     return from(this.auth.user$).pipe(
@@ -714,19 +699,6 @@ export class UploadService {
         formData.append('userEmail', user.email);
         formData.append('userId', user.uid);
         formData.append('uploadTime', new Date().toISOString());
-        // Add AI validation flag
-        formData.append('enableAiValidation', enableAiValidation.toString());
-
-        console.log('╔═══════════════════════════════════════════════════════════════');
-        console.log('║ [UPLOAD SERVICE] FORM DATA PREPARED');
-        console.log('╠═══════════════════════════════════════════════════════════════');
-        console.log('║ FormData contents:');
-        console.log('║   - script:', fileToUpload.name);
-        console.log('║   - userEmail:', user.email);
-        console.log('║   - userId:', user.uid);
-        console.log('║   - enableAiValidation:', enableAiValidation.toString());
-        console.log('║ Posting to:', this.url + '/api');
-        console.log('╚═══════════════════════════════════════════════════════════════');
 
         return this.httpClient
           .post(this.url + '/api', formData, {
@@ -1312,8 +1284,7 @@ export class UploadService {
       'sanitized': 11,
       'security_scan': 12,
       'security_checked': 13,
-      'classifying': 14,
-      'ai_validation': 15
+      'classifying': 14
     };
     return stepMap[stage] || 0;
   }

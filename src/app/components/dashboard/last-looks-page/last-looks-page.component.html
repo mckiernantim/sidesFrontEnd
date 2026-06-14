@@ -189,20 +189,20 @@
                     <!-- continue spans (at the bottom of the page) -->
                     <span *ngIf="line.cont === 'CONTINUE'"
                         class="bar-span continue-span CONTINUE {{line.hidden}}"
-                        [style.bottom]="getContinueBarPosition(line)"
+                        [style.bottom]="line.calculatedBarY"
                         [attr.data-line-id]="line.id"
                         (mousedown)="startLineDrag($event, line, 'continue')"
                         [class.draggable]="canEditDocument"
                         [style.cursor]="canEditDocument ? 'grab' : 'default'">
-                        <span class="bar-text" 
-                            [style.left.px]="line.continueTextOffset || 10"
+                        <span class="bar-text"
+                            [style.left.px]="line.continueTextOffset ?? 0"
                             (mousedown)="canEditDocument && startBarTextDrag($event, line, 'continue')"
                             (dblclick)="canEditDocument && onBarTextDoubleClick($event, line, 'continue')">
                             <ng-container *ngIf="barTextEditingId !== line.docPageLineIndex || barTextEditingType !== 'continue'; else editContinueText">
-                                {{ line.customContinueText || ('↓↓↓ ' + line.sceneNumberText + ' CONTINUED ↓↓↓') }}
+                                {{ line.customContinueText || ('CONTINUE ' + line.sceneNumberText + ' ↓↓↓') }}
                             </ng-container>
                             <ng-template #editContinueText>
-                                <span 
+                                <span
                                     id="bar-text-edit-{{line.docPageLineIndex}}-continue"
                                     contenteditable="true"
                                     (input)="onBarTextChange($event, line)"

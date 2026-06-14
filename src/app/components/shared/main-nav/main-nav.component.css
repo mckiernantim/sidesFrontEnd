@@ -155,6 +155,13 @@
   border: 2px solid var(--sw-border);
 }
 
+/* SVG placeholder when photoURL is null (email/password accounts) */
+.sw-nav__avatar--placeholder {
+  color: var(--sw-text-muted, #9ca3af);
+  background: var(--sw-surface-2, #1e1e1e);
+  padding: 3px;
+}
+
 .sw-nav__username {
   font-family: var(--sw-font-body);
   font-size: 0.875rem;

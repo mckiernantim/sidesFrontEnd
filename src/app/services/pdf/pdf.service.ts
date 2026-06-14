@@ -2359,14 +2359,50 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     }
   }
 
-  // Add method to get the current document's token
-  getCurrentDocumentToken(): string | null {
-    return localStorage.getItem('pdfToken');
+  /**
+   * Remove a single scene from the selected set and rebuild the preview document.
+   * Mirrors updateSceneOrder: filters _selectedScenes, then calls processPdf so
+   * _documentRegenerated$ fires. Also emits _documentReordered$ so the Last Looks
+   * preview resets to page 1 (same as reorderScenes behaviour).
+   *
+   * Identification priority: docPageIndex (map key used by the component), then index.
+   */
+  removeScene(scene: { docPageIndex?: number; index?: number }): void {
+    const remaining = this._selectedScenes.filter(s => {
+      if (scene.docPageIndex !== undefined && s.docPageIndex !== undefined) {
+        return s.docPageIndex !== scene.docPageIndex;
+      }
+      return s.index !== scene.index;
+    });
+
+    this._selectedScenes = remaining;
+
+    if (!this.finalDocReady || !this.finalDocument) {
+      console.warn('removeScene: finalDocument not ready; updated _selectedScenes only');
+      return;
+    }
+
+    // Rebuild the document without the removed scene (mirrors updateSceneOrder)
+    this.processPdf(
+      remaining,
+      this.finalDocument.name,
+      this.finalDocument.numPages,
+      this.finalDocument.callSheetPath
+    );
+
+    // Signal structural change so Last Looks resets to page 1 (mirrors reorderScenes)
+    this._documentReordered$.next(true);
   }
 
-  // Add method to set the document token
+  // Returns the current PDF session token (canonical key: pdfBackupToken).
+  getCurrentDocumentToken(): string | null {
+    return localStorage.getItem('pdfBackupToken');
+  }
+
+  // Stores the PDF session token. Prefer TokenService.setToken() for writes
+  // that need expiry monitoring; this method exists for direct reads only.
   setDocumentToken(token: string, expirationTime: number): void {
-    localStorage.setItem('pdfToken', token);
+    localStorage.setItem('pdfBackupToken', token);
     localStorage.setItem('pdfTokenExpires', expirationTime.toString());
   }
 

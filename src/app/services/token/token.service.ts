@@ -7,7 +7,7 @@ import Cookies from 'js-cookie';
   providedIn: 'root',
 })
 export class TokenService {
-  private readonly PDF_TOKEN_KEY = 'pdfToken';
+  private readonly PDF_TOKEN_KEY = 'pdfBackupToken';      // canonical key (R8 fix)
   private readonly PDF_TOKEN_EXPIRES_KEY = 'pdfTokenExpires';
   private tokenSubject = new BehaviorSubject<string | null>(null);
   private tokenExpiredSubject = new Subject<void>();

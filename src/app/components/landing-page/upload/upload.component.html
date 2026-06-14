@@ -15,7 +15,7 @@
 
     <!-- CTA: show sign-in if logged out, hide button if logged in -->
     <ng-container *ngIf="!(user$ | async)">
-      <button (click)="signIn()" class="sw-btn-cta">Sign In With Google</button>
+      <button (click)="signIn()" class="sw-btn-cta">Sign In</button>
     </ng-container>
   </div>
 </section>
@@ -24,9 +24,7 @@
 <section *ngIf="(user$ | async)" class="sw-section sw-upload-section">
   <div class="sw-card">
     <h2 class="sw-section-heading">
-      <span class="sw-arrow">~&gt;~&gt;</span>
       UPLOAD YOUR <span class="sw-accent-text">SCRIPT</span>
-      <span class="sw-arrow">~&gt;~&gt;</span>
     </h2>
 
     <!-- File Upload Widget -->
@@ -50,30 +48,6 @@
           <span class="sw-upload-subtext">PDF files only</span>
         </label>
 
-        <!-- AI Validation Toggle -->
-        <div class="sw-ai-validation-toggle" *ngIf="!maintenanceMode">
-          <label class="sw-toggle-label">
-            <input
-              type="checkbox"
-              [(ngModel)]="enableAiValidation"
-              class="sw-toggle-input"
-            />
-            <span class="sw-toggle-slider"></span>
-            <span class="sw-toggle-text">Enable AI Validation (Beta)</span>
-          </label>
-          <button
-            class="sw-info-button"
-            (mouseenter)="showAiTooltip = true"
-            (mouseleave)="showAiTooltip = false"
-            type="button">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-            </svg>
-          </button>
-          <div class="sw-tooltip" *ngIf="showAiTooltip">
-            AI validation provides additional scene detection accuracy using Claude AI
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -106,9 +80,7 @@
 <section class="sw-section">
   <div class="sw-card">
     <h2 class="sw-section-heading">
-      <span class="sw-arrow">~&gt;~&gt;</span>
       YOUR <span class="sw-accent-text">SECURITY</span> IS OUR PRIORITY
-      <span class="sw-arrow">~&gt;~&gt;</span>
     </h2>
 
     <div class="sw-security">
@@ -148,10 +120,8 @@
 <section class="sw-section">
   <div class="sw-card">
     <h2 class="sw-section-heading">
-      <span class="sw-arrow">~&gt;~&gt;</span>
       BUILD <span class="sw-accent-text">SIDES</span> IN
       <span class="sw-accent-text">3 STEPS</span>
-      <span class="sw-arrow">~&gt;~&gt;</span>
     </h2>
 
     <div class="sw-steps">
@@ -205,6 +175,6 @@
     Start Saving Time NOW. Let Sides-Ways save you time and hassle.
   </p>
   <button (click)="signIn()" class="sw-bottom-cta__link">
-    SIGN IN WITH GOOGLE
+    SIGN IN
   </button>
 </section>

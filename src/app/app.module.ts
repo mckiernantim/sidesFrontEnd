@@ -28,6 +28,10 @@ import { SubscriptionModalComponent } from './components/subscription-modal/subs
 import { AuthService } from './services/auth/auth.service';
 import { MaintenanceNoticeComponent } from './components/maintenance-notice/maintenance-notice.component';
 import { HelpCenterComponent } from './components/help-center/help-center.component';
+import { AuthComponent } from './components/auth/auth.component';
+import { AuthModalComponent } from './components/auth-modal/auth-modal.component';
+import { PrivacyComponent } from './components/privacy/privacy.component';
+import { TermsComponent } from './components/terms/terms.component';
 
 // Factory function to ensure Firebase is initialized before the app starts
 export function initializeFirebase(authService: AuthService) {
@@ -58,6 +62,10 @@ export function initializeFirebase(authService: AuthService) {
     SubscriptionModalComponent,
     MaintenanceNoticeComponent,
     HelpCenterComponent,
+    AuthComponent,
+    AuthModalComponent,
+    PrivacyComponent,
+    TermsComponent,
   ],
   imports: [
     BrowserModule,

@@ -1593,20 +1593,35 @@ async sendFinalDocumentToServer(finalDocument) {
     return [...this.selected];
   }
 
-  // Update the removeSelectedScene method to handle both the array and UI update
   removeSelectedScene(scene: any): void {
-    // Find and remove the scene from the selected array
-    const index = this.selected.findIndex((s) => s.index === scene.index);
-    if (index !== -1) {
-      this.selected.splice(index, 1);
+    // Identify by the same key the map uses: docPageIndex.
+    // Fall back to scanning by scene.index if docPageIndex is absent.
+    let mapKey: number | undefined = scene.docPageIndex as number | undefined;
 
-      // Force the table to update its selection state
-      // We need to create a new array reference for Angular change detection
-      this.selected = [...this.selected];
-
-      // Update the UI
-      this.cdr.detectChanges();
+    if (mapKey === undefined) {
+      for (const [key, s] of this.selectedScenesMap) {
+        if (s.index === scene.index) {
+          mapKey = key;
+          break;
+        }
+      }
     }
+
+    if (mapKey === undefined || !this.selectedScenesMap.has(mapKey)) {
+      // Scene not in map — no-op, safe defensive exit
+      return;
+    }
+
+    // Delete from the map (mirrors the toggle pattern in onRowClick)
+    this.selectedScenesMap.delete(mapKey);
+
+    // Rebuild this.selected from the map values (same pattern as onRowClick)
+    this.selected = Array.from(this.selectedScenesMap.values());
+
+    // Tell PdfService to drop the scene from _selectedScenes and regenerate the preview
+    this.pdf.removeScene(scene);
+
+    this.cdr.detectChanges();
   }
 
   // Helper method to truncate text

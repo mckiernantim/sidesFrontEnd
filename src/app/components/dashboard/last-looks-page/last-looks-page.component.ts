@@ -1586,7 +1586,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         this.barTextInitialOffset = line.endTextOffset || 0;
         break;
       case 'continue':
-        this.barTextInitialOffset = line.continueTextOffset || 0;
+        this.barTextInitialOffset = line.continueTextOffset ?? 0;
         break;
       case 'continue-top':
         this.barTextInitialOffset = line.continueTopTextOffset || 0;
@@ -1602,7 +1602,9 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     if (!this.barTextDragging) return;
     
     const deltaX = event.clientX - this.barTextDragStartX;
-    const newOffset = this.clamp(this.barTextInitialOffset + deltaX, 0, this.xboxPageWidth);
+    const newOffset = this.barTextDragType === 'continue'
+      ? this.clamp(this.barTextInitialOffset + deltaX, -750, 0)
+      : this.clamp(this.barTextInitialOffset + deltaX, 0, this.xboxPageWidth);
     
     const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.barTextDragLineId);
     if (lineIndex === -1) return;
@@ -1625,7 +1627,6 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     }
     
     this.cdRef.detectChanges();
-    this.pageUpdate.emit([...this.page]);
   };
 
   endBarTextDrag = (event: MouseEvent): void => {
@@ -2945,29 +2946,50 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   }
   
   getContinueBarPosition(line: Line): string {
-    // If manually positioned, keep custom position
-    if (line.calculatedBarY && line.calculatedBarY !== '90px' && parseInt(String(line.calculatedBarY)) !== 90) {
-      return String(line.calculatedBarY);
-    }
+    // Page height constant — continue bar must sit within [0, PAGE_HEIGHT).
+    const PAGE_HEIGHT = 1056;
 
-    // Find lowest Y position (closest to bottom) of visible text lines
-    let lowestYPos = 0;
-    for (const pageLine of this.page) {
-      if (pageLine.docPageLineIndex !== line.docPageLineIndex &&
-          pageLine.visible === 'true' &&
-          pageLine.category !== 'page-number' &&
-          pageLine.category !== 'injected-break' &&
-          pageLine.category !== 'callsheet') {
-        const yPos = parseInt(String(pageLine.calculatedYpos || pageLine.yPos || '0'));
-        if (yPos > 0 && (yPos < lowestYPos || lowestYPos === 0)) {
-          lowestYPos = yPos;
-        }
+    // Use a manually-set position only if it is a plausible `bottom:` value
+    // (> 0, < page height, and not the sentinel default of 90).
+    // Values like 1014px (from PAGE_BOTTOM_LIMIT * 1.3 in the service) are
+    // raw-unit positions mistakenly passed through without clamping — reject them.
+    if (line.calculatedBarY) {
+      const stored = parseInt(String(line.calculatedBarY), 10);
+      if (!isNaN(stored) && stored > 0 && stored < PAGE_HEIGHT && stored !== 90) {
+        return String(line.calculatedBarY);
       }
     }
 
-    // Position CONTINUE bar 55px below last line
-    if (lowestYPos > 0) {
-      return Math.max(20, lowestYPos - 75) + 'px';
+    // Dynamic calculation: find the visible text line that is closest to the
+    // bottom of the page (smallest `bottom:` value = smallest calculatedYpos).
+    // The CONTINUE bar itself is excluded so we position it just below the
+    // last piece of visible content.
+    const EXCLUDED_CATS = new Set(['page-number', 'page-number-hidden', 'injected-break', 'callsheet']);
+    let closestToBottom = 0; // smallest (most-bottom) yPos seen so far
+
+    for (const pageLine of this.page) {
+      // Exclude the CONTINUE line itself; fall back to index comparison when
+      // docPageLineIndex is null (e.g. in test fixtures loaded before the
+      // service assigns indexes).
+      const sameLineByIndex = pageLine.docPageLineIndex !== null
+        ? pageLine.docPageLineIndex === line.docPageLineIndex
+        : pageLine === line;
+
+      if (sameLineByIndex) continue;
+      if (EXCLUDED_CATS.has(pageLine.category)) continue;
+      if (pageLine.visible !== 'true') continue;
+
+      const yPos = parseInt(String(pageLine.calculatedYpos || pageLine.yPos || '0'), 10);
+      if (yPos > 0 && (closestToBottom === 0 || yPos < closestToBottom)) {
+        closestToBottom = yPos;
+      }
+    }
+
+    // Place CONTINUE bar 20px below the last visible line (i.e. 20px closer to
+    // the page bottom than the closest content line), clamped so the bar is
+    // always visible and not too close to the page edge.
+    if (closestToBottom > 0) {
+      return Math.max(15, closestToBottom - 20) + 'px';
     }
 
     return '90px';
