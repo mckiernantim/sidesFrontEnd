@@ -46,7 +46,17 @@
       <ng-template #loggedInTemplate>
         <div class="sw-nav__user" (click)="toggleUserMenu()" (clickOutside)="closeUserMenu()">
           <button class="sw-nav__user-btn">
-            <img [src]="userAvatar || 'assets/default-avatar.png'" alt="User avatar" class="sw-nav__avatar">
+            <img
+              *ngIf="userAvatar; else avatarFallback"
+              [src]="userAvatar"
+              alt="User avatar"
+              class="sw-nav__avatar"
+            />
+            <ng-template #avatarFallback>
+              <svg class="sw-nav__avatar sw-nav__avatar--placeholder" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+              </svg>
+            </ng-template>
             <span class="sw-nav__username">{{ username }}</span>
             <svg xmlns="http://www.w3.org/2000/svg" class="sw-nav__chevron" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd"

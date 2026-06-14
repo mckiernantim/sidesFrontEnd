@@ -90,7 +90,11 @@ describe('DashboardRightComponent', () => {
       documentRegenerated$: of(false),
       documentReordered$: of(false),
       watermarkUpdated$: of({}),
-      finalDocumentData$: of({})
+      finalDocumentData$: of({}),
+      sceneOrderUpdated$: of([]),
+      setSelectedScenes: jest.fn(),
+      clearSelectedScenes: jest.fn(),
+      removeScene: jest.fn()
     };
 
     uploadServiceMock = {
@@ -98,7 +102,14 @@ describe('DashboardRightComponent', () => {
     };
 
     undoServiceMock = {
-      pop: jest.fn()
+      pop: jest.fn(),
+      undoRedo$: of({ type: 'undo', item: { changeDescription: '' } }),
+      reset$: of(undefined),
+      clearHistory: jest.fn(),
+      reset: jest.fn(),
+      undo: jest.fn(),
+      redo: jest.fn(),
+      recordSceneReorderChange: jest.fn()
     };
 
     lineOutServiceMock = {};
@@ -110,7 +121,8 @@ describe('DashboardRightComponent', () => {
     tailwindDialogServiceMock = {
       open: jest.fn().mockReturnValue({
         afterClosed: jest.fn().mockReturnValue(of(true))
-      })
+      }),
+      closeAll: jest.fn()
     };
 
     routerMock = {
@@ -141,17 +153,34 @@ describe('DashboardRightComponent', () => {
 
     fixture = TestBed.createComponent(DashboardRightComponent);
     component = fixture.componentInstance;
-    
-    // Mock localStorage
-    jest.spyOn(localStorage, 'getItem').mockImplementation((key) => {
-      if (key === 'name') return 'test-script.pdf';
-      if (key === 'callSheetPath') return 'test-callsheet.pdf';
-      return null;
+
+    // jsdom-safe localStorage mock (jest.spyOn on localStorage is unreliable in jsdom)
+    const localStore: Record<string, string> = {
+      name: 'test-script.pdf',
+      callSheetPath: 'test-callsheet.pdf'
+    };
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: jest.fn((k: string) => (k in localStore ? localStore[k] : null)),
+        setItem: jest.fn((k: string, v: string) => { localStore[k] = String(v); }),
+        removeItem: jest.fn((k: string) => { delete localStore[k]; }),
+        clear: jest.fn(() => { for (const k in localStore) delete localStore[k]; })
+      }
     });
-    
-    // Mock sessionStorage
-    jest.spyOn(sessionStorage, 'setItem').mockImplementation(() => {});
-    
+
+    // jsdom-safe sessionStorage mock
+    const sessionStore: Record<string, string> = {};
+    Object.defineProperty(window, 'sessionStorage', {
+      configurable: true,
+      value: {
+        getItem: jest.fn((k: string) => (k in sessionStore ? sessionStore[k] : null)),
+        setItem: jest.fn((k: string, v: string) => { sessionStore[k] = String(v); }),
+        removeItem: jest.fn((k: string) => { delete sessionStore[k]; }),
+        clear: jest.fn(() => { for (const k in sessionStore) delete sessionStore[k]; })
+      }
+    });
+
     fixture.detectChanges();
   });
 
@@ -222,19 +251,12 @@ describe('DashboardRightComponent', () => {
 
   it('should handle subscription required', () => {
     const finalDocument = { data: [] };
-    const response = { 
-      checkoutUrl: 'https://checkout.stripe.com/test',
-      requiresSubscription: true
-    };
-    
+
     // Call private method using any type
-    (component as any).handleSubscriptionRequired(finalDocument, response);
-    
-    // Check sessionStorage was set
-    expect(sessionStorage.setItem).toHaveBeenCalledWith('pendingDocument', JSON.stringify(finalDocument));
-    expect(sessionStorage.setItem).toHaveBeenCalledWith('returnPath', '/dashboard');
-    
-    // Check dialog was opened
+    (component as any).handleSubscriptionRequired(finalDocument);
+
+    // Existing dialogs are dismissed, then the subscription modal is opened
+    expect(tailwindDialogServiceMock.closeAll).toHaveBeenCalled();
     expect(tailwindDialogServiceMock.open).toHaveBeenCalled();
   });
 
@@ -255,7 +277,7 @@ describe('DashboardRightComponent', () => {
 
   it('should handle tool tip clicked for undo', () => {
     component.handleToolTipClicked('undo');
-    expect(undoServiceMock.pop).toHaveBeenCalled();
+    expect(undoServiceMock.undo).toHaveBeenCalled();
   });
 
   it('should handle tool tip clicked for resetDoc', () => {
@@ -274,6 +296,38 @@ describe('DashboardRightComponent', () => {
     component.handleToolTipClicked('stopEdit');
     
     expect(component.editLastLooksState).toBeTrue();
+  });
+
+  it('drag handle in edit mode shows reorder icon, not translate icon', () => {
+    // Enable edit mode so the *ngIf="editState" guard passes
+    component.editState = true;
+    // Provide at least one selected scene so the *ngFor renders
+    const fakeScene = {
+      sceneNumberText: '1',
+      category: 'scene-header',
+      text: 'INT. TEST - DAY',
+      docPageIndex: 0
+    };
+    component.selected = [fakeScene as any];
+    fixture.detectChanges();
+
+    const compiled: HTMLElement = fixture.nativeElement;
+    const dragHandle = compiled.querySelector('[cdkDragHandle]');
+    expect(dragHandle).toBeTruthy();
+
+    const svg = dragHandle!.querySelector('svg');
+    expect(svg).toBeTruthy();
+
+    // New icon: two horizontal <line> elements
+    const lines = svg!.querySelectorAll('line');
+    expect(lines.length).toBe(2);
+
+    // Old (wrong) translate icon had a <path> — must be absent
+    const paths = svg!.querySelectorAll('path');
+    expect(paths.length).toBe(0);
+
+    // Confirm the old translate path signature is not present anywhere in the handle
+    expect(dragHandle!.innerHTML).not.toContain('M7 2a1 1 0 011 1v1h3');
   });
 
   it('should toggle selected scene', () => {
@@ -297,5 +351,61 @@ describe('DashboardRightComponent', () => {
     component.toggleSelected(mockEvent, scene);
     
     expect(component.selected).not.toContain(scene);
+  });
+
+  describe('removeSelectedScene', () => {
+    const sceneA = { sceneNumberText: '1', text: 'INT. OFFICE - DAY', index: 10, docPageIndex: 0 };
+    const sceneB = { sceneNumberText: '2', text: 'EXT. STREET - NIGHT', index: 20, docPageIndex: 1 };
+
+    beforeEach(() => {
+      // Seed the map and selected array with two scenes
+      component.selectedScenesMap = new Map<number, any>([
+        [sceneA.docPageIndex, sceneA],
+        [sceneB.docPageIndex, sceneB]
+      ]);
+      component.selected = [sceneA, sceneB];
+    });
+
+    it('removes the scene from selectedScenesMap by docPageIndex', () => {
+      component.removeSelectedScene(sceneA);
+
+      expect(component.selectedScenesMap.has(sceneA.docPageIndex)).toBeFalse();
+      expect(component.selectedScenesMap.has(sceneB.docPageIndex)).toBeTrue();
+    });
+
+    it('rebuilds this.selected without the removed scene', () => {
+      component.removeSelectedScene(sceneA);
+
+      expect(component.selected).not.toContain(sceneA);
+      expect(component.selected).toContain(sceneB);
+      expect(component.selected.length).toBe(1);
+    });
+
+    it('calls pdfService.removeScene with the removed scene', () => {
+      component.removeSelectedScene(sceneA);
+
+      expect(pdfServiceMock.removeScene).toHaveBeenCalledWith(sceneA);
+    });
+
+    it('is a no-op and does not throw when the scene is not in the map', () => {
+      const absentScene = { sceneNumberText: '99', text: 'INT. NOWHERE - DAY', index: 99, docPageIndex: 99 };
+
+      expect(() => component.removeSelectedScene(absentScene)).not.toThrow();
+      // Map and selected array are unchanged
+      expect(component.selectedScenesMap.size).toBe(2);
+      expect(component.selected.length).toBe(2);
+      expect(pdfServiceMock.removeScene).not.toHaveBeenCalled();
+    });
+
+    it('falls back to matching by scene.index when docPageIndex is undefined', () => {
+      const sceneWithoutDocPageIndex = { sceneNumberText: '1', text: 'INT. OFFICE - DAY', index: 10 };
+      // Map still keyed by docPageIndex 0 (sceneA's key)
+
+      component.removeSelectedScene(sceneWithoutDocPageIndex);
+
+      expect(component.selectedScenesMap.has(sceneA.docPageIndex)).toBeFalse();
+      expect(component.selected).not.toContain(sceneA);
+      expect(pdfServiceMock.removeScene).toHaveBeenCalled();
+    });
   });
 });

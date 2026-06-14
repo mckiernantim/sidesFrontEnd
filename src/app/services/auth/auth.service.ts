@@ -1,12 +1,16 @@
 import { Injectable } from '@angular/core';
-import { 
-  Auth, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  signOut, 
-  onAuthStateChanged, 
+import {
+  Auth,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut,
+  onAuthStateChanged,
   User,
-  browserLocalPersistence
+  browserLocalPersistence,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  updateProfile,
 } from '@angular/fire/auth';
 import { Firestore, doc, getDoc, setDoc } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable } from 'rxjs';
@@ -17,16 +21,16 @@ import { SubscriptionStatus } from '../../types/SubscriptionTypes';
   providedIn: 'root'
 })
 export class AuthService {
-  // Simple auth state
+  // Auth state
   private userSubject = new BehaviorSubject<User | null>(null);
   user$: Observable<User | null> = this.userSubject.asObservable();
-  
+
   // Track if we're in the middle of an auth redirect
   private isRedirecting = false;
-  
+
   // Track if auth state has been initialized
   private authInitialized = false;
-  
+
   // Track admin whitelist status for maintenance mode bypass
   private isAdminSubject = new BehaviorSubject<boolean>(false);
   isAdmin$: Observable<boolean> = this.isAdminSubject.asObservable();
@@ -37,12 +41,11 @@ export class AuthService {
     private router: Router
   ) {
     console.log('AuthService constructor called');
-    
+
     // Set up auth state listener immediately
     this.setupAuthStateListener();
-    
+
     // Set persistence to local (survives page reloads)
-    // FIXED: Using the method on the auth instance instead of a standalone function
     try {
       this.auth.setPersistence(browserLocalPersistence)
         .then(() => {
@@ -52,24 +55,23 @@ export class AuthService {
     } catch (error) {
       console.error('Error setting up auth persistence:', error);
     }
-    
+
     // Check for redirect result on service initialization
     this.handleRedirectResult();
   }
-  
-  // Set up auth state listener
+
+  // ─── Auth state listener ────────────────────────────────────────────────────
+
   private setupAuthStateListener(): void {
-    // Listen for auth state changes
-    onAuthStateChanged(this.auth, 
+    onAuthStateChanged(
+      this.auth,
       async (user) => {
         console.log('Auth state changed:', user?.uid || 'No user');
         this.userSubject.next(user);
         this.authInitialized = true;
-        
-        // Check admin whitelist status when user signs in
+
         if (user) {
           await this.checkAdminWhitelist(user);
-          // Update user data in Firestore
           this.updateUserData(user);
         } else {
           this.isAdminSubject.next(false);
@@ -82,23 +84,47 @@ export class AuthService {
     );
   }
 
-  // Handle redirect result
+  // Handle redirect result (no-op — we use popups)
   async handleRedirectResult(): Promise<void> {
-    // This is now a no-op since we're using popup
     return Promise.resolve();
   }
 
-  // Add a method to update user data in Firestore
+  // ─── Firestore user record ──────────────────────────────────────────────────
+
+  /**
+   * Write the user's data to Firestore.
+   *
+   * For email/password accounts, `user.displayName` and `user.photoURL` are
+   * null until `updateProfile` is called.  We read the existing Firestore
+   * document first and fall back to whatever is already stored so we never
+   * overwrite a display name with null.
+   */
   private async updateUserData(user: User): Promise<void> {
     const userRef = doc(this.firestore, `users/${user.uid}`);
+
+    // Read existing record to preserve fields that may be null on the Firebase User
+    let existingDisplayName: string | null = null;
+    let existingPhotoURL: string | null = null;
+    try {
+      const snapshot = await getDoc(userRef);
+      if (snapshot.exists()) {
+        const existing = snapshot.data() as { displayName?: string | null; photoURL?: string | null };
+        existingDisplayName = existing.displayName ?? null;
+        existingPhotoURL = existing.photoURL ?? null;
+      }
+    } catch (readError) {
+      console.error('Error reading existing user data:', readError);
+    }
+
     const userData = {
       uid: user.uid,
       email: user.email,
-      displayName: user.displayName,
-      photoURL: user.photoURL,
-      lastLogin: new Date()
+      displayName: user.displayName ?? existingDisplayName,
+      photoURL: user.photoURL ?? existingPhotoURL,
+      lastLogin: new Date(),
+      providers: user.providerData.map(p => p.providerId),
     };
-    
+
     try {
       await setDoc(userRef, userData, { merge: true });
       console.log('User data updated in Firestore');
@@ -107,7 +133,8 @@ export class AuthService {
     }
   }
 
-  // Sign in with Google using popup
+  // ─── Google sign-in ─────────────────────────────────────────────────────────
+
   async signInWithGoogle(): Promise<void> {
     try {
       const provider = new GoogleAuthProvider();
@@ -119,7 +146,39 @@ export class AuthService {
     }
   }
 
-  // Simple sign out
+  // ─── Email/Password sign-in ─────────────────────────────────────────────────
+
+  /**
+   * Register a new account with email and password, then immediately set the
+   * display name via updateProfile so the Firestore record reflects the name
+   * the user entered during registration.
+   */
+  async registerWithEmail(email: string, password: string, displayName: string): Promise<void> {
+    const credential = await createUserWithEmailAndPassword(this.auth, email, password);
+    await updateProfile(credential.user, { displayName });
+    // onAuthStateChanged fires automatically after createUserWithEmailAndPassword;
+    // updateUserData will pick up the display name from the updated profile.
+  }
+
+  /**
+   * Sign in with an existing email/password account.
+   * Throws the raw Firebase error so the caller can map it via getErrorMessage.
+   */
+  async signInWithEmail(email: string, password: string): Promise<void> {
+    await signInWithEmailAndPassword(this.auth, email, password);
+    // User is automatically updated via onAuthStateChanged
+  }
+
+  /**
+   * Send a password-reset email.
+   * Always called with the user-supplied address — Firebase handles the rest.
+   */
+  async sendPasswordReset(email: string): Promise<void> {
+    await sendPasswordResetEmail(this.auth, email);
+  }
+
+  // ─── Sign out ───────────────────────────────────────────────────────────────
+
   async signOut(): Promise<void> {
     try {
       await signOut(this.auth);
@@ -129,20 +188,18 @@ export class AuthService {
       throw error;
     }
   }
-  
-  // Helper to get current user
+
+  // ─── User helpers ───────────────────────────────────────────────────────────
+
   getCurrentUser(): User | null {
     return this.auth.currentUser;
   }
-  
-  // Wait for auth to be initialized and get user
+
   getAuthenticatedUser(): Observable<User | null> {
-    // If auth is already initialized, just return the current user
     if (this.authInitialized) {
       return this.user$;
     }
-    
-    // Otherwise, wait for auth to be initialized
+
     return new Observable<User | null>(observer => {
       const unsubscribe = onAuthStateChanged(
         this.auth,
@@ -154,25 +211,23 @@ export class AuthService {
           observer.error(error);
         }
       );
-      
-      // Return cleanup function
       return unsubscribe;
     });
   }
-  
-  // Check if user is in admin whitelist (for maintenance mode bypass)
+
+  // ─── Admin whitelist ────────────────────────────────────────────────────────
+
   private async checkAdminWhitelist(user: User): Promise<void> {
     try {
       if (!user.email) {
         this.isAdminSubject.next(false);
         return;
       }
-  
-      // Encode email to make it a valid Firestore document ID
+
       const encodedEmail = user.email.replace(/\./g, '_dot_').replace(/@/g, '_at_');
       const adminDocRef = doc(this.firestore, `listed/${encodedEmail}`);
       const adminSnapshot = await getDoc(adminDocRef);
-      
+
       const isAdmin = adminSnapshot.exists();
       console.log(`Admin whitelist check for ${user.email}:`, isAdmin);
       this.isAdminSubject.next(isAdmin);
@@ -182,7 +237,8 @@ export class AuthService {
     }
   }
 
-  // Check subscription status
+  // ─── Subscription ───────────────────────────────────────────────────────────
+
   async checkSubscriptionStatus(): Promise<boolean> {
     const user = this.auth.currentUser;
     if (!user) return false;
@@ -196,20 +252,42 @@ export class AuthService {
       new Date(response.subscription.currentPeriodEnd) > new Date()
     );
   }
-  
-  // Helper method to format error messages
-  private getErrorMessage(error: any): string {
+
+  // ─── Error message helper ───────────────────────────────────────────────────
+
+  /**
+   * Maps Firebase Auth error codes to user-facing strings.
+   * Called by UI components that catch errors from auth methods.
+   */
+  getErrorMessage(error: { code?: string; message?: string }): string {
     if (error.code) {
       switch (error.code) {
+        // ── Existing codes ──────────────────────────────────────────────────
         case 'auth/account-exists-with-different-credential':
           return 'An account already exists with the same email address but different sign-in credentials.';
         case 'auth/user-disabled':
           return 'This account has been disabled.';
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-          return 'Invalid email or password.';
         case 'auth/network-request-failed':
           return 'A network error occurred. Please check your connection.';
+        case 'auth/popup-blocked':
+          return 'Sign-in popup was blocked. Please allow popups for this site.';
+        case 'auth/popup-closed-by-user':
+          return 'Sign-in was cancelled.';
+
+        // ── Email/password codes ────────────────────────────────────────────
+        case 'auth/email-already-in-use':
+          return 'An account with this email already exists. Try signing in instead.';
+        case 'auth/weak-password':
+          return 'Password must be at least 6 characters.';
+        case 'auth/invalid-email':
+          return 'Please enter a valid email address.';
+        case 'auth/wrong-password':
+          return 'Incorrect password. Try again or reset your password.';
+        case 'auth/user-not-found':
+          return 'No account found with this email. Create an account instead.';
+        case 'auth/too-many-requests':
+          return 'Too many failed attempts. Please wait a moment or reset your password.';
+
         default:
           return `Authentication error: ${error.message || error}`;
       }

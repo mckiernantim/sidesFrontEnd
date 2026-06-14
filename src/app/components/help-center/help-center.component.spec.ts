@@ -106,6 +106,32 @@ describe('HelpCenterComponent', () => {
     });
   });
 
+  describe('Canonical support email (T6)', () => {
+    it('should use sideswaysscriptsides@gmail.com in every FAQ answer string', () => {
+      const allAnswers = component.sections.flatMap((s: FaqSection) => s.items.map(i => i.answer));
+      const oldEmail = 'support@sides-ways.com';
+      const newEmail = 'sideswaysscriptsides@gmail.com';
+      allAnswers.forEach(answer => {
+        expect(answer).not.toContain(oldEmail);
+      });
+      const answersWithEmail = allAnswers.filter(a => a.includes(newEmail));
+      expect(answersWithEmail.length).toBeGreaterThan(0);
+    });
+
+    it('should render the canonical mailto link in the bottom CTA', () => {
+      const compiled: HTMLElement = fixture.nativeElement;
+      const link = compiled.querySelector('a[href="mailto:sideswaysscriptsides@gmail.com"]') as HTMLAnchorElement;
+      expect(link).toBeTruthy();
+      expect(link.textContent?.trim()).toBe('sideswaysscriptsides@gmail.com');
+    });
+
+    it('should NOT render the old support@sides-ways.com mailto link', () => {
+      const compiled: HTMLElement = fixture.nativeElement;
+      const oldLink = compiled.querySelector('a[href="mailto:support@sides-ways.com"]');
+      expect(oldLink).toBeNull();
+    });
+  });
+
   describe('Template rendering', () => {
     it('should render a section element for each FAQ section', () => {
       const compiled: HTMLElement = fixture.nativeElement;

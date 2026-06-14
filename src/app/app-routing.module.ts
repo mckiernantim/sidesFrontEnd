@@ -13,6 +13,7 @@ import { PaymentSuccessComponent } from './components/payment-success/payment-su
 import { ProfileComponent } from './components/profile/profile.component';
 
 import { ProfileLoaderComponent } from './components/profile/profile-loader.component';
+import { AuthComponent } from './components/auth/auth.component';
 import { AuthGuard } from './guards/auth.guard'
 import { TestComponent } from './components/test/test.component';
 import { PricingComponent } from './components/pricing/pricing.component';
@@ -20,6 +21,8 @@ import { ContactComponent } from './components/contact/contact.component';
 import { HowItWorksComponent } from './components/how-it-works/how-it-works.component';
 import { SchedulePageComponent } from './components/schedule/schedule-page/schedule-page.component';
 import { HelpCenterComponent } from './components/help-center/help-center.component';
+import { PrivacyComponent } from './components/privacy/privacy.component';
+import { TermsComponent } from './components/terms/terms.component';
 
 const routes: Routes = [
   { path: 'test', component: TestComponent },
@@ -47,6 +50,10 @@ const routes: Routes = [
   { path: 'contact', component: ContactComponent },
   { path: 'how-it-works', component: HowItWorksComponent },
   { path: 'help', component: HelpCenterComponent },
+  { path: 'privacy', component: PrivacyComponent },
+  { path: 'terms', component: TermsComponent },
+  { path: 'auth', component: AuthComponent },
+  { path: 'sign-in', redirectTo: 'auth', pathMatch: 'full' },
   { path: "**", component:FourOfourComponent}
  ];
 

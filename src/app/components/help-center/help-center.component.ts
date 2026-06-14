@@ -141,7 +141,7 @@ export class HelpCenterComponent {
         {
           question: 'When are callsheets deleted?',
           answer:
-            'Callsheets are associated with the document they were uploaded for. If you delete a document from your dashboard, its associated callsheet is also removed. Uploading a new callsheet for the same document replaces the previous one. If you have questions about a specific retention scenario, contact us at support@sides-ways.com.'
+            'Callsheets are associated with the document they were uploaded for. If you delete a document from your dashboard, its associated callsheet is also removed. Uploading a new callsheet for the same document replaces the previous one. If you have questions about a specific retention scenario, contact us at sideswaysscriptsides@gmail.com.'
         }
       ]
     },
@@ -190,7 +190,7 @@ export class HelpCenterComponent {
         {
           question: 'Where do I address billing or account concerns?',
           answer:
-            'For billing, upload, scan, security, or account concerns, contact us at support@sides-ways.com. We respond within 24 hours. You can also use the contact form on the Contact page.'
+            'For billing, upload, scan, security, or account concerns, contact us at sideswaysscriptsides@gmail.com. We respond within 24 hours. You can also use the contact form on the Contact page.'
         }
       ]
     }
