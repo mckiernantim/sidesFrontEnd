@@ -3011,8 +3011,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     const PAGE_HEIGHT = 1056;
     const CONTENT_LEFT = 88;   // Slightly outside left content margin (96) for padding
     const CONTENT_RIGHT = 739; // Slightly outside right content edge (731) for padding
-    const PAD_TOP = 20;        // Top padding — clears text above the first skipped line
-    const PAD_BOTTOM = 4;      // Bottom padding — tight so box doesn't bleed onto next scene
+    const PAD_TOP = 16;        // Covers the scene-header line height so X-box starts at the slug line top
+    const PAD_BOTTOM = 4;      // Tight so box doesn't bleed onto next scene
 
     // Categories that are not "content" and should not affect X-box bounds
     const EXCLUDED_CATEGORIES = new Set([
@@ -3526,7 +3526,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     const PAGE_HEIGHT = this.xboxPageHeight;
     const CONTENT_LEFT = 88;
     const CONTENT_RIGHT = 739;
-    const PAD_TOP = 20;
+    const PAD_TOP = 16;
     const PAD_BOTTOM = 4;
 
     const idSet = new Set(lineIds);

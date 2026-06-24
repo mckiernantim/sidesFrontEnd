@@ -1,0 +1,137 @@
+/* Page wrapper */
+.sw-legal {
+  min-height: 100vh;
+  background-color: var(--sw-bg);
+}
+
+/* Content area */
+.sw-legal__content {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 2rem 1.5rem;
+}
+
+/* Intro block */
+.sw-legal__intro {
+  background-color: var(--sw-surface);
+  border: 1px solid var(--sw-border);
+  border-left: 4px solid var(--sw-accent);
+  border-radius: var(--sw-radius-lg);
+  padding: 1.75rem 2rem;
+}
+
+.sw-legal__intro-text {
+  font-family: var(--sw-font-body);
+  font-size: 1rem;
+  color: var(--sw-text-muted);
+  line-height: 1.75;
+  margin: 0;
+}
+
+/* Individual legal section */
+.sw-legal__section {
+  background-color: var(--sw-surface);
+  border: 1px solid var(--sw-border);
+  border-radius: var(--sw-radius-xl);
+  padding: 2rem 2.5rem;
+}
+
+.sw-legal__section--last {
+  margin-bottom: 0;
+}
+
+/* Section header */
+.sw-legal__section-header {
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid var(--sw-border);
+}
+
+.sw-legal__section-title {
+  font-family: var(--sw-font-display);
+  font-size: clamp(1rem, 2.5vw, 1.375rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--sw-accent);
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+/* Body content */
+.sw-legal__section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Paragraphs */
+.sw-legal__paragraph {
+  font-family: var(--sw-font-body);
+  font-size: 0.9375rem;
+  color: var(--sw-text-muted);
+  line-height: 1.75;
+  margin: 0;
+}
+
+.sw-legal__paragraph--closing {
+  border-left: 3px solid var(--sw-accent);
+  padding-left: 1rem;
+  color: var(--sw-text);
+  font-weight: 500;
+}
+
+/* Lists */
+.sw-legal__list {
+  margin: 0;
+  padding-left: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.sw-legal__list-item {
+  font-family: var(--sw-font-body);
+  font-size: 0.9375rem;
+  color: var(--sw-text-muted);
+  line-height: 1.7;
+}
+
+/* Inline links within the text */
+.sw-legal__email,
+.sw-legal__link {
+  color: var(--sw-accent);
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+
+.sw-legal__email:hover,
+.sw-legal__link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sw-legal__section {
+    padding: 1.5rem 1.25rem;
+    border-radius: var(--sw-radius-lg);
+  }
+
+  .sw-legal__intro {
+    padding: 1.25rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sw-legal__section {
+    padding: 1.25rem 1rem;
+  }
+
+  .sw-legal__list {
+    padding-left: 1rem;
+  }
+}
