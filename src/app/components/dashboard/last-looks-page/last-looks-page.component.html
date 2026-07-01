@@ -195,7 +195,7 @@
                         [class.draggable]="canEditDocument"
                         [style.cursor]="canEditDocument ? 'grab' : 'default'">
                         <span class="bar-text"
-                            [style.left.px]="line.continueTextOffset ?? 0"
+                            [style.left]="line.continueTextOffset ? line.continueTextOffset + 'px' : '90%'"
                             (mousedown)="canEditDocument && startBarTextDrag($event, line, 'continue')"
                             (dblclick)="canEditDocument && onBarTextDoubleClick($event, line, 'continue')">
                             <ng-container *ngIf="barTextEditingId !== line.docPageLineIndex || barTextEditingType !== 'continue'; else editContinueText">

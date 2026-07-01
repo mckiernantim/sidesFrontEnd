@@ -1602,9 +1602,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     if (!this.barTextDragging) return;
     
     const deltaX = event.clientX - this.barTextDragStartX;
-    const newOffset = this.barTextDragType === 'continue'
-      ? this.clamp(this.barTextInitialOffset + deltaX, -750, 0)
-      : this.clamp(this.barTextInitialOffset + deltaX, 0, this.xboxPageWidth);
+    const newOffset = this.clamp(this.barTextInitialOffset + deltaX, 0, this.xboxPageWidth);
     
     const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.barTextDragLineId);
     if (lineIndex === -1) return;

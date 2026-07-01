@@ -1,4 +1,4 @@
-<div class="sw-legal">
+<div class="sw-legal" [@fadeInOut]>
 
   <!-- Hero -->
   <section class="sw-hero">
@@ -8,7 +8,8 @@
         PRIVACY <span class="sw-accent-text">POLICY</span>
       </h1>
       <p class="sw-hero__subhead">
-        Effective date: {{ effectiveDate }}
+        Effective date: <strong>{{ effectiveDate }}</strong><br>
+        ⚠️ Draft baseline — needs attorney review. Fill in bracketed <strong>[…]</strong> fields before launch.
       </p>
     </div>
   </section>
@@ -24,6 +25,20 @@
       </div>
     </div>
   </section>
+
+  <!-- Quick section nav -->
+  <nav class="sw-legal__quicknav" aria-label="Privacy Policy sections">
+    <div class="sw-legal__quicknav-inner">
+      <a
+        *ngFor="let section of sections"
+        [href]="'#' + section.id"
+        (click)="scrollToSection(section.id, $event)"
+        class="sw-legal__quicklink"
+        [attr.aria-label]="'Jump to ' + section.title">
+        {{ section.title }}
+      </a>
+    </div>
+  </nav>
 
   <!-- Legal sections -->
   <main class="sw-section">
@@ -66,7 +81,8 @@
   <section class="sw-bottom-cta">
     <h2 class="sw-bottom-cta__title">Questions about your data?</h2>
     <p class="sw-bottom-cta__body">
-      Email us at <a [href]="'mailto:' + contactEmail" class="sw-legal__email">{{ contactEmail }}</a>
+      Email us at
+      <a [href]="'mailto:' + contactEmail" class="sw-legal__email">{{ contactEmail }}</a>
       or visit our <a routerLink="/contact" class="sw-legal__link">Contact page</a>.
     </p>
     <a routerLink="/terms" class="sw-btn-cta">View Terms of Service</a>
