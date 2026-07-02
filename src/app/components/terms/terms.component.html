@@ -1,0 +1,93 @@
+<div class="sw-legal" [@fadeInOut]>
+
+  <!-- Hero -->
+  <section class="sw-hero">
+    <div class="sw-hero__overlay"></div>
+    <div class="sw-hero__content">
+      <h1 class="sw-hero__headline">
+        TERMS OF <span class="sw-accent-text">SERVICE</span>
+      </h1>
+      <p class="sw-hero__subhead">
+        Effective date: <strong>{{ effectiveDate }}</strong><br>
+        ⚠️ Draft baseline — needs attorney review. Fill in bracketed <strong>[…]</strong> fields before launch.
+      </p>
+    </div>
+  </section>
+
+  <!-- Intro -->
+  <section class="sw-section">
+    <div class="sw-legal__content">
+      <div class="sw-legal__intro">
+        <p class="sw-legal__intro-text">
+          Welcome to SidesWays. These Terms of Service ("Terms") govern your access to and use of
+          the SidesWays website, applications, and services (collectively, the "Service"). By
+          creating an account, uploading a document, or otherwise using the Service, you agree to
+          these Terms. If you do not agree, do not use the Service.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick section nav -->
+  <nav class="sw-legal__quicknav" aria-label="Terms of Service sections">
+    <div class="sw-legal__quicknav-inner">
+      <a
+        *ngFor="let section of sections"
+        [href]="'#' + section.id"
+        (click)="scrollToSection(section.id, $event)"
+        class="sw-legal__quicklink"
+        [attr.aria-label]="'Jump to ' + section.title">
+        {{ section.title }}
+      </a>
+    </div>
+  </nav>
+
+  <!-- Legal sections -->
+  <main class="sw-section">
+    <div class="sw-legal__content">
+
+      <section
+        *ngFor="let section of sections; let last = last"
+        [id]="section.id"
+        class="sw-legal__section"
+        [class.sw-legal__section--last]="last">
+
+        <header class="sw-legal__section-header">
+          <h2 class="sw-legal__section-title">{{ section.title }}</h2>
+        </header>
+
+        <div class="sw-legal__section-body">
+          <p
+            *ngFor="let para of section.paragraphs"
+            class="sw-legal__paragraph">
+            {{ para }}
+          </p>
+
+          <ul *ngIf="section.listItems && section.listItems.length" class="sw-legal__list">
+            <li *ngFor="let item of section.listItems" class="sw-legal__list-item">
+              {{ item }}
+            </li>
+          </ul>
+
+          <p *ngIf="section.closingText" class="sw-legal__paragraph sw-legal__paragraph--closing">
+            {{ section.closingText }}
+          </p>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Bottom CTA -->
+  <section class="sw-bottom-cta">
+    <h2 class="sw-bottom-cta__title">Questions about these Terms?</h2>
+    <p class="sw-bottom-cta__body">
+      Email us at
+      <a [href]="'mailto:' + contactEmail" class="sw-legal__email">{{ contactEmail }}</a>
+      or visit our <a routerLink="/contact" class="sw-legal__link">Contact page</a>.
+    </p>
+    <a routerLink="/privacy" class="sw-btn-cta">View Privacy Policy</a>
+  </section>
+
+</div>

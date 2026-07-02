@@ -1,0 +1,17 @@
+<div
+  *ngIf="isOpen"
+  class="auth-modal__backdrop"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Sign in"
+  (click)="onBackdropClick($event)"
+>
+  <div class="auth-modal__panel">
+    <button class="auth-modal__close" (click)="close()" aria-label="Close sign in">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+    <app-auth [isModal]="true" (closeModal)="close()"></app-auth>
+  </div>
+</div>

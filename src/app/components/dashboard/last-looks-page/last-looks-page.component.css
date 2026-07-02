@@ -420,10 +420,12 @@ li.page-number {
     /* strike-through removed: X-box SVG overlay communicates exclusion */
 }
 
-/* Skipped (false) lines: light grey background beneath the X-box SVG overlay. */
+/* Removed/skipped lines: grey background + strikethrough beneath the X-box SVG overlay. */
 li.false:not(.page-number):not(.page-number-text):not(.page-number-hidden) {
     z-index: 2;
     background-color: #e8e8e8;
+    text-decoration: line-through;
+    text-decoration-color: rgba(0, 0, 0, 0.5);
 }
 
 /* SVG X-box overlay — sits above skipped (false) content, BELOW visible lines */
@@ -561,7 +563,6 @@ span.CONTINUE {
     width: 95%;
     border-top: 2.5px solid;
     padding-top: 2.5px;
-    text-align: right;
     right: 5px;
     font-size: 16pt;
     font-weight: 900;

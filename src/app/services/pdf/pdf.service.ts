@@ -729,7 +729,7 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     }
   }
   private handleFinalScene(line, merged) {
-    const skippedCategories = ['page-number', 'injected-break', 'page-number-hidden'];
+    const skippedCategories = ['page-number', 'injected-break', 'page-number-hidden', 'draft-color-text'];
     let actualLastLineIndex = merged.length - 1;
   
     while (
@@ -900,7 +900,10 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     let lastLine = merged.find((l) => l.index === lastLineIndex);
     let lastLinePositionInMerged = merged.findIndex((l) => l.index === lastLineIndex);
     let sceneNumberText = '';
-    if (lastLine && lastLine.category === 'page-number') {
+    if (lastLine && this.isTrailingPageMetadata(lastLine)) {
+      // The scene's recorded last line is page metadata (page number, revision/
+      // draft-colour label, version stamp). Walk back to the real last content
+      // line so the END bar lands on actual scene content, not on the footer.
       for (let i = lastLinePositionInMerged - 1; i >= 0; i--) {
         if (this.conditions.includes(merged[i].category)) {
           merged[i].end = 'END';
@@ -939,7 +942,7 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     breaks = this.sortBreaks(breaks);
     let merged = this.flattenScenes(sceneArr);
     let counter = 0;
-    const skippedCategories = ['page-number', 'injected-break', 'page-number-hidden'];
+    const skippedCategories = ['page-number', 'injected-break', 'page-number-hidden', 'draft-color-text'];
   
     for (let i = 0; i < merged.length; i++) {
       let line = merged[i];
@@ -1594,35 +1597,39 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
       
       // If first line isn't a scene header, it's a continuation
       if (firstVisibleLine && firstVisibleLine.category !== 'scene-header') {
-        // Mark as continuation from previous page
-        firstVisibleLine.cont = 'CONTINUE-TOP';
-        
-        // Only set position if it hasn't been set before
-        if (!firstVisibleLine.barY || !firstVisibleLine.calculatedBarY) {
-          const topPosition = 40 ; // Default position from top
-          firstVisibleLine.barY = topPosition;
-          firstVisibleLine.calculatedBarY = topPosition + 'px';
-        }
-        
         // Find last visible continuable line on previous page - simple backwards iteration
+        let lastContinuableLine: any = null;
         for (let j = previousPage.length - 1; j >= 0; j--) {
           const line = previousPage[j];
-          if (line && 
-              line.visible === 'true' && 
+          if (line &&
+              line.visible === 'true' &&
               line.category !== 'injected-break' &&
               continuableCategories.includes(line.category)) {
-            // Mark this line as CONTINUE
-            line.cont = 'CONTINUE';
-            
-            // Only set position if it hasn't been set before
-            if (!line.barY || !line.calculatedBarY) {
-              const topPosition = 90; // Default position from top
-              line.barY = topPosition;
-              line.calculatedBarY = topPosition + 'px';
-            }
-            
-            // We found our line, no need to continue
+            lastContinuableLine = line;
             break;
+          }
+        }
+
+        // Only draw the continuation bars when the previous page's last content
+        // line does NOT already end a scene. An END means the scene closed on
+        // the previous page, so a "↓↓↓ N CONTINUED ↓↓↓" bar would be wrong — this
+        // is what left stray continue bars at the bottom of pages whose scene had
+        // ended (e.g. pages carrying a top-aligned draft-color-text label).
+        if (lastContinuableLine && lastContinuableLine.end !== 'END') {
+          // Mark first line of this page as a continuation from the previous page
+          firstVisibleLine.cont = 'CONTINUE-TOP';
+          if (!firstVisibleLine.barY || !firstVisibleLine.calculatedBarY) {
+            const topPosition = 40; // Default position from top
+            firstVisibleLine.barY = topPosition;
+            firstVisibleLine.calculatedBarY = topPosition + 'px';
+          }
+
+          // Mark the previous page's last continuable line as CONTINUE
+          lastContinuableLine.cont = 'CONTINUE';
+          if (!lastContinuableLine.barY || !lastContinuableLine.calculatedBarY) {
+            const bottomPosition = 90; // Default position from bottom
+            lastContinuableLine.barY = bottomPosition;
+            lastContinuableLine.calculatedBarY = bottomPosition + 'px';
           }
         }
       }
@@ -1804,6 +1811,14 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
           first = currentPage[j];
         }
         if (first && last) {
+          // A scene that ENDS on this page must never carry a CONTINUE bar.
+          // `last` is the last visible content line of the page; when it holds
+          // an END bar the scene closed here and the next page begins a new
+          // scene, so a "↓↓↓ N CONTINUED ↓↓↓" bar would be wrong (e.g. scene 7
+          // ends but the page footer still reads "scene 7 continued").
+          if (last.end === 'END') {
+            break;
+          }
           if (
             first.visible === 'true' &&
             last.visible === 'true' &&
@@ -1914,9 +1929,42 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     currentScene.lastPage = this.getLastPage(currentScene);
   }
 
+  // Trailing lines that are page metadata, never scene content. Any run of these
+  // at the end of a scene must be skipped when deciding the scene's last page —
+  // otherwise the scene is treated as spilling onto an extra page (forcing an
+  // extra rendered page and a stray CONTINUE bar) when its content actually
+  // ended on the previous page. The shapes a revision/draft footer can take:
+  //   - category 'draft-color-text' (standalone revision-colour label)
+  //   - category 'version'          (date-only revision stamp)
+  //   - category 'page-number' / 'page-number-hidden'
+  //   - any line carrying a draftColorText label (revision colour folded into a
+  //     page-number line, e.g. "BLUE 6/19/25 5.")
+  // Confirmed against real revision scripts: scenes spilled because the run was
+  // draft-color-text INTERLEAVED with a page-number — stripping only one shape
+  // stopped at the other and still pushed lastPage onto the next page.
+  private isTrailingPageMetadata(line: any): boolean {
+    if (!line) return false;
+    const metadataCategories = [
+      'draft-color-text',
+      'version',
+      'page-number',
+      'page-number-hidden',
+    ];
+    if (metadataCategories.includes(line.category)) return true;
+    if (line.draftColorText && String(line.draftColorText).trim() !== '')
+      return true;
+    return false;
+  }
+
   getLastPage = (scene) => {
-    
-    return this.allLines[scene.lastLine]?.page || null;
+    let idx = scene.lastLine;
+    while (
+      idx > scene.firstLine &&
+      this.isTrailingPageMetadata(this.allLines[idx])
+    ) {
+      idx--;
+    }
+    return this.allLines[idx]?.page || null;
   };
 
   getPreview(ind) {
@@ -2367,30 +2415,64 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
    *
    * Identification priority: docPageIndex (map key used by the component), then index.
    */
-  removeScene(scene: { docPageIndex?: number; index?: number }): void {
-    const remaining = this._selectedScenes.filter(s => {
+  removeScene(scene: { docPageIndex?: number; index?: number; firstLine?: number; lastLine?: number }): void {
+    // Find full scene data before filtering so we have firstLine/lastLine
+    const sceneToRemove = this._selectedScenes.find(s => {
+      if (scene.docPageIndex !== undefined && s.docPageIndex !== undefined) {
+        return s.docPageIndex === scene.docPageIndex;
+      }
+      return s.index === scene.index;
+    });
+
+    this._selectedScenes = this._selectedScenes.filter(s => {
       if (scene.docPageIndex !== undefined && s.docPageIndex !== undefined) {
         return s.docPageIndex !== scene.docPageIndex;
       }
       return s.index !== scene.index;
     });
 
-    this._selectedScenes = remaining;
-
     if (!this.finalDocReady || !this.finalDocument) {
       console.warn('removeScene: finalDocument not ready; updated _selectedScenes only');
       return;
     }
 
-    // Rebuild the document without the removed scene (mirrors updateSceneOrder)
-    this.processPdf(
-      remaining,
-      this.finalDocument.name,
-      this.finalDocument.numPages,
-      this.finalDocument.callSheetPath
-    );
+    const target = sceneToRemove || scene;
+    const firstLine = target.firstLine;
+    const lastLine  = target.lastLine;
 
-    // Signal structural change so Last Looks resets to page 1 (mirrors reorderScenes)
+    if (firstLine === undefined || lastLine === undefined) {
+      console.warn('removeScene: missing firstLine/lastLine, falling back to full rebuild');
+      this.processPdf(
+        this._selectedScenes,
+        this.finalDocument.name,
+        this.finalDocument.numPages,
+        this.finalDocument.callSheetPath
+      );
+      this._documentReordered$.next(true);
+      return;
+    }
+
+    // Step 1: zero out every line that belongs to the removed scene
+    const structuralCategories = new Set(['page-number', 'page-number-hidden', 'injected-break']);
+    for (const page of this.finalDocument.data) {
+      for (const line of page) {
+        if (line.index >= firstLine && line.index <= lastLine) {
+          line.visible = 'false';
+          line.bar     = 'hideBar';
+          line.end     = 'hideEnd';
+          line.cont    = 'hideCont';
+        }
+      }
+    }
+
+    // Step 2: scan pages in order; drop pages with no visible content lines,
+    // stop as soon as a page with visible content is found
+    const hasVisibleContent = (page: any[]) =>
+      page.some(l => l.visible === 'true' && !structuralCategories.has(l.category));
+
+    this.finalDocument.data = this.finalDocument.data.filter(page => hasVisibleContent(page));
+
+    this._documentRegenerated$.next(true);
     this._documentReordered$.next(true);
   }
 
