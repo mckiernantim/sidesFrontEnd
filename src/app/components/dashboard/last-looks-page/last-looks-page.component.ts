@@ -1,10 +1,11 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, HostListener, OnDestroy, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, HostListener, OnDestroy, ChangeDetectorRef, ViewChild, AfterViewInit, ElementRef } from '@angular/core';
 import { Line } from 'src/app/types/Line';
 import { UndoService } from 'src/app/services/edit/undo.service';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, filter } from 'rxjs/operators';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
 import { AnnotationStateService } from 'src/app/services/annotation/annotation-state.service';
+import { ZoomStateService } from 'src/app/services/zoom/zoom-state.service';
 import { DEFAULT_TEXT_BOX_PRESETS } from 'src/app/types/Annotation';
 import { cloneDeep } from 'lodash';
 
@@ -15,7 +16,7 @@ import { cloneDeep } from 'lodash';
   styleUrls: ['./last-looks-page.component.css'],
   standalone: false
 })
-export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
+export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, AfterViewInit {
   @Input() page: any[] = [];
   @Input() canEditDocument: boolean = false;
   @Input() selectedLine: any = null;
@@ -167,6 +168,32 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   private readonly xboxPageWidth = 816;
   private readonly xboxPageHeight = 1056;
 
+  @ViewChild('pageViewport') pageViewportRef!: ElementRef<HTMLElement>;
+  touchSelectMode = false;
+  zoomTransitionActive = false;
+  private activePointers = new Map<number, { x: number; y: number }>();
+  private pinchStartDistance = 0;
+  private pinchStartScale = 1;
+  private isPinching = false;
+  private isPanning = false;
+  private panStartX = 0;
+  private panStartY = 0;
+  private panOriginX = 0;
+  private panOriginY = 0;
+  private lastTapTime = 0;
+  private lastTapX = 0;
+  private lastTapY = 0;
+  private longPressTimer: ReturnType<typeof setTimeout> | null = null;
+  private longPressLine: Line | null = null;
+  private longPressLineIndex = -1;
+  private longPressStartX = 0;
+  private longPressStartY = 0;
+  private preEditZoomSnapshot: { scale: number; panX: number; panY: number } | null = null;
+  private viewportTouchMoveHandler = (e: TouchEvent) => this.onViewportTouchMove(e);
+  private resizeObserver: ResizeObserver | null = null;
+  private lastLineTapTime = 0;
+  private lastLineTapId: number | null = null;
+
   @ViewChild('pdfViewer') pdfViewer: any;
 
   // Backend uploads files with makePublic() so the GCS URL is already publicly
@@ -180,7 +207,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     private undoService: UndoService,
     public cdRef: ChangeDetectorRef,
     private pdfService: PdfService,
-    private annotationState: AnnotationStateService
+    private annotationState: AnnotationStateService,
+    public zoomState: ZoomStateService
   ) {
     // Subscribe to line updates from the service
     this.subscription = this.pdfService.finalDocumentData$.subscribe(update => {
@@ -411,23 +439,27 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       this.sceneHeaderTextUpdateSubscription.unsubscribe();
     }
     this.xboxUndoRedoSubscription?.unsubscribe();
+    this.cancelLongPress();
+    this.resizeObserver?.disconnect();
+    const viewport = this.pageViewportRef?.nativeElement;
+    if (viewport) viewport.removeEventListener('touchmove', this.viewportTouchMoveHandler);
     // Clean up event listeners
-    document.removeEventListener('mousemove', this.handleMouseMove);
-    document.removeEventListener('mouseup', this.handleMouseUp);
-    document.removeEventListener('mousemove', this.moveBarText);
-    document.removeEventListener('mouseup', this.endBarTextDrag);
-    document.removeEventListener('mousemove', this.resizeTextBox);
-    document.removeEventListener('mouseup', this.endTextBoxResize);
-    document.removeEventListener('mousemove', this.handleXboxDragMove);
-    document.removeEventListener('mouseup', this.handleXboxDragEnd);
-    document.removeEventListener('mousemove', this.handleXboxResizeMove);
-    document.removeEventListener('mouseup', this.handleXboxResizeEnd);
-    document.removeEventListener('mousemove', this.rotateArrow);
-    document.removeEventListener('mouseup', this.endArrowRotate);
-    document.removeEventListener('mousemove', this.moveArrow);
-    document.removeEventListener('mouseup', this.endArrowDrag);
-    document.removeEventListener('mousemove', this.resizeArrow);
-    document.removeEventListener('mouseup', this.endArrowResize);
+    document.removeEventListener('pointermove', this.handleMouseMove);
+    document.removeEventListener('pointerup', this.handleMouseUp);
+    document.removeEventListener('pointermove', this.moveBarText);
+    document.removeEventListener('pointerup', this.endBarTextDrag);
+    document.removeEventListener('pointermove', this.resizeTextBox);
+    document.removeEventListener('pointerup', this.endTextBoxResize);
+    document.removeEventListener('pointermove', this.handleXboxDragMove);
+    document.removeEventListener('pointerup', this.handleXboxDragEnd);
+    document.removeEventListener('pointermove', this.handleXboxResizeMove);
+    document.removeEventListener('pointerup', this.handleXboxResizeEnd);
+    document.removeEventListener('pointermove', this.rotateArrow);
+    document.removeEventListener('pointerup', this.endArrowRotate);
+    document.removeEventListener('pointermove', this.moveArrow);
+    document.removeEventListener('pointerup', this.endArrowDrag);
+    document.removeEventListener('pointermove', this.resizeArrow);
+    document.removeEventListener('pointerup', this.endArrowResize);
 
     // Clean up annotation system
     this.toolStateSubscription?.unsubscribe();
@@ -714,27 +746,23 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.textBoxInitialNormX = annotation.normalizedX;
     this.textBoxInitialNormY = annotation.normalizedY;
 
-    document.addEventListener('mousemove', this.moveTextBox);
-    document.addEventListener('mouseup', this.endTextBoxDrag);
+    document.addEventListener('pointermove', this.moveTextBox);
+    document.addEventListener('pointerup', this.endTextBoxDrag);
   }
 
   /**
    * Handle mousemove during text box drag.
    */
-  moveTextBox = (event: MouseEvent): void => {
+  moveTextBox = (event: PointerEvent): void => {
     if (!this.draggingTextBoxId) return;
-
-    const pageWidth = 816;
-    const pageHeight = 1056;
+    const scale = this.zoomState.effectiveScale;
     const annotation = this.getAnnotationsForCurrentPage().find(a => a.annotationId === this.draggingTextBoxId);
     const maxNormX = Math.max(0, 1 - (annotation?.normalizedWidth ?? 0));
     const maxNormY = Math.max(0, 1 - (annotation?.normalizedHeight ?? 0));
-
     const deltaX = event.clientX - this.textBoxDragStartX;
     const deltaY = event.clientY - this.textBoxDragStartY;
-
-    const newNormX = this.clamp(this.textBoxInitialNormX + (deltaX / pageWidth), 0, maxNormX);
-    const newNormY = this.clamp(this.textBoxInitialNormY + (deltaY / pageHeight), 0, maxNormY);
+    const newNormX = this.clamp(this.textBoxInitialNormX + deltaX / (this.xboxPageWidth * scale), 0, maxNormX);
+    const newNormY = this.clamp(this.textBoxInitialNormY + deltaY / (this.xboxPageHeight * scale), 0, maxNormY);
 
     // Update annotation position in the state service (source of truth during editing).
     // We also update finalDocument.annotations inline so the DOM text boxes re-render
@@ -760,8 +788,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
    * End text box drag.
    */
   endTextBoxDrag = (event: MouseEvent): void => {
-    document.removeEventListener('mousemove', this.moveTextBox);
-    document.removeEventListener('mouseup', this.endTextBoxDrag);
+    document.removeEventListener('pointermove', this.moveTextBox);
+    document.removeEventListener('pointerup', this.endTextBoxDrag);
 
     // Full sync from state → document now that drag is complete
     if (this.draggingTextBoxId) {
@@ -784,8 +812,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.textBoxInitialNormHeight = annotation.normalizedHeight;
     this.selectAnnotation(annotation.annotationId);
 
-    document.addEventListener('mousemove', this.resizeTextBox);
-    document.addEventListener('mouseup', this.endTextBoxResize);
+    document.addEventListener('pointermove', this.resizeTextBox);
+    document.addEventListener('pointerup', this.endTextBoxResize);
   }
 
   resizeTextBox = (event: MouseEvent): void => {
@@ -798,8 +826,9 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     const minHeight = 24 / this.xboxPageHeight;
     const maxWidth = Math.max(minWidth, 1 - annotation.normalizedX);
     const maxHeight = Math.max(minHeight, 1 - annotation.normalizedY);
-    const deltaX = (event.clientX - this.textBoxResizeStartX) / this.xboxPageWidth;
-    const deltaY = (event.clientY - this.textBoxResizeStartY) / this.xboxPageHeight;
+    const scale = this.zoomState.effectiveScale;
+    const deltaX = (event.clientX - this.textBoxResizeStartX) / (this.xboxPageWidth * scale);
+    const deltaY = (event.clientY - this.textBoxResizeStartY) / (this.xboxPageHeight * scale);
 
     const normalizedWidth = this.clamp(this.textBoxInitialNormWidth + deltaX, minWidth, maxWidth);
     const normalizedHeight = this.clamp(this.textBoxInitialNormHeight + deltaY, minHeight, maxHeight);
@@ -815,8 +844,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   };
 
   endTextBoxResize = (_event: MouseEvent): void => {
-    document.removeEventListener('mousemove', this.resizeTextBox);
-    document.removeEventListener('mouseup', this.endTextBoxResize);
+    document.removeEventListener('pointermove', this.resizeTextBox);
+    document.removeEventListener('pointerup', this.endTextBoxResize);
     if (this.resizingTextBoxId) {
       this.saveAnnotationsToDocument();
     }
@@ -852,22 +881,20 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.highlightInitialNormX = annotation.normalizedX;
     this.highlightInitialNormY = annotation.normalizedY;
 
-    document.addEventListener('mousemove', this.moveHighlight);
-    document.addEventListener('mouseup', this.endHighlightDrag);
+    document.addEventListener('pointermove', this.moveHighlight);
+    document.addEventListener('pointerup', this.endHighlightDrag);
   }
 
-  private moveHighlight = (event: MouseEvent): void => {
+  private moveHighlight = (event: PointerEvent): void => {
     if (!this.draggingHighlightId) return;
-
-    const pageWidth = 816;
-    const pageHeight = 1056;
+    const scale = this.zoomState.effectiveScale;
     const annotation = this.getAnnotationsForCurrentPage().find(a => a.annotationId === this.draggingHighlightId);
     const maxNormX = Math.max(0, 1 - (annotation?.normalizedWidth ?? 0));
     const maxNormY = Math.max(0, 1 - (annotation?.normalizedHeight ?? 0));
     const deltaX = event.clientX - this.highlightDragStartX;
     const deltaY = event.clientY - this.highlightDragStartY;
-    const newNormX = this.clamp(this.highlightInitialNormX + deltaX / pageWidth, 0, maxNormX);
-    const newNormY = this.clamp(this.highlightInitialNormY + deltaY / pageHeight, 0, maxNormY);
+    const newNormX = this.clamp(this.highlightInitialNormX + deltaX / (this.xboxPageWidth * scale), 0, maxNormX);
+    const newNormY = this.clamp(this.highlightInitialNormY + deltaY / (this.xboxPageHeight * scale), 0, maxNormY);
 
     this.annotationState.updateAnnotation(this.draggingHighlightId, {
       normalizedX: newNormX,
@@ -886,8 +913,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   };
 
   private endHighlightDrag = (_event: MouseEvent): void => {
-    document.removeEventListener('mousemove', this.moveHighlight);
-    document.removeEventListener('mouseup', this.endHighlightDrag);
+    document.removeEventListener('pointermove', this.moveHighlight);
+    document.removeEventListener('pointerup', this.endHighlightDrag);
 
     if (this.draggingHighlightId) {
       this.saveAnnotationsToDocument();
@@ -928,20 +955,19 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.arrowInitialNormY = annotation.normalizedY;
     this.selectAnnotation(annotation.annotationId);
 
-    document.addEventListener('mousemove', this.moveArrow);
-    document.addEventListener('mouseup', this.endArrowDrag);
+    document.addEventListener('pointermove', this.moveArrow);
+    document.addEventListener('pointerup', this.endArrowDrag);
   }
 
-  moveArrow = (event: MouseEvent): void => {
+  moveArrow = (event: PointerEvent): void => {
     if (!this.draggingArrowId) return;
     const annotation = this.getAnnotationById(this.draggingArrowId);
     if (!annotation) return;
-
-    const deltaX = event.clientX - this.arrowDragStartX;
-    const deltaY = event.clientY - this.arrowDragStartY;
+    const { dx: deltaX, dy: deltaY } = this.screenDeltaToDocDelta(
+      event.clientX - this.arrowDragStartX, event.clientY - this.arrowDragStartY
+    );
     const maxNormX = Math.max(0, 1 - annotation.normalizedWidth);
     const maxNormY = Math.max(0, 1 - annotation.normalizedHeight);
-
     this.updateArrowAnnotation(this.draggingArrowId, {
       normalizedX: this.clamp(this.arrowInitialNormX + deltaX / this.xboxPageWidth, 0, maxNormX),
       normalizedY: this.clamp(this.arrowInitialNormY + deltaY / this.xboxPageHeight, 0, maxNormY),
@@ -949,8 +975,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   };
 
   endArrowDrag = (_event: MouseEvent): void => {
-    document.removeEventListener('mousemove', this.moveArrow);
-    document.removeEventListener('mouseup', this.endArrowDrag);
+    document.removeEventListener('pointermove', this.moveArrow);
+    document.removeEventListener('pointerup', this.endArrowDrag);
     if (this.draggingArrowId) {
       this.recordAnnotationUndoIfChanged(this.arrowUndoSnapshot, 'Move arrow');
       this.saveAnnotationsToDocument();
@@ -976,8 +1002,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.arrowResizeFixedPoint = endpoint === 'start' ? endpoints.end : endpoints.start;
     this.selectAnnotation(annotation.annotationId);
 
-    document.addEventListener('mousemove', this.resizeArrow);
-    document.addEventListener('mouseup', this.endArrowResize);
+    document.addEventListener('pointermove', this.resizeArrow);
+    document.addEventListener('pointerup', this.endArrowResize);
   }
 
   resizeArrow = (event: MouseEvent): void => {
@@ -985,9 +1011,10 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       return;
     }
 
+    const rect = this.arrowResizePageRect;
     const movingPoint = {
-      x: this.clamp(event.clientX - this.arrowResizePageRect.left, 0, this.xboxPageWidth),
-      y: this.clamp(event.clientY - this.arrowResizePageRect.top, 0, this.xboxPageHeight),
+      x: this.clamp((event.clientX - rect.left) * (this.xboxPageWidth / rect.width), 0, this.xboxPageWidth),
+      y: this.clamp((event.clientY - rect.top) * (this.xboxPageHeight / rect.height), 0, this.xboxPageHeight),
     };
 
     const start = this.arrowResizeEndpoint === 'start' ? movingPoint : this.arrowResizeFixedPoint;
@@ -1015,8 +1042,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   };
 
   endArrowResize = (_event: MouseEvent): void => {
-    document.removeEventListener('mousemove', this.resizeArrow);
-    document.removeEventListener('mouseup', this.endArrowResize);
+    document.removeEventListener('pointermove', this.resizeArrow);
+    document.removeEventListener('pointerup', this.endArrowResize);
     if (this.resizingArrowId) {
       this.recordAnnotationUndoIfChanged(this.arrowUndoSnapshot, 'Resize arrow');
       this.saveAnnotationsToDocument();
@@ -1058,8 +1085,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.arrowInitialRotationDegrees = this.getArrowRotationDegrees(annotation);
     this.selectAnnotation(annotation.annotationId);
 
-    document.addEventListener('mousemove', this.rotateArrow);
-    document.addEventListener('mouseup', this.endArrowRotate);
+    document.addEventListener('pointermove', this.rotateArrow);
+    document.addEventListener('pointerup', this.endArrowRotate);
   }
 
   rotateArrow = (event: MouseEvent): void => {
@@ -1081,8 +1108,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   };
 
   endArrowRotate = (_event: MouseEvent): void => {
-    document.removeEventListener('mousemove', this.rotateArrow);
-    document.removeEventListener('mouseup', this.endArrowRotate);
+    document.removeEventListener('pointermove', this.rotateArrow);
+    document.removeEventListener('pointerup', this.endArrowRotate);
     if (this.rotatingArrowId) {
       this.recordAnnotationUndoIfChanged(this.arrowUndoSnapshot, 'Rotate arrow');
       this.saveAnnotationsToDocument();
@@ -1335,26 +1362,222 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  ngAfterViewInit() {
+  ngAfterViewInit(): void {
     if (this.pdfViewer) {
-      // Disable right-click context menu
       this.pdfViewer.nativeElement.addEventListener('contextmenu', (e: Event) => {
         e.preventDefault();
         return false;
       });
-
-      // Disable keyboard shortcuts
       this.pdfViewer.nativeElement.addEventListener('keydown', (e: KeyboardEvent) => {
-        // Prevent common download shortcuts
         if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
           e.preventDefault();
           return false;
         }
       });
     }
+    this.setupMobileViewport();
   }
 
-  // ============= MOUSE DRAG METHODS =============
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.updateBaseScale();
+  }
+
+  private setupMobileViewport(): void {
+    const viewport = this.pageViewportRef?.nativeElement;
+    if (!viewport) {
+      setTimeout(() => this.setupMobileViewport(), 0);
+      return;
+    }
+    viewport.addEventListener('touchmove', this.viewportTouchMoveHandler, { passive: false });
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => this.updateBaseScale());
+      this.resizeObserver.observe(viewport);
+    }
+    this.updateBaseScale();
+  }
+
+  private onViewportTouchMove(event: TouchEvent): void {
+    if (event.touches.length >= 2) {
+      event.preventDefault();
+    }
+  }
+
+  private updateBaseScale(): void {
+    const viewport = this.pageViewportRef?.nativeElement;
+    if (!viewport) return;
+    const width = viewport.clientWidth;
+    if (width <= 0) return;
+    this.zoomState.setBaseScale(width / this.xboxPageWidth);
+    this.syncAnnotationCanvasZoom();
+    this.cdRef.detectChanges();
+  }
+
+  getPageTransform(): string {
+    return `translate(${this.zoomState.panX}px, ${this.zoomState.panY}px) scale(${this.zoomState.effectiveScale})`;
+  }
+
+  screenDeltaToDocDelta(screenDeltaX: number, screenDeltaY: number): { dx: number; dy: number } {
+    const scale = this.zoomState.effectiveScale;
+    return { dx: screenDeltaX / scale, dy: screenDeltaY / scale };
+  }
+
+  private syncAnnotationCanvasZoom(): void {
+    this.annotationState.updateCanvasState({
+      zoom: this.zoomState.effectiveScale,
+      panOffset: { x: this.zoomState.panX, y: this.zoomState.panY },
+    });
+  }
+
+  onViewportPointerDown(event: PointerEvent): void {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    this.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (this.activePointers.size === 2) {
+      this.cancelLongPress();
+      this.isPinching = true;
+      this.isPanning = false;
+      const pts = Array.from(this.activePointers.values());
+      this.pinchStartDistance = this.pointerDistance(pts[0], pts[1]);
+      this.pinchStartScale = this.zoomState.effectiveScale;
+      if (this.showContextMenu) this.closeContextMenu();
+      return;
+    }
+    if (this.activePointers.size === 1 && this.canPanViewport()) {
+      this.isPanning = true;
+      this.panStartX = event.clientX;
+      this.panStartY = event.clientY;
+      this.panOriginX = this.zoomState.panX;
+      this.panOriginY = this.zoomState.panY;
+    }
+  }
+
+  onViewportPointerMove(event: PointerEvent): void {
+    if (!this.activePointers.has(event.pointerId)) return;
+    this.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (this.isPinching && this.activePointers.size >= 2) {
+      const pts = Array.from(this.activePointers.values());
+      const dist = this.pointerDistance(pts[0], pts[1]);
+      if (this.pinchStartDistance > 0) {
+        this.zoomState.setScale(this.pinchStartScale * (dist / this.pinchStartDistance));
+        this.syncAnnotationCanvasZoom();
+        this.cdRef.detectChanges();
+      }
+      return;
+    }
+    if (this.isPanning && this.activePointers.size === 1) {
+      const clamped = this.clampPan(
+        this.panOriginX + (event.clientX - this.panStartX),
+        this.panOriginY + (event.clientY - this.panStartY)
+      );
+      this.zoomState.setPan(clamped.panX, clamped.panY);
+      this.syncAnnotationCanvasZoom();
+      this.cdRef.detectChanges();
+    }
+  }
+
+  onViewportPointerUp(event: PointerEvent): void {
+    this.activePointers.delete(event.pointerId);
+    if (this.activePointers.size < 2) this.isPinching = false;
+    if (this.activePointers.size === 0) {
+      this.isPanning = false;
+      const now = Date.now();
+      if (now - this.lastTapTime < 300 &&
+          Math.hypot(event.clientX - this.lastTapX, event.clientY - this.lastTapY) < 30) {
+        this.zoomTransitionActive = true;
+        this.zoomState.reset();
+        this.syncAnnotationCanvasZoom();
+        setTimeout(() => { this.zoomTransitionActive = false; this.cdRef.detectChanges(); }, 200);
+        this.lastTapTime = 0;
+      } else {
+        this.lastTapTime = now;
+        this.lastTapX = event.clientX;
+        this.lastTapY = event.clientY;
+      }
+    }
+  }
+
+  private canPanViewport(): boolean {
+    if (this.canEditDocument) return false;
+    if (this.isPinching || this.mouseDragging || this.barTextDragging ||
+        this.xboxDragging || this.xboxResizing || this.draggingTextBoxId ||
+        this.draggingHighlightId || this.draggingArrowId) return false;
+    return this.zoomState.effectiveScale > this.zoomState.baseScale + 0.01;
+  }
+
+  private clampPan(panX: number, panY: number): { panX: number; panY: number } {
+    const viewport = this.pageViewportRef?.nativeElement;
+    if (!viewport) return { panX, panY };
+    const scale = this.zoomState.effectiveScale;
+    const minPanX = Math.min(0, viewport.clientWidth - this.xboxPageWidth * scale);
+    const minPanY = Math.min(0, viewport.clientHeight - this.xboxPageHeight * scale);
+    return { panX: Math.min(0, Math.max(minPanX, panX)), panY: Math.min(0, Math.max(minPanY, panY)) };
+  }
+
+  private pointerDistance(a: { x: number; y: number }, b: { x: number; y: number }): number {
+    return Math.hypot(b.x - a.x, b.y - a.y);
+  }
+
+  toggleTouchSelectMode(): void {
+    this.touchSelectMode = !this.touchSelectMode;
+    if (!this.touchSelectMode) this.clearSelection();
+    this.cdRef.detectChanges();
+  }
+
+  private scheduleLongPress(event: PointerEvent, line: Line, lineIndex: number): void {
+    this.cancelLongPress();
+    this.longPressLine = line;
+    this.longPressLineIndex = lineIndex;
+    this.longPressStartX = event.clientX;
+    this.longPressStartY = event.clientY;
+    this.longPressTimer = setTimeout(() => {
+      if (!this.longPressLine) return;
+      this.mouseDragging = false;
+      this.dragLineId = null;
+      document.body.classList.remove('grab-cursor');
+      this.openContextMenu(
+        { clientX: this.longPressStartX, clientY: this.longPressStartY, preventDefault: () => {} } as MouseEvent,
+        this.longPressLine, this.longPressLineIndex
+      );
+      this.cancelLongPress();
+    }, 500);
+  }
+
+  private cancelLongPress(): void {
+    if (this.longPressTimer) { clearTimeout(this.longPressTimer); this.longPressTimer = null; }
+    this.longPressLine = null;
+    this.longPressLineIndex = -1;
+  }
+
+  private capturePreEditZoomState(): void {
+    this.preEditZoomSnapshot = {
+      scale: this.zoomState.effectiveScale,
+      panX: this.zoomState.panX,
+      panY: this.zoomState.panY,
+    };
+  }
+
+  private restorePreEditZoomState(): void {
+    if (!this.preEditZoomSnapshot) return;
+    this.zoomState.setScale(this.preEditZoomSnapshot.scale);
+    this.zoomState.setPan(this.preEditZoomSnapshot.panX, this.preEditZoomSnapshot.panY);
+    this.syncAnnotationCanvasZoom();
+    this.preEditZoomSnapshot = null;
+    this.cdRef.detectChanges();
+  }
+
+  private setupVisualViewportKeyboardRestore(): void {
+    if (!window.visualViewport) return;
+    const onResize = () => {
+      if (this.editingLine === null && this.editingTextBoxId === null && this.barTextEditingId === null) return;
+      if (window.visualViewport!.height >= window.innerHeight * 0.85) {
+        this.restorePreEditZoomState();
+        window.visualViewport!.removeEventListener('resize', onResize);
+      }
+    };
+    window.visualViewport.addEventListener('resize', onResize);
+  }
+
+  // ============= MOUSE / POINTER DRAG METHODS =============
 
   onMouseDown(event: MouseEvent, line: Line): void {
     // Only auto-select if no modifier keys are pressed AND line is not selected
@@ -1368,22 +1591,16 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  startLineDrag(event: MouseEvent, line: Line, type: 'line' | 'end' | 'continue' | 'continue-top'): void {
-    // Don't start drag if we're in a double-click situation
-    if (event.detail > 1) {
-        return;
-    }
-
+  startLineDrag(event: PointerEvent, line: Line, type: 'line' | 'end' | 'continue' | 'continue-top'): void {
+    if (event.detail > 1) return;
     if (!this.canEditDocument) return;
+    if (event.shiftKey || event.ctrlKey || event.metaKey) return;
 
-    // Don't start drag if modifier keys are pressed (allow multi-selection)
-    if (event.shiftKey || event.ctrlKey || event.metaKey) {
-      return;
+    if (event.pointerType === 'touch' || event.pointerType === 'pen') {
+      this.scheduleLongPress(event, line, line.docPageLineIndex);
     }
 
-    // For main line drag, always select the line (whether it was selected or not)
     if (type === 'line') {
-      console.log('🎯 Selecting line for drag:', line.docPageLineIndex);
       const mockEvent = { shiftKey: false, ctrlKey: false, metaKey: false } as MouseEvent;
       this.selectLine(line, mockEvent);
     }
@@ -1434,21 +1651,19 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
             break;
     }
 
-    document.addEventListener('mousemove', this.handleMouseMove);
-    document.addEventListener('mouseup', this.handleMouseUp);
+    document.addEventListener('pointermove', this.handleMouseMove);
+    document.addEventListener('pointerup', this.handleMouseUp);
   }
 
   // Handle mouse move
-  handleMouseMove = (event: MouseEvent): void => {
+  handleMouseMove = (event: PointerEvent): void => {
     if (!this.mouseDragging) return;
-    
-    // Calculate delta from start
-    const deltaX = event.clientX - this.dragStartX;
-    const deltaY = event.clientY - this.dragStartY;
-    
-    // Calculate new position: INITIAL + DELTA
+    const rawDeltaX = event.clientX - this.dragStartX;
+    const rawDeltaY = event.clientY - this.dragStartY;
+    if (Math.hypot(rawDeltaX, rawDeltaY) > 5) this.cancelLongPress();
+    const { dx: deltaX, dy: deltaY } = this.screenDeltaToDocDelta(rawDeltaX, rawDeltaY);
     const newX = this.initialPosition.x + deltaX;
-    const newY = this.initialPosition.y - deltaY; // Invert Y for bottom-based coordinates
+    const newY = this.initialPosition.y - deltaY;
     
     // Find the line
     const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.dragLineId);
@@ -1478,30 +1693,23 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   };
 
   // Handle mouse up
-  handleMouseUp = (event: MouseEvent): void => {
+  handleMouseUp = (event: PointerEvent): void => {
     if (!this.mouseDragging) return;
-
-    // Remove event listeners
-    document.removeEventListener('mousemove', this.handleMouseMove);
-    document.removeEventListener('mouseup', this.handleMouseUp);
-
-    // Remove grab cursor
+    this.cancelLongPress();
+    document.removeEventListener('pointermove', this.handleMouseMove);
+    document.removeEventListener('pointerup', this.handleMouseUp);
     document.body.classList.remove('grab-cursor');
 
-    // Calculate final position
-    const deltaX = event.clientX - this.dragStartX;
-    const deltaY = event.clientY - this.dragStartY;
+    const rawDeltaX = event.clientX - this.dragStartX;
+    const rawDeltaY = event.clientY - this.dragStartY;
+    const { dx: deltaX, dy: deltaY } = this.screenDeltaToDocDelta(rawDeltaX, rawDeltaY);
     const finalX = this.initialPosition.x + deltaX;
     const finalY = this.initialPosition.y - deltaY;
 
-    // Find the line
     const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.dragLineId);
     if (lineIndex === -1) return;
-
     const line = this.page[lineIndex];
-
-    // Check if position actually changed (minimum drag threshold)
-    const hasPositionChanged = Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2;
+    const hasPositionChanged = Math.abs(rawDeltaX) > 2 || Math.abs(rawDeltaY) > 2;
 
     // Set final position and store raw values
     switch (this.dragType) {
@@ -1593,15 +1801,14 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
         break;
     }
     
-    document.addEventListener('mousemove', this.moveBarText);
-    document.addEventListener('mouseup', this.endBarTextDrag);
+    document.addEventListener('pointermove', this.moveBarText);
+    document.addEventListener('pointerup', this.endBarTextDrag);
     document.body.classList.add('ew-resize-cursor');
   }
 
-  moveBarText = (event: MouseEvent): void => {
+  moveBarText = (event: PointerEvent): void => {
     if (!this.barTextDragging) return;
-    
-    const deltaX = event.clientX - this.barTextDragStartX;
+    const { dx: deltaX } = this.screenDeltaToDocDelta(event.clientX - this.barTextDragStartX, 0);
     const newOffset = this.clamp(this.barTextInitialOffset + deltaX, 0, this.xboxPageWidth);
     
     const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.barTextDragLineId);
@@ -1673,8 +1880,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
       }
     }
 
-    document.removeEventListener('mousemove', this.moveBarText);
-    document.removeEventListener('mouseup', this.endBarTextDrag);
+    document.removeEventListener('pointermove', this.moveBarText);
+    document.removeEventListener('pointerup', this.endBarTextDrag);
     document.body.classList.remove('ew-resize-cursor');
 
     // Only emit page update if the drag actually moved the text.
@@ -1801,8 +2008,13 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     if (!this.canEditDocument) return;
 
     const lineId = line.docPageLineIndex;
-    
-    if (event.shiftKey && this.lastSelectedIndex !== null) {
+
+    if (this.touchSelectMode) {
+      const index = this.selectedLineIds.indexOf(lineId);
+      if (index === -1) this.selectedLineIds.push(lineId);
+      else this.selectedLineIds.splice(index, 1);
+      this.lastSelectedIndex = lineId;
+    } else if (event.shiftKey && this.lastSelectedIndex !== null) {
       // Shift + click for range selection
       this.selectedLineIds = [];
 
@@ -1944,9 +2156,9 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private startEditingLine(lineId: number, text: string): void {
-    console.log('startEditingLine called with lineId:', lineId, 'text:', text);
+    this.capturePreEditZoomState();
+    this.setupVisualViewportKeyboardRestore();
 
-    // Find the line
     const line = this.page.find(line => line.docPageLineIndex === lineId);
     if (!line) {
       console.log('Line not found for lineId:', lineId);
@@ -2124,6 +2336,19 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
     // Use the same logic as the context menu
     this.startEditingLine(lineId, text);
+  }
+
+  onLinePointerTap(event: PointerEvent, lineId: number, text: string): void {
+    if (!this.canEditDocument || event.pointerType === 'mouse') return;
+    const now = Date.now();
+    if (this.lastLineTapId === lineId && now - this.lastLineTapTime < 300) {
+      this.lastLineTapTime = 0;
+      this.lastLineTapId = null;
+      this.onDoubleClick(event as unknown as MouseEvent, lineId, text);
+      return;
+    }
+    this.lastLineTapTime = now;
+    this.lastLineTapId = lineId;
   }
 
   onEditTextChange(newText: string): void {
@@ -3275,17 +3500,17 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.xboxDragInitialWidth = xbox.right - xbox.left;
     this.xboxDragInitialHeight = xbox.bottom - xbox.top;
 
-    document.addEventListener('mousemove', this.handleXboxDragMove);
-    document.addEventListener('mouseup', this.handleXboxDragEnd);
+    document.addEventListener('pointermove', this.handleXboxDragMove);
+    document.addEventListener('pointerup', this.handleXboxDragEnd);
   }
 
-  handleXboxDragMove = (event: MouseEvent): void => {
+  handleXboxDragMove = (event: PointerEvent): void => {
     if (!this.xboxDragging || this.selectedXboxIndex === null) return;
     const xbox = this.getXboxById(this.selectedXboxIndex);
     if (!xbox) return;
-
-    const deltaX = event.clientX - this.xboxDragStartX;
-    const deltaY = event.clientY - this.xboxDragStartY;
+    const { dx: deltaX, dy: deltaY } = this.screenDeltaToDocDelta(
+      event.clientX - this.xboxDragStartX, event.clientY - this.xboxDragStartY
+    );
     const newTop = this.clamp(
       this.xboxDragInitialTop + deltaY,
       0,
@@ -3306,8 +3531,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   };
 
   handleXboxDragEnd = (_event: MouseEvent): void => {
-    document.removeEventListener('mousemove', this.handleXboxDragMove);
-    document.removeEventListener('mouseup', this.handleXboxDragEnd);
+    document.removeEventListener('pointermove', this.handleXboxDragMove);
+    document.removeEventListener('pointerup', this.handleXboxDragEnd);
     if (!this.xboxDragging || this.selectedXboxIndex === null) {
       this.xboxDragging = false;
       this.xboxUndoSnapshot = [];
@@ -3347,17 +3572,17 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.xboxResizeStartY = event.clientY;
     this.xboxResizeInitial = { top: xbox.top, bottom: xbox.bottom, left: xbox.left, right: xbox.right };
 
-    document.addEventListener('mousemove', this.handleXboxResizeMove);
-    document.addEventListener('mouseup', this.handleXboxResizeEnd);
+    document.addEventListener('pointermove', this.handleXboxResizeMove);
+    document.addEventListener('pointerup', this.handleXboxResizeEnd);
   }
 
-  handleXboxResizeMove = (event: MouseEvent): void => {
+  handleXboxResizeMove = (event: PointerEvent): void => {
     if (!this.xboxResizing || this.selectedXboxIndex === null || !this.xboxResizeInitial) return;
     const xbox = this.getXboxById(this.selectedXboxIndex);
     if (!xbox) return;
-
-    const deltaX = event.clientX - this.xboxResizeStartX;
-    const deltaY = event.clientY - this.xboxResizeStartY;
+    const { dx: deltaX, dy: deltaY } = this.screenDeltaToDocDelta(
+      event.clientX - this.xboxResizeStartX, event.clientY - this.xboxResizeStartY
+    );
     const MIN_SIZE = 30;
     const init = this.xboxResizeInitial;
 
@@ -3392,8 +3617,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   };
 
   handleXboxResizeEnd = (_event: MouseEvent): void => {
-    document.removeEventListener('mousemove', this.handleXboxResizeMove);
-    document.removeEventListener('mouseup', this.handleXboxResizeEnd);
+    document.removeEventListener('pointermove', this.handleXboxResizeMove);
+    document.removeEventListener('pointerup', this.handleXboxResizeEnd);
     if (!this.xboxResizing || this.selectedXboxIndex === null) {
       this.xboxResizing = false;
       this.xboxResizeEdge = null;

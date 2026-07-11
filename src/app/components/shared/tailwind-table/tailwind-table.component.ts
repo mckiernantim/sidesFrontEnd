@@ -7,6 +7,8 @@ export interface TableColumn {
   key: string;
   header: string;
   cell?: (item: any) => string;
+  /** When true, column is hidden below the sm breakpoint (640px). */
+  hideOnMobile?: boolean;
 }
 
 @Component({
@@ -17,7 +19,7 @@ export interface TableColumn {
 })
 export class TailwindTableComponent implements AfterContentInit, OnChanges {
   @Input() data: any[] = [];
-  @Input() columns: {key: string, header: string, cell?: (item: any) => string}[] = [];
+  @Input() columns: TableColumn[] = [];
   @Input() selectable: boolean = false;
   @Input() pagination: boolean = false;
   @Input() pageSize: number = 10;

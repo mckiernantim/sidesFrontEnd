@@ -1,5 +1,15 @@
 <!-- last-looks-page.component.html -->
 <main class="last-looks-container">
+    <div class="page-viewport-outer">
+        <div #pageViewport
+             class="page-viewport"
+             (pointerdown)="onViewportPointerDown($event)"
+             (pointermove)="onViewportPointerMove($event)"
+             (pointerup)="onViewportPointerUp($event)"
+             (pointercancel)="onViewportPointerUp($event)">
+            <div class="page-transform-wrapper"
+                 [style.transform]="getPageTransform()"
+                 [class.zoom-transition]="zoomTransitionActive">
     <div class="page shadow-lg border" (click)="showContextMenu && closeContextMenu(); !$event.target.closest('li') && clearSelection(); !$event.target.closest('.annotation-textbox-edit') && !$event.target.closest('.annotation-canvas-overlay') && deselectAllAnnotations()">
         <!-- Callsheet display section -->
         <div *ngIf="currentPageIndex === 0 && isCallsheetPage(page)" class="callsheet-container">
@@ -92,12 +102,12 @@
                         [class]="'bar-span ' + line.bar + ' ' + line.hidden"
                         [style.bottom]="line.calculatedBarY"
                         [attr.data-line-id]="line.id"
-                        (mousedown)="startLineDrag($event, line, 'continue')"
+                        (pointerdown)="startLineDrag($event, line, 'continue')"
                         [class.draggable]="canEditDocument"
                         [style.cursor]="canEditDocument ? 'grab' : 'default'">
                         <span class="bar-text" 
                             [style.left.px]="line.startTextOffset || 10"
-                            (mousedown)="canEditDocument && startBarTextDrag($event, line, 'start')"
+                            (pointerdown)="canEditDocument && startBarTextDrag($event, line, 'start')"
                             (dblclick)="canEditDocument && onBarTextDoubleClick($event, line, 'start')">
                             <ng-container *ngIf="barTextEditingId !== line.docPageLineIndex || barTextEditingType !== 'start'; else editStartText">
                                 {{ line.customStartText || ('START ' + line.sceneNumberText) }}
@@ -121,7 +131,7 @@
                             (dblclick)="canEditDocument && onDoubleClick($event, line.docPageLineIndex, line.text)"
                             [class.editing]="editingLine === line.docPageLineIndex"
                             tabindex="0"
-                            (mousedown)="startLineDrag($event, line, 'line')"
+                            (pointerdown)="startLineDrag($event, line, 'line')"
                             [class.draggable]="canEditDocument"
                             [style.cursor]="canEditDocument ? 'grab' : 'default'"
                             [class.grabbing]="mouseDragging && dragLineId === line.docPageLineIndex"
@@ -132,6 +142,7 @@
                             [class.editing]="editingLine === line.docPageLineIndex"
                             [ngClass]="{ 'edit-li': canEditDocument }"
                             (click)="canEditDocument && selectLine(line, $event)"
+                            (pointerup)="canEditDocument && onLinePointerTap($event, line.docPageLineIndex, line.text)"
                             [style.bottom]="line.calculatedYpos"
                             [style.left]="line.calculatedXpos"
                             [style.--line-left]="line.calculatedXpos"
@@ -163,12 +174,12 @@
                         class="bar-span continue-top-span CONTINUE-TOP {{line.hidden}}"
                         [style.top]="line.calculatedBarY"
                         [attr.data-line-id]="line.id"
-                        (mousedown)="startLineDrag($event, line, 'continue-top')"
+                        (pointerdown)="startLineDrag($event, line, 'continue-top')"
                         [class.draggable]="canEditDocument"
                         [style.cursor]="canEditDocument ? 'grab' : 'default'">
                         <span class="bar-text" 
                             [style.left.px]="line.continueTopTextOffset || 10"
-                            (mousedown)="canEditDocument && startBarTextDrag($event, line, 'continue-top')"
+                            (pointerdown)="canEditDocument && startBarTextDrag($event, line, 'continue-top')"
                             (dblclick)="canEditDocument && onBarTextDoubleClick($event, line, 'continue-top')">
                             <ng-container *ngIf="barTextEditingId !== line.docPageLineIndex || barTextEditingType !== 'continue-top'; else editContinueTopText">
                                 {{ line.customContinueTopText || ('↓↓↓ ' + line.sceneNumberText + ' CONTINUED ↓↓↓') }}
@@ -191,12 +202,12 @@
                         class="bar-span continue-span CONTINUE {{line.hidden}}"
                         [style.bottom]="line.calculatedBarY"
                         [attr.data-line-id]="line.id"
-                        (mousedown)="startLineDrag($event, line, 'continue')"
+                        (pointerdown)="startLineDrag($event, line, 'continue')"
                         [class.draggable]="canEditDocument"
                         [style.cursor]="canEditDocument ? 'grab' : 'default'">
                         <span class="bar-text"
                             [style.left]="line.continueTextOffset ? line.continueTextOffset + 'px' : '90%'"
-                            (mousedown)="canEditDocument && startBarTextDrag($event, line, 'continue')"
+                            (pointerdown)="canEditDocument && startBarTextDrag($event, line, 'continue')"
                             (dblclick)="canEditDocument && onBarTextDoubleClick($event, line, 'continue')">
                             <ng-container *ngIf="barTextEditingId !== line.docPageLineIndex || barTextEditingType !== 'continue'; else editContinueText">
                                 {{ line.customContinueText || ('CONTINUE ' + line.sceneNumberText + ' ↓↓↓') }}
@@ -219,12 +230,12 @@
                         class="bar-span END  {{line.hidden}}"
                         [style.bottom]="line.calculatedEnd"
                         [attr.data-line-id]="line.id"
-                        (mousedown)="startLineDrag($event, line, 'end')"
+                        (pointerdown)="startLineDrag($event, line, 'end')"
                         [class.draggable]="canEditDocument"
                         [style.cursor]="canEditDocument ? 'grab' : 'default'">
                         <span class="bar-text" 
                             [style.left]="line.endTextOffset ? line.endTextOffset + 'px' : '90%'"
-                            (mousedown)="canEditDocument && startBarTextDrag($event, line, 'end')"
+                            (pointerdown)="canEditDocument && startBarTextDrag($event, line, 'end')"
                             (dblclick)="canEditDocument && onBarTextDoubleClick($event, line, 'end')">
                             <ng-container *ngIf="barTextEditingId !== line.docPageLineIndex || barTextEditingType !== 'end'; else editEndText">
                                 {{ line.customEndText || ('END ' + line.sceneNumberText) }}
@@ -321,24 +332,24 @@
                      [style.left.px]="section.left"
                      [style.width.px]="section.right - section.left"
                      [style.height.px]="section.bottom - section.top"
-                     (mousedown)="startXboxDrag(section.originalIndex, $event)"
+                     (pointerdown)="startXboxDrag(section.originalIndex, $event)"
                      (click)="selectXbox(section.originalIndex, $event)">
 
                     <!-- Delete button (always visible on hover, prominent when selected) -->
                     <button class="xbox-delete-btn"
-                            (mousedown)="deleteXbox(section.originalIndex, $event)"
+                            (pointerdown)="deleteXbox(section.originalIndex, $event)"
                             (click)="$event.stopPropagation()"
                             title="Remove this X-box">✕</button>
 
                     <!-- Resize corner handles (always visible in edit mode) -->
                     <div class="xbox-resize-handle top-left"
-                         (mousedown)="startXboxResize(section.originalIndex, 'top-left', $event)"></div>
+                         (pointerdown)="startXboxResize(section.originalIndex, 'top-left', $event)"></div>
                     <div class="xbox-resize-handle top-right"
-                         (mousedown)="startXboxResize(section.originalIndex, 'top-right', $event)"></div>
+                         (pointerdown)="startXboxResize(section.originalIndex, 'top-right', $event)"></div>
                     <div class="xbox-resize-handle bottom-left"
-                         (mousedown)="startXboxResize(section.originalIndex, 'bottom-left', $event)"></div>
+                         (pointerdown)="startXboxResize(section.originalIndex, 'bottom-left', $event)"></div>
                     <div class="xbox-resize-handle bottom-right"
-                         (mousedown)="startXboxResize(section.originalIndex, 'bottom-right', $event)"></div>
+                         (pointerdown)="startXboxResize(section.originalIndex, 'bottom-right', $event)"></div>
                 </div>
             </div>
 
@@ -359,7 +370,7 @@
                          class="annotation-arrow-edit"
                          [class.selected]="selectedAnnotationId === annotation.annotationId"
                          [class.dragging]="draggingArrowId === annotation.annotationId"
-                         (mousedown)="canEditDocument && startArrowDrag($event, annotation)"
+                         (pointerdown)="canEditDocument && startArrowDrag($event, annotation)"
                          (click)="canEditDocument && selectAnnotation(annotation.annotationId); $event.stopPropagation()">
                     <svg class="annotation-arrow-svg"
                          [attr.viewBox]="'0 0 ' + (annotation.normalizedWidth * 816) + ' ' + (annotation.normalizedHeight * 1056)">
@@ -385,19 +396,19 @@
                     </svg>
                     <ng-container *ngIf="canEditDocument && selectedAnnotationId === annotation.annotationId">
                         <button class="arrow-delete-btn"
-                                (mousedown)="deleteArrow($event, annotation)"
+                                (pointerdown)="deleteArrow($event, annotation)"
                                 (click)="$event.stopPropagation()"
                                 title="Delete arrow">✕</button>
                         <button class="arrow-rotate-btn"
-                                (mousedown)="startArrowRotate($event, annotation)"
+                                (pointerdown)="startArrowRotate($event, annotation)"
                                 (click)="$event.stopPropagation()"
                                 title="Drag to rotate arrow">↻</button>
                         <div class="arrow-resize-handle arrow-resize-handle-start"
                              [ngStyle]="getArrowHandleStyle(annotation, 'start')"
-                             (mousedown)="startArrowResize($event, annotation, 'start')"></div>
+                             (pointerdown)="startArrowResize($event, annotation, 'start')"></div>
                         <div class="arrow-resize-handle arrow-resize-handle-end"
                              [ngStyle]="getArrowHandleStyle(annotation, 'end')"
-                             (mousedown)="startArrowResize($event, annotation, 'end')"></div>
+                             (pointerdown)="startArrowResize($event, annotation, 'end')"></div>
                     </ng-container>
                     </div>
                 </ng-container>
@@ -414,10 +425,10 @@
                          class="annotation-highlight-edit"
                          [class.dragging]="draggingHighlightId === annotation.annotationId"
                          [class.selected]="selectedAnnotationId === annotation.annotationId"
-                         (mousedown)="startHighlightDrag($event, annotation)"
+                         (pointerdown)="startHighlightDrag($event, annotation)"
                          (click)="selectAnnotation(annotation.annotationId); $event.stopPropagation()">
                         <button class="highlight-delete-btn"
-                                (mousedown)="deleteHighlight($event, annotation)"
+                                (pointerdown)="deleteHighlight($event, annotation)"
                                 title="Delete highlight">✕</button>
                     </div>
                 </ng-container>
@@ -432,7 +443,7 @@
                          [class.editing]="editingTextBoxId === annotation.annotationId"
                          [class.dragging]="draggingTextBoxId === annotation.annotationId"
                          [class.selected]="selectedAnnotationId === annotation.annotationId"
-                         (mousedown)="startTextBoxDrag($event, annotation)"
+                         (pointerdown)="startTextBoxDrag($event, annotation)"
                          (click)="selectAnnotation(annotation.annotationId); $event.stopPropagation()"
                          (dblclick)="onTextBoxDoubleClick($event, annotation)">
 
@@ -447,7 +458,7 @@
                               class="textbox-editable"
                               (input)="onTextBoxInput($event, annotation)"
                               (keydown)="onTextBoxKeyDown($event)"
-                              (mousedown)="$event.stopPropagation()"
+                              (pointerdown)="$event.stopPropagation()"
                               (click)="$event.stopPropagation()"
                               (blur)="finishTextBoxEdit()">{{ editingTextBoxInitial }}</span>
 
@@ -457,12 +468,12 @@
 
                         <!-- Delete button -->
                         <button class="textbox-delete-btn"
-                                (mousedown)="deleteTextBox($event, annotation)"
+                                (pointerdown)="deleteTextBox($event, annotation)"
                                 title="Delete text box">✕</button>
 
                         <div *ngIf="selectedAnnotationId === annotation.annotationId && editingTextBoxId !== annotation.annotationId"
                              class="textbox-resize-handle"
-                             (mousedown)="startTextBoxResize($event, annotation)"
+                             (pointerdown)="startTextBoxResize($event, annotation)"
                              title="Resize text box"></div>
                     </div>
                 </ng-container>
@@ -507,6 +518,9 @@
             <li class="footer">made by Sides-Ways</li>
         </div>
     </div>
+            </div><!-- end page-transform-wrapper -->
+        </div><!-- end page-viewport -->
+    </div><!-- end page-viewport-outer -->
 
     <!-- Enhanced Modern Context Menu -->
     <div *ngIf="showContextMenu" class="modern-context-menu" [style.left.px]="contextMenuPosition.x" [style.top.px]="contextMenuPosition.y">
@@ -550,6 +564,12 @@
 
     <!-- Vertical Right-Side Toolbar -->
     <div class="vertical-toolbar" *ngIf="canEditDocument">
+        <button class="tool-btn" [class.active]="touchSelectMode" (click)="toggleTouchSelectMode()" data-tooltip-left="Select Mode">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+        </button>
+        <div class="toolbar-section-divider"></div>
         <!-- Selection Counter -->
         <div class="selection-badge" *ngIf="selectedLineIds.length > 0">
             {{selectedLineIds.length}}

@@ -41,8 +41,14 @@
 app-dashboard-right {
     flex-direction: column;
     height: auto;
-    overflow: hidden;
+    overflow: visible;
     background-color: var(--sw-bg);
     margin-bottom: 1rem;
-    min-height: 1200px;
+    min-height: 0;
+}
+
+@media screen and (min-width: 1024px) {
+    app-dashboard-right {
+        min-height: 800px;
+    }
 }

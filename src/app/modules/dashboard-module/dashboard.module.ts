@@ -19,6 +19,7 @@ import { CheckoutModalComponent } from '../../components/dashboard/checkout-moda
 import { AnnotationCanvasComponent } from '../../components/annotation-canvas/annotation-canvas.component';
 import { AnnotationToolbarComponent } from '../../components/annotation-toolbar/annotation-toolbar.component';
 import { DisclaimerToggleComponent } from '../../components/annotation-toolbar/disclaimer-toggle/disclaimer-toggle.component';
+import { ZoomStateService } from '../../services/zoom/zoom-state.service';
 
 @NgModule({
   declarations: [
@@ -53,6 +54,7 @@ import { DisclaimerToggleComponent } from '../../components/annotation-toolbar/d
     SceneSelectionComponent,
     CheckoutModalComponent
   ],
+  providers: [ZoomStateService],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DashboardModule { }

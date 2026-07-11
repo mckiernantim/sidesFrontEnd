@@ -171,8 +171,9 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
       key: 'preview',
       header: 'Preview',
       cell: (item: any) => this.truncateText(item.preview, 50),
+      hideOnMobile: true,
     },
-    { key: 'page', header: 'Page' },
+    { key: 'page', header: 'Page', hideOnMobile: true },
   ];
 
   // Add a selectedScenes map to track selections
@@ -192,8 +193,9 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
       key: 'characters',
       header: 'Speaking Characters',
       cell: (item: any) => item.characters?.join(', ') || '-',
+      hideOnMobile: true,
     },
-    { key: 'page', header: 'Page' },
+    { key: 'page', header: 'Page', hideOnMobile: true },
   ];
 
   showCheckoutModal: boolean = false;
@@ -405,8 +407,9 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
         key: 'preview',
         header: 'Preview',
         cell: (item: any) => this.truncateText(item.preview, 50),
+        hideOnMobile: true,
       },
-      { key: 'page', header: 'Page' },
+      { key: 'page', header: 'Page', hideOnMobile: true },
     ];
 
     this.intizilazeState();

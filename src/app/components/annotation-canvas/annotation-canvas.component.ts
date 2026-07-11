@@ -24,6 +24,7 @@ import {
 } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
 import { AnnotationStateService } from '../../services/annotation/annotation-state.service';
+import { ZoomStateService } from '../../services/zoom/zoom-state.service';
 import { CoordinateService } from '../../services/coordinate/coordinate.service';
 import {
   Annotation,
@@ -52,10 +53,12 @@ export class AnnotationCanvasComponent implements OnInit, AfterViewInit, OnDestr
   // Current annotations for this page
   private currentPageAnnotations: Annotation[] = [];
 
-  // Mouse state
+  // Pointer state
   private isMouseDown = false;
   private mouseDownPos: CanvasPoint | null = null;
   private currentMousePos: CanvasPoint | null = null;
+  private activePointerCount = 0;
+  private drawingCancelledByPinch = false;
 
   // Hovered annotation ID
   private hoveredAnnotationId: string | null = null;
@@ -79,7 +82,8 @@ export class AnnotationCanvasComponent implements OnInit, AfterViewInit, OnDestr
 
   constructor(
     private annotationState: AnnotationStateService,
-    private coordService: CoordinateService
+    private coordService: CoordinateService,
+    private zoomState: ZoomStateService
   ) {}
 
   /**
@@ -120,6 +124,58 @@ export class AnnotationCanvasComponent implements OnInit, AfterViewInit, OnDestr
 
   ngAfterViewInit(): void {
     this.ctx = this.canvasRef.nativeElement.getContext('2d');
+    this.annotationState.updateCanvasState({
+      zoom: this.zoomState.effectiveScale,
+      panOffset: { x: this.zoomState.panX, y: this.zoomState.panY },
+    });
+    this.render();
+  }
+
+  private screenToCanvasCoords(clientX: number, clientY: number): CanvasPoint {
+    const canvas = this.canvasRef.nativeElement;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = rect.width > 0 ? this.pageWidth / rect.width : 1;
+    const scaleY = rect.height > 0 ? this.pageHeight / rect.height : 1;
+    return {
+      canvasX: (clientX - rect.left) * scaleX,
+      canvasY: (clientY - rect.top) * scaleY,
+    };
+  }
+
+  onPointerDown(event: PointerEvent): void {
+    this.activePointerCount++;
+    if (this.activePointerCount >= 2) {
+      this.cancelActiveDraw();
+      return;
+    }
+    this.onMouseDown(event);
+  }
+
+  onPointerMove(event: PointerEvent): void {
+    if (this.activePointerCount >= 2) return;
+    this.onMouseMove(event);
+  }
+
+  onPointerUp(event: PointerEvent): void {
+    this.activePointerCount = Math.max(0, this.activePointerCount - 1);
+    if (this.drawingCancelledByPinch) {
+      this.drawingCancelledByPinch = false;
+      return;
+    }
+    this.onMouseUp(event);
+  }
+
+  private cancelActiveDraw(): void {
+    if (this.annotationState.toolState.isDrawing) {
+      this.annotationState.updateToolState({
+        isDrawing: false,
+        drawingStart: null,
+        drawingCurrent: null,
+      });
+      this.drawingCancelledByPinch = true;
+    }
+    this.isMouseDown = false;
+    this.mouseDownPos = null;
     this.render();
   }
 
@@ -133,10 +189,7 @@ export class AnnotationCanvasComponent implements OnInit, AfterViewInit, OnDestr
   // ─────────────────────────────────────────────
 
   onMouseDown(event: MouseEvent): void {
-    const canvas = this.canvasRef.nativeElement;
-    const rect = canvas.getBoundingClientRect();
-    const canvasX = event.clientX - rect.left;
-    const canvasY = event.clientY - rect.top;
+    const { canvasX, canvasY } = this.screenToCanvasCoords(event.clientX, event.clientY);
 
     this.isMouseDown = true;
     this.mouseDownPos = { canvasX, canvasY };
@@ -235,10 +288,7 @@ export class AnnotationCanvasComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   onMouseMove(event: MouseEvent): void {
-    const canvas = this.canvasRef.nativeElement;
-    const rect = canvas.getBoundingClientRect();
-    const canvasX = event.clientX - rect.left;
-    const canvasY = event.clientY - rect.top;
+    const { canvasX, canvasY } = this.screenToCanvasCoords(event.clientX, event.clientY);
 
     this.currentMousePos = { canvasX, canvasY };
 
@@ -254,7 +304,7 @@ export class AnnotationCanvasComponent implements OnInit, AfterViewInit, OnDestr
       }
 
       // Update cursor style
-      canvas.style.cursor = hovered ? 'move' : 'crosshair';
+      this.canvasRef.nativeElement.style.cursor = hovered ? 'move' : 'crosshair';
     }
 
     if (this.isMouseDown && this.mouseDownPos) {

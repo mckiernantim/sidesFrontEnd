@@ -9,6 +9,9 @@
    3. Page Size: 816px × 1056px (standard US Letter)
    4. Colors: Black text on white background
    5. Margins: Industry-standard screenplay margins
+   6. Mobile zoom: scale/pan via .page-transform-wrapper + ZoomStateService
+      (touch-action on .last-looks-container / .page-viewport). Do not put
+      transform directly on .page.
 
    These styles use !important to override global design system styles.
    Modifying these will break industry-standard script formatting.
@@ -317,6 +320,7 @@
     position: relative;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     color: black !important;
+    transform: none;
 }
 
 .grab-cursor {
@@ -342,13 +346,44 @@
     flex-direction: column;
     align-items: center;
     padding: 1rem;
-    padding-right: 100px; /* Make room for right toolbar */
+    padding-right: 100px;
     background-color: #f9fafb;
-    min-width: 816px;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
     height: 100%;
     position: relative;
     z-index: 0;
     isolation: isolate;
+    touch-action: none;
+}
+
+.page-viewport-outer {
+    width: 100%;
+    flex: 1;
+    overflow: auto;
+    touch-action: pan-x pan-y;
+    display: flex;
+    justify-content: center;
+}
+
+.page-viewport {
+    width: 100%;
+    max-width: 816px;
+    min-height: 200px;
+    position: relative;
+    overflow: visible;
+    touch-action: none;
+}
+
+.page-transform-wrapper {
+    transform-origin: top center;
+    width: 816px;
+    margin: 0 auto;
+}
+
+.page-transform-wrapper.zoom-transition {
+    transition: transform 200ms ease;
 }
 
 /* Sacred screenplay elements */
@@ -1079,27 +1114,48 @@ li.page-number {
 
 /* Bar controls - DEPRECATED: Now using vertical toolbar */
 
-@media (max-width: 1200px) {
+@media (max-width: 767px) {
     .last-looks-container {
         padding: 0.5rem;
+        padding-right: 0.5rem;
+        padding-bottom: 88px;
     }
-    
-    .page {
-        transform-origin: top center;
-        transform: scale(0.9);
+
+    .vertical-toolbar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
+        transform: none;
+        flex-direction: row;
+        justify-content: flex-start;
+        overflow-x: auto;
+        width: 100%;
+        border-radius: 12px 12px 0 0;
+        padding: 8px 12px;
+        gap: 4px;
+        z-index: 300;
+    }
+
+    .vertical-toolbar .tool-btn {
+        min-width: 44px;
+        min-height: 44px;
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
+    }
+
+    .vertical-toolbar .toolbar-section-divider {
+        width: 1px;
+        height: 32px;
+        margin: 0 4px;
     }
 }
 
-@media (max-width: 900px) {
-    .page {
-        transform: scale(0.8);
-    }
-}
-
-@media (max-width: 700px) {
-    .page {
-        transform: scale(0.7);
-    }
+.edit-li, .bar-span, .xbox-resize-handle, .arrow-resize-handle, .textbox-resize-handle {
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .callsheet-container {
