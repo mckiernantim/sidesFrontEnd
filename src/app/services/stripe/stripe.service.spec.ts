@@ -1,11 +1,17 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of, throwError, firstValueFrom } from 'rxjs';
 import { StripeService } from './stripe.service';
 import { AuthService } from '../auth/auth.service';
 import { SubscriptionStatus, BackendSubscriptionResponse } from '../../types/SubscriptionTypes';
 import { User } from '@angular/fire/auth';
+
+/** Flush getIdToken microtask so HttpClientTestingController sees the request. */
+async function flushAuthToken(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
 
 // Create mock user inline
 const createMockUser = (overrides: Partial<User> = {}): User => {
@@ -173,62 +179,55 @@ describe('StripeService', () => {
   });
 
   describe('getSubscriptionStatus', () => {
-    it('should fetch subscription status successfully', (done) => {
-      service.getSubscriptionStatus('test-user-123').subscribe({
-        next: (status) => {
-          expect(status).toBeDefined();
-          expect(status?.active).toBe(true);
-          expect(status?.subscription?.status).toBe('active');
-          done();
-        },
-        error: done
-      });
-
+    it('should fetch subscription status successfully', async () => {
+      const statusPromise = firstValueFrom(service.getSubscriptionStatus('test-user-123'));
+      await flushAuthToken();
       const req = httpMock.expectOne('http://localhost:3000/stripe/subscription-status/test-user-123');
       expect(req.request.method).toBe('GET');
-      
       req.flush(mockSubscriptionResponse);
+      const status = await statusPromise;
+      expect(status).toBeDefined();
+      expect(status?.active).toBe(true);
+      expect(status?.subscription?.status).toBe('active');
     });
 
-    it('should handle inactive subscription', (done) => {
-      service.getSubscriptionStatus('test-user-123').subscribe({
-        next: (status) => {
-          expect(status).toBeDefined();
-          expect(status?.active).toBe(false);
-          expect(status?.subscription?.status).toBe('canceled');
-          done();
-        },
-        error: done
-      });
+    it('E1: maps isFounder from status API', async () => {
+      const statusPromise = firstValueFrom(service.getSubscriptionStatus('test-user-123'));
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/subscription-status/test-user-123');
+      req.flush({ ...mockInactiveSubscriptionResponse, isFounder: true });
+      const status = await statusPromise;
+      expect(status.isFounder).toBe(true);
+    });
 
+    it('should handle inactive subscription', async () => {
+      const statusPromise = firstValueFrom(service.getSubscriptionStatus('test-user-123'));
+      await flushAuthToken();
       const req = httpMock.expectOne('http://localhost:3000/stripe/subscription-status/test-user-123');
       req.flush(mockInactiveSubscriptionResponse);
+      const status = await statusPromise;
+      expect(status).toBeDefined();
+      expect(status?.active).toBe(false);
+      expect(status?.subscription?.status).toBe('canceled');
     });
 
-    it('should handle HTTP errors', (done) => {
-      service.getSubscriptionStatus('test-user-123').subscribe({
-        next: () => fail('Should have errored'),
-        error: (error) => {
-          expect(error).toBeDefined();
-          done();
-        }
-      });
-
+    it('should handle HTTP errors by returning empty status', async () => {
+      const statusPromise = firstValueFrom(service.getSubscriptionStatus('test-user-123'));
+      await flushAuthToken();
       const req = httpMock.expectOne('http://localhost:3000/stripe/subscription-status/test-user-123');
       req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
+      const status = await statusPromise;
+      expect(status.active).toBe(false);
+      expect(status.isFounder).toBe(false);
     });
 
-    it('should handle network errors', (done) => {
-      service.getSubscriptionStatus('test-user-123').subscribe({
-        next: () => fail('Should have errored'),
-        error: (error) => {
-          expect(error).toBeDefined();
-          done();
-        }
-      });
-
+    it('should handle network errors by returning empty status', async () => {
+      const statusPromise = firstValueFrom(service.getSubscriptionStatus('test-user-123'));
+      await flushAuthToken();
       const req = httpMock.expectOne('http://localhost:3000/stripe/subscription-status/test-user-123');
       req.error(new ErrorEvent('Network error'));
+      const status = await statusPromise;
+      expect(status.active).toBe(false);
     });
   });
 
@@ -244,7 +243,7 @@ describe('StripeService', () => {
       });
     });
 
-    it('should create portal session successfully', (done) => {
+    it('should create portal session successfully', async () => {
       const mockResponse = {
         success: true,
         url: 'https://billing.stripe.com/session_123',
@@ -252,98 +251,86 @@ describe('StripeService', () => {
         message: 'Portal session created'
       };
 
-      service.createPortalSession('test-user-123', 'test@example.com').subscribe({
-        next: (result) => {
-          expect(result.success).toBe(true);
-          expect(result.url).toBe('https://billing.stripe.com/session_123');
-          expect(result.type).toBe('portal');
-          done();
-        },
-        error: done
-      });
-
+      const resultPromise = firstValueFrom(
+        service.createPortalSession('test-user-123', 'test@example.com')
+      );
+      await flushAuthToken();
       const req = httpMock.expectOne('http://localhost:3000/stripe/create-portal-session');
       expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({
-        userId: 'test-user-123',
-        userEmail: 'test@example.com',
-        returnUrl: 'http://localhost:4200'
-      });
-      
+      expect(req.request.body.userId).toBe('test-user-123');
+      expect(req.request.body.userEmail).toBe('test@example.com');
+      expect(req.request.body.priceId).toBeUndefined();
       req.flush(mockResponse);
+      const result = await resultPromise;
+      expect(result.success).toBe(true);
+      expect(result.url).toBe('https://billing.stripe.com/session_123');
+      expect(result.type).toBe('portal');
     });
 
-    it('should handle portal session creation failure', (done) => {
+    it('should handle portal session creation failure', async () => {
       const mockResponse = {
         success: false,
         error: 'Failed to create portal session'
       };
 
-      service.createPortalSession('test-user-123', 'test@example.com').subscribe({
-        next: () => fail('Should have errored'),
-        error: (error) => {
-          expect(error.message).toContain('Failed to create portal session');
-          done();
-        }
-      });
-
+      const resultPromise = firstValueFrom(
+        service.createPortalSession('test-user-123', 'test@example.com')
+      );
+      await flushAuthToken();
       const req = httpMock.expectOne('http://localhost:3000/stripe/create-portal-session');
       req.flush(mockResponse);
+      const result = await resultPromise;
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
     });
 
-    it('should handle invalid URL response', (done) => {
+    it('should handle invalid URL response', async () => {
       const mockResponse = {
         success: true,
         url: 'invalid-url'
       };
 
-      service.createPortalSession('test-user-123', 'test@example.com').subscribe({
-        next: () => fail('Should have errored'),
-        error: (error) => {
-          expect(error.message).toContain('Invalid URL format');
-          done();
-        }
-      });
-
+      const resultPromise = firstValueFrom(
+        service.createPortalSession('test-user-123', 'test@example.com')
+      );
+      await flushAuthToken();
       const req = httpMock.expectOne('http://localhost:3000/stripe/create-portal-session');
       req.flush(mockResponse);
+      const result = await resultPromise;
+      expect(result.success).toBe(false);
     });
 
-    it('should handle missing URL in response', (done) => {
+    it('should handle missing URL in response', async () => {
       const mockResponse = {
         success: true
       };
 
-      service.createPortalSession('test-user-123', 'test@example.com').subscribe({
-        next: () => fail('Should have errored'),
-        error: (error) => {
-          expect(error.message).toContain('No portal URL received');
-          done();
-        }
-      });
-
+      const resultPromise = firstValueFrom(
+        service.createPortalSession('test-user-123', 'test@example.com')
+      );
+      await flushAuthToken();
       const req = httpMock.expectOne('http://localhost:3000/stripe/create-portal-session');
       req.flush(mockResponse);
+      const result = await resultPromise;
+      expect(result.success).toBe(false);
     });
 
-    it('should redirect to portal URL on success', (done) => {
+    it('should redirect to portal URL on success', async () => {
       const mockResponse = {
         success: true,
         url: 'https://billing.stripe.com/session_123',
         type: 'portal' as const
       };
 
-      service.createPortalSession('test-user-123', 'test@example.com').subscribe({
-        next: (result) => {
-          expect(result.success).toBe(true);
-          expect(window.location.href).toBe('https://billing.stripe.com/session_123');
-          done();
-        },
-        error: done
-      });
-
+      const resultPromise = firstValueFrom(
+        service.createPortalSession('test-user-123', 'test@example.com')
+      );
+      await flushAuthToken();
       const req = httpMock.expectOne('http://localhost:3000/stripe/create-portal-session');
       req.flush(mockResponse);
+      const result = await resultPromise;
+      expect(result.success).toBe(true);
+      expect(window.location.href).toBe('https://billing.stripe.com/session_123');
     });
   });
 
@@ -379,155 +366,122 @@ describe('StripeService', () => {
   });
 
   describe('getAuthHeaders', () => {
-    it('should get auth headers with user token', (done) => {
-      (mockAuthService.getCurrentUser as jest.Mock).mockResolvedValue(mockUser);
-      
-      // Mock getIdToken method
-      (mockUser as any).getIdToken = jest.fn().mockResolvedValue('mock-token');
-
-      service['getAuthHeaders']().subscribe({
-        next: (headers) => {
-          expect(headers.get('Authorization')).toBe('Bearer mock-token');
-          done();
-        },
-        error: done
-      });
+    it('should get auth headers with user token', async () => {
+      mockAuthService.getCurrentUser.mockReturnValue(mockUser);
+      mockUser.getIdToken = jest.fn().mockResolvedValue('mock-token');
+      const headers = await firstValueFrom(service['getAuthHeaders']());
+      expect(headers.get('Authorization')).toBe('Bearer mock-token');
     });
 
-    it('should handle missing user', (done) => {
-      (mockAuthService.getCurrentUser as jest.Mock).mockResolvedValue(null);
-
-      service['getAuthHeaders']().subscribe({
-        next: () => fail('Should have errored'),
-        error: (error) => {
-          expect(error).toBeDefined();
-          done();
-        }
-      });
+    it('should handle missing user', async () => {
+      mockAuthService.getCurrentUser.mockReturnValue(null);
+      try {
+        await firstValueFrom(service['getAuthHeaders']());
+        fail('Should have errored');
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
     });
 
-    it('should handle token retrieval error', (done) => {
-      (mockAuthService.getCurrentUser as jest.Mock).mockResolvedValue(mockUser);
-      (mockUser as any).getIdToken = jest.fn().mockRejectedValue(new Error('Token error'));
-
-      service['getAuthHeaders']().subscribe({
-        next: () => fail('Should have errored'),
-        error: (error) => {
-          expect(error).toBeDefined();
-          done();
-        }
-      });
+    it('should handle token retrieval error', async () => {
+      mockAuthService.getCurrentUser.mockReturnValue(mockUser);
+      mockUser.getIdToken = jest.fn().mockRejectedValue(new Error('Token error'));
+      try {
+        await firstValueFrom(service['getAuthHeaders']());
+        fail('Should have errored');
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
     });
   });
 
   describe('Error Handling', () => {
-    it('should handle HTTP 401 errors', (done) => {
-      service.getSubscriptionStatus('test-user-123').subscribe({
-        next: () => fail('Should have errored'),
-        error: (error) => {
-          expect(error).toBeDefined();
-          done();
-        }
-      });
-
+    it('should handle HTTP 401 errors with empty status', async () => {
+      const statusPromise = firstValueFrom(service.getSubscriptionStatus('test-user-123'));
+      await flushAuthToken();
       const req = httpMock.expectOne('http://localhost:3000/stripe/subscription-status/test-user-123');
       req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+      const status = await statusPromise;
+      expect(status.active).toBe(false);
     });
 
-    it('should handle HTTP 403 errors', (done) => {
-      service.getSubscriptionStatus('test-user-123').subscribe({
-        next: () => fail('Should have errored'),
-        error: (error) => {
-          expect(error).toBeDefined();
-          done();
-        }
-      });
-
+    it('should handle HTTP 403 errors with empty status', async () => {
+      const statusPromise = firstValueFrom(service.getSubscriptionStatus('test-user-123'));
+      await flushAuthToken();
       const req = httpMock.expectOne('http://localhost:3000/stripe/subscription-status/test-user-123');
       req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
+      const status = await statusPromise;
+      expect(status.active).toBe(false);
     });
 
-    it('should handle malformed JSON responses', (done) => {
-      service.getSubscriptionStatus('test-user-123').subscribe({
-        next: () => fail('Should have errored'),
-        error: (error) => {
-          expect(error).toBeDefined();
-          done();
-        }
-      });
-
+    it('should handle malformed JSON responses with empty status', async () => {
+      const statusPromise = firstValueFrom(service.getSubscriptionStatus('test-user-123'));
+      await flushAuthToken();
       const req = httpMock.expectOne('http://localhost:3000/stripe/subscription-status/test-user-123');
       req.flush('Invalid JSON', { status: 200, statusText: 'OK' });
+      const status = await statusPromise;
+      expect(status).toBeDefined();
     });
   });
 
   describe('Subscription Status Updates', () => {
-    it('should emit subscription status updates', (done) => {
-      let emissionCount = 0;
-      
-      service.subscriptionStatus$.subscribe(status => {
-        emissionCount++;
-        if (emissionCount === 1) {
-          expect(status).toBeNull(); // Initial null value
-        } else if (emissionCount === 2) {
-          expect(status?.active).toBe(true);
-          done();
-        }
-      });
+    it('should emit subscription status updates', async () => {
+      const emissions: Array<SubscriptionStatus | null> = [];
+      const sub = service.subscriptionStatus$.subscribe(status => emissions.push(status));
 
-      // Trigger a status update
-      service.getSubscriptionStatus('test-user-123').subscribe();
-      
+      const statusPromise = firstValueFrom(service.getSubscriptionStatus('test-user-123'));
+      await flushAuthToken();
       const req = httpMock.expectOne('http://localhost:3000/stripe/subscription-status/test-user-123');
       req.flush(mockSubscriptionResponse);
+      await statusPromise;
+      sub.unsubscribe();
+
+      expect(emissions[0]).toBeNull();
+      expect(emissions.some(e => e?.active === true)).toBe(true);
     });
   });
 
   describe('Integration Scenarios', () => {
-    it('should handle complete subscription flow', (done) => {
-      // 1. Check initial status (inactive)
-      service.getSubscriptionStatus('test-user-123').subscribe();
-      const statusReq = httpMock.expectOne('http://localhost:3000/stripe/subscription-status');
-      statusReq.flush(mockInactiveSubscriptionResponse);
+    it('should handle complete subscription flow', async () => {
+      const statusPromise = firstValueFrom(service.getSubscriptionStatus('test-user-123'));
+      await flushAuthToken();
+      httpMock
+        .expectOne('http://localhost:3000/stripe/subscription-status/test-user-123')
+        .flush(mockInactiveSubscriptionResponse);
+      await statusPromise;
 
-      // 2. Create portal session for new subscription
-      service.createPortalSession('test-user-123', 'test@example.com').subscribe({
-        next: (result) => {
-          expect(result.success).toBe(true);
-          done();
-        },
-        error: done
-      });
-
-      const portalReq = httpMock.expectOne('http://localhost:3000/stripe/create-portal-session');
-      portalReq.flush({
+      const portalPromise = firstValueFrom(
+        service.createPortalSession('test-user-123', 'test@example.com')
+      );
+      await flushAuthToken();
+      httpMock.expectOne('http://localhost:3000/stripe/create-portal-session').flush({
         success: true,
         url: 'https://billing.stripe.com/session_123',
         type: 'portal'
       });
+      const result = await portalPromise;
+      expect(result.success).toBe(true);
     });
 
-    it('should handle subscription management flow', (done) => {
-      // 1. Check active subscription status
-      service.getSubscriptionStatus('test-user-123').subscribe();
-      const statusReq = httpMock.expectOne('http://localhost:3000/stripe/subscription-status');
-      statusReq.flush(mockSubscriptionResponse);
+    it('should handle subscription management flow', async () => {
+      const statusPromise = firstValueFrom(service.getSubscriptionStatus('test-user-123'));
+      await flushAuthToken();
+      httpMock
+        .expectOne('http://localhost:3000/stripe/subscription-status/test-user-123')
+        .flush(mockSubscriptionResponse);
+      await statusPromise;
 
-      // 2. Create portal session for management
-      service.createPortalSession('test-user-123', 'test@example.com').subscribe({
-        next: (result) => {
-          expect(result.success).toBe(true);
-          done();
-        },
-        error: done
-      });
-
-      const portalReq = httpMock.expectOne('http://localhost:3000/stripe/create-portal-session');
-      portalReq.flush({
+      const portalPromise = firstValueFrom(
+        service.createPortalSession('test-user-123', 'test@example.com')
+      );
+      await flushAuthToken();
+      httpMock.expectOne('http://localhost:3000/stripe/create-portal-session').flush({
         success: true,
         url: 'https://billing.stripe.com/session_123',
         type: 'portal'
       });
+      const result = await portalPromise;
+      expect(result.success).toBe(true);
     });
   });
 });

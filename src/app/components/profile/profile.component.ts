@@ -12,6 +12,10 @@ import {
   formatAmount,
   getDaysUntilReset
 } from 'src/app/types/SubscriptionTypes';
+import {
+  getOfferPriceLabel,
+  shouldShowFoundersOffer
+} from 'src/app/utils/founders-offer';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
@@ -184,7 +188,24 @@ export class ProfileComponent implements OnInit, OnDestroy {
   // Get formatted plan name
   getFormattedPlan(): string {
     const plan = this.subscription?.subscription?.plan;
+    if (plan?.amount === 1000) {
+      return plan.nickname || 'Founders Rate';
+    }
     return formatPlanName(plan);
+  }
+
+  showFoundersOffer(): boolean {
+    return shouldShowFoundersOffer({
+      isFounder: Boolean(this.subscription?.isFounder),
+      active: Boolean(this.subscription?.active)
+    });
+  }
+
+  getSubscribePriceLabel(): string {
+    return getOfferPriceLabel({
+      isFounder: Boolean(this.subscription?.isFounder),
+      active: Boolean(this.subscription?.active)
+    });
   }
   
   // Get days until usage reset

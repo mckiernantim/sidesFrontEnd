@@ -2,11 +2,17 @@ import { Injectable, isDevMode } from '@angular/core';
 import { loadStripe } from '@stripe/stripe-js';
 import { getConfig } from '../../../environments/environment';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { from, Observable, throwError, BehaviorSubject, of } from 'rxjs';
+import { from, Observable, throwError, BehaviorSubject, of, firstValueFrom } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { SubscriptionStatus } from 'src/app/types/SubscriptionTypes';
+import {
+  pricingCommandsForOffer,
+  resolveOfferProduct,
+  shouldRedirectToPricingAfterLogin,
+  OfferProduct
+} from '../../utils/founders-offer';
 
 interface StripeError {
   code: string;
@@ -17,6 +23,7 @@ interface StripeError {
 // Backend response interface - matches the new consolidated structure
 interface BackendSubscriptionResponse {
   active: boolean;
+  isFounder?: boolean;
   subscription: {
     status: string;
     subscriptionId: string | null;
@@ -53,6 +60,12 @@ export class StripeService {
   
   private subscriptionStatusSubject = new BehaviorSubject<SubscriptionStatus | null>(null);
   public subscriptionStatus$ = this.subscriptionStatusSubject.asObservable();
+
+  private isFounderSubject = new BehaviorSubject<boolean>(false);
+  public isFounder$ = this.isFounderSubject.asObservable();
+
+  private offerProductSubject = new BehaviorSubject<OfferProduct>('standard');
+  public offerProduct$ = this.offerProductSubject.asObservable();
 
   constructor(
     private http: HttpClient,
@@ -103,6 +116,7 @@ export class StripeService {
             // Map the consolidated backend response to frontend format
             const status: SubscriptionStatus = {
               active: response.active,
+              isFounder: Boolean(response.isFounder),
               subscription: response.subscription ? {
                 id: response.subscription.subscriptionId || '',
                 status: response.subscription.status,
@@ -143,6 +157,10 @@ export class StripeService {
             
             console.log('STRIPE: Processed consolidated status:', status);
             this.subscriptionStatusSubject.next(status);
+            this.isFounderSubject.next(Boolean(status.isFounder));
+            this.offerProductSubject.next(
+              resolveOfferProduct({ isFounder: Boolean(status.isFounder), active: status.active })
+            );
             return status;
           }),
           catchError(error => {
@@ -173,6 +191,7 @@ export class StripeService {
   private createEmptyStatus(): SubscriptionStatus {
     return {
       active: false,
+      isFounder: false,
       subscription: {
         id: '',
         status: null,
@@ -200,6 +219,40 @@ export class StripeService {
       plan: null,
       lastPayment: null
     };
+  }
+
+  /**
+   * After explicit sign-in: refresh eligibility and route inactive users to the correct product.
+   * Does not hijack mid-app reloads (explicitSignIn=false).
+   */
+  async resolveAndRouteAfterLogin(
+    userId: string,
+    options: { explicitSignIn?: boolean; currentPath?: string } = {}
+  ): Promise<SubscriptionStatus> {
+    const explicitSignIn = options.explicitSignIn !== false;
+    const status = await firstValueFrom(this.getSubscriptionStatus(userId));
+    const eligibility = {
+      isFounder: Boolean(status.isFounder),
+      active: status.active
+    };
+    const offer = resolveOfferProduct(eligibility);
+
+    if (
+      shouldRedirectToPricingAfterLogin(eligibility, {
+        explicitSignIn,
+        currentPath: options.currentPath || this.router.url
+      })
+    ) {
+      const cmd = pricingCommandsForOffer(offer);
+      await this.router.navigate([cmd.path], cmd.queryParams ? { queryParams: cmd.queryParams } : {});
+    }
+
+    return status;
+  }
+
+  /** Silent eligibility refresh on reload — no forced redirect. */
+  async refreshEligibility(userId: string): Promise<SubscriptionStatus> {
+    return firstValueFrom(this.getSubscriptionStatus(userId));
   }
 
   // Method to refresh subscription status (useful after subscription changes)
@@ -245,6 +298,8 @@ export class StripeService {
   clearCache(): void {
     console.log('STRIPE: Clearing subscription cache');
     this.subscriptionStatusSubject.next(null);
+    this.isFounderSubject.next(false);
+    this.offerProductSubject.next('standard');
   }
 
   createPortalSession(userId: string, userEmail: string, returnUrl?: string): Observable<{ success: boolean; url?: string; error?: string; type?: string }> {

@@ -36,11 +36,13 @@
       <!-- Pricing Card -->
       <div *ngIf="!isLoading" class="bg-white rounded-lg shadow-lg overflow-hidden">
         <div class="bg-gray-800 text-white p-6 text-center">
-          <h2 class="text-3xl font-bold">Professional Plan</h2>
+          <h2 class="text-3xl font-bold">{{ planTitle }}</h2>
           <div class="mt-4 flex items-center justify-center">
-            <span class="text-5xl font-bold">$20</span>
+            <span class="text-5xl font-bold">${{ weeklyDollars }}</span>
             <span class="ml-2 text-xl">/week</span>
           </div>
+          <p *ngIf="showFoundersOffer" class="mt-2 text-amber-200 text-sm">Legacy Founders Rate — 50% off</p>
+          <p *ngIf="showFoundersOffer" class="mt-1 text-blue-100/80 text-sm line-through">$20/week</p>
           <p class="mt-2 text-blue-100">Cancel anytime</p>
         </div>
         

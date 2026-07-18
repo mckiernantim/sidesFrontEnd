@@ -1,45 +1,88 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { StripeService } from '../../services/stripe/stripe.service';
 import { AuthService } from '../../services/auth/auth.service';
 import { Observable, firstValueFrom, take } from 'rxjs';
 import { User } from '@angular/fire/auth';
 import { SubscriptionStatus } from '../../types/SubscriptionTypes';
 import { fadeInOutAnimation } from '../../animations/animations';
+import {
+  effectiveOfferFromQuery,
+  getOfferPlanTitle,
+  getOfferPriceLabel,
+  getOfferWeeklyPriceCents,
+  shouldShowFoundersOffer
+} from '../../utils/founders-offer';
 
 @Component({
-  selector: 'app-pricing',
-  templateUrl: './pricing.component.html',
-  styleUrls: ['./pricing.component.css'],
-  animations: [fadeInOutAnimation],
-  standalone: false
+    selector: 'app-pricing',
+    templateUrl: './pricing.component.html',
+    styleUrls: ['./pricing.component.css'],
+    animations: [fadeInOutAnimation],
+    standalone: false
 })
 export class PricingComponent implements OnInit {
   user$: Observable<User | null>;
   currentUser: User | null = null;
   subscriptionStatus$: Observable<SubscriptionStatus>;
   isLoading = true;
+  isFounder = false;
+  showFoundersOffer = false;
+  planTitle = 'Professional Plan';
+  priceLabel = '$20 per week';
+  weeklyDollars = 20;
+  private offerQuery: string | null = null;
   
   constructor(
     private stripeService: StripeService,
-    private authService: AuthService
+    private authService: AuthService,
+    private route: ActivatedRoute
   ) { }
 
   ngOnInit(): void {
     this.user$ = this.authService.user$;
     this.subscriptionStatus$ = this.stripeService.subscriptionStatus$;
+    this.offerQuery = this.route.snapshot.queryParamMap.get('offer');
     
-    // Get current user
     this.user$.pipe(take(1)).subscribe(user => {
       this.currentUser = user;
     
       if (user) {
-        this.stripeService.getSubscriptionStatus(user.uid);
+        this.stripeService.getSubscriptionStatus(user.uid).subscribe(status => {
+          this.applyEligibility(status);
+        });
+      } else {
+        this.applyEligibility({ isFounder: false, active: false } as SubscriptionStatus);
       }
       
       setTimeout(() => {
         this.isLoading = false;
       }, 1000);
     });
+
+    this.subscriptionStatus$.subscribe(status => {
+      if (status) {
+        this.applyEligibility(status);
+      }
+    });
+  }
+
+  private applyEligibility(status: Pick<SubscriptionStatus, 'isFounder' | 'active'>): void {
+    const eligibility = {
+      isFounder: Boolean(status?.isFounder),
+      active: Boolean(status?.active)
+    };
+    // Query param is display-only; forged ?offer=founders cannot elevate non-founders
+    const offer = effectiveOfferFromQuery(eligibility, this.offerQuery);
+    this.isFounder = eligibility.isFounder;
+    this.showFoundersOffer = offer === 'founders' && shouldShowFoundersOffer(eligibility);
+    this.planTitle = this.showFoundersOffer ? 'Founders Rate' : getOfferPlanTitle(eligibility);
+    this.weeklyDollars = getOfferWeeklyPriceCents(
+      this.showFoundersOffer ? eligibility : { isFounder: false, active: false }
+    ) / 100;
+    this.priceLabel = this.showFoundersOffer
+      ? getOfferPriceLabel(eligibility)
+      : getOfferPriceLabel({ isFounder: false, active: false });
   }
 
   signIn(): void {
@@ -54,6 +97,7 @@ export class PricingComponent implements OnInit {
       return;
     }
 
+    // No client priceId — backend selects Founders vs weekly from founders/{uid}
     this.stripeService.createPortalSession(user.uid, user.email).subscribe({
       next: (response) => {
         if (response.success && response.url) {
@@ -67,7 +111,6 @@ export class PricingComponent implements OnInit {
   }
 
   manageSubscription(): void {
-    // Use the stored user if available
     if (this.currentUser) {
       this.stripeService.createPortalSession(this.currentUser.uid, this.currentUser.email).subscribe({
         next: (response) => {
@@ -84,7 +127,13 @@ export class PricingComponent implements OnInit {
 
   formatDate(timestamp: any): string {
     if (!timestamp) return '';
-    const date = new Date(timestamp.seconds * 1000);
-    return date.toLocaleDateString();
+    if (typeof timestamp === 'string') {
+      return new Date(timestamp).toLocaleDateString();
+    }
+    if (timestamp.seconds) {
+      const date = new Date(timestamp.seconds * 1000);
+      return date.toLocaleDateString();
+    }
+    return '';
   }
-} 
+}

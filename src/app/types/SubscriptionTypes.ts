@@ -43,6 +43,8 @@ export interface PaymentInfo {
 
 export interface SubscriptionStatus {
   active: boolean;
+  /** Closed-list Founders Rate eligibility from backend founders/{uid} */
+  isFounder?: boolean;
   subscription: SubscriptionDetails | null;
   usage: UsageInfo;
   plan: string | null;
@@ -52,6 +54,7 @@ export interface SubscriptionStatus {
 // Backend response interface (what your API returns)
 export interface BackendSubscriptionResponse {
   active: boolean;
+  isFounder?: boolean;
   subscription: {
     status: string;
     subscriptionId: string | null;

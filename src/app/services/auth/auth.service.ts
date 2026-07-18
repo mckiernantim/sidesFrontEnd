@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Injector } from '@angular/core';
 import { 
   Auth, 
   signInWithPopup, 
@@ -34,7 +34,8 @@ export class AuthService {
   constructor(
     private auth: Auth,
     private firestore: Firestore,
-    private router: Router
+    private router: Router,
+    private injector: Injector
   ) {
     console.log('AuthService constructor called');
     
@@ -71,6 +72,14 @@ export class AuthService {
           await this.checkAdminWhitelist(user);
           // Update user data in Firestore
           this.updateUserData(user);
+          // Silent Founders/subscription eligibility refresh (no forced redirect)
+          try {
+            const { StripeService } = await import('../stripe/stripe.service');
+            const stripe = this.injector.get(StripeService);
+            await stripe.refreshEligibility(user.uid);
+          } catch (eligibilityError) {
+            console.warn('Eligibility refresh failed:', eligibilityError);
+          }
         } else {
           this.isAdminSubject.next(false);
         }
@@ -112,7 +121,20 @@ export class AuthService {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(this.auth, provider);
-      // User is automatically updated via onAuthStateChanged
+      // Route inactive users to the correct product offer (Founders vs standard)
+      const user = this.auth.currentUser;
+      if (user) {
+        try {
+          const { StripeService } = await import('../stripe/stripe.service');
+          const stripe = this.injector.get(StripeService);
+          await stripe.resolveAndRouteAfterLogin(user.uid, {
+            explicitSignIn: true,
+            currentPath: this.router.url
+          });
+        } catch (routeError) {
+          console.warn('Post-login offer routing failed:', routeError);
+        }
+      }
     } catch (error) {
       console.error('Error signing in with Google:', error);
       throw error;
