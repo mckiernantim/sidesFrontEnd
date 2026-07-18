@@ -13,6 +13,15 @@ export interface FounderEligibility {
 export const FOUNDERS_WEEKLY_CENTS = 1000;
 export const STANDARD_WEEKLY_CENTS = 2000;
 
+/** Consistent copy for Founder members (nav badge, profile tag, plan titles). */
+export const FOUNDERS_MEMBER_TAG = 'Founder';
+export const FOUNDERS_RATE_LABEL = 'Founders Rate';
+export const FOUNDERS_RATE_SUBTITLE = 'Founders Rate — 50% off';
+
+export function isFounderMember(eligibility: Pick<FounderEligibility, 'isFounder'>): boolean {
+  return Boolean(eligibility?.isFounder);
+}
+
 export function shouldShowFoundersOffer(eligibility: FounderEligibility): boolean {
   return Boolean(eligibility?.isFounder) && !eligibility?.active;
 }
@@ -43,17 +52,23 @@ export function effectiveOfferFromQuery(
   return resolved;
 }
 
+/** Display price for Founders (even when subscribed) — their rate is always $10. */
 export function getOfferWeeklyPriceCents(eligibility: FounderEligibility): number {
-  return shouldShowFoundersOffer(eligibility) ? FOUNDERS_WEEKLY_CENTS : STANDARD_WEEKLY_CENTS;
+  return isFounderMember(eligibility) ? FOUNDERS_WEEKLY_CENTS : STANDARD_WEEKLY_CENTS;
 }
 
 export function getOfferPlanTitle(eligibility: FounderEligibility): string {
-  return shouldShowFoundersOffer(eligibility) ? 'Founders Rate' : 'Professional Plan';
+  return isFounderMember(eligibility) ? FOUNDERS_RATE_LABEL : 'Professional Plan';
 }
 
 export function getOfferPriceLabel(eligibility: FounderEligibility): string {
   const dollars = getOfferWeeklyPriceCents(eligibility) / 100;
   return `$${dollars} per week`;
+}
+
+export function getBillingFaqText(eligibility: FounderEligibility): string {
+  const amount = isFounderMember(eligibility) ? '$10' : '$20';
+  return `You'll be charged ${amount} every week until you cancel. Your subscription will automatically renew each week.`;
 }
 
 /**

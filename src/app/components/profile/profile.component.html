@@ -32,7 +32,35 @@
   
   <!-- Profile content (logged in) -->
   <div *ngIf="!isLoading && user && !error" class="bg-white rounded-lg shadow-md p-8 mx-auto max-w-3xl">
-    <h1 class="text-2xl font-bold mb-8 text-center">Your Profile</h1>
+    <div class="flex flex-col items-center mb-8">
+      <div class="relative inline-block mb-3">
+        <img
+          [src]="user.photoURL || 'assets/default-avatar.png'"
+          alt="Profile photo"
+          class="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+        >
+        <span
+          *ngIf="isFounderMember()"
+          class="absolute -right-0.5 -bottom-0.5 inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-600 text-white border-2 border-white"
+          title="Founder"
+          aria-label="Founder"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+          </svg>
+        </span>
+      </div>
+      <h1 class="text-2xl font-bold text-center">{{ user.displayName || 'Your Profile' }}</h1>
+      <span
+        *ngIf="isFounderMember()"
+        class="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1 border border-amber-200"
+      >
+        Founder
+      </span>
+      <p *ngIf="isFounderMember()" class="mt-2 text-sm text-gray-600 text-center">
+        You have the {{ foundersRateLabel }} — {{ getSubscribePriceLabel() }}
+      </p>
+    </div>
     
     <!-- Subscription Section -->
     <div class="mb-10">
@@ -136,7 +164,7 @@
           <div class="flex justify-between items-center">
             <div *ngIf="showFoundersOffer()">
               <p class="text-lg font-bold text-yellow-900">{{ getSubscribePriceLabel() }}</p>
-              <p class="text-sm text-amber-700">Founders Rate — 50% off</p>
+              <p class="text-sm text-amber-700">{{ foundersRateSubtitle }}</p>
             </div>
             <button 
               (click)="handleNewSubscription()" 
@@ -150,7 +178,7 @@
       
       <!-- No subscription yet or pending subscription -->
       <div *ngIf="!isSubscriptionActive() && subscription?.subscription?.status !== 'canceled'" class="p-6 bg-blue-50 rounded-lg border border-blue-100">
-        <h3 class="text-xl font-semibold mb-4 text-blue-800">{{ showFoundersOffer() ? 'Founders Rate' : 'Upgrade to Premium' }}</h3>
+        <h3 class="text-xl font-semibold mb-4 text-blue-800">{{ showFoundersOffer() ? foundersRateLabel : 'Upgrade to Premium' }}</h3>
         
         <!-- Show pending message if status is pending -->
         <div *ngIf="subscription?.subscription?.status === 'pending'" class="mb-4 p-3 bg-yellow-50 border border-yellow-100 rounded text-yellow-800">
@@ -185,7 +213,7 @@
         <div class="flex justify-between items-center">
           <div>
             <p class="text-xl font-bold text-blue-800">{{ getSubscribePriceLabel() }}</p>
-            <p *ngIf="showFoundersOffer()" class="text-sm text-amber-700 mt-1">Founders Rate — 50% off</p>
+            <p *ngIf="showFoundersOffer()" class="text-sm text-amber-700 mt-1">{{ foundersRateSubtitle }}</p>
             <p *ngIf="showFoundersOffer()" class="text-sm text-gray-500 line-through">$20 per week</p>
           </div>
           <button 

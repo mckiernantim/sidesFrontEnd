@@ -41,8 +41,8 @@
             <span class="text-5xl font-bold">${{ weeklyDollars }}</span>
             <span class="ml-2 text-xl">/week</span>
           </div>
-          <p *ngIf="showFoundersOffer" class="mt-2 text-amber-200 text-sm">Legacy Founders Rate — 50% off</p>
-          <p *ngIf="showFoundersOffer" class="mt-1 text-blue-100/80 text-sm line-through">$20/week</p>
+          <p *ngIf="isFounder" class="mt-2 text-amber-200 text-sm">{{ foundersRateSubtitle }}</p>
+          <p *ngIf="isFounder" class="mt-1 text-blue-100/80 text-sm line-through">$20/week</p>
           <p class="mt-2 text-blue-100">Cancel anytime</p>
         </div>
         
@@ -142,12 +142,12 @@
           
           <div class="bg-white p-6 rounded-lg shadow-md">
             <h4 class="text-lg font-semibold mb-2 text-indigo-700">How does the weekly billing work?</h4>
-            <p class="text-gray-700">You'll be charged $20 every week until you cancel. Your subscription will automatically renew each week.</p>
+            <p class="text-gray-700">{{ billingFaqText }}</p>
           </div>
           
           <div class="bg-white p-6 rounded-lg shadow-md">
             <h4 class="text-lg font-semibold mb-2 text-indigo-700">Is there a limit to how many sides I can generate?</h4>
-            <p class="text-gray-700">No, with the Professional Plan, you can generate unlimited sides during your subscription period.</p>
+            <p class="text-gray-700">No, with the {{ planTitle }}, you can generate unlimited sides during your subscription period.</p>
           </div>
           
           <div class="bg-white p-6 rounded-lg shadow-md">

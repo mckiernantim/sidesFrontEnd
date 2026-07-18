@@ -5,6 +5,7 @@ import {
   getOfferWeeklyPriceCents,
   getOfferPlanTitle,
   getOfferPriceLabel,
+  getBillingFaqText,
   shouldRedirectToPricingAfterLogin,
   pricingCommandsForOffer,
   FOUNDERS_WEEKLY_CENTS,
@@ -34,9 +35,11 @@ describe('founders-offer helpers', () => {
       expect(getOfferWeeklyPriceCents(e)).toBe(2000);
     });
 
-    it('E5: founder with active sub is subscribed product', () => {
+    it('E5: founder with active sub is subscribed product but keeps Founders Rate copy', () => {
       expect(resolveOfferProduct({ isFounder: true, active: true })).toBe('subscribed');
       expect(shouldShowFoundersOffer({ isFounder: true, active: true })).toBe(false);
+      expect(getOfferPlanTitle({ isFounder: true, active: true })).toBe('Founders Rate');
+      expect(getOfferPriceLabel({ isFounder: true, active: true })).toBe('$10 per week');
     });
 
     it('E7/E9: founder inactive/canceled-style inactive shows $10 for profile', () => {
@@ -47,8 +50,8 @@ describe('founders-offer helpers', () => {
       expect(getOfferPriceLabel({ isFounder: false, active: false })).toBe('$20 per week');
     });
 
-    it('E10: active founder plan amount label uses founders title only when offer shown inactive', () => {
-      // Active: no checkout offer; plan title for inactive path is Founders when eligible
+    it('E10: active founder still sees Founders Rate in plan title', () => {
+      expect(getOfferPlanTitle({ isFounder: true, active: true })).toBe('Founders Rate');
       expect(getOfferPlanTitle({ isFounder: true, active: false })).toBe('Founders Rate');
     });
   });
@@ -103,6 +106,13 @@ describe('founders-offer helpers', () => {
       const cmd = pricingCommandsForOffer('founders');
       expect(JSON.stringify(cmd)).not.toContain('price_');
       expect((cmd as any).priceId).toBeUndefined();
+    });
+  });
+
+  describe('copy', () => {
+    it('billing FAQ uses $10 for founders and $20 for everyone else', () => {
+      expect(getBillingFaqText({ isFounder: true, active: false })).toContain('$10');
+      expect(getBillingFaqText({ isFounder: false, active: false })).toContain('$20');
     });
   });
 });

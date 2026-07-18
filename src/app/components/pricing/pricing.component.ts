@@ -8,10 +8,12 @@ import { SubscriptionStatus } from '../../types/SubscriptionTypes';
 import { fadeInOutAnimation } from '../../animations/animations';
 import {
   effectiveOfferFromQuery,
+  getBillingFaqText,
   getOfferPlanTitle,
   getOfferPriceLabel,
   getOfferWeeklyPriceCents,
-  shouldShowFoundersOffer
+  shouldShowFoundersOffer,
+  FOUNDERS_RATE_SUBTITLE
 } from '../../utils/founders-offer';
 
 @Component({
@@ -31,6 +33,8 @@ export class PricingComponent implements OnInit {
   planTitle = 'Professional Plan';
   priceLabel = '$20 per week';
   weeklyDollars = 20;
+  billingFaqText = getBillingFaqText({ isFounder: false, active: false });
+  readonly foundersRateSubtitle = FOUNDERS_RATE_SUBTITLE;
   private offerQuery: string | null = null;
   
   constructor(
@@ -73,16 +77,14 @@ export class PricingComponent implements OnInit {
       active: Boolean(status?.active)
     };
     // Query param is display-only; forged ?offer=founders cannot elevate non-founders
-    const offer = effectiveOfferFromQuery(eligibility, this.offerQuery);
+    effectiveOfferFromQuery(eligibility, this.offerQuery);
     this.isFounder = eligibility.isFounder;
-    this.showFoundersOffer = offer === 'founders' && shouldShowFoundersOffer(eligibility);
-    this.planTitle = this.showFoundersOffer ? 'Founders Rate' : getOfferPlanTitle(eligibility);
-    this.weeklyDollars = getOfferWeeklyPriceCents(
-      this.showFoundersOffer ? eligibility : { isFounder: false, active: false }
-    ) / 100;
-    this.priceLabel = this.showFoundersOffer
-      ? getOfferPriceLabel(eligibility)
-      : getOfferPriceLabel({ isFounder: false, active: false });
+    this.showFoundersOffer = shouldShowFoundersOffer(eligibility);
+    // Founders always see Founders Rate copy ($10); non-founders see Professional ($20)
+    this.planTitle = getOfferPlanTitle(eligibility);
+    this.weeklyDollars = getOfferWeeklyPriceCents(eligibility) / 100;
+    this.priceLabel = getOfferPriceLabel(eligibility);
+    this.billingFaqText = getBillingFaqText(eligibility);
   }
 
   signIn(): void {

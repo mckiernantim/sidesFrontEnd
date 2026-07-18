@@ -14,7 +14,11 @@ import {
 } from 'src/app/types/SubscriptionTypes';
 import {
   getOfferPriceLabel,
-  shouldShowFoundersOffer
+  getOfferPlanTitle,
+  isFounderMember,
+  shouldShowFoundersOffer,
+  FOUNDERS_RATE_LABEL,
+  FOUNDERS_RATE_SUBTITLE
 } from 'src/app/utils/founders-offer';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
@@ -185,13 +189,29 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return formatSubscriptionStatus(status);
   }
   
+  readonly foundersRateLabel = FOUNDERS_RATE_LABEL;
+  readonly foundersRateSubtitle = FOUNDERS_RATE_SUBTITLE;
+
   // Get formatted plan name
   getFormattedPlan(): string {
+    const eligibility = {
+      isFounder: Boolean(this.subscription?.isFounder),
+      active: Boolean(this.subscription?.active)
+    };
+    if (isFounderMember(eligibility)) {
+      return getOfferPlanTitle(eligibility);
+    }
     const plan = this.subscription?.subscription?.plan;
     if (plan?.amount === 1000) {
-      return plan.nickname || 'Founders Rate';
+      return plan.nickname || FOUNDERS_RATE_LABEL;
     }
     return formatPlanName(plan);
+  }
+
+  isFounderMember(): boolean {
+    return isFounderMember({
+      isFounder: Boolean(this.subscription?.isFounder)
+    });
   }
 
   showFoundersOffer(): boolean {

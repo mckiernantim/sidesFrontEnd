@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Observable, Subscription, interval } from 'rxjs';
 import { AuthService } from '../../../services/auth/auth.service';
 import { PdfService } from '../../../services/pdf/pdf.service';
+import { StripeService } from '../../../services/stripe/stripe.service';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 
@@ -17,28 +18,40 @@ export class MainNavComponent implements OnInit, OnDestroy {
   isLoggedIn = false;
   username = '';
   userAvatar = '';
+  isFounder = false;
   isUserMenuOpen = false;
   isMobileMenuOpen = false;
   currentScriptName = '';
   
   private routerSubscription: Subscription | null = null;
   private scriptCheckInterval: Subscription | null = null;
+  private authSubscription: Subscription | null = null;
+  private founderSubscription: Subscription | null = null;
 
   constructor(
     private authService: AuthService,
     private pdfService: PdfService,
+    private stripeService: StripeService,
     private router: Router
   ) {
     this.user$ = this.authService.user$;
   }
 
   ngOnInit(): void {
-    this.authService.user$.subscribe(user => {
+    this.authSubscription = this.authService.user$.subscribe(user => {
       this.isLoggedIn = !!user;
       if (user) {
         this.username = user.displayName || user.email || 'User';
         this.userAvatar = user.photoURL || '';
+      } else {
+        this.username = '';
+        this.userAvatar = '';
+        this.isFounder = false;
       }
+    });
+
+    this.founderSubscription = this.stripeService.isFounder$.subscribe(isFounder => {
+      this.isFounder = isFounder;
     });
 
     // Check for script name on init
@@ -68,6 +81,12 @@ export class MainNavComponent implements OnInit, OnDestroy {
     }
     if (this.scriptCheckInterval) {
       this.scriptCheckInterval.unsubscribe();
+    }
+    if (this.authSubscription) {
+      this.authSubscription.unsubscribe();
+    }
+    if (this.founderSubscription) {
+      this.founderSubscription.unsubscribe();
     }
   }
 

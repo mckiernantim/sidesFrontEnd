@@ -134,3 +134,26 @@ button.nav-item:hover {
 }
 
 }
+
+/* Founder badge on nav avatar */
+.founder-avatar-check {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background-color: #16a34a;
+  color: #fff;
+  border: 2px solid #1f2937;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.founder-avatar-check svg {
+  display: block;
+  width: 10px;
+  height: 10px;
+}
