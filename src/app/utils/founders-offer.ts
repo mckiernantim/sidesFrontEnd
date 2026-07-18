@@ -10,13 +10,16 @@ export interface FounderEligibility {
   active: boolean;
 }
 
-export const FOUNDERS_WEEKLY_CENTS = 1000;
-export const STANDARD_WEEKLY_CENTS = 2000;
+/** Standard catalog + Founders at exactly 50% off. */
+export const STANDARD_WEEKLY_CENTS = 2000; // $20/week
+export const STANDARD_MONTHLY_CENTS = 6000; // $60/month
+export const FOUNDERS_WEEKLY_CENTS = 1000; // $10/week = 50% of $20
+export const FOUNDERS_MONTHLY_CENTS = 3000; // $30/month = 50% of $60
 
 /** Consistent copy for Founder members (nav badge, profile tag, plan titles). */
 export const FOUNDERS_MEMBER_TAG = 'Founder';
 export const FOUNDERS_RATE_LABEL = 'Founders Rate';
-export const FOUNDERS_RATE_SUBTITLE = 'Founders Rate — 50% off';
+export const FOUNDERS_RATE_SUBTITLE = 'Founders Rate — 50% off ($10/week)';
 
 export function isFounderMember(eligibility: Pick<FounderEligibility, 'isFounder'>): boolean {
   return Boolean(eligibility?.isFounder);

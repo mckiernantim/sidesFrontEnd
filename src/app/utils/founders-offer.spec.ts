@@ -9,7 +9,9 @@ import {
   shouldRedirectToPricingAfterLogin,
   pricingCommandsForOffer,
   FOUNDERS_WEEKLY_CENTS,
-  STANDARD_WEEKLY_CENTS
+  FOUNDERS_MONTHLY_CENTS,
+  STANDARD_WEEKLY_CENTS,
+  STANDARD_MONTHLY_CENTS
 } from './founders-offer';
 
 describe('founders-offer helpers', () => {
@@ -113,6 +115,13 @@ describe('founders-offer helpers', () => {
     it('billing FAQ uses $10 for founders and $20 for everyone else', () => {
       expect(getBillingFaqText({ isFounder: true, active: false })).toContain('$10');
       expect(getBillingFaqText({ isFounder: false, active: false })).toContain('$20');
+    });
+
+    it('Founders catalog is exactly 50% of standard $20/week and $60/month', () => {
+      expect(STANDARD_WEEKLY_CENTS).toBe(2000);
+      expect(STANDARD_MONTHLY_CENTS).toBe(6000);
+      expect(FOUNDERS_WEEKLY_CENTS * 2).toBe(STANDARD_WEEKLY_CENTS);
+      expect(FOUNDERS_MONTHLY_CENTS * 2).toBe(STANDARD_MONTHLY_CENTS);
     });
   });
 });
