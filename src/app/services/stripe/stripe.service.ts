@@ -11,6 +11,7 @@ import {
   pricingCommandsForOffer,
   resolveOfferProduct,
   shouldRedirectToPricingAfterLogin,
+  BillingInterval,
   OfferProduct
 } from '../../utils/founders-offer';
 
@@ -35,6 +36,14 @@ interface BackendSubscriptionResponse {
       nickname: string;
       amount: number;
       interval: string; // Allow any string interval from Stripe
+    } | null;
+    pendingPlanChange?: {
+      fromInterval: string;
+      toInterval: string;
+      amount?: number | null;
+      effectiveAt: string;
+      priceId?: string;
+      scheduleId?: string;
     } | null;
     createdAt: string | null;
     lastUpdated: string;
@@ -131,7 +140,8 @@ export class StripeService {
                   amount: response.subscription.plan.amount,
                   interval: response.subscription.plan.interval,
                   nickname: response.subscription.plan.nickname
-                } : null
+                } : null,
+                pendingPlanChange: response.subscription.pendingPlanChange || null
               } : null,
               usage: {
                 pdfsGenerated: response.usage.pdfsGenerated,
@@ -302,8 +312,13 @@ export class StripeService {
     this.offerProductSubject.next('standard');
   }
 
-  createPortalSession(userId: string, userEmail: string, returnUrl?: string): Observable<{ success: boolean; url?: string; error?: string; type?: string }> {
-    console.log('STRIPE: Creating portal session', { userId, userEmail, returnUrl });
+  createPortalSession(
+    userId: string,
+    userEmail: string,
+    returnUrl?: string,
+    interval: BillingInterval = 'week'
+  ): Observable<{ success: boolean; url?: string; error?: string; type?: string }> {
+    console.log('STRIPE: Creating portal session', { userId, userEmail, returnUrl, interval });
     
     return this.getAuthHeaders().pipe(
       switchMap(headers => {
@@ -317,7 +332,8 @@ export class StripeService {
           userId,
           userEmail,
           returnUrl: safeReturnUrl,
-          locale: 'en-US'
+          locale: 'en-US',
+          interval
         };
 
         console.log('STRIPE: Portal session request body', requestBody);
@@ -405,6 +421,74 @@ export class StripeService {
           error: 'Failed to create portal session'
         });
       })
+    );
+  }
+
+  /**
+   * Schedule a weekly ↔ monthly plan change at the end of the current billing period.
+   * Price IDs are selected server-side from founders eligibility.
+   */
+  changePlan(
+    userId: string,
+    userEmail: string,
+    interval: BillingInterval
+  ): Observable<{
+    success: boolean;
+    unchanged?: boolean;
+    interval?: string;
+    fromInterval?: string;
+    amount?: number | null;
+    effectiveAt?: string;
+    message?: string;
+    error?: string;
+    pendingPlanChange?: {
+      fromInterval: string;
+      toInterval: string;
+      amount?: number | null;
+      effectiveAt: string;
+    };
+  }> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => {
+        return this.http.post<{
+          success: boolean;
+          unchanged?: boolean;
+          interval?: string;
+          fromInterval?: string;
+          amount?: number | null;
+          effectiveAt?: string;
+          message?: string;
+          error?: string;
+          pendingPlanChange?: {
+            fromInterval: string;
+            toInterval: string;
+            amount?: number | null;
+            effectiveAt: string;
+          };
+        }>(
+          `${this.apiUrl}/stripe/change-plan`,
+          { userId, userEmail, interval },
+          { headers, withCredentials: true }
+        ).pipe(
+          map(response => {
+            if (!response?.success) {
+              return {
+                success: false,
+                error: response?.error || response?.message || 'Failed to change plan'
+              };
+            }
+            return response;
+          }),
+          catchError((error: HttpErrorResponse) => {
+            const errorMessage =
+              error.error?.message ||
+              error.error?.error ||
+              'An error occurred while changing your plan';
+            return of({ success: false, error: errorMessage });
+          })
+        );
+      }),
+      catchError(() => of({ success: false, error: 'Failed to change plan' }))
     );
   }
 }

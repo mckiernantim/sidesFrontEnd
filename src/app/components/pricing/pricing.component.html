@@ -37,12 +37,37 @@
       <div *ngIf="!isLoading" class="bg-white rounded-lg shadow-lg overflow-hidden">
         <div class="bg-gray-800 text-white p-6 text-center">
           <h2 class="text-3xl font-bold">{{ planTitle }}</h2>
+
+          <!-- Weekly / Monthly toggle -->
+          <div class="mt-5 inline-flex rounded-lg border border-white/20 bg-white/10 p-1" role="group" aria-label="Billing interval">
+            <button
+              type="button"
+              (click)="selectInterval('week')"
+              [class.bg-white]="selectedInterval === 'week'"
+              [class.text-gray-900]="selectedInterval === 'week'"
+              [class.text-white]="selectedInterval !== 'week'"
+              class="px-4 py-2 text-sm font-semibold rounded-md transition-colors"
+            >
+              Weekly
+            </button>
+            <button
+              type="button"
+              (click)="selectInterval('month')"
+              [class.bg-white]="selectedInterval === 'month'"
+              [class.text-gray-900]="selectedInterval === 'month'"
+              [class.text-white]="selectedInterval !== 'month'"
+              class="px-4 py-2 text-sm font-semibold rounded-md transition-colors"
+            >
+              Monthly
+            </button>
+          </div>
+
           <div class="mt-4 flex items-center justify-center">
-            <span class="text-5xl font-bold">${{ weeklyDollars }}</span>
-            <span class="ml-2 text-xl">/week</span>
+            <span class="text-5xl font-bold">${{ priceDollars }}</span>
+            <span class="ml-2 text-xl">{{ getIntervalSuffix() }}</span>
           </div>
           <p *ngIf="isFounder" class="mt-2 text-amber-200 text-sm">{{ foundersRateSubtitle }}</p>
-          <p *ngIf="isFounder" class="mt-1 text-blue-100/80 text-sm line-through">$20/week</p>
+          <p *ngIf="isFounder" class="mt-1 text-blue-100/80 text-sm line-through">{{ getStruckThroughPrice() }}</p>
           <p class="mt-2 text-blue-100">Cancel anytime</p>
         </div>
         
@@ -141,8 +166,8 @@
           </div>
           
           <div class="bg-white p-6 rounded-lg shadow-md">
-            <h4 class="text-lg font-semibold mb-2 text-indigo-700">How does the weekly billing work?</h4>
-            <p class="text-gray-700">{{ billingFaqText }}</p>
+            <h4 class="text-lg font-semibold mb-2 text-indigo-700">How does billing work?</h4>
+            <p class="text-gray-700">{{ billingFaqText }} Choose weekly or monthly when you subscribe — you can switch later and the change takes effect at the end of your current billing period.</p>
           </div>
           
           <div class="bg-white p-6 rounded-lg shadow-md">

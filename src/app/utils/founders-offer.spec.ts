@@ -3,6 +3,7 @@ import {
   resolveOfferProduct,
   effectiveOfferFromQuery,
   getOfferWeeklyPriceCents,
+  getOfferPriceCents,
   getOfferPlanTitle,
   getOfferPriceLabel,
   getBillingFaqText,
@@ -55,6 +56,13 @@ describe('founders-offer helpers', () => {
     it('E10: active founder still sees Founders Rate in plan title', () => {
       expect(getOfferPlanTitle({ isFounder: true, active: true })).toBe('Founders Rate');
       expect(getOfferPlanTitle({ isFounder: true, active: false })).toBe('Founders Rate');
+    });
+
+    it('E11: monthly prices are $60 standard / $30 founders', () => {
+      expect(getOfferPriceCents({ isFounder: false, active: false }, 'month')).toBe(STANDARD_MONTHLY_CENTS);
+      expect(getOfferPriceCents({ isFounder: true, active: false }, 'month')).toBe(FOUNDERS_MONTHLY_CENTS);
+      expect(getOfferPriceLabel({ isFounder: true, active: false }, 'month')).toBe('$30 per month');
+      expect(getOfferPriceLabel({ isFounder: false, active: false }, 'month')).toBe('$60 per month');
     });
   });
 

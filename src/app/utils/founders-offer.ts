@@ -4,6 +4,7 @@
  */
 
 export type OfferProduct = 'founders' | 'standard' | 'subscribed';
+export type BillingInterval = 'week' | 'month';
 
 export interface FounderEligibility {
   isFounder: boolean;
@@ -19,7 +20,7 @@ export const FOUNDERS_MONTHLY_CENTS = 3000; // $30/month = 50% of $60
 /** Consistent copy for Founder members (nav badge, profile tag, plan titles). */
 export const FOUNDERS_MEMBER_TAG = 'Founder';
 export const FOUNDERS_RATE_LABEL = 'Founders Rate';
-export const FOUNDERS_RATE_SUBTITLE = 'Founders Rate — 50% off ($10/week)';
+export const FOUNDERS_RATE_SUBTITLE = 'Founders Rate — 50% off for life';
 
 export function isFounderMember(eligibility: Pick<FounderEligibility, 'isFounder'>): boolean {
   return Boolean(eligibility?.isFounder);
@@ -55,23 +56,59 @@ export function effectiveOfferFromQuery(
   return resolved;
 }
 
-/** Display price for Founders (even when subscribed) — their rate is always $10. */
-export function getOfferWeeklyPriceCents(eligibility: FounderEligibility): number {
+export function normalizeBillingInterval(interval: string | null | undefined): BillingInterval {
+  if (interval === 'month' || interval === 'monthly') {
+    return 'month';
+  }
+  return 'week';
+}
+
+/** Display price cents for a given interval (Founders always 50% off). */
+export function getOfferPriceCents(
+  eligibility: FounderEligibility,
+  interval: BillingInterval = 'week'
+): number {
+  if (interval === 'month') {
+    return isFounderMember(eligibility) ? FOUNDERS_MONTHLY_CENTS : STANDARD_MONTHLY_CENTS;
+  }
   return isFounderMember(eligibility) ? FOUNDERS_WEEKLY_CENTS : STANDARD_WEEKLY_CENTS;
+}
+
+/** @deprecated Prefer getOfferPriceCents(eligibility, 'week') */
+export function getOfferWeeklyPriceCents(eligibility: FounderEligibility): number {
+  return getOfferPriceCents(eligibility, 'week');
 }
 
 export function getOfferPlanTitle(eligibility: FounderEligibility): string {
   return isFounderMember(eligibility) ? FOUNDERS_RATE_LABEL : 'Professional Plan';
 }
 
-export function getOfferPriceLabel(eligibility: FounderEligibility): string {
-  const dollars = getOfferWeeklyPriceCents(eligibility) / 100;
-  return `$${dollars} per week`;
+export function getOfferPriceLabel(
+  eligibility: FounderEligibility,
+  interval: BillingInterval = 'week'
+): string {
+  const dollars = getOfferPriceCents(eligibility, interval) / 100;
+  return interval === 'month' ? `$${dollars} per month` : `$${dollars} per week`;
 }
 
-export function getBillingFaqText(eligibility: FounderEligibility): string {
-  const amount = isFounderMember(eligibility) ? '$10' : '$20';
-  return `You'll be charged ${amount} every week until you cancel. Your subscription will automatically renew each week.`;
+export function getStandardPriceLabel(interval: BillingInterval): string {
+  const dollars = (interval === 'month' ? STANDARD_MONTHLY_CENTS : STANDARD_WEEKLY_CENTS) / 100;
+  return interval === 'month' ? `$${dollars} per month` : `$${dollars} per week`;
+}
+
+export function getAlternateInterval(interval: BillingInterval): BillingInterval {
+  return interval === 'month' ? 'week' : 'month';
+}
+
+export function getBillingFaqText(
+  eligibility: FounderEligibility,
+  interval: BillingInterval = 'week'
+): string {
+  const amount = interval === 'month'
+    ? (isFounderMember(eligibility) ? '$30' : '$60')
+    : (isFounderMember(eligibility) ? '$10' : '$20');
+  const cadence = interval === 'month' ? 'month' : 'week';
+  return `You'll be charged ${amount} every ${cadence} until you cancel. Your subscription will automatically renew each ${cadence}.`;
 }
 
 /**

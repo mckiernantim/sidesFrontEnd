@@ -126,6 +126,7 @@ describe('ProfileComponent', () => {
     mockStripeService = {
       getSubscriptionStatus: jest.fn(),
       createPortalSession: jest.fn(),
+      changePlan: jest.fn(),
       subscriptionStatus$: of(mockActiveSubscription),
       clearCache: jest.fn()
     } as any;
@@ -260,7 +261,7 @@ describe('ProfileComponent', () => {
       expect(component.isLoading).toBeTrue();
       
       setTimeout(() => {
-        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('test-user-123', 'test@example.com');
+        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('test-user-123', 'test@example.com', undefined, 'week');
         expect(window.location.href).toBe('https://billing.stripe.com/checkout_123');
         expect(component.isLoading).toBeFalse();
         done();
@@ -355,7 +356,7 @@ describe('ProfileComponent', () => {
 
       component.manageSubscription();
 
-      expect(component.error).toBe('You must be logged in to manage subscription');
+      expect(component.error).toBe('You must be logged in to manage your subscription');
       expect(mockStripeService.createPortalSession).not.toHaveBeenCalled();
     });
 
@@ -481,7 +482,7 @@ describe('ProfileComponent', () => {
       component.handleNewSubscription();
 
       setTimeout(() => {
-        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('test-user-123', 'test@example.com');
+        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('test-user-123', 'test@example.com', undefined, 'week');
         
         // Later, manage active subscription
         component.subscription = mockActiveSubscription;

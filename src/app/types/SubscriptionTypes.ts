@@ -7,6 +7,15 @@ export interface SubscriptionPlan {
   interval: string
 }
 
+export interface PendingPlanChange {
+  fromInterval: string;
+  toInterval: string;
+  amount?: number | null;
+  effectiveAt: string;
+  priceId?: string;
+  scheduleId?: string;
+}
+
 export interface SubscriptionDetails {
   id: string;
   status: string | null;
@@ -17,6 +26,7 @@ export interface SubscriptionDetails {
   willAutoRenew: boolean;
   originalStartDate: string | null;
   plan: SubscriptionPlan | null;
+  pendingPlanChange?: PendingPlanChange | null;
 }
 
 export interface UsageFeatures {
@@ -67,6 +77,7 @@ export interface BackendSubscriptionResponse {
       amount: number;
       interval: string;
     } | null;
+    pendingPlanChange?: PendingPlanChange | null;
     createdAt: string | null;
     lastUpdated: string;
     lastPaymentStatus?: string;

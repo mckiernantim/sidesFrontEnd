@@ -7,11 +7,13 @@ import { User } from '@angular/fire/auth';
 import { SubscriptionStatus } from '../../types/SubscriptionTypes';
 import { fadeInOutAnimation } from '../../animations/animations';
 import {
+  BillingInterval,
   effectiveOfferFromQuery,
   getBillingFaqText,
   getOfferPlanTitle,
+  getOfferPriceCents,
   getOfferPriceLabel,
-  getOfferWeeklyPriceCents,
+  getStandardPriceLabel,
   shouldShowFoundersOffer,
   FOUNDERS_RATE_SUBTITLE
 } from '../../utils/founders-offer';
@@ -32,8 +34,9 @@ export class PricingComponent implements OnInit {
   showFoundersOffer = false;
   planTitle = 'Professional Plan';
   priceLabel = '$20 per week';
-  weeklyDollars = 20;
-  billingFaqText = getBillingFaqText({ isFounder: false, active: false });
+  priceDollars = 20;
+  selectedInterval: BillingInterval = 'week';
+  billingFaqText = getBillingFaqText({ isFounder: false, active: false }, 'week');
   readonly foundersRateSubtitle = FOUNDERS_RATE_SUBTITLE;
   private offerQuery: string | null = null;
   
@@ -80,11 +83,30 @@ export class PricingComponent implements OnInit {
     effectiveOfferFromQuery(eligibility, this.offerQuery);
     this.isFounder = eligibility.isFounder;
     this.showFoundersOffer = shouldShowFoundersOffer(eligibility);
-    // Founders always see Founders Rate copy ($10); non-founders see Professional ($20)
     this.planTitle = getOfferPlanTitle(eligibility);
-    this.weeklyDollars = getOfferWeeklyPriceCents(eligibility) / 100;
-    this.priceLabel = getOfferPriceLabel(eligibility);
-    this.billingFaqText = getBillingFaqText(eligibility);
+    this.refreshPriceCopy(eligibility);
+  }
+
+  private refreshPriceCopy(eligibility = {
+    isFounder: this.isFounder,
+    active: false
+  }): void {
+    this.priceDollars = getOfferPriceCents(eligibility, this.selectedInterval) / 100;
+    this.priceLabel = getOfferPriceLabel(eligibility, this.selectedInterval);
+    this.billingFaqText = getBillingFaqText(eligibility, this.selectedInterval);
+  }
+
+  selectInterval(interval: BillingInterval): void {
+    this.selectedInterval = interval;
+    this.refreshPriceCopy({ isFounder: this.isFounder, active: false });
+  }
+
+  getStruckThroughPrice(): string {
+    return getStandardPriceLabel(this.selectedInterval);
+  }
+
+  getIntervalSuffix(): string {
+    return this.selectedInterval === 'month' ? '/month' : '/week';
   }
 
   signIn(): void {
@@ -99,8 +121,13 @@ export class PricingComponent implements OnInit {
       return;
     }
 
-    // No client priceId — backend selects Founders vs weekly from founders/{uid}
-    this.stripeService.createPortalSession(user.uid, user.email).subscribe({
+    // No client priceId — backend selects Founders vs standard from founders/{uid} + interval
+    this.stripeService.createPortalSession(
+      user.uid,
+      user.email,
+      undefined,
+      this.selectedInterval
+    ).subscribe({
       next: (response) => {
         if (response.success && response.url) {
           window.location.href = response.url;

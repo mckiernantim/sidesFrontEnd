@@ -58,8 +58,13 @@
         Founder
       </span>
       <p *ngIf="isFounderMember()" class="mt-2 text-sm text-gray-600 text-center">
-        You have the {{ foundersRateLabel }} — {{ getSubscribePriceLabel() }}
+        You have the {{ foundersRateLabel }} — 50% off for life ($10/week or $30/month)
       </p>
+    </div>
+
+    <!-- Plan change confirmation -->
+    <div *ngIf="planChangeMessage" class="mb-4 bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-lg text-sm">
+      {{ planChangeMessage }}
     </div>
     
     <!-- Subscription Section -->
@@ -85,10 +90,36 @@
               <p class="font-medium">Documents processed</p>
               <p>{{ subscription?.usage?.pdfsGenerated || 0 }}</p>
             </div>
-            <div *ngIf="subscription?.plan">
+            <div *ngIf="subscription?.subscription?.plan">
               <p class="font-medium">Billing</p>
-              <p>{{ formatCurrency(subscription?.plan?.amount) }} per {{ subscription?.plan?.interval }}</p>
+              <p>{{ getCurrentBillingLabel() }}</p>
             </div>
+          </div>
+
+          <div
+            *ngIf="hasPendingPlanChange()"
+            class="mb-4 p-3 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-sm"
+          >
+            {{ getPendingPlanChangeMessage() }}
+          </div>
+
+          <div
+            *ngIf="!hasPendingPlanChange()"
+            class="mb-4 p-4 rounded-md bg-white border border-green-200"
+          >
+            <p class="text-sm font-medium text-green-900 mb-2">Change billing plan</p>
+            <p class="text-sm text-green-700 mb-3">
+              Switch to {{ getAlternatePlanLabel() }}. The change takes effect when your current period ends
+              ({{ formatDate(subscription?.subscription?.currentPeriodEnd) }}).
+            </p>
+            <button
+              type="button"
+              (click)="changePlanToAlternate()"
+              [disabled]="isChangingPlan"
+              class="bg-white border border-green-600 text-green-700 hover:bg-green-50 font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50"
+            >
+              {{ isChangingPlan ? 'Scheduling…' : ('Switch to ' + (getAlternatePlanInterval() === 'month' ? 'Monthly' : 'Weekly')) }}
+            </button>
           </div>
           
           <div class="flex justify-end">
@@ -123,9 +154,9 @@
               <p class="font-medium">Documents processed</p>
               <p>{{ subscription?.usage?.pdfsGenerated || 0 }}</p>
             </div>
-            <div *ngIf="subscription?.plan">
+            <div *ngIf="subscription?.subscription?.plan">
               <p class="font-medium">Billing</p>
-              <p>{{ formatCurrency(subscription?.plan?.amount) }} per {{ subscription?.plan?.interval }}</p>
+              <p>{{ getCurrentBillingLabel() }}</p>
             </div>
           </div>
           
@@ -161,6 +192,19 @@
             </div>
           </div>
           
+          <div class="mb-4 inline-flex rounded-lg border border-yellow-200 bg-white p-1" role="group" aria-label="Billing interval">
+            <button type="button" (click)="selectInterval('week')"
+              [class.bg-yellow-600]="selectedInterval === 'week'"
+              [class.text-white]="selectedInterval === 'week'"
+              [class.text-yellow-800]="selectedInterval !== 'week'"
+              class="px-3 py-1.5 text-sm font-semibold rounded-md transition-colors">Weekly</button>
+            <button type="button" (click)="selectInterval('month')"
+              [class.bg-yellow-600]="selectedInterval === 'month'"
+              [class.text-white]="selectedInterval === 'month'"
+              [class.text-yellow-800]="selectedInterval !== 'month'"
+              class="px-3 py-1.5 text-sm font-semibold rounded-md transition-colors">Monthly</button>
+          </div>
+
           <div class="flex justify-between items-center">
             <div *ngIf="showFoundersOffer()">
               <p class="text-lg font-bold text-yellow-900">{{ getSubscribePriceLabel() }}</p>
@@ -210,11 +254,35 @@
           </ul>
         </div>
         
+        <!-- Weekly / Monthly toggle -->
+        <div class="mb-5 inline-flex rounded-lg border border-blue-200 bg-white p-1" role="group" aria-label="Billing interval">
+          <button
+            type="button"
+            (click)="selectInterval('week')"
+            [class.bg-blue-600]="selectedInterval === 'week'"
+            [class.text-white]="selectedInterval === 'week'"
+            [class.text-blue-800]="selectedInterval !== 'week'"
+            class="px-4 py-2 text-sm font-semibold rounded-md transition-colors"
+          >
+            Weekly
+          </button>
+          <button
+            type="button"
+            (click)="selectInterval('month')"
+            [class.bg-blue-600]="selectedInterval === 'month'"
+            [class.text-white]="selectedInterval === 'month'"
+            [class.text-blue-800]="selectedInterval !== 'month'"
+            class="px-4 py-2 text-sm font-semibold rounded-md transition-colors"
+          >
+            Monthly
+          </button>
+        </div>
+
         <div class="flex justify-between items-center">
           <div>
             <p class="text-xl font-bold text-blue-800">{{ getSubscribePriceLabel() }}</p>
             <p *ngIf="showFoundersOffer()" class="text-sm text-amber-700 mt-1">{{ foundersRateSubtitle }}</p>
-            <p *ngIf="showFoundersOffer()" class="text-sm text-gray-500 line-through">$20 per week</p>
+            <p *ngIf="showFoundersOffer()" class="text-sm text-gray-500 line-through">{{ getStandardStrikePrice() }}</p>
           </div>
           <button 
             (click)="handleNewSubscription()" 
