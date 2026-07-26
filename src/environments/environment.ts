@@ -47,14 +47,11 @@ export const environmentProd = {
 /**
  * Dynamic configuration helper
  * Automatically detects environment and returns appropriate config
- * 
+ *
  * Environment Detection:
- * - localhost:4200 (ng serve) -> DEV Firebase + DEV Heroku backend
- * - scriptthing-dev.web.app -> DEV Firebase + DEV Heroku backend  
+ * - localhost / 127.0.0.1 -> DEV Firebase + backend at same host:8080
+ * - scriptthing-dev.web.app -> DEV Firebase + DEV Heroku backend
  * - scriptthing.web.app -> PROD Firebase + PROD Heroku backend
- * 
- * For local backend testing:
- * Set localStorage.setItem('USE_LOCAL_BACKEND', 'true') in browser console
  */
 export function getConfig(isProd = false) {
   // Check if running in browser
@@ -62,26 +59,22 @@ export function getConfig(isProd = false) {
     return isProd ? environmentProd : environment;
   }
 
-  const hostname = window.location.hostname;
-  const port = window.location.port;
-  
-  // Check for local backend override (useful for backend development)
-  const useLocalBackend = localStorage.getItem('USE_LOCAL_BACKEND') === 'true';
-  
-  // Detect localhost (ng serve)
+  const { hostname, protocol } = window.location;
   const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
   
   if (isLocalhost) {
-    console.log('🏠 Running on localhost - Using DEV environment');
-    console.log(`📡 Backend: ${useLocalBackend ? 'http://localhost:8080 (LOCAL)' : 'https://sides3-dev-e045a1d9ac46.herokuapp.com (DEV)'}`);
-    console.log(`🔥 Firebase: scriptthing-dev`);
-    console.log('💡 Tip: To use local backend, run: localStorage.setItem("USE_LOCAL_BACKEND", "true")');
+    // Same host as the page, local backend port
+    const backendUrl = `${protocol}//${hostname}:8080`;
+
+    console.log('🏠 Running on localhost - Using DEV Firebase');
+    console.log(`📡 Backend: ${backendUrl} (from page URL)`);
+    console.log('🔥 Firebase: scriptthing-dev');
     
     return {
       ...environment,
       production: false,
       firebaseConfig: devFirebaseConfig,
-      url: useLocalBackend ? 'http://localhost:8080' : 'https://sides3-dev-e045a1d9ac46.herokuapp.com'
+      url: backendUrl
     };
   }
   

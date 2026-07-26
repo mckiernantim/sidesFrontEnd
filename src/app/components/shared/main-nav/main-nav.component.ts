@@ -22,7 +22,8 @@ export class MainNavComponent implements OnInit, OnDestroy {
   isUserMenuOpen = false;
   isMobileMenuOpen = false;
   currentScriptName = '';
-  
+  isDarkTheme = false;
+
   private routerSubscription: Subscription | null = null;
   private scriptCheckInterval: Subscription | null = null;
   private authSubscription: Subscription | null = null;
@@ -38,6 +39,8 @@ export class MainNavComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.initTheme();
+
     this.authSubscription = this.authService.user$.subscribe(user => {
       this.isLoggedIn = !!user;
       if (user) {
@@ -116,6 +119,41 @@ export class MainNavComponent implements OnInit, OnDestroy {
     this.authService.signOut().then(() => {
       this.router.navigate(['/']);
     });
+  }
+
+  toggleTheme(): void {
+    this.applyTheme(this.isDarkTheme ? 'light' : 'dark');
+  }
+
+  private initTheme(): void {
+    try {
+      const saved = localStorage.getItem('sw-theme');
+      if (saved === 'dark' || saved === 'light') {
+        this.applyTheme(saved);
+        return;
+      }
+    } catch {
+      /* ignore */
+    }
+    const prefersDark = typeof window !== 'undefined'
+      && window.matchMedia
+      && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    this.applyTheme(prefersDark ? 'dark' : 'light');
+  }
+
+  private applyTheme(theme: 'light' | 'dark'): void {
+    this.isDarkTheme = theme === 'dark';
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.setAttribute('data-theme', 'dark');
+    } else {
+      root.removeAttribute('data-theme');
+    }
+    try {
+      localStorage.setItem('sw-theme', theme);
+    } catch {
+      /* ignore */
+    }
   }
 }
 

@@ -2,28 +2,37 @@
   <div class="flex h-full">
     <!-- Document Viewer (Main Content) -->
     <div class="w-full flex flex-col overflow-hidden min-w-0 h-full">
-      <!-- Pagination Controls - Moved here -->
-      <div class="bg-white p-4 border-b border-gray-200">
-        <div class="flex justify-between space-x-2">
-          <button 
-            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            (click)="previousPage()" 
+      <div class="ll-header">
+        <div class="ll-header-inner">
+          <p class="ll-header-kicker">Almost there</p>
+          <h2 class="ll-header-title">Last Looks</h2>
+          <p class="ll-header-sub">Review and fine-tune your sides before you complete.</p>
+        </div>
+      </div>
+      <!-- Pagination Controls -->
+      <div class="ll-pager">
+        <div class="ll-pager-inner">
+          <button
+            type="button"
+            class="btn-sw btn-sw-primary flex-1"
+            (click)="previousPage()"
             [disabled]="currentPageIndex === 0">
             Previous
           </button>
-          <div class="flex items-center justify-center px-4 text-gray-700 font-medium">
+          <div class="ll-pager-label">
             Page {{currentPageIndex + 1}} of {{pages?.length || 0}}
           </div>
-          <button 
-            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            (click)="nextPage()" 
+          <button
+            type="button"
+            class="btn-sw btn-sw-primary flex-1"
+            (click)="nextPage()"
             [disabled]="currentPageIndex === (pages?.length - 1)">
             Next
           </button>
         </div>
       </div>
       <div class="page-container h-full">
-        <app-last-looks-page 
+        <app-last-looks-page
           [page]="currentPage"
           [canEditDocument]="canEditDocument"
           [selectedLine]="selectedLine"
@@ -43,4 +52,3 @@
     </div>
   </div>
 </main>
-  

@@ -654,9 +654,18 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   scrollToUpload(): void {
-    const uploadElement = document.querySelector('.upload-component');
+    const uploadElement = document.getElementById('upload');
     if (uploadElement) {
-      uploadElement.scrollIntoView({ behavior: 'smooth' });
+      uploadElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  onFileDropped(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.onFileSelected({ target: { files } });
     }
   }
 

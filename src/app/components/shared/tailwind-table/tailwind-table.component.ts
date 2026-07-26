@@ -21,11 +21,14 @@ export class TailwindTableComponent implements AfterContentInit, OnChanges {
   @Input() selectable: boolean = false;
   @Input() pagination: boolean = false;
   @Input() pageSize: number = 10;
+  /** Include `0` for "All". Defaults to 10 / 20 / 50 / All. */
+  @Input() pageSizeOptions: number[] = [10, 20, 50, 0];
   @Input() selectedItems: any[] = [];
   
   @Output() rowClick = new EventEmitter<any>();
   @Output() selectionChange = new EventEmitter<any[]>();
   @Output() pageChange = new EventEmitter<number>();
+  @Output() pageSizeChange = new EventEmitter<number>();
   
   @ContentChildren(TailwindTableColumnDirective) columnList!: QueryList<TailwindTableColumnDirective>;
   
@@ -58,9 +61,17 @@ export class TailwindTableComponent implements AfterContentInit, OnChanges {
     }
   }
   
+  /** Effective page size — `0` means show all rows. */
+  get effectivePageSize(): number {
+    if (!this.data?.length) return 10;
+    if (!this.pageSize || this.pageSize <= 0) return this.data.length;
+    return this.pageSize;
+  }
+
   setupPagination(): void {
     if (this.pagination && this.data) {
-      this.totalPages = Math.max(1, Math.ceil(this.data.length / this.pageSize));
+      const size = this.effectivePageSize;
+      this.totalPages = Math.max(1, Math.ceil(this.data.length / size));
       
       // Ensure current page is valid
       if (this.currentPage > this.totalPages) {
@@ -68,14 +79,27 @@ export class TailwindTableComponent implements AfterContentInit, OnChanges {
       }
       
       // Update display data
-      const start = (this.currentPage - 1) * this.pageSize;
-      const end = Math.min(start + this.pageSize, this.data.length);
+      const start = (this.currentPage - 1) * size;
+      const end = Math.min(start + size, this.data.length);
       this.displayData = this.data.slice(start, end);
     } else {
       this.displayData = this.data ? [...this.data] : [];
       this.totalPages = 1;
       this.currentPage = 1;
     }
+  }
+
+  onPageSizeChange(size: number | string): void {
+    const next = typeof size === 'string' ? parseInt(size, 10) : size;
+    this.pageSize = Number.isFinite(next) ? next : 10;
+    this.currentPage = 1;
+    this.updateDisplayData();
+    this.pageSizeChange.emit(this.pageSize);
+    this.pageChange.emit(this.currentPage);
+  }
+
+  pageSizeLabel(size: number): string {
+    return size === 0 ? 'All' : String(size);
   }
   
   get sortedData(): any[] {
@@ -106,8 +130,9 @@ export class TailwindTableComponent implements AfterContentInit, OnChanges {
     
    
     if (this.pagination) {
-      const start = (this.currentPage - 1) * this.pageSize;
-      const end = Math.min(start + this.pageSize, result.length);
+      const size = this.effectivePageSize;
+      const start = (this.currentPage - 1) * size;
+      const end = Math.min(start + size, result.length);
       return result.slice(start, end);
     }
     
@@ -115,11 +140,11 @@ export class TailwindTableComponent implements AfterContentInit, OnChanges {
   }
   
   get startIndex(): number {
-    return this.currentPage * this.pageSize;
+    return (this.currentPage - 1) * this.effectivePageSize;
   }
   
   get endIndex(): number {
-    return this.startIndex + this.pageSize;
+    return Math.min(this.startIndex + this.effectivePageSize, this.data?.length || 0);
   }
   
   get pageNumbers(): number[] {

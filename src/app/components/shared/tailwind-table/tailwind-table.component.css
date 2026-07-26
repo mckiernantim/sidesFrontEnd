@@ -1,1 +1,129 @@
-/* Tailwind handles most styling */ 
+.sw-table-wrap {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--white-brand);
+}
+
+.sw-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+.sw-table thead tr {
+  background: var(--paper);
+}
+
+.sw-table th {
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--line);
+}
+
+.sw-table tbody tr {
+  border-top: 1px solid var(--line);
+  transition: background 0.12s;
+}
+
+.sw-table tbody tr:hover {
+  background: rgba(20, 40, 43, 0.03);
+}
+
+.sw-table tbody tr.selected {
+  background: var(--mint-soft);
+}
+
+.sw-table .empty {
+  color: var(--ink-faint);
+}
+
+.sw-checkbox {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--coral);
+  cursor: pointer;
+}
+
+.sw-table-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-top: 0;
+  background: var(--white-brand);
+  border: 1px solid var(--line);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+}
+
+.pager-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+}
+
+.pager-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.pager-size-select {
+  width: auto;
+  min-width: 4.5rem;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.pager-meta {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.pager-nav-wrap {
+  margin-left: auto;
+}
+
+.pager-nav {
+  display: inline-flex;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.pager-nav button {
+  background: var(--white-brand);
+  border: none;
+  border-right: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.pager-nav button:last-child {
+  border-right: none;
+}
+
+.pager-nav button:hover:not(:disabled) {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.pager-nav button.active {
+  background: var(--tint);
+  color: var(--mustard-deep);
+}
+
+.pager-nav button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

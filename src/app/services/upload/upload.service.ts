@@ -199,20 +199,19 @@ export class UploadService {
           }
         );
       }),
-      tap((response) => {
+      // Backend returns 202 + status:"processing" immediately, then the worker
+      // finishes in the background. Poll until complete before navigating.
+      switchMap((response) => {
         console.log('Response received from server:', response);
-        
-        // Store the token from the response body
-        if (response && response.token) {
-          localStorage.setItem(this.tokenKey, response.token);
-          
-          // Also store the expiration time
+
+        const pdfToken = response?.token || (response as any)?.pdfToken;
+        if (pdfToken) {
+          localStorage.setItem(this.tokenKey, pdfToken);
           if (response.expirationTime) {
             localStorage.setItem('pdfTokenExpires', response.expirationTime.toString());
           }
         }
 
-        // Update PDF usage if available
         if (response && response.usage) {
           const pdfUsage: PdfUsage = {
             pdfsGenerated: response.usage.pdfsGenerated,
@@ -223,6 +222,17 @@ export class UploadService {
           };
           this.pdfUsageSubject.next(pdfUsage);
         }
+
+        if (response?.status === 'complete') {
+          return of(response);
+        }
+
+        if (response?.status === 'processing' && pdfToken) {
+          console.log('PDF still processing — polling status for token', pdfToken);
+          return this.pollPdfStatus(pdfToken, response.expirationTime);
+        }
+
+        return of(response);
       }),
       catchError((error) => {
         console.error('Error in generatePdf:', error);
@@ -238,6 +248,89 @@ export class UploadService {
         return throwError(() => error);
       })
     );
+  }
+
+  /**
+   * Poll GET /api/pdf-status/:token until the background PDF worker finishes.
+   * Matches the backend async contract (202 + statusEndpoint).
+   */
+  private pollPdfStatus(
+    token: string,
+    expirationTime?: number
+  ): Observable<PdfResponse> {
+    const maxAttempts = 120; // ~2 minutes at 1s
+    const intervalMs = 1000;
+
+    return new Observable<PdfResponse>((observer) => {
+      let attempts = 0;
+      let inFlight = false;
+
+      const tick = () => {
+        if (inFlight) return;
+        inFlight = true;
+        attempts += 1;
+
+        this.httpClient
+          .get<{
+            success: boolean;
+            status: string;
+            token?: string;
+            pdfToken?: string;
+            expirationTime?: number;
+            errorMessage?: string;
+          }>(`${this.url}/api/pdf-status/${token}`)
+          .subscribe({
+            next: (status) => {
+              inFlight = false;
+
+              if (status.status === 'complete') {
+                clearInterval(timer);
+                const complete: PdfResponse = {
+                  success: true,
+                  status: 'complete',
+                  token: status.token || status.pdfToken || token,
+                  expirationTime: status.expirationTime || expirationTime,
+                };
+                if (complete.token) {
+                  localStorage.setItem(this.tokenKey, complete.token);
+                }
+                if (complete.expirationTime) {
+                  localStorage.setItem(
+                    'pdfTokenExpires',
+                    complete.expirationTime.toString()
+                  );
+                }
+                observer.next(complete);
+                observer.complete();
+                return;
+              }
+
+              if (status.status === 'error') {
+                clearInterval(timer);
+                observer.error(
+                  new Error(status.errorMessage || 'PDF generation failed')
+                );
+                return;
+              }
+
+              if (attempts >= maxAttempts) {
+                clearInterval(timer);
+                observer.error(new Error('PDF generation timed out'));
+              }
+            },
+            error: (err) => {
+              inFlight = false;
+              clearInterval(timer);
+              observer.error(err);
+            },
+          });
+      };
+
+      const timer = setInterval(tick, intervalMs);
+      tick(); // first check immediately
+
+      return () => clearInterval(timer);
+    });
   }
 
   downloadPdf(

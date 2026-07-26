@@ -1,186 +1,97 @@
-<div class="bg-gray-100 min-h-screen" [@fadeInOut]>
-  <!-- Hero Section -->
-  <div class="bg-blue-500 text-white py-12">
-    <div class="container mx-auto px-4 text-center">
-      <h1 class="text-4xl md:text-5xl font-bold mb-3">Simple, Transparent Pricing</h1>
-      <p class="text-lg md:text-xl max-w-2xl mx-auto mb-6">
-        One affordable plan for unlimited sides generation.
-      </p>
-      
-      <!-- Compact testimonial -->
-      <div class="max-w-xl mx-auto bg-white/10 backdrop-blur-sm rounded-lg p-4 mt-4 text-white border border-white/20">
-        <div class="flex items-center text-center">
-          <svg class="h-6 w-6 text-white/80 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-          </svg>
-          <p class="text-sm italic text-white/90 mx-2">
-            Sides-Ways has completely transformed our production workflow. What used to take hours now takes minutes.
-          </p>
-          <svg class="h-6 w-6 text-white/80 ml-2 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.57-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z" />
-          </svg>
-        </div>
-        <p class="text-xs text-white/80 mt-1">— Alexander Yellen, Director of Photography</p>
+<div class="pricing-page" [@fadeInOut]>
+  <div class="pricing-hero">
+    <div class="container mx-auto px-4">
+      <h1>Simple, Transparent Pricing</h1>
+      <p class="hero-sub">One affordable plan for unlimited sides generation.</p>
+      <div class="pricing-quote">
+        <p class="text-sm italic">
+          Sides-Ways has completely transformed our production workflow. What used to take hours now takes minutes.
+        </p>
+        <p class="text-xs mt-2">— Alexander Yellen, Director of Photography</p>
       </div>
     </div>
   </div>
 
-  <!-- Pricing Section -->
   <section class="container mx-auto px-4 py-12">
     <div class="max-w-3xl mx-auto">
-      <!-- Loading State -->
       <div *ngIf="isLoading" class="flex justify-center items-center py-8">
-        <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-600"></div>
+        <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2" style="border-color: var(--coral);"></div>
       </div>
 
-      <!-- Pricing Card -->
-      <div *ngIf="!isLoading" class="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div class="bg-gray-800 text-white p-6 text-center">
-          <h2 class="text-3xl font-bold">{{ planTitle }}</h2>
-
-          <!-- Weekly / Monthly toggle -->
-          <div class="mt-5 inline-flex rounded-lg border border-white/20 bg-white/10 p-1" role="group" aria-label="Billing interval">
-            <button
-              type="button"
-              (click)="selectInterval('week')"
-              [class.bg-white]="selectedInterval === 'week'"
-              [class.text-gray-900]="selectedInterval === 'week'"
-              [class.text-white]="selectedInterval !== 'week'"
-              class="px-4 py-2 text-sm font-semibold rounded-md transition-colors"
-            >
-              Weekly
-            </button>
-            <button
-              type="button"
-              (click)="selectInterval('month')"
-              [class.bg-white]="selectedInterval === 'month'"
-              [class.text-gray-900]="selectedInterval === 'month'"
-              [class.text-white]="selectedInterval !== 'month'"
-              class="px-4 py-2 text-sm font-semibold rounded-md transition-colors"
-            >
-              Monthly
-            </button>
+      <div *ngIf="!isLoading" class="pricing-card">
+        <div class="pricing-card-header">
+          <h2>{{ planTitle }}</h2>
+          <div class="pricing-interval" role="group" aria-label="Billing interval">
+            <button type="button" (click)="selectInterval('week')" [class.active]="selectedInterval === 'week'">Weekly</button>
+            <button type="button" (click)="selectInterval('month')" [class.active]="selectedInterval === 'month'">Monthly</button>
           </div>
-
           <div class="mt-4 flex items-center justify-center">
             <span class="text-5xl font-bold">${{ priceDollars }}</span>
             <span class="ml-2 text-xl">{{ getIntervalSuffix() }}</span>
           </div>
-          <p *ngIf="isFounder" class="mt-2 text-amber-200 text-sm">{{ foundersRateSubtitle }}</p>
-          <p *ngIf="isFounder" class="mt-1 text-blue-100/80 text-sm line-through">{{ getStruckThroughPrice() }}</p>
-          <p class="mt-2 text-blue-100">Cancel anytime</p>
+          <p *ngIf="isFounder" class="mt-2 text-sm" style="color: var(--mustard);">{{ foundersRateSubtitle }}</p>
+          <p *ngIf="isFounder" class="mt-1 text-sm line-through opacity-70">{{ getStruckThroughPrice() }}</p>
+          <p class="mt-2 opacity-80">Cancel anytime</p>
         </div>
-        
+
         <div class="p-8">
           <ul class="space-y-4">
-            <li class="flex items-start">
-              <svg class="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <li class="flex items-start" *ngFor="let feature of ['Unlimited sides generation','Advanced formatting options','Priority processing','Email support']">
+              <svg class="h-6 w-6 pricing-check mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
               </svg>
-              <span>Unlimited sides generation</span>
-            </li>
-            <li class="flex items-start">
-              <svg class="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              <span>Advanced formatting options</span>
-            </li>
-            <li class="flex items-start">
-              <svg class="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              <span>Priority processing</span>
-            </li>
-            <li class="flex items-start">
-              <svg class="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              <span>Email support</span>
+              <span>{{ feature }}</span>
             </li>
           </ul>
-          
+
           <div class="mt-8">
             <ng-container *ngIf="(user$ | async) as user; else signInTemplate">
               <ng-container *ngIf="(subscriptionStatus$ | async) as status">
                 <div *ngIf="status.active" class="text-center">
-                  <div class="bg-green-100 text-green-800 px-4 py-2 rounded-md mb-4">
+                  <div class="px-4 py-2 rounded-md mb-4" style="background: var(--mint-soft); color: var(--ink); border: 1px solid rgba(63,170,141,.28);">
                     <p class="font-semibold">You're subscribed!</p>
                     <p class="text-sm">Your subscription is active until {{ formatDate(status.subscription?.currentPeriodEnd) }}</p>
                   </div>
-                  <button 
-                    (click)="manageSubscription()" 
-                    class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-md transition-colors">
-                    Manage Subscription
-                  </button>
+                  <button type="button" (click)="manageSubscription()" class="pricing-cta">Manage Subscription</button>
                 </div>
                 <div *ngIf="!status.active" class="text-center">
-                  <button 
-                    (click)="subscribe()" 
-                    class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-md transition-colors">
-                    Subscribe Now
-                  </button>
-                  <div class="mt-4 relative px-8">
-                    <svg class="h-6 w-6 text-blue-500 absolute top-0 left-0" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                    </svg>
-                    <p class="text-gray-600 italic">Invest in your production workflow today and save hours of time tomorrow.</p>
-                    <svg class="h-6 w-6 text-blue-500 absolute bottom-0 right-0" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.57-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z" />
-                    </svg>
-                  </div>
+                  <button type="button" (click)="subscribe()" class="pricing-cta">Subscribe Now</button>
+                  <p class="mt-4 text-sm italic" style="color: var(--ink-soft);">Invest in your production workflow today and save hours of time tomorrow.</p>
                 </div>
               </ng-container>
             </ng-container>
-            
+
             <ng-template #signInTemplate>
               <div class="text-center">
-                <p class="mb-4 text-gray-600">Sign in to subscribe to our service</p>
-                <button 
-                  (click)="signIn()" 
-                  class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-md transition-colors">
-                  Sign In to Continue
-                </button>
-                <div class="mt-4 relative px-8">
-                  <svg class="h-6 w-6 text-blue-500 absolute top-0 left-0" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                  </svg>
-                  <p class="text-gray-600 italic">Invest in your production workflow today and save hours of time tomorrow.</p>
-                  <svg class="h-6 w-6 text-blue-500 absolute bottom-0 right-0" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.57-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z" />
-                  </svg>
-                </div>
+                <p class="mb-4" style="color: var(--ink-soft);">Sign in to subscribe to our service</p>
+                <button type="button" (click)="signIn()" class="pricing-cta">Sign In to Continue</button>
               </div>
             </ng-template>
           </div>
         </div>
       </div>
 
-      <!-- FAQ Section -->
-      <div class="mt-16">
-        <h3 class="text-2xl font-bold text-center mb-8 text-indigo-800">Frequently Asked Questions</h3>
-        
+      <div class="mt-16 pricing-faq">
+        <h3 class="text-2xl font-bold text-center mb-8">Frequently Asked Questions</h3>
         <div class="space-y-6">
-          <div class="bg-white p-6 rounded-lg shadow-md">
-            <h4 class="text-lg font-semibold mb-2 text-indigo-700">Can I cancel my subscription at any time?</h4>
-            <p class="text-gray-700">Yes, you can cancel your subscription at any time. You'll continue to have access until the end of your current billing period.</p>
+          <div class="faq-item">
+            <h4 class="text-lg font-semibold mb-2">Can I cancel my subscription at any time?</h4>
+            <p style="color: var(--ink-soft);">Yes, you can cancel your subscription at any time. You'll continue to have access until the end of your current billing period.</p>
           </div>
-          
-          <div class="bg-white p-6 rounded-lg shadow-md">
-            <h4 class="text-lg font-semibold mb-2 text-indigo-700">How does billing work?</h4>
-            <p class="text-gray-700">{{ billingFaqText }} Choose weekly or monthly when you subscribe — you can switch later and the change takes effect at the end of your current billing period.</p>
+          <div class="faq-item">
+            <h4 class="text-lg font-semibold mb-2">How does billing work?</h4>
+            <p style="color: var(--ink-soft);">{{ billingFaqText }} Choose weekly or monthly when you subscribe — you can switch later and the change takes effect at the end of your current billing period.</p>
           </div>
-          
-          <div class="bg-white p-6 rounded-lg shadow-md">
-            <h4 class="text-lg font-semibold mb-2 text-indigo-700">Is there a limit to how many sides I can generate?</h4>
-            <p class="text-gray-700">No, with the {{ planTitle }}, you can generate unlimited sides during your subscription period.</p>
+          <div class="faq-item">
+            <h4 class="text-lg font-semibold mb-2">Is there a limit to how many sides I can generate?</h4>
+            <p style="color: var(--ink-soft);">No, with the {{ planTitle }}, you can generate unlimited sides during your subscription period.</p>
           </div>
-          
-          <div class="bg-white p-6 rounded-lg shadow-md">
-            <h4 class="text-lg font-semibold mb-2 text-indigo-700">What payment methods do you accept?</h4>
-            <p class="text-gray-700">We accept all major credit cards through our secure payment processor, Stripe.</p>
+          <div class="faq-item">
+            <h4 class="text-lg font-semibold mb-2">What payment methods do you accept?</h4>
+            <p style="color: var(--ink-soft);">We accept all major credit cards through our secure payment processor, Stripe.</p>
           </div>
         </div>
       </div>
     </div>
   </section>
-</div> 
+</div>

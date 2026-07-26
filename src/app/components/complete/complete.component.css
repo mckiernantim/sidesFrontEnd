@@ -1,24 +1,227 @@
-
-
-
-/* TODO(mdc-migration): The following rule targets internal classes of card that may no longer apply for the MDC version. */
-mat-mdc-card {
-    margin-bottom:50px
-}
-
-.indent {
-    margin: 3%
-}
-.complete-card {
-     color: var(--black)!important;
-     background: var(--white) !important;
-}
-.mat-mdc-card-header {
+.complete-page {
+  min-height: 85vh;
+  padding: 32px 20px 64px;
   display: flex;
-  padding: 16px 16px 0;
-  flex-direction: row;
-  align-content: center;
-  justify-content: space-around;
-  align-items: stretch;
+  justify-content: center;
+  align-items: flex-start;
 }
 
+.complete-card {
+  width: 100%;
+  max-width: 70rem;
+  padding: 40px 36px;
+}
+
+.complete-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 3.5vw, 2.5rem);
+  text-align: center;
+  margin: 0 0 24px;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.complete-title em {
+  font-style: normal;
+  display: inline;
+}
+
+.complete-error {
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  background: #fbe6e0;
+  border: 1px solid rgba(217, 87, 60, 0.35);
+  border-left: 3px solid var(--coral);
+  border-radius: 10px;
+  color: #8a3424;
+}
+
+.complete-error p {
+  margin: 0;
+}
+
+.complete-timer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  background: var(--tint);
+  border: 1px solid rgba(184, 144, 26, 0.28);
+  border-radius: 12px;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.complete-timer-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  color: var(--mustard-deep);
+}
+
+.complete-countdown {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  color: var(--coral);
+  margin-left: 4px;
+}
+
+.complete-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.complete-actions .btn-sw {
+  gap: 10px;
+  min-height: 52px;
+  padding: 14px 18px;
+}
+
+.complete-delete {
+  grid-column: 1 / -1;
+  color: var(--coral);
+  border-color: rgba(217, 87, 60, 0.35);
+}
+
+.complete-btn-icon,
+.complete-spinner svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.complete-spinner {
+  display: inline-flex;
+  animation: complete-spin 0.8s linear infinite;
+}
+
+@keyframes complete-spin {
+  to { transform: rotate(360deg); }
+}
+
+.complete-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--line);
+  margin: 28px 0;
+}
+
+.complete-rating {
+  width: 100%;
+  max-width: 32rem;
+  margin: 0 auto;
+}
+
+.complete-rating h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  text-align: center;
+  margin: 0 0 20px;
+}
+
+.complete-stars {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.complete-star {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: rgba(20, 40, 43, 0.2);
+  transition: transform 0.12s, color 0.12s;
+}
+
+.complete-star:hover {
+  transform: scale(1.1);
+}
+
+.complete-star svg {
+  width: 40px;
+  height: 40px;
+  display: block;
+}
+
+.complete-star svg.on {
+  color: var(--mustard);
+}
+
+.complete-rating-label {
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 14px;
+  margin: 0 0 16px;
+}
+
+.complete-feedback-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+
+.complete-char-count {
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-align: right;
+  margin: 6px 0 16px;
+  font-family: var(--font-mono);
+}
+
+.complete-thanks {
+  text-align: center;
+  padding: 28px 20px;
+  background: var(--mint-soft);
+  border: 1px solid rgba(63, 170, 141, 0.28);
+  border-radius: 14px;
+}
+
+.complete-thanks-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 12px;
+  color: #3faa8d;
+  display: block;
+}
+
+.complete-thanks h3 {
+  margin: 0 0 8px;
+  color: #2f7d68;
+  font-size: 1.25rem;
+}
+
+.complete-thanks p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 720px) {
+  .complete-page {
+    padding: 20px 12px 48px;
+  }
+
+  .complete-card {
+    padding: 28px 18px;
+  }
+
+  .complete-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .complete-delete {
+    grid-column: auto;
+  }
+}

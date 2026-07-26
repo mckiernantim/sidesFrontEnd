@@ -4,6 +4,7 @@
   align-items: center;
   min-height: 200px;
   padding: 20px;
+  max-width: 100%;
 }
 
 .spinning-bot-content {
@@ -12,12 +13,13 @@
   align-items: center;
   gap: 20px;
   max-width: 600px;
+  width: 100%;
   text-align: center;
 }
 
 .spinning-bot-icon {
   font-size: 48px;
-  color: #ff4444;
+  color: var(--coral);
   animation: spin 2s linear infinite;
 }
 
@@ -25,12 +27,12 @@
   h3 {
     font-size: 24px;
     margin-bottom: 16px;
-    color: #333;
+    color: var(--ink);
   }
 
   p {
     font-size: 16px;
-    color: #666;
+    color: var(--ink-soft);
     margin-bottom: 8px;
   }
 }
@@ -42,4 +44,4 @@
   to {
     transform: rotate(360deg);
   }
-} 
+}

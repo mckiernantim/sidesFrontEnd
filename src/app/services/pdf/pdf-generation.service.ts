@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Observable, throwError, from } from 'rxjs';
-import { catchError, tap, switchMap } from 'rxjs/operators';
+import { Observable, throwError, from, of, BehaviorSubject } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { getAuth } from 'firebase/auth';
 import { PdfGenerationResponse, PdfResponse } from '../../types/user';
@@ -8,7 +8,6 @@ import { PdfUsage } from '../../types/PdfUsageTypes';
 import { Timestamp } from '@angular/fire/firestore';
 import { AuthService } from '../auth/auth.service';
 import { getConfig } from '../../../environments/environment';
-import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -61,12 +60,12 @@ export class PdfGenerationService {
           }
         );
       }),
-      tap((response) => {
+      switchMap((response) => {
         console.log('Response received from server:', response);
-        
-        if (response && response.token) {
-          localStorage.setItem(this.tokenKey, response.token);
-          
+
+        const pdfToken = response?.token || (response as any)?.pdfToken;
+        if (pdfToken) {
+          localStorage.setItem(this.tokenKey, pdfToken);
           if (response.expirationTime) {
             localStorage.setItem('pdfTokenExpires', response.expirationTime.toString());
           }
@@ -82,6 +81,16 @@ export class PdfGenerationService {
           };
           this.pdfUsageSubject.next(pdfUsage);
         }
+
+        if (response?.status === 'complete') {
+          return of(response);
+        }
+
+        if (response?.status === 'processing' && pdfToken) {
+          return this.pollPdfStatus(pdfToken, response.expirationTime);
+        }
+
+        return of(response);
       }),
       catchError((error) => {
         console.error('Error in generatePdf:', error);
@@ -97,6 +106,85 @@ export class PdfGenerationService {
         return throwError(() => error);
       })
     );
+  }
+
+  private pollPdfStatus(
+    token: string,
+    expirationTime?: number
+  ): Observable<PdfResponse> {
+    const maxAttempts = 120;
+    const intervalMs = 1000;
+
+    return new Observable<PdfResponse>((observer) => {
+      let attempts = 0;
+      let inFlight = false;
+
+      const tick = () => {
+        if (inFlight) return;
+        inFlight = true;
+        attempts += 1;
+
+        this.httpClient
+          .get<{
+            success: boolean;
+            status: string;
+            token?: string;
+            pdfToken?: string;
+            expirationTime?: number;
+            errorMessage?: string;
+          }>(`${this.url}/api/pdf-status/${token}`)
+          .subscribe({
+            next: (status) => {
+              inFlight = false;
+
+              if (status.status === 'complete') {
+                clearInterval(timer);
+                const complete: PdfResponse = {
+                  success: true,
+                  status: 'complete',
+                  token: status.token || status.pdfToken || token,
+                  expirationTime: status.expirationTime || expirationTime,
+                };
+                if (complete.token) {
+                  localStorage.setItem(this.tokenKey, complete.token);
+                }
+                if (complete.expirationTime) {
+                  localStorage.setItem(
+                    'pdfTokenExpires',
+                    complete.expirationTime.toString()
+                  );
+                }
+                observer.next(complete);
+                observer.complete();
+                return;
+              }
+
+              if (status.status === 'error') {
+                clearInterval(timer);
+                observer.error(
+                  new Error(status.errorMessage || 'PDF generation failed')
+                );
+                return;
+              }
+
+              if (attempts >= maxAttempts) {
+                clearInterval(timer);
+                observer.error(new Error('PDF generation timed out'));
+              }
+            },
+            error: (err) => {
+              inFlight = false;
+              clearInterval(timer);
+              observer.error(err);
+            },
+          });
+      };
+
+      const timer = setInterval(tick, intervalMs);
+      tick();
+
+      return () => clearInterval(timer);
+    });
   }
 
   handleSubscriptionFlow(

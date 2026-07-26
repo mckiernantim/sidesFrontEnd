@@ -49,6 +49,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   lastSelectedIndex: number | null = null;
   showInstructions: boolean = false;
   changesMade: boolean = false;
+  /** When true, taps toggle lines into/out of multi-select without modifier keys */
+  touchSelectMode = false;
 
   // Line editing properties
   editingLine: number | null = null;
@@ -762,8 +764,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
           }
         }
       }
-    } else if (event.ctrlKey || event.metaKey) {
-      // Ctrl/Cmd + click for multi-selection
+    } else if (this.touchSelectMode || event.ctrlKey || event.metaKey) {
+      // Touch-select mode or Ctrl/Cmd + click for multi-selection
       const index = this.selectedLineIds.indexOf(lineId);
       if (index === -1) {
         this.selectedLineIds.push(lineId);
@@ -1642,6 +1644,265 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     }
     
     return '90px';
+  }
+
+  // ============= EDITING TOOLBAR METHODS =============
+
+  toggleTouchSelectMode(): void {
+    this.touchSelectMode = !this.touchSelectMode;
+    if (!this.touchSelectMode) {
+      this.clearSelection();
+    }
+    this.cdRef.detectChanges();
+  }
+
+  isVisibilityToggled(): boolean {
+    if (this.selectedLineIds.length === 0) return false;
+    const selectedLines = this.page.filter(line => this.selectedLineIds.includes(line.docPageLineIndex));
+    return selectedLines.some(line => line.visible === 'false');
+  }
+
+  getVisibilityTooltip(): string {
+    if (this.selectedLineIds.length === 0) return 'Toggle Visibility';
+    return this.isVisibilityToggled() ? 'Show Lines' : 'Hide Lines';
+  }
+
+  toggleSelectedVisibility(): void {
+    if (this.selectedLineIds.length === 0) return;
+
+    const selectedLines = this.selectedLineIds.map(lineId => {
+      const line = this.page.find(l => l.docPageLineIndex === lineId);
+      const lineIndex = this.page.findIndex(l => l.docPageLineIndex === lineId);
+      return { line, lineIndex };
+    }).filter(item => item.line);
+
+    if (selectedLines.length === 0) return;
+
+    const firstLine = selectedLines[0].line;
+    const newVisibility = firstLine.visible === 'true' ? 'false' : 'true';
+
+    const batchChanges = selectedLines.map(({ line, lineIndex }) => ({
+      pageIndex: this.currentPageIndex,
+      lineIndex,
+      currentLineState: { ...line },
+      changeDescription: `Toggle visibility: ${line.visible} → ${newVisibility}`
+    }));
+    this.undoService.recordBatchChanges(batchChanges);
+
+    selectedLines.forEach(({ line }) => {
+      this.pdfService.updateLine(
+        this.currentPageIndex,
+        line.docPageLineIndex,
+        { ...line, visible: newVisibility }
+      );
+    });
+
+    this.cdRef.detectChanges();
+  }
+
+  hasStartBar(): boolean {
+    if (this.selectedLineIds.length === 0) return false;
+    return this.page
+      .filter(line => this.selectedLineIds.includes(line.docPageLineIndex))
+      .some(line => line.bar === 'bar');
+  }
+
+  toggleStartBarForSelected(): void {
+    if (this.selectedLineIds.length === 0) return;
+    const firstLine = this.page.find(l => l.docPageLineIndex === this.selectedLineIds[0]);
+    if (!firstLine) return;
+
+    const lineIndex = this.page.findIndex(l => l.docPageLineIndex === firstLine.docPageLineIndex);
+    this.undoService.recordLineChange(this.currentPageIndex, lineIndex, firstLine, 'Toggle start bar');
+
+    if (firstLine.bar === 'bar') {
+      firstLine.bar = 'hideBar';
+      firstLine.calculatedBarY = undefined;
+      firstLine.startTextOffset = undefined;
+    } else {
+      firstLine.bar = 'bar';
+      if (!firstLine.calculatedBarY) {
+        firstLine.calculatedBarY = (parseInt(firstLine.calculatedYpos as string) + 20) + 'px';
+        firstLine.barY = parseInt(firstLine.calculatedBarY) / 1.3;
+      }
+      firstLine.startTextOffset = 10;
+    }
+
+    this.pdfService.updateLine(this.currentPageIndex, lineIndex, firstLine);
+    this.pageUpdate.emit([...this.page]);
+    this.cdRef.detectChanges();
+  }
+
+  hasEndBar(): boolean {
+    if (this.selectedLineIds.length === 0) return false;
+    return this.page
+      .filter(line => this.selectedLineIds.includes(line.docPageLineIndex))
+      .some(line => line.end === 'END');
+  }
+
+  toggleEndBarForSelected(): void {
+    if (this.selectedLineIds.length === 0) return;
+    const firstLine = this.page.find(l => l.docPageLineIndex === this.selectedLineIds[0]);
+    if (!firstLine) return;
+
+    const lineIndex = this.page.findIndex(l => l.docPageLineIndex === firstLine.docPageLineIndex);
+    this.undoService.recordLineChange(this.currentPageIndex, lineIndex, firstLine, 'Toggle end bar');
+
+    if (firstLine.end === 'END') {
+      firstLine.end = 'hideEnd';
+      firstLine.calculatedEnd = undefined;
+      firstLine.endTextOffset = undefined;
+    } else {
+      firstLine.end = 'END';
+      if (!firstLine.calculatedEnd) {
+        firstLine.calculatedEnd = (parseInt(firstLine.calculatedYpos as string) - 20) + 'px';
+        firstLine.endY = parseInt(firstLine.calculatedEnd) / 1.3;
+      }
+      firstLine.endTextOffset = 10;
+    }
+
+    this.pdfService.updateLine(this.currentPageIndex, lineIndex, firstLine);
+    this.pageUpdate.emit([...this.page]);
+    this.cdRef.detectChanges();
+  }
+
+  hasContinueTop(): boolean {
+    if (this.selectedLineIds.length === 0) return false;
+    return this.page
+      .filter(line => this.selectedLineIds.includes(line.docPageLineIndex))
+      .some(line => line.cont === 'CONTINUE-TOP');
+  }
+
+  toggleContinueTopForSelected(): void {
+    if (this.selectedLineIds.length === 0) return;
+    const firstLine = this.page.find(l => l.docPageLineIndex === this.selectedLineIds[0]);
+    if (!firstLine) return;
+
+    const lineIndex = this.page.findIndex(l => l.docPageLineIndex === firstLine.docPageLineIndex);
+    this.undoService.recordLineChange(this.currentPageIndex, lineIndex, firstLine, 'Toggle continue top bar');
+
+    if (firstLine.cont === 'CONTINUE-TOP') {
+      firstLine.cont = 'hideCont';
+      firstLine.calculatedBarY = undefined;
+      firstLine.continueTopTextOffset = undefined;
+    } else {
+      firstLine.cont = 'CONTINUE-TOP';
+      if (!firstLine.calculatedBarY) {
+        firstLine.calculatedBarY = '40px';
+        firstLine.barY = 40;
+      }
+      if (!firstLine.continueTopTextOffset) {
+        firstLine.continueTopTextOffset = 10;
+      }
+    }
+
+    this.pdfService.updateLine(this.currentPageIndex, lineIndex, firstLine);
+    this.pageUpdate.emit([...this.page]);
+    this.cdRef.detectChanges();
+  }
+
+  hasContinue(): boolean {
+    if (this.selectedLineIds.length === 0) return false;
+    return this.page
+      .filter(line => this.selectedLineIds.includes(line.docPageLineIndex))
+      .some(line => line.cont === 'CONTINUE');
+  }
+
+  toggleContinueForSelected(): void {
+    if (this.selectedLineIds.length === 0) return;
+    const firstLine = this.page.find(l => l.docPageLineIndex === this.selectedLineIds[0]);
+    if (!firstLine) return;
+
+    const lineIndex = this.page.findIndex(l => l.docPageLineIndex === firstLine.docPageLineIndex);
+    this.undoService.recordLineChange(this.currentPageIndex, lineIndex, firstLine, 'Toggle continue bar');
+
+    if (firstLine.cont === 'CONTINUE') {
+      firstLine.cont = 'hideCont';
+      firstLine.calculatedBarY = undefined;
+      firstLine.continueTextOffset = undefined;
+    } else {
+      firstLine.cont = 'CONTINUE';
+      if (!firstLine.calculatedBarY) {
+        firstLine.calculatedBarY = '90px';
+        firstLine.barY = 90;
+      }
+      if (!firstLine.continueTextOffset) {
+        firstLine.continueTextOffset = 10;
+      }
+    }
+
+    this.pdfService.updateLine(this.currentPageIndex, lineIndex, firstLine);
+    this.pageUpdate.emit([...this.page]);
+    this.cdRef.detectChanges();
+  }
+
+  combinePages(): void {
+    const totalPages = this.pdfService.finalDocument?.data?.length || 0;
+    if (totalPages === 0) {
+      alert('No pages to condense.');
+      return;
+    }
+
+    const confirmMsg = totalPages <= 8
+      ? `Current document has ${totalPages} pages (within 8-page limit).\nCondensing will remove all crossed-out lines and repack pages.\n\nThis cannot be undone. Continue?`
+      : `Current document has ${totalPages} pages (exceeds 8-page SAG-AFTRA limit).\nCondensing will remove all crossed-out lines and try to fit within 8 pages.\n\nThis cannot be undone. Continue?`;
+
+    if (!confirm(confirmMsg)) return;
+
+    this.undoService.recordDocumentReorderChange(
+      cloneDeep(this.pdfService.finalDocument.data),
+      'Combine/condense pages'
+    );
+
+    const result = this.pdfService.combinePages(8);
+    if (!result.condensed) {
+      alert('No hidden lines found to remove. Document is already condensed.');
+      return;
+    }
+
+    const newPages = this.pdfService.finalDocument.data;
+    const newCurrentPageIndex = Math.min(this.currentPageIndex, newPages.length - 1);
+    this.currentPageIndex = newCurrentPageIndex;
+    this.page = newPages[newCurrentPageIndex] || [];
+    this.pageUpdate.emit([...this.page]);
+    this.pageChange.emit(newCurrentPageIndex);
+    this.pdfService.saveDocumentState();
+    this.cdRef.detectChanges();
+
+    const pageReduction = newPages.length <= 8
+      ? `Now ${newPages.length} pages — within SAG-AFTRA limit!`
+      : `Now ${newPages.length} pages — still exceeds 8-page limit. Consider removing more material.`;
+    alert(`Condensed: removed ${result.removedLines} hidden lines.\n${pageReduction}`);
+  }
+
+  resetToInitialState(): void {
+    if (!confirm('Are you sure you want to reset all changes? This cannot be undone.')) {
+      return;
+    }
+
+    this.undoService.reset();
+
+    if (this.initialPageState && this.initialPageState.length > 0) {
+      this.page = JSON.parse(JSON.stringify(this.initialPageState));
+    }
+
+    this.selectedLineIds = [];
+    this.lastSelectedIndex = null;
+    this.selectedLine = null;
+    this.touchSelectMode = false;
+
+    this.pageUpdate.emit([...this.page]);
+    this.cdRef.detectChanges();
+  }
+
+  saveChanges(): void {
+    if (this.pdfService.finalDocument?.data) {
+      this.pdfService.finalDocument.data[this.currentPageIndex] = [...this.page];
+      this.pdfService.saveDocumentState();
+      this.pageUpdate.emit([...this.page]);
+    }
+    alert('Changes saved successfully!');
+    this.cdRef.detectChanges();
   }
   
 }

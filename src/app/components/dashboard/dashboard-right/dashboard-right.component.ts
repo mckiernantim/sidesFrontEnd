@@ -163,6 +163,12 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
   private analytics: any;
 
   pageSize: number = 10;
+  /** 0 = show all scenes */
+  pageSizeOptions: number[] = [10, 20, 50, 0];
+
+  onPageSizeChange(size: number): void {
+    this.pageSize = size;
+  }
 
   tableColumns = [
     { key: 'sceneNumberText', header: 'Scene' },

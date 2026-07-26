@@ -1,1 +1,118 @@
-/* No special styles needed */ 
+.hiw-page {
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 60vh;
+}
+
+.hiw-hero {
+  background: var(--tint);
+  border-bottom: 1px solid var(--line);
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.hiw-hero h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(32px, 4vw, 48px);
+  margin: 0 0 12px;
+}
+
+.hiw-hero p {
+  color: var(--ink-soft);
+  font-size: 1.125rem;
+  max-width: 36rem;
+  margin: 0 auto;
+}
+
+.hiw-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 48px;
+  background: var(--white-brand);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow), var(--hl);
+  padding: 28px 24px;
+}
+
+@media (min-width: 768px) {
+  .hiw-step {
+    flex-direction: row;
+    padding: 28px 32px;
+  }
+}
+
+.hiw-num {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: var(--tint);
+  color: var(--mustard-deep);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.hiw-step:nth-child(2) .hiw-num {
+  background: #e8f0f7;
+  color: #4a7ea3;
+}
+
+.hiw-step:nth-child(3) .hiw-num {
+  background: #fbe6e0;
+  color: var(--coral);
+}
+
+.hiw-step:nth-child(4) .hiw-num {
+  background: var(--mint-soft);
+  color: #3faa8d;
+}
+
+html[data-theme='dark'] .hiw-step:nth-child(2) .hiw-num {
+  background: color-mix(in oklab, var(--sky) 18%, var(--paper-2));
+  color: var(--sky);
+}
+
+html[data-theme='dark'] .hiw-step:nth-child(3) .hiw-num {
+  background: color-mix(in oklab, var(--coral) 18%, var(--paper-2));
+  color: var(--coral);
+}
+
+html[data-theme='dark'] .hiw-step:nth-child(4) .hiw-num {
+  color: var(--mint);
+}
+
+.hiw-copy h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.35rem;
+  margin: 0 0 12px;
+  color: var(--ink);
+}
+
+.hiw-copy p {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.hiw-cta {
+  text-align: center;
+  margin-top: 32px;
+}
+
+.hiw-cta h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin: 0 0 20px;
+}

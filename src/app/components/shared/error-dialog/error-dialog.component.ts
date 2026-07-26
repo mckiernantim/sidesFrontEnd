@@ -6,24 +6,24 @@ import { HttpErrorResponse } from '@angular/common/http';
 @Component({
   selector: 'app-error-dialog',
   template: `
-    <div *ngIf="isOpen" class="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto outline-none focus:outline-none">
-      <div class="relative mx-auto my-6 w-11/12 sm:w-3/4 md:w-2/3 lg:w-2/5 xl:w-1/3 max-w-lg">
-        <div class="relative flex flex-col w-full bg-white border-0 rounded-lg shadow-lg outline-none focus:outline-none">
+    <div *ngIf="isOpen" class="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto outline-none focus:outline-none px-4">
+      <div class="relative mx-auto my-6 w-full max-w-lg">
+        <div class="relative flex flex-col w-full sw-dialog-panel outline-none focus:outline-none overflow-hidden">
           <!-- Header -->
-          <div class="flex items-start justify-between p-5 border-b border-solid rounded-t" 
-               [ngClass]="{'bg-red-50': isServerError, 'border-red-200': isServerError, 'border-blueGray-200': !isServerError}">
-            <div class="flex items-center">
+          <div class="flex items-start justify-between p-5 border-b border-solid border-sw-border" 
+               [ngClass]="{'bg-red-50': isServerError, 'border-red-200': isServerError}">
+            <div class="flex items-center text-left">
               <div *ngIf="isServerError" class="mr-3 text-red-500">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
-              <h3 class="text-xl font-semibold" [ngClass]="{'text-red-600': isServerError}">
+              <h3 class="text-xl font-semibold text-sw-text" [ngClass]="{'text-red-600': isServerError}">
                 {{ displayTitle }}
               </h3>
             </div>
-            <button *ngIf="showCloseButton" class="p-1 ml-auto bg-transparent border-0 text-black float-right text-3xl leading-none font-semibold outline-none focus:outline-none" (click)="onClose()">
-              <span class="text-black h-6 w-6 text-2xl block outline-none focus:outline-none">×</span>
+            <button *ngIf="showCloseButton" type="button" class="p-1 ml-auto bg-transparent border-0 text-sw-text float-right text-3xl leading-none font-semibold outline-none focus:outline-none" (click)="onClose()">
+              <span class="text-sw-text h-6 w-6 text-2xl block outline-none focus:outline-none">×</span>
             </button>
           </div>
           
