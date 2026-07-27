@@ -1,11 +1,41 @@
 <!-- last-looks-page.component.html -->
 <main class="last-looks-container">
     <div class="page shadow-lg border" (click)="showContextMenu && closeContextMenu(); !$event.target.closest('li') && clearSelection()">
-        <!-- Callsheet display section -->
+        <!-- Callsheet display section (+ watermark preview, spec 022) -->
         <div *ngIf="currentPageIndex === 0 && isCallsheetPage(page)" class="callsheet-container">
             <img [src]="page[0].imagePath" 
                  class="callsheet-image"
-                 alt="Callsheet">
+                 alt="Callsheet"
+                 (error)="handleCallsheetImageError($event)"
+                 (load)="onCallsheetImageLoad($event)">
+            <div *ngIf="page[0]?.watermarkData?.isActive" class="watermark-overlay callsheet-watermark-overlay">
+                <div class="watermark-repeating-container callsheet-watermark-container">
+                    <div class="watermark-timestamp-row">
+                        <div class="watermark-timestamp-block"
+                             *ngFor="let block of getWatermarkBlocks(page[0].watermarkData.repetitions)">
+                            {{ page[0].watermarkData.timestamp }}
+                        </div>
+                    </div>
+                    <div class="watermark-actor-row" *ngIf="page[0].watermarkData.castingDirector">
+                        <div class="watermark-actor-block watermark-casting-block"
+                             *ngFor="let block of getWatermarkBlocks(page[0].watermarkData.repetitions)">
+                            {{ page[0].watermarkData.castingDirector }}
+                        </div>
+                    </div>
+                    <div class="watermark-actor-row">
+                        <div class="watermark-actor-block"
+                             *ngFor="let block of getWatermarkBlocks(page[0].watermarkData.repetitions)">
+                            {{ page[0].watermarkData.actorName }}
+                        </div>
+                    </div>
+                    <div class="watermark-timestamp-row">
+                        <div class="watermark-timestamp-block"
+                             *ngFor="let block of getWatermarkBlocks(page[0].watermarkData.repetitions)">
+                            {{ page[0].watermarkData.timestamp }}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Regular page content -->

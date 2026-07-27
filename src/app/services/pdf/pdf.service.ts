@@ -2145,6 +2145,11 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
   
     console.log('Using validated preview URL:', validPreviewUrl);
   
+    // Carry active watermark onto the callsheet so Last Looks can preview the stamp
+    const existingWatermark = this.finalDocument.data
+      .find((p) => p && p[0] && p[0].watermarkData && p[0].watermarkData.isActive)?.[0]
+      ?.watermarkData;
+
     // Create a callsheet page object with the preview image
     const callsheetPage = [{
       type: 'callsheet',
@@ -2169,7 +2174,9 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
       cont: 'hideCont',
       end: 'hideEnd',
       hidden: '',
-      trueScene: ''
+      trueScene: '',
+      // Spec 022: preview watermark on callsheet in Last Looks
+      watermarkData: existingWatermark ? { ...existingWatermark } : null
     }];
   
     // Store original document length for validation

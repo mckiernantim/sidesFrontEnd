@@ -35,6 +35,7 @@ import {
 import { PdfUsage } from 'src/app/types/PdfUsageTypes';
 import { StripeService } from '../stripe/stripe.service';
 import { Timestamp } from '@angular/fire/firestore';
+import { getUserFriendlyMessage } from '../../types/error';
 
 
 @Injectable({
@@ -1069,6 +1070,7 @@ export class UploadService {
     progress: number;
     progressMessage?: string;
     error?: string;
+    errorCode?: string | null;
     linesProcessed?: number;
     completedAt?: string;
   }> {
@@ -1206,7 +1208,6 @@ export class UploadService {
                 message = 'Almost done...';
               }
             }
-            debugger
             // Emit progress for modal updates
             const progressUpdate = {
               stage: status.status,
@@ -1263,7 +1264,16 @@ export class UploadService {
             } else if (status.status === 'error') {
               clearInterval(interval);
               this.scanProgressSubject.next(null);
-              observer.error(new Error(status.error || 'Processing failed'));
+              const code = status.errorCode || 'PROCESSING_FAILED';
+              const message = getUserFriendlyMessage(
+                code,
+                status.error || 'Processing failed'
+              );
+              // Shape matches sync HttpErrorResponse.error so upload.component can map it
+              const err: any = new Error(message);
+              err.code = code;
+              err.error = { code, message, status: code === 'NO_TEXT_CONTENT' ? 422 : 500 };
+              observer.error(err);
             }
             // Otherwise keep polling (pending/processing)
           },
