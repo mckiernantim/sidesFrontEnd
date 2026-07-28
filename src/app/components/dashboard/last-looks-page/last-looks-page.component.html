@@ -88,6 +88,7 @@
                         [class]="'scene-number-left ' + line.trueScene + ' ' + line.visible + (canEditDocument && isLineSelected(line) ? ' selected' : '')"
                         [attr.contenteditable]="editingSceneNumber === line.sceneNumberText ? 'true' : 'false'"
                         (dblclick)="canEditDocument && startEditingSceneNumber(line)"
+                        (touchend)="canEditDocument && onSceneNumberTouchEnd($event, line)"
                         (blur)="saveSceneNumberEdit(line, $event)"
                         (keydown)="handleSceneNumberKeyDown($event)"
                         [style.bottom]="line.calculatedYpos">
@@ -100,11 +101,13 @@
                         [style.bottom]="line.calculatedBarY"
                         [attr.data-line-id]="line.id"
                         (mousedown)="startLineDrag($event, line, 'continue')"
+                        (touchstart)="canEditDocument && startLineTouchDrag($event, line, 'continue')"
                         [class.draggable]="canEditDocument"
                         [style.cursor]="canEditDocument ? 'grab' : 'default'">
                         <span class="bar-text" 
                             [style.left.px]="line.startTextOffset || 10"
                             (mousedown)="canEditDocument && startBarTextDrag($event, line, 'start')"
+                            (touchstart)="canEditDocument && startBarTextTouchDrag($event, line, 'start')"
                             (dblclick)="canEditDocument && onBarTextDoubleClick($event, line, 'start')">
                             <ng-container *ngIf="barTextEditingId !== line.docPageLineIndex || barTextEditingType !== 'start'; else editStartText">
                                 {{ line.customStartText || ('START ' + line.sceneNumberText) }}
@@ -129,6 +132,10 @@
                             [class.editing]="editingLine === line.docPageLineIndex"
                             tabindex="0"
                             (mousedown)="startLineDrag($event, line, 'line')"
+                            (touchstart)="onLineTouchStart($event, line, line.docPageLineIndex)"
+                            (touchmove)="onLineTouchMove($event)"
+                            (touchend)="onLineTouchEnd($event)"
+                            (touchcancel)="onLineTouchEnd($event)"
                             [class.draggable]="canEditDocument"
                             [style.cursor]="canEditDocument ? 'grab' : 'default'"
                             [class.grabbing]="mouseDragging && dragLineId === line.docPageLineIndex"
@@ -169,11 +176,13 @@
                         [style.top]="line.calculatedBarY"
                         [attr.data-line-id]="line.id"
                         (mousedown)="startLineDrag($event, line, 'continue-top')"
+                        (touchstart)="canEditDocument && startLineTouchDrag($event, line, 'continue-top')"
                         [class.draggable]="canEditDocument"
                         [style.cursor]="canEditDocument ? 'grab' : 'default'">
                         <span class="bar-text" 
                             [style.left.px]="line.continueTopTextOffset || 10"
                             (mousedown)="canEditDocument && startBarTextDrag($event, line, 'continue-top')"
+                            (touchstart)="canEditDocument && startBarTextTouchDrag($event, line, 'continue-top')"
                             (dblclick)="canEditDocument && onBarTextDoubleClick($event, line, 'continue-top')">
                             <ng-container *ngIf="barTextEditingId !== line.docPageLineIndex || barTextEditingType !== 'continue-top'; else editContinueTopText">
                                 {{ line.customContinueTopText || ('↓↓↓ ' + line.sceneNumberText + ' CONTINUED ↓↓↓') }}
@@ -197,11 +206,13 @@
                         [style.bottom]="getContinueBarPosition(line)"
                         [attr.data-line-id]="line.id"
                         (mousedown)="startLineDrag($event, line, 'continue')"
+                        (touchstart)="canEditDocument && startLineTouchDrag($event, line, 'continue')"
                         [class.draggable]="canEditDocument"
                         [style.cursor]="canEditDocument ? 'grab' : 'default'">
                         <span class="bar-text" 
                             [style.left.px]="line.continueTextOffset || 10"
                             (mousedown)="canEditDocument && startBarTextDrag($event, line, 'continue')"
+                            (touchstart)="canEditDocument && startBarTextTouchDrag($event, line, 'continue')"
                             (dblclick)="canEditDocument && onBarTextDoubleClick($event, line, 'continue')">
                             <ng-container *ngIf="barTextEditingId !== line.docPageLineIndex || barTextEditingType !== 'continue'; else editContinueText">
                                 {{ line.customContinueText || ('↓↓↓ ' + line.sceneNumberText + ' CONTINUED ↓↓↓') }}
@@ -225,11 +236,13 @@
                         [style.bottom]="line.calculatedEnd"
                         [attr.data-line-id]="line.id"
                         (mousedown)="startLineDrag($event, line, 'end')"
+                        (touchstart)="canEditDocument && startLineTouchDrag($event, line, 'end')"
                         [class.draggable]="canEditDocument"
                         [style.cursor]="canEditDocument ? 'grab' : 'default'">
                         <span class="bar-text" 
                             [style.left]="line.endTextOffset ? line.endTextOffset + 'px' : '90%'"
                             (mousedown)="canEditDocument && startBarTextDrag($event, line, 'end')"
+                            (touchstart)="canEditDocument && startBarTextTouchDrag($event, line, 'end')"
                             (dblclick)="canEditDocument && onBarTextDoubleClick($event, line, 'end')">
                             <ng-container *ngIf="barTextEditingId !== line.docPageLineIndex || barTextEditingType !== 'end'; else editEndText">
                                 {{ line.customEndText || ('END ' + line.sceneNumberText) }}
@@ -252,6 +265,7 @@
                         [class]="'scene-number-right ' + line.trueScene + ' ' + line.visible + (canEditDocument && isLineSelected(line) ? ' selected' : '')"
                         [attr.contenteditable]="editingSceneNumber === line.sceneNumberText ? 'true' : 'false'"
                         (dblclick)="canEditDocument && startEditingSceneNumber(line)"
+                        (touchend)="canEditDocument && onSceneNumberTouchEnd($event, line)"
                         (blur)="saveSceneNumberEdit(line, $event)"
                         (keydown)="handleSceneNumberKeyDown($event)"
                         [style.bottom]="line.calculatedYpos">
@@ -308,6 +322,15 @@
         <button type="button" class="tool-btn" [class.active]="touchSelectMode" (click)="toggleTouchSelectMode()" data-tooltip-left="Select Mode">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+        </button>
+        <button type="button" class="tool-btn"
+                [class.disabled]="selectedLineIds.length === 0"
+                [class.active]="showContextMenu"
+                (click)="selectedLineIds.length > 0 && openContextMenuForSelection()"
+                data-tooltip-left="Line Menu (long-press)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z"></path>
             </svg>
         </button>
         <div class="toolbar-section-divider"></div>

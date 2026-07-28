@@ -65,6 +65,8 @@ export class MainNavComponent implements OnInit, OnDestroy {
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
       this.updateScriptName();
+      this.closeMobileMenu();
+      this.closeUserMenu();
     });
 
     // Poll for script name changes (for when document is uploaded)
@@ -113,9 +115,18 @@ export class MainNavComponent implements OnInit, OnDestroy {
 
   toggleMobileMenu(): void {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
+    if (this.isMobileMenuOpen) {
+      this.isUserMenuOpen = false;
+    }
+  }
+
+  closeMobileMenu(): void {
+    this.isMobileMenuOpen = false;
   }
 
   logout(): void {
+    this.closeMobileMenu();
+    this.closeUserMenu();
     this.authService.signOut().then(() => {
       this.router.navigate(['/']);
     });

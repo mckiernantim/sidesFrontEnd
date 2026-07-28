@@ -114,7 +114,7 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     },
     {
       title: 'Reclassifying Lines:',
-      text: 'Right Click a line to reclassify or toggle line-through',
+      text: 'Long-press a line (or tap Line Menu) to reclassify, edit, or delete',
       ind: 1,
     },
     {

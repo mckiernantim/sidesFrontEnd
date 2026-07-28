@@ -25,6 +25,7 @@ interface StripeError {
 interface BackendSubscriptionResponse {
   active: boolean;
   isFounder?: boolean;
+  isStudent?: boolean;
   subscription: {
     status: string;
     subscriptionId: string | null;
@@ -66,12 +67,17 @@ export class StripeService {
   private config = getConfig(!isDevMode());
   private stripePromise = loadStripe(this.config.stripe);
   public apiUrl: string = this.config.url;
+  /** Mirrors environment isLive — false = test Stripe, true = real charges */
+  public readonly isLive: boolean = Boolean(this.config.isLive);
   
   private subscriptionStatusSubject = new BehaviorSubject<SubscriptionStatus | null>(null);
   public subscriptionStatus$ = this.subscriptionStatusSubject.asObservable();
 
   private isFounderSubject = new BehaviorSubject<boolean>(false);
   public isFounder$ = this.isFounderSubject.asObservable();
+
+  private isStudentSubject = new BehaviorSubject<boolean>(false);
+  public isStudent$ = this.isStudentSubject.asObservable();
 
   private offerProductSubject = new BehaviorSubject<OfferProduct>('standard');
   public offerProduct$ = this.offerProductSubject.asObservable();
@@ -126,6 +132,7 @@ export class StripeService {
             const status: SubscriptionStatus = {
               active: response.active,
               isFounder: Boolean(response.isFounder),
+              isStudent: Boolean(response.isStudent),
               subscription: response.subscription ? {
                 id: response.subscription.subscriptionId || '',
                 status: response.subscription.status,
@@ -168,6 +175,7 @@ export class StripeService {
             console.log('STRIPE: Processed consolidated status:', status);
             this.subscriptionStatusSubject.next(status);
             this.isFounderSubject.next(Boolean(status.isFounder));
+            this.isStudentSubject.next(Boolean(status.isStudent));
             this.offerProductSubject.next(
               resolveOfferProduct({ isFounder: Boolean(status.isFounder), active: status.active })
             );
@@ -202,6 +210,7 @@ export class StripeService {
     return {
       active: false,
       isFounder: false,
+      isStudent: false,
       subscription: {
         id: '',
         status: null,
@@ -309,6 +318,7 @@ export class StripeService {
     console.log('STRIPE: Clearing subscription cache');
     this.subscriptionStatusSubject.next(null);
     this.isFounderSubject.next(false);
+    this.isStudentSubject.next(false);
     this.offerProductSubject.next('standard');
   }
 

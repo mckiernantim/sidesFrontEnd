@@ -1,6 +1,6 @@
 <nav class="sw-nav">
   <div class="sw-nav-inner">
-    <a [routerLink]="['/']" class="sw-logo">
+    <a [routerLink]="['/']" class="sw-logo" (click)="closeMobileMenu()">
       <img
         class="sw-logo-mark"
         src="assets/brand/hero-bot.jpeg"
@@ -42,11 +42,12 @@
       </div>
 
       <ng-container *ngIf="!isLoggedIn; else loggedInTemplate">
-        <button type="button" (click)="signIn()" class="sw-login-btn">Login</button>
+        <button type="button" (click)="signIn()" class="sw-login-btn hidden md:inline-flex">Login</button>
       </ng-container>
 
       <ng-template #loggedInTemplate>
-        <div class="sw-user-menu" (click)="toggleUserMenu()" (clickOutside)="closeUserMenu()">
+        <!-- Desktop account menu; mobile uses drawer links instead -->
+        <div class="sw-user-menu hidden md:block" (click)="toggleUserMenu()" (clickOutside)="closeUserMenu()">
           <button type="button" class="sw-user-trigger" aria-haspopup="true" [attr.aria-expanded]="isUserMenuOpen">
             <span class="sw-avatar-wrap">
               <img
@@ -81,19 +82,41 @@
         </div>
       </ng-template>
 
-      <button type="button" class="sw-mobile-toggle md:hidden" (click)="toggleMobileMenu()" aria-label="Open menu">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <button
+        type="button"
+        class="sw-mobile-toggle md:hidden"
+        (click)="toggleMobileMenu()"
+        [attr.aria-label]="isMobileMenuOpen ? 'Close menu' : 'Open menu'"
+        [attr.aria-expanded]="isMobileMenuOpen"
+        aria-controls="sw-mobile-menu"
+      >
+        <svg *ngIf="!isMobileMenuOpen" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        <svg *ngIf="isMobileMenuOpen" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
     </div>
   </div>
 
-  <div *ngIf="isMobileMenuOpen" class="sw-mobile-menu md:hidden">
-    <a routerLink="/" (click)="toggleMobileMenu()">Home</a>
-    <a routerLink="/how-it-works" (click)="toggleMobileMenu()">How it works</a>
-    <a routerLink="/pricing" (click)="toggleMobileMenu()">Pricing</a>
-    <a routerLink="/about" (click)="toggleMobileMenu()">About</a>
-    <a routerLink="/contact" (click)="toggleMobileMenu()">Contact</a>
+  <div *ngIf="isMobileMenuOpen" id="sw-mobile-menu" class="sw-mobile-menu md:hidden" role="navigation" aria-label="Mobile">
+    <a routerLink="/" (click)="closeMobileMenu()">Home</a>
+    <a routerLink="/how-it-works" (click)="closeMobileMenu()">How it works</a>
+    <a routerLink="/pricing" (click)="closeMobileMenu()">Pricing</a>
+    <a routerLink="/about" (click)="closeMobileMenu()">About</a>
+    <a routerLink="/contact" (click)="closeMobileMenu()">Contact</a>
+
+    <div class="sw-mobile-divider" aria-hidden="true"></div>
+
+    <ng-container *ngIf="isLoggedIn; else mobileLogin">
+      <p *ngIf="username" class="sw-mobile-user-label">{{ username }}</p>
+      <a [routerLink]="['/profile']" (click)="closeMobileMenu()">Profile</a>
+      <a [routerLink]="['/settings']" (click)="closeMobileMenu()">Settings</a>
+      <button type="button" class="sw-mobile-logout" (click)="logout(); closeMobileMenu()">Logout</button>
+    </ng-container>
+    <ng-template #mobileLogin>
+      <button type="button" class="sw-mobile-login" (click)="signIn(); closeMobileMenu()">Login</button>
+    </ng-template>
   </div>
 </nav>

@@ -58,8 +58,13 @@
     align-items: flex-start;
     padding: 1rem;
     background-color: #f9fafb;
-    min-width: 816px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     height: 100%;
+    box-sizing: border-box;
 }
 
 p {
@@ -840,13 +845,22 @@ li.page-number {
 
 @media (max-width: 900px) {
     .page {
+        transform-origin: top center;
         transform: scale(0.8);
     }
 }
 
 @media (max-width: 700px) {
     .page {
-        transform: scale(0.7);
+        transform-origin: top center;
+        transform: scale(0.55);
+    }
+}
+
+@media (max-width: 420px) {
+    .page {
+        transform-origin: top center;
+        transform: scale(0.42);
     }
 }
 
@@ -1526,4 +1540,60 @@ li.page-number {
 .page .screenbox span {
   color: #000;
   font-family: 'Courier Prime', monospace;
+}
+
+/* ── Mobile / touch Last Looks editing ── */
+@media (hover: none), (pointer: coarse) {
+  .edit-mode li {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+
+  .edit-mode li.editing {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Always show drag affordance (no hover on phones) */
+  .edit-mode li::before {
+    content: "⋮";
+    position: absolute;
+    left: -15px;
+    color: #888;
+  }
+
+  .edit-mode .bar-span,
+  .edit-mode .END,
+  .edit-mode .CONTINUE,
+  .edit-mode .CONTINUE-TOP {
+    touch-action: none;
+    min-height: 28px;
+  }
+
+  .classification-option {
+    padding: 12px 16px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    font-size: 15px;
+  }
+
+  .context-menu {
+    min-width: 220px;
+    max-width: min(92vw, 280px);
+    border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  }
+
+  .tool-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+.tool-btn:focus[data-tooltip-left]::after,
+.tool-btn:focus[data-tooltip-left]::before {
+  opacity: 1;
 }

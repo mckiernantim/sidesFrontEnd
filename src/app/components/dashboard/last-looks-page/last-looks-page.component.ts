@@ -64,6 +64,20 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   dragType: 'line' | 'end' | 'continue' | 'continue-top' = 'line';
   initialPosition: { x: number; y: number } = { x: 0, y: 0 };
 
+  // Touch / mobile: long-press → same context menu as right-click
+  private longPressTimer: ReturnType<typeof setTimeout> | null = null;
+  private longPressTouchX = 0;
+  private longPressTouchY = 0;
+  private longPressLine: Line | null = null;
+  private longPressLineIndex = -1;
+  private longPressOpenedMenu = false;
+  private suppressNextClick = false;
+  private lastTapTime = 0;
+  private lastTapLineId: number | null = null;
+  private static readonly LONG_PRESS_MS = 480;
+  private static readonly LONG_PRESS_MOVE_PX = 10;
+  private static readonly DOUBLE_TAP_MS = 380;
+
   // Bar text dragging
   barTextDragging: boolean = false;
   barTextDragStartX: number = 0;
@@ -273,6 +287,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
 
   ngOnDestroy(): void {
+    this.clearLongPressTimer();
     // Clean up subscription
     if (this.subscription) {
       this.subscription.unsubscribe();
@@ -285,6 +300,10 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     document.removeEventListener('mouseup', this.handleMouseUp);
     document.removeEventListener('mousemove', this.moveBarText);
     document.removeEventListener('mouseup', this.endBarTextDrag);
+    document.removeEventListener('touchmove', this.handleTouchMove);
+    document.removeEventListener('touchend', this.handleTouchUp);
+    document.removeEventListener('touchmove', this.moveBarTextTouch);
+    document.removeEventListener('touchend', this.endBarTextDragTouch);
   }
 
   ngAfterViewInit() {
@@ -633,6 +652,290 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     this.barTextDragType = null;
   };
 
+  // ============= TOUCH / MOBILE (long-press menu + drag) =============
+
+  private clearLongPressTimer(): void {
+    if (this.longPressTimer) {
+      clearTimeout(this.longPressTimer);
+      this.longPressTimer = null;
+    }
+  }
+
+  onLineTouchStart(event: TouchEvent, line: Line, lineIndex: number): void {
+    if (!this.canEditDocument || this.editingLine !== null) return;
+    if (event.touches.length !== 1) return;
+
+    const touch = event.touches[0];
+    this.longPressOpenedMenu = false;
+    this.longPressTouchX = touch.clientX;
+    this.longPressTouchY = touch.clientY;
+    this.longPressLine = line;
+    this.longPressLineIndex = lineIndex;
+
+    this.clearLongPressTimer();
+    this.longPressTimer = setTimeout(() => {
+      this.longPressTimer = null;
+      if (!this.longPressLine) return;
+
+      // Haptic feedback when available
+      try {
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+          (navigator as Navigator & { vibrate?: (p: number) => void }).vibrate?.(12);
+        }
+      } catch {
+        /* ignore */
+      }
+
+      this.longPressOpenedMenu = true;
+      this.suppressNextClick = true;
+      this.openContextMenu(
+        {
+          clientX: this.longPressTouchX,
+          clientY: this.longPressTouchY,
+          preventDefault: () => undefined
+        },
+        this.longPressLine,
+        this.longPressLineIndex
+      );
+    }, LastLooksPageComponent.LONG_PRESS_MS);
+  }
+
+  onLineTouchMove(event: TouchEvent): void {
+    if (!event.touches.length) return;
+    const touch = event.touches[0];
+
+    // Cancel long-press if finger moves (scroll / start drag)
+    if (this.longPressTimer) {
+      const dist = Math.hypot(
+        touch.clientX - this.longPressTouchX,
+        touch.clientY - this.longPressTouchY
+      );
+      if (dist > LastLooksPageComponent.LONG_PRESS_MOVE_PX) {
+        this.clearLongPressTimer();
+        // Convert into a line drag once the user has clearly moved
+        if (this.longPressLine && this.canEditDocument && !this.mouseDragging) {
+          event.preventDefault();
+          this.beginLineDragFromPoint(
+            touch.clientX,
+            touch.clientY,
+            this.longPressLine,
+            'line'
+          );
+          document.addEventListener('touchmove', this.handleTouchMove, { passive: false });
+          document.addEventListener('touchend', this.handleTouchUp);
+          document.addEventListener('touchcancel', this.handleTouchUp);
+        }
+      }
+    } else if (this.mouseDragging) {
+      event.preventDefault();
+    }
+  }
+
+  onLineTouchEnd(event: TouchEvent): void {
+    const wasWaiting = !!this.longPressTimer;
+    this.clearLongPressTimer();
+
+    if (this.longPressOpenedMenu) {
+      this.longPressOpenedMenu = false;
+      this.suppressNextClick = true;
+      setTimeout(() => { this.suppressNextClick = false; }, 350);
+      return;
+    }
+
+    // Quick tap → select (existing click handler) + double-tap → edit text
+    if (wasWaiting && this.longPressLine && !this.mouseDragging) {
+      const line = this.longPressLine;
+      const now = Date.now();
+      const isDoubleTap =
+        this.lastTapLineId === line.docPageLineIndex &&
+        now - this.lastTapTime < LastLooksPageComponent.DOUBLE_TAP_MS;
+
+      this.lastTapTime = now;
+      this.lastTapLineId = line.docPageLineIndex;
+
+      if (isDoubleTap) {
+        event.preventDefault();
+        this.suppressNextClick = true;
+        setTimeout(() => { this.suppressNextClick = false; }, 350);
+        if (!this.isLineSelected(line)) {
+          this.selectLine(line, { shiftKey: false, ctrlKey: false, metaKey: false } as MouseEvent);
+        }
+        this.startEditingLine(line.docPageLineIndex, line.text);
+        this.lastTapLineId = null;
+      }
+    }
+
+    this.longPressLine = null;
+    this.longPressLineIndex = -1;
+  }
+
+  /** Shared drag bootstrap used by mouse + touch. */
+  private beginLineDragFromPoint(
+    clientX: number,
+    clientY: number,
+    line: Line,
+    type: 'line' | 'end' | 'continue' | 'continue-top'
+  ): void {
+    if (type === 'line') {
+      const mockEvent = { shiftKey: false, ctrlKey: false, metaKey: false } as MouseEvent;
+      this.selectLine(line, mockEvent);
+    }
+
+    const lineIndex = this.page.findIndex(l => l.docPageLineIndex === line.docPageLineIndex);
+    if (lineIndex !== -1) {
+      this.undoService.recordLineChange(
+        this.currentPageIndex,
+        lineIndex,
+        cloneDeep(line),
+        `Drag ${type} position`
+      );
+    }
+
+    this.mouseDragging = true;
+    this.dragStartX = clientX;
+    this.dragStartY = clientY;
+    this.dragLineId = line.docPageLineIndex;
+    this.dragType = type;
+    document.body.classList.add('grab-cursor');
+
+    switch (type) {
+      case 'line':
+        this.initialPosition = {
+          x: parseInt(String(line.calculatedXpos || '0'), 10) || 0,
+          y: parseInt(String(line.calculatedYpos || '0'), 10) || 0
+        };
+        break;
+      case 'end':
+        this.initialPosition = {
+          x: 0,
+          y: parseInt(String(line.calculatedEnd || '0'), 10) || 0
+        };
+        break;
+      case 'continue':
+      case 'continue-top':
+        this.initialPosition = {
+          x: 0,
+          y: parseInt(String(line.calculatedBarY || '0'), 10) || 0
+        };
+        break;
+    }
+  }
+
+  startLineTouchDrag(
+    event: TouchEvent,
+    line: Line,
+    type: 'line' | 'end' | 'continue' | 'continue-top'
+  ): void {
+    if (!this.canEditDocument || event.touches.length !== 1) return;
+    this.clearLongPressTimer();
+    event.preventDefault();
+    event.stopPropagation();
+    const touch = event.touches[0];
+    this.beginLineDragFromPoint(touch.clientX, touch.clientY, line, type);
+    document.addEventListener('touchmove', this.handleTouchMove, { passive: false });
+    document.addEventListener('touchend', this.handleTouchUp);
+    document.addEventListener('touchcancel', this.handleTouchUp);
+  }
+
+  handleTouchMove = (event: TouchEvent): void => {
+    if (!this.mouseDragging || !event.touches.length) return;
+    event.preventDefault();
+    const touch = event.touches[0];
+    this.handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY } as MouseEvent);
+  };
+
+  handleTouchUp = (event: TouchEvent): void => {
+    document.removeEventListener('touchmove', this.handleTouchMove);
+    document.removeEventListener('touchend', this.handleTouchUp);
+    document.removeEventListener('touchcancel', this.handleTouchUp);
+    const touch = event.changedTouches?.[0];
+    if (touch) {
+      this.handleMouseUp({ clientX: touch.clientX, clientY: touch.clientY } as MouseEvent);
+    } else if (this.mouseDragging) {
+      this.handleMouseUp({ clientX: this.dragStartX, clientY: this.dragStartY } as MouseEvent);
+    }
+    this.suppressNextClick = true;
+    setTimeout(() => { this.suppressNextClick = false; }, 350);
+  };
+
+  startBarTextTouchDrag(
+    event: TouchEvent,
+    line: Line,
+    type: 'start' | 'end' | 'continue' | 'continue-top'
+  ): void {
+    if (!this.canEditDocument || this.barTextEditingId !== null || event.touches.length !== 1) return;
+    event.stopPropagation();
+    event.preventDefault();
+    this.clearLongPressTimer();
+
+    const touch = event.touches[0];
+    const lineIndex = this.page.findIndex(l => l.docPageLineIndex === line.docPageLineIndex);
+    if (lineIndex === -1) return;
+
+    this.undoService.recordLineChange(
+      this.currentPageIndex,
+      lineIndex,
+      cloneDeep(line),
+      `Drag ${type} bar text`
+    );
+
+    this.barTextDragging = true;
+    this.barTextDragStartX = touch.clientX;
+    this.barTextDragLineId = line.docPageLineIndex;
+    this.barTextDragType = type;
+
+    switch (type) {
+      case 'start':
+        this.barTextInitialOffset = line.startTextOffset || 0;
+        break;
+      case 'end':
+        this.barTextInitialOffset = line.endTextOffset || 0;
+        break;
+      case 'continue':
+        this.barTextInitialOffset = line.continueTextOffset || 0;
+        break;
+      case 'continue-top':
+        this.barTextInitialOffset = line.continueTopTextOffset || 0;
+        break;
+    }
+
+    document.addEventListener('touchmove', this.moveBarTextTouch, { passive: false });
+    document.addEventListener('touchend', this.endBarTextDragTouch);
+    document.addEventListener('touchcancel', this.endBarTextDragTouch);
+    document.body.classList.add('ew-resize-cursor');
+  }
+
+  moveBarTextTouch = (event: TouchEvent): void => {
+    if (!this.barTextDragging || !event.touches.length) return;
+    event.preventDefault();
+    const touch = event.touches[0];
+    this.moveBarText({ clientX: touch.clientX, clientY: touch.clientY } as MouseEvent);
+  };
+
+  endBarTextDragTouch = (event: TouchEvent): void => {
+    document.removeEventListener('touchmove', this.moveBarTextTouch);
+    document.removeEventListener('touchend', this.endBarTextDragTouch);
+    document.removeEventListener('touchcancel', this.endBarTextDragTouch);
+    const touch = event.changedTouches?.[0];
+    this.endBarTextDrag({ clientX: touch?.clientX ?? this.barTextDragStartX, clientY: touch?.clientY ?? 0 } as MouseEvent);
+  };
+
+  onSceneNumberTouchEnd(event: TouchEvent, line: Line): void {
+    if (!this.canEditDocument || line.category !== 'scene-header') return;
+    const now = Date.now();
+    const key = Number(`-1${line.docPageLineIndex}`); // namespace separate from line taps
+    const isDoubleTap =
+      this.lastTapLineId === key &&
+      now - this.lastTapTime < LastLooksPageComponent.DOUBLE_TAP_MS;
+    this.lastTapTime = now;
+    this.lastTapLineId = key;
+    if (isDoubleTap) {
+      event.preventDefault();
+      this.startEditingSceneNumber(line);
+      this.lastTapLineId = null;
+    }
+  }
+
   // ============= BAR TEXT EDITING METHODS =============
 
   onBarTextDoubleClick(event: MouseEvent, line: Line, type: 'start' | 'end' | 'continue' | 'continue-top'): void {
@@ -741,6 +1044,9 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   // ============= SELECTION METHODS =============
 
   selectLine(line: Line, event: MouseEvent): void {
+    if (this.suppressNextClick) {
+      return;
+    }
     console.log('🖱️ selectLine called for line:', line.docPageLineIndex, 'shiftKey:', event.shiftKey, 'ctrlKey:', event.ctrlKey, 'lastSelectedIndex:', this.lastSelectedIndex);
     if (!this.canEditDocument) return;
 
@@ -845,13 +1151,13 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
   // ============= CONTEXT MENU METHODS =============
 
-  openContextMenu(event: MouseEvent, line: any, lineIndex: number): void {
+  openContextMenu(event: { clientX: number; clientY: number; preventDefault?: () => void }, line: any, lineIndex: number): void {
     console.log('🔴 openContextMenu called, selectedLineIds:', this.selectedLineIds, 'line:', line?.docPageLineIndex);
-    event.preventDefault();
+    event.preventDefault?.();
 
-    // If no lines are selected, select the right-clicked line
+    // If no lines are selected, select the right-clicked / long-pressed line
     if (this.selectedLineIds.length === 0 && line) {
-      console.log('🔴 No lines selected, auto-selecting right-clicked line');
+      console.log('🔴 No lines selected, auto-selecting line');
       this.selectedLineIds = [line.docPageLineIndex];
       this.lastSelectedIndex = line.docPageLineIndex;
       this.emitSelectedLines();
@@ -859,9 +1165,40 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
 
     console.log('🔴 Opening context menu');
     this.showContextMenu = true;
-    this.contextMenuPosition = { x: event.clientX, y: event.clientY };
+    this.contextMenuPosition = this.clampContextMenuPosition(event.clientX, event.clientY);
     this.selectedLine = line;
     this.selectedLineIndex = lineIndex;
+    this.cdRef.detectChanges();
+  }
+
+  /** Keep the menu on-screen on phones (right-click coords can be near the edge). */
+  private clampContextMenuPosition(clientX: number, clientY: number): { x: number; y: number } {
+    const menuWidth = 240;
+    const menuHeight = 420;
+    const pad = 8;
+    const maxX = Math.max(pad, window.innerWidth - menuWidth - pad);
+    const maxY = Math.max(pad, window.innerHeight - menuHeight - pad);
+    return {
+      x: Math.min(Math.max(pad, clientX), maxX),
+      y: Math.min(Math.max(pad, clientY), maxY)
+    };
+  }
+
+  /** Toolbar / mobile fallback: open the same menu for the current selection. */
+  openContextMenuForSelection(): void {
+    if (!this.canEditDocument || this.selectedLineIds.length === 0) return;
+    const lineId = this.selectedLineIds[this.selectedLineIds.length - 1];
+    const line = this.page.find(l => l.docPageLineIndex === lineId);
+    if (!line) return;
+    this.openContextMenu(
+      {
+        clientX: Math.min(window.innerWidth - 24, window.innerWidth * 0.55),
+        clientY: Math.min(window.innerHeight - 24, window.innerHeight * 0.35),
+        preventDefault: () => undefined
+      },
+      line,
+      lineId
+    );
   }
 
   closeContextMenu(): void {

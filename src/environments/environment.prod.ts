@@ -1,12 +1,25 @@
+import {
+  STRIPE_IS_LIVE,
+  STRIPE_PUBLISHABLE_LIVE,
+  STRIPE_PUBLISHABLE_TEST,
+  resolveStripePublishableKey
+} from './stripe.keys';
+
+/**
+ * Production build env.
+ *
+ * Flip STRIPE_IS_LIVE in stripe.keys.ts to true when ready for real payments.
+ * Until then isLive stays false → pk_test_ (no real charges from the browser).
+ */
 export const environment = {
   production: true,
-  
-  // ⚠️⚠️⚠️ CRITICAL: CHANGE TO REAL STRIPE PRODUCTION KEY BEFORE GOING LIVE! ⚠️⚠️⚠️
-  // Current key is TEST mode - will NOT process real payments!
-  // Replace with: pk_live_... (your real production publishable key)
-  stripe: 'pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ',
-  
-  firebaseConfig:{
+  /** false = test Stripe; true = Live Stripe (real money). Controlled by stripe.keys.ts */
+  isLive: STRIPE_IS_LIVE,
+  stripeTest: STRIPE_PUBLISHABLE_TEST,
+  stripeLive: STRIPE_PUBLISHABLE_LIVE,
+  stripe: resolveStripePublishableKey(STRIPE_IS_LIVE),
+
+  firebaseConfig: {
     apiKey: "AIzaSyBXD5kQfAS4lrmSJxYAuEUq8sxvXgWmCio",
     authDomain: "scriptthing.firebaseapp.com",
     databaseURL: "https://scriptthing.firebaseio.com",
@@ -29,7 +42,7 @@ export const environment = {
   //   measurementId: "G-1JF7DG5L5H"
   // },
   // url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
-  password:"NOTEWORTHY",
+  password: "NOTEWORTHY",
   maintenanceMode: false
 };
 
@@ -39,9 +52,12 @@ export const environmentProd = environment;
 export function getConfig(isProd = false) {
   // Check if we're on the dev staging URL
   if (typeof window !== 'undefined' && window.location.hostname === 'scriptthing-dev.web.app') {
-    // DEV STAGING CONFIG
     return {
       ...environment,
+      isLive: STRIPE_IS_LIVE,
+      stripeTest: STRIPE_PUBLISHABLE_TEST,
+      stripeLive: STRIPE_PUBLISHABLE_LIVE,
+      stripe: resolveStripePublishableKey(STRIPE_IS_LIVE),
       firebaseConfig: {
         apiKey: "AIzaSyCr0Gemya880xoOnAYWtTcZWssg5Uc2HY0",
         authDomain: "scriptthing-dev.firebaseapp.com",
@@ -55,10 +71,10 @@ export function getConfig(isProd = false) {
     };
   }
 
-  // PRODUCTION CONFIG (default)
-  return environment;
+  // PRODUCTION CONFIG (default) — Stripe mode still gated by STRIPE_IS_LIVE
+  return {
+    ...environment,
+    isLive: STRIPE_IS_LIVE,
+    stripe: resolveStripePublishableKey(STRIPE_IS_LIVE)
+  };
 }
-
-
-
-

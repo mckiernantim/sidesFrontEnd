@@ -55,6 +55,8 @@ export interface SubscriptionStatus {
   active: boolean;
   /** Closed-list Founders Rate eligibility from backend founders/{uid} */
   isFounder?: boolean;
+  /** Active .edu student window (2 years) from backend students/{uid} */
+  isStudent?: boolean;
   subscription: SubscriptionDetails | null;
   usage: UsageInfo;
   plan: string | null;
@@ -65,6 +67,7 @@ export interface SubscriptionStatus {
 export interface BackendSubscriptionResponse {
   active: boolean;
   isFounder?: boolean;
+  isStudent?: boolean;
   subscription: {
     status: string;
     subscriptionId: string | null;

@@ -20,7 +20,7 @@
 }
 
 .subscription-info, .subscription-signup {
-  background-color: #f8f9fa;
+  background-color: var(--paper, #f8f9fa);
   border-radius: 8px;
   padding: 20px;
   margin-top: 20px;
@@ -32,6 +32,7 @@
 
 .subscription-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 20px;
 }
@@ -68,4 +69,23 @@
   margin-top: 20px;
   padding: 10px 20px;
   font-size: 1rem;
+}
+
+@media (max-width: 640px) {
+  .profile-container {
+    padding: 16px;
+  }
+
+  .subscription-info,
+  .subscription-signup {
+    padding: 16px;
+  }
+
+  .subscription-actions {
+    flex-direction: column;
+  }
+
+  .subscription-actions > * {
+    width: 100%;
+  }
 }
