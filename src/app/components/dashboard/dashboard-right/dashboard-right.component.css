@@ -179,14 +179,15 @@ app-last-looks {
     display: flex;
     flex-direction: column;
     height: auto;
-    overflow: hidden;
+    /* Scene select must grow and scroll via app-dashboard-right; do not clip here. */
+    overflow: visible;
     margin-bottom: 1rem;
     background-color: var(--paper);
 }
 
 .dashboard-right-content {
     flex: 1;
-    overflow: hidden;
+    overflow: visible;
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -205,7 +206,8 @@ app-last-looks {
 .selected-scenes-list {
     max-height: 300px;
     overflow-y: auto;
-    margin-top: 1rem;
+    margin-top: 0;
+    width: 100%;
 }
 
 /* Last Looks Container */
@@ -387,11 +389,11 @@ app-last-looks {
     transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
-/* Update media queries to maintain page dimensions and scrolling */
+/* Tablet / mid widths — keep scene header above the list; scroll page stage */
 @media (max-width: 1400px) {
     .last-looks-container {
         display: flex;
-        flex-direction: column-reverse;
+        flex-direction: column;
         height: auto;
         min-height: calc(100vh - 64px);
     }
@@ -424,6 +426,8 @@ app-last-looks {
     .controls-container {
         width: 100%;
     }
+
+    /* Scene-select mobile uses Scenes | Controls toggle — do not force side panel first */
 }
 
 /* Small screens */
@@ -477,6 +481,28 @@ app-last-looks {
 
 .dash-side-panel {
   transition: background-color 0.3s ease, border-color 0.3s ease;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.selected-scenes-heading {
+  width: 100%;
+  margin: 0 0 0.75rem;
+  text-align: left;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.last-looks-host {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.dash-main-row {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .scene-number, .scene-text {
@@ -506,3 +532,444 @@ app-last-looks {
 }
 
 
+
+
+/* ── Scene-select mobile toggle (mirrors Last Looks Preview|Controls) ── */
+.ss-mobile-toggle {
+  display: none;
+}
+
+.ss-mobile-toggle-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--sw-accent, var(--coral));
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+@media (max-width: 767px) {
+  .ss-shell {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  /* Controls: flush under toggle like Last Looks rail (eye stays put) */
+  .ss-shell--controls {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .ss-shell--controls .ss-mobile-toggle {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    margin-bottom: 0;
+  }
+
+  .ss-mobile-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    flex-shrink: 0;
+    padding: 8px 0 6px;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--sw-surface, var(--paper));
+    border-bottom: 1px solid var(--sw-border, var(--line));
+    margin-bottom: 10px;
+  }
+
+  .ss-mobile-toggle-btn {
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--sw-border, var(--line));
+    border-radius: 9px;
+    background: var(--sw-surface-2, var(--sw-bg, var(--paper-2, var(--white-brand))));
+    color: var(--sw-text-muted, var(--ink-soft));
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+
+  .ss-mobile-toggle-btn--active {
+    background: var(--sw-accent, var(--coral));
+    border-color: var(--sw-accent, var(--coral));
+    color: #fff;
+  }
+
+  .ss-mobile-toggle-btn--active .ss-mobile-toggle-count {
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  /* Kill stacked gap when only one panel is visible */
+  .ss-shell .dash-main-row {
+    row-gap: 0;
+  }
+
+  .ss-shell .dash-main-row > * + * {
+    margin-top: 0;
+  }
+
+  /* Scenes first — hide controls panel */
+  .ss-row--scenes .ss-controls-panel {
+    display: none !important;
+  }
+
+  .ss-row--scenes .ss-scenes-panel {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Controls panel — hide scene table */
+  .ss-row--controls .ss-scenes-panel {
+    display: none !important;
+  }
+
+  .ss-row--controls .ss-controls-panel {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    order: 0;
+    /* Full-bleed rail under the toggle — same eye position as Last Looks Controls */
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: var(--sw-surface, var(--paper));
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  .ss-row--controls .ss-rail {
+    min-height: calc(100dvh - 120px);
+  }
+
+  .ss-row--controls .ss-rail-header {
+    padding: 12px 12px 10px;
+  }
+
+  .ss-row--controls .ss-rail-checkout {
+    padding: 10px 12px 14px;
+  }
+}
+
+/* ── Scene-select Controls rail (mirrors last-looks-rail) ── */
+.ss-controls-panel {
+  padding: 0;
+  overflow: hidden;
+  background: var(--sw-surface, var(--paper));
+  border: 1px solid var(--sw-border, var(--line));
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.ss-rail {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ss-rail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--sw-border, var(--line));
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.ss-rail-title-block {
+  min-width: 0;
+}
+
+.ss-rail-kicker {
+  margin: 0 0 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sw-text-muted, var(--ink-soft));
+}
+
+.ss-rail-script-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sw-text, var(--ink));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ss-rail-date {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: var(--sw-text-muted, var(--ink-soft));
+}
+
+.ss-rail-scenes {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 12px 8px;
+  min-height: 0;
+}
+
+.ss-rail-section-label {
+  margin: 0 0 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sw-text-muted, var(--ink-soft));
+}
+
+.ss-scene-list,
+.ss-scene-list.selected-scenes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: none !important;
+  margin-top: 0;
+  width: 100%;
+  overflow: visible;
+}
+
+.ss-scene-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  margin-bottom: 0;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: var(--sw-bg, transparent);
+  transition: background 0.12s, border-color 0.12s;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+
+.ss-scene-row:hover {
+  background: var(--sw-surface-2, var(--sw-surface, var(--tint)));
+  border-color: var(--sw-border, var(--line));
+}
+
+.ss-scene-row--draggable {
+  cursor: grab;
+}
+
+.ss-scene-row--draggable:active {
+  cursor: grabbing;
+}
+
+.ss-scene-row-inner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.ss-drag-handle {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--sw-text-muted, var(--ink-faint));
+  cursor: grab;
+}
+
+.ss-scene-number {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sw-text, var(--ink));
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 1.5rem;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.ss-scene-text {
+  font-size: 12px;
+  color: var(--sw-text-muted, var(--ink-soft));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.ss-scene-number[contenteditable='true']:focus,
+.ss-scene-text[contenteditable='true']:focus,
+.ss-scene-editing {
+  outline: 2px solid var(--sw-accent, var(--coral));
+  border-radius: 3px;
+  background: var(--sw-bg, var(--mint-soft));
+}
+
+.ss-scene-remove {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--sw-text-muted, var(--ink-soft));
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0;
+  transition: color 0.12s, background 0.12s;
+}
+
+.ss-scene-remove:hover {
+  color: var(--coral, var(--sw-accent));
+  background: var(--sw-surface-2, transparent);
+}
+
+.ss-scene-remove-icon {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+.ss-scene-empty {
+  padding: 12px 8px;
+  font-size: 12px;
+  color: var(--sw-text-muted, var(--ink-faint));
+  text-align: center;
+}
+
+.ss-scene-reorder-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--sw-text-muted, var(--ink-soft));
+  text-align: center;
+  font-style: italic;
+}
+
+.ss-rail-status-row {
+  padding: 6px 12px;
+  border-top: 1px solid var(--sw-border, var(--line));
+  flex-shrink: 0;
+}
+
+.ss-rail-status-text {
+  margin: 2px 0;
+  font-size: 12px;
+  color: var(--sw-text-muted, var(--ink-soft));
+}
+
+.ss-rail-checkout {
+  padding: 12px 12px 16px;
+  border-top: 1px solid var(--sw-border, var(--line));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ss-rail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ss-rail-action-btn {
+  width: 100%;
+  min-height: 44px;
+}
+
+.ss-rail-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ss-rail-attach-item {
+  width: 100%;
+}
+
+.ss-rail-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  width: 100%;
+  justify-content: center;
+}
+
+.ss-chip-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.ss-chip-mint {
+  background: rgba(63, 170, 141, 0.15);
+  color: var(--mint, #3faa8d);
+}
+
+.ss-chip-sky {
+  background: rgba(74, 144, 226, 0.15);
+  color: var(--sky, #4a90e2);
+}
+
+/* ── Last Looks full-height mode (FR-001, FR-003) ─────────── */
+/* These --ll rules MUST stay scoped; scene select uses height:auto / overflow:visible above. */
+
+.dashboard-right--ll {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.dashboard-right-content--ll {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ll-fullbleed-host {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ll-fullbleed-host app-last-looks {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}

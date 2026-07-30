@@ -1,1 +1,20 @@
-/* Styles are handled by Tailwind CSS classes in the template */ 
+/* Must sit above Last Looks chrome on mobile:
+   tools strip (220), rail backdrop (290), rail sheet (300),
+   and page context menus (up to 9999). */
+:host {
+  position: relative;
+  z-index: 10000;
+  display: block;
+}
+
+.checkout-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  -webkit-overflow-scrolling: touch;
+}

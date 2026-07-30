@@ -7,6 +7,8 @@ export interface TableColumn {
   key: string;
   header: string;
   cell?: (item: any) => string;
+  /** Mobile card layout: badge (scene #), primary (main text), meta (secondary), hide */
+  role?: 'badge' | 'primary' | 'meta' | 'hide';
 }
 
 @Component({
@@ -17,7 +19,7 @@ export interface TableColumn {
 })
 export class TailwindTableComponent implements AfterContentInit, OnChanges {
   @Input() data: any[] = [];
-  @Input() columns: {key: string, header: string, cell?: (item: any) => string}[] = [];
+  @Input() columns: TableColumn[] = [];
   @Input() selectable: boolean = false;
   @Input() pagination: boolean = false;
   @Input() pageSize: number = 10;
@@ -40,6 +42,36 @@ export class TailwindTableComponent implements AfterContentInit, OnChanges {
   
   // For template access
   Math = Math;
+
+  /** Columns shown as the scene-number badge on mobile cards. */
+  get badgeColumns(): TableColumn[] {
+    return this.columns.filter(c => (c.role || this.inferRole(c, 0)) === 'badge');
+  }
+
+  /** Main title/body column(s) for mobile cards. */
+  get primaryColumns(): TableColumn[] {
+    return this.columns.filter(c => (c.role || this.inferRole(c, 1)) === 'primary');
+  }
+
+  /** Secondary meta line on mobile cards. */
+  get metaColumns(): TableColumn[] {
+    return this.columns.filter(c => (c.role || this.inferRole(c, 2)) === 'meta');
+  }
+
+  private inferRole(column: TableColumn, index: number): 'badge' | 'primary' | 'meta' | 'hide' {
+    if (column.role) return column.role;
+    if (column.key === 'sceneNumberText' || column.key === 'sceneNumber') return 'badge';
+    if (column.key === 'text' || column.key === 'location' || column.key === 'name') return 'primary';
+    if (index === 0) return 'badge';
+    if (index === 1) return 'primary';
+    return 'meta';
+  }
+
+  cellValue(item: any, column: TableColumn): string {
+    if (column.cell) return column.cell(item);
+    const raw = item?.[column.key];
+    return raw == null ? '' : String(raw);
+  }
   
   ngAfterContentInit() {
     // Only use columnList if columns input is empty

@@ -24,14 +24,193 @@
     cursor: grab;
 }
 
+/* Stage: control bar on top, scaled page below. Never wider than its container. */
+.ll-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.ll-page-viewport {
+    order: 2;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    /* Only scrolls when the user zooms past fit */
+    overflow-x: auto;
+    box-sizing: border-box;
+}
+
+/* Holds the scaled page's real footprint; centered in the viewport */
+.ll-page-scaler {
+    position: relative;
+    margin: 0 auto;
+}
+
 .page {
     font-family: 'Courier Prime', monospace;
     height: 1056px;
     width: 816px;
-    background-color: white;
-    margin: 0 auto;
-    position: relative;
+    /* FR-023: paper preview must stay white in light AND dark themes */
+    background-color: #ffffff !important;
+    color: #16181c;
+    margin: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+}
+
+html[data-theme='dark'] .page {
+    background-color: #ffffff !important;
+    color: #16181c;
+}
+
+/* Ordered above the page even though it is rendered after it in the DOM */
+.ll-page-rail {
+    order: 1;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    position: sticky;
+    top: 0;
+    z-index: 210;
+    padding: 0.5rem 0;
+    background: #f9fafb;
+    font-family: system-ui, -apple-system, sans-serif;
+    color: var(--ink, #111827);
+}
+
+.ll-rail-primary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.ll-rail-btn {
+    justify-content: center;
+    white-space: nowrap;
+}
+
+/* Zoom stepper — keeps the page readable without locking the layout to 816px */
+.ll-zoom {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-left: auto;
+    padding: 2px;
+    border: 1px solid var(--line, #e5e7eb);
+    border-radius: 10px;
+    background: var(--white-brand, #fff);
+}
+
+.ll-zoom-btn,
+.ll-zoom-fit {
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--ink, #111827);
+    line-height: 1;
+}
+
+.ll-zoom-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+}
+
+.ll-zoom-fit {
+    height: 28px;
+    padding: 0 10px;
+    font-size: 12px;
+}
+
+.ll-zoom-btn:hover:not(:disabled),
+.ll-zoom-fit:hover {
+    background: var(--wash, #f3f4f6);
+}
+
+.ll-zoom-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.ll-zoom-fit.active {
+    background: var(--wash, #f3f4f6);
+}
+
+.ll-zoom-value {
+    min-width: 3.25rem;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-soft, #6b7280);
+}
+
+.ll-tips-toggle {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line, #e5e7eb);
+    background: var(--white-brand, #fff);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--ink, #111827);
+}
+
+.ll-tips-panel {
+    flex: 1 1 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line, #e5e7eb);
+    background: var(--white-brand, #fff);
+    box-shadow: var(--shadow-lift, 0 4px 20px rgba(0, 0, 0, 0.08));
+}
+
+.ll-tips-panel p {
+    margin: 0 0 6px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--ink-soft, #6b7280);
+    position: static;
+}
+
+.ll-tips-panel p:last-child {
+    margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+    .ll-rail-primary {
+        flex: 1 1 100%;
+    }
+
+    .ll-rail-btn,
+    .ll-tips-toggle {
+        flex: 1 1 auto;
+    }
+
+    .ll-zoom {
+        margin-left: 0;
+        flex: 1 1 100%;
+        justify-content: center;
+    }
 }
 
 .grab-cursor {
@@ -52,18 +231,16 @@
     overflow: visible;
 }
 
+/* Non-scrolling: the parent .page-container owns the scroll so the control bar can stick */
 .last-looks-container {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    display: block;
     padding: 1rem;
     background-color: #f9fafb;
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    height: 100%;
+    overflow: visible;
+    height: auto;
     box-sizing: border-box;
 }
 
@@ -79,8 +256,9 @@ p {
     padding: 0;
 }
 
-li,
-span {
+/* Scope to the letter page only — must NOT hit Edit tips / control rail */
+.page li,
+.page span {
     position: absolute;
     list-style-type: none;
     line-height: normal;
@@ -129,6 +307,25 @@ li.page-number {
 .false {
     text-decoration: line-through;
     text-decoration-thickness: 25%;
+}
+
+/* Skipped (false) lines: white background + strikethrough.
+   Contiguous blocks get the SVG X-box overlay (not a grey fill). */
+li.false:not(.page-number):not(.page-number-text):not(.page-number-hidden) {
+    z-index: 2;
+    background-color: #ffffff;
+}
+
+/* SVG X-box overlay — above skipped content, no pointer events */
+svg.skipped-sections-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 816px;
+    height: 1056px;
+    pointer-events: none;
+    z-index: 3;
+    overflow: visible;
 }
 
 .legal {
@@ -1378,25 +1575,25 @@ li.page-number {
 
 
 /* ════════════════════════════════════════════════════════════
-   VERTICAL RIGHT-SIDE TOOLBAR (edit mode only)
+   EDIT TOOLBAR (edit mode only) — horizontal row inside the control bar.
    Kept separate from sacred screenplay formatting below.
    ════════════════════════════════════════════════════════════ */
 
 .vertical-toolbar {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
+  position: relative;
+  flex: 1 1 100%;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 12px 8px;
+  gap: 4px;
+  padding: 6px 8px;
   background: var(--white-brand, #fff);
   border: 1px solid var(--line, #e5e7eb);
   border-radius: 12px;
   box-shadow: var(--shadow-lift, 0 4px 20px rgba(0, 0, 0, 0.08));
   z-index: 200;
+  box-sizing: border-box;
 }
 
 .tool-btn {
@@ -1465,12 +1662,13 @@ li.page-number {
   color: #22c55e;
 }
 
+/* Toolbar sits at the top of the stage, so tooltips open downward */
 .tool-btn[data-tooltip-left]::after {
   content: attr(data-tooltip-left);
   position: absolute;
-  right: calc(100% + 12px);
-  top: 50%;
-  transform: translateY(-50%);
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
   padding: 6px 10px;
   background: #1f2937;
   color: #fff;
@@ -1488,12 +1686,12 @@ li.page-number {
 .tool-btn[data-tooltip-left]::before {
   content: '';
   position: absolute;
-  right: calc(100% + 6px);
-  top: 50%;
-  transform: translateY(-50%);
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-left: 6px solid #1f2937;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 6px solid #1f2937;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
@@ -1506,10 +1704,11 @@ li.page-number {
 }
 
 .toolbar-section-divider {
-  width: 32px;
-  height: 1px;
+  width: 1px;
+  align-self: stretch;
+  min-height: 24px;
   background-color: var(--line, #e5e7eb);
-  margin: 4px 0;
+  margin: 0 4px;
 }
 
 .selection-badge {

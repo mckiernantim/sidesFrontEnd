@@ -1,0 +1,180 @@
+<!-- Collapsed state: vertical strip -->
+<div *ngIf="isCollapsed" class="ll-rail-collapsed" (click)="toggleRail.emit()" role="button" [attr.aria-label]="verticalLabel + ', expand rail'" tabindex="0" (keydown.enter)="toggleRail.emit()" (keydown.space)="$event.preventDefault(); toggleRail.emit()">
+  <span class="ll-rail-vertical-label">{{ verticalLabel }}</span>
+  <svg class="ll-rail-expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+  </svg>
+</div>
+
+<!-- Expanded state -->
+<div *ngIf="!isCollapsed" class="ll-rail-expanded">
+  <!-- Rail header with collapse button -->
+  <div class="ll-rail-header">
+    <div class="ll-rail-title-block">
+      <p class="ll-rail-kicker">Generating sides for</p>
+      <h3 class="ll-rail-script-name">{{ scriptName }}</h3>
+      <p class="ll-rail-date" *ngIf="scriptDate">{{ scriptDate | date }}</p>
+    </div>
+    <button
+      type="button"
+      class="ll-rail-collapse-btn"
+      (click)="toggleRail.emit()"
+      aria-label="Collapse scene rail">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Scene list -->
+  <div class="ll-rail-scenes">
+    <h4 class="ll-rail-section-label">Select a Scene</h4>
+
+    <div
+      class="ll-scene-list"
+      cdkDropList
+      (cdkDropListDropped)="onSceneDrop($event)"
+      [cdkDropListDisabled]="!editState">
+
+      <div
+        *ngFor="let scene of selectedScenes; let i = index; trackBy: trackBySceneIndex"
+        cdkDrag
+        [cdkDragDisabled]="!editState"
+        class="ll-scene-row"
+        [class.ll-scene-row--draggable]="editState">
+
+        <!-- Drag handle -->
+        <div class="ll-scene-row-inner">
+          <svg *ngIf="editState"
+               xmlns="http://www.w3.org/2000/svg"
+               class="ll-drag-handle"
+               viewBox="0 0 20 20"
+               fill="currentColor"
+               aria-hidden="true"
+               cdkDragHandle>
+            <circle cx="7" cy="5" r="1.5"/>
+            <circle cx="13" cy="5" r="1.5"/>
+            <circle cx="7" cy="10" r="1.5"/>
+            <circle cx="13" cy="10" r="1.5"/>
+            <circle cx="7" cy="15" r="1.5"/>
+            <circle cx="13" cy="15" r="1.5"/>
+          </svg>
+
+          <span
+            class="ll-scene-number"
+            [attr.contenteditable]="editState && scene.category === 'scene-header' ? 'true' : 'false'"
+            (dblclick)="startEditingSceneNumber(scene)"
+            (blur)="onSceneNumberBlur(scene, $event)"
+            (keydown)="handleSceneNumberKeyDown($event)"
+            [class.ll-scene-editing]="editingSceneNumber === scene.sceneNumberText">{{ scene.sceneNumberText }}</span>:
+
+          <span
+            class="ll-scene-text"
+            [attr.contenteditable]="editState ? 'true' : 'false'"
+            (dblclick)="startEditingSceneText(scene)"
+            (blur)="onSceneTextBlur(scene, $event)"
+            (keydown)="handleSceneTextKeyDown($event)"
+            [class.ll-scene-editing]="editingSceneText === scene.text">{{ scene.text }}</span>
+        </div>
+
+        <button
+          type="button"
+          (click)="onRemoveScene(scene)"
+          class="ll-scene-remove"
+          aria-label="Remove scene">
+          <svg xmlns="http://www.w3.org/2000/svg" class="ll-scene-remove-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Empty state -->
+      <div *ngIf="!selectedScenes || selectedScenes.length === 0" class="ll-scene-empty">
+        No scenes selected. Please select scenes from the table.
+      </div>
+
+      <!-- Reorder hint (edit mode) -->
+      <div *ngIf="editState && selectedScenes && selectedScenes.length > 1" class="ll-scene-reorder-hint">
+        Drag and drop scenes to reorder them
+      </div>
+    </div>
+  </div>
+
+  <!-- Callsheet / watermark status row -->
+  <div class="ll-rail-status-row">
+    <p class="ll-rail-status-text" *ngIf="callsheetState">
+      <span class="font-medium">Callsheet:</span> {{ callsheet }}
+    </p>
+    <p class="ll-rail-status-text" *ngIf="watermark">
+      <span class="font-medium">Watermark:</span> {{ watermark }}
+    </p>
+  </div>
+
+  <!-- Total + actions -->
+  <div class="ll-rail-checkout">
+    <h2 class="ll-rail-total">Total: <span class="ll-rail-free">FREE</span></h2>
+
+    <div class="ll-rail-actions">
+      <!-- Not signed in -->
+      <button *ngIf="!userData"
+        type="button"
+        (click)="signIn.emit()"
+        class="btn-sw btn-sw-primary ll-rail-action-btn">
+        Sign in to continue
+      </button>
+
+      <!-- Signed in -->
+      <button *ngIf="userData"
+        type="button"
+        (click)="getSides.emit()"
+        [disabled]="isCheckingSubscription"
+        class="btn-sw btn-sw-primary ll-rail-action-btn">
+        <span *ngIf="isCheckingSubscription" class="flex items-center justify-center">
+          <svg class="animate-spin mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Checking...
+        </span>
+        <span *ngIf="!isCheckingSubscription">Get My Sides</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="backToScenes.emit()"
+        [disabled]="!selectedScenes || selectedScenes.length === 0"
+        class="btn-sw btn-sw-secondary ll-rail-action-btn">
+        Back To Scene Select
+      </button>
+    </div>
+
+    <!-- Callsheet + watermark add controls -->
+    <div class="ll-rail-attachments">
+      <div class="ll-rail-attach-item">
+        <app-add-callsheet (callsheetInfo)="callsheetUpload.emit($event)"></app-add-callsheet>
+      </div>
+      <div class="ll-rail-attach-item">
+        <app-add-watermark
+          [hasWatermark]="hasWatermark"
+          (waterMarkUpdate)="watermarkUpdate.emit($event)"
+          (waterMarkRemove)="watermarkRemove.emit()">
+        </app-add-watermark>
+      </div>
+    </div>
+
+    <!-- Status chips -->
+    <div *ngIf="callsheetReady && callSheetPath" class="ll-rail-chip ll-chip-mint">
+      <svg class="ll-chip-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+      </svg>
+      Callsheet Ready
+    </div>
+
+    <div *ngIf="watermark" class="ll-rail-chip ll-chip-sky">
+      <svg class="ll-chip-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+        <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+      </svg>
+      Watermark: {{ watermark }}
+    </div>
+  </div>
+</div>

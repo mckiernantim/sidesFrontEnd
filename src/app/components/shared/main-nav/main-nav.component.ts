@@ -113,7 +113,9 @@ export class MainNavComponent implements OnInit, OnDestroy {
     this.isUserMenuOpen = false;
   }
 
-  toggleMobileMenu(): void {
+  toggleMobileMenu(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
     if (this.isMobileMenuOpen) {
       this.isUserMenuOpen = false;

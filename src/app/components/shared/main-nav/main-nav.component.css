@@ -1,3 +1,9 @@
+:host {
+  display: block;
+  position: relative;
+  z-index: 100;
+}
+
 .sw-nav {
   background: var(--nav-bg);
   backdrop-filter: blur(18px) saturate(150%);
@@ -6,10 +12,11 @@
   box-shadow: 0 1px 0 color-mix(in oklab, var(--white-brand) 60%, transparent);
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: 110;
   width: 100%;
   max-width: 100%;
-  overflow-x: clip;
+  /* Do NOT use overflow clip/hidden here — it breaks sticky + clips mobile menus */
+  overflow: visible;
 }
 
 .sw-nav-inner {
@@ -99,6 +106,7 @@
 }
 
 .sw-script-badge {
+  display: flex;
   align-items: center;
   gap: 8px;
   background: var(--paper);
@@ -140,6 +148,7 @@
 
 .sw-user-menu {
   position: relative;
+  display: block;
 }
 
 .sw-user-trigger {
@@ -203,7 +212,7 @@
   border-radius: 12px;
   box-shadow: var(--shadow-lift), var(--hl);
   padding: 6px 0;
-  z-index: 20;
+  z-index: 120;
 }
 
 .sw-user-dropdown a {
@@ -222,6 +231,7 @@
 }
 
 .sw-mobile-toggle {
+  display: none; /* shown only below 768px */
   background: transparent;
   border: none;
   color: var(--ink);
@@ -229,81 +239,23 @@
   min-width: 44px;
   min-height: 44px;
   padding: 10px;
-  display: grid;
   place-items: center;
   border-radius: 10px;
+  flex: 0 0 auto;
+  z-index: 120;
+  position: relative;
 }
 
 .sw-mobile-toggle:hover {
   background: color-mix(in oklab, var(--ink) 5%, transparent);
 }
 
+.sw-mobile-backdrop {
+  display: none;
+}
+
 .sw-mobile-menu {
-  padding: 8px 20px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  border-top: 1px solid var(--line);
-  background: var(--white-brand);
-}
-
-.sw-mobile-menu a,
-.sw-mobile-login,
-.sw-mobile-logout {
-  padding: 12px 14px;
-  min-height: 44px;
-  border-radius: 8px;
-  color: var(--ink-soft);
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 15px;
-  font-family: var(--font-body);
-  display: flex;
-  align-items: center;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.sw-mobile-menu a:hover,
-.sw-mobile-login:hover,
-.sw-mobile-logout:hover {
-  background: color-mix(in oklab, var(--ink) 5%, transparent);
-  color: var(--ink);
-}
-
-.sw-mobile-divider {
-  height: 1px;
-  margin: 8px 0;
-  background: var(--line);
-}
-
-.sw-mobile-user-label {
-  margin: 0;
-  padding: 4px 14px 8px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ink-soft);
-  font-family: var(--font-mono);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sw-mobile-logout {
-  color: var(--coral);
-}
-
-.sw-mobile-logout:hover {
-  color: var(--coral);
-}
-
-.sw-mobile-login {
-  color: var(--ink);
-  font-weight: 600;
+  display: none;
 }
 
 .founder-avatar-check {
@@ -321,9 +273,10 @@
   color: var(--ink);
 }
 
+/* —— Mobile layout (pure CSS; do not rely on Tailwind utilities) —— */
 @media (max-width: 768px) {
   .sw-nav-inner {
-    padding: 12px 20px;
+    padding: 12px 16px;
     gap: 8px;
   }
 
@@ -335,16 +288,118 @@
     display: none;
   }
 
-  .sw-username {
-    display: none;
+  .sw-nav-links {
+    display: none !important;
+  }
+
+  .sw-user-menu {
+    display: none !important;
+  }
+
+  .sw-login-desktop {
+    display: none !important;
   }
 
   .sw-script-badge {
     display: none !important;
   }
 
+  .sw-username {
+    display: none;
+  }
+
   .theme-btn {
     width: 44px;
     height: 44px;
+  }
+
+  .sw-mobile-toggle {
+    display: grid !important;
+  }
+
+  .sw-mobile-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(20, 40, 43, 0.35);
+    z-index: 105;
+  }
+
+  .sw-mobile-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: fixed;
+    top: 60px;
+    left: 12px;
+    right: 12px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--white-brand);
+    box-shadow: var(--shadow-lift), var(--hl);
+    z-index: 120;
+  }
+
+  .sw-mobile-menu a,
+  .sw-mobile-login,
+  .sw-mobile-logout {
+    padding: 14px 16px;
+    min-height: 48px;
+    border-radius: 10px;
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 16px;
+    font-family: var(--font-body);
+    display: flex;
+    align-items: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .sw-mobile-menu a:hover,
+  .sw-mobile-login:hover,
+  .sw-mobile-logout:hover {
+    background: color-mix(in oklab, var(--ink) 5%, transparent);
+    color: var(--ink);
+  }
+
+  .sw-mobile-divider {
+    height: 1px;
+    margin: 8px 0;
+    background: var(--line);
+  }
+
+  .sw-mobile-user-label {
+    margin: 0;
+    padding: 4px 16px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sw-mobile-logout {
+    color: var(--coral);
+  }
+
+  .sw-mobile-login {
+    color: var(--ink);
+    font-weight: 600;
   }
 }

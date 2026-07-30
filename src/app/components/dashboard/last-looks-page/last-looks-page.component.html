@@ -1,6 +1,10 @@
 <!-- last-looks-page.component.html -->
 <main class="last-looks-container">
-    <div class="page shadow-lg border" (click)="showContextMenu && closeContextMenu(); !$event.target.closest('li') && clearSelection()">
+  <div class="ll-stage">
+    <!-- Scroll/scale viewport: the 816x1056 page is scaled to fit, never clipped -->
+    <div class="ll-page-viewport" #pageViewport>
+      <div class="ll-page-scaler" [style.width.px]="scaledPageWidth" [style.height.px]="scaledPageHeight">
+    <div class="page shadow-lg border" [style.transform]="pageTransform" (click)="showContextMenu && closeContextMenu(); !$event.target.closest('li') && clearSelection()">
         <!-- Callsheet display section (+ watermark preview, spec 022) -->
         <div *ngIf="currentPageIndex === 0 && isCallsheetPage(page)" class="callsheet-container">
             <img [src]="page[0].imagePath" 
@@ -280,10 +284,57 @@
                     </li>
                 </ng-container>
             </ul>
+
+            <!-- ═══ SKIPPED-SECTION X-BOX OVERLAY ═══
+                 Industry-standard diagonal X inside a box for each contiguous block
+                 of skipped (false) content lines. pointer-events: none so edit tools
+                 remain fully functional underneath. -->
+            <svg *ngIf="getSkippedSections().length > 0"
+                 class="skipped-sections-overlay"
+                 viewBox="0 0 816 1056"
+                 width="816"
+                 height="1056"
+                 xmlns="http://www.w3.org/2000/svg"
+                 aria-hidden="true">
+              <ng-container *ngFor="let section of getSkippedSections()">
+                <rect
+                  [attr.x]="section.left"
+                  [attr.y]="section.top"
+                  [attr.width]="section.right - section.left"
+                  [attr.height]="section.bottom - section.top"
+                  fill="none"
+                  stroke="#000000"
+                  stroke-width="5"
+                  opacity="0.5">
+                </rect>
+                <line
+                  [attr.x1]="section.left"
+                  [attr.y1]="section.top"
+                  [attr.x2]="section.right"
+                  [attr.y2]="section.bottom"
+                  stroke="#000000"
+                  stroke-width="5"
+                  opacity="0.5">
+                </line>
+                <line
+                  [attr.x1]="section.right"
+                  [attr.y1]="section.top"
+                  [attr.x2]="section.left"
+                  [attr.y2]="section.bottom"
+                  stroke="#000000"
+                  stroke-width="5"
+                  opacity="0.5">
+                </line>
+              </ng-container>
+            </svg>
+
             <li class="footer">made by Sides-Ways</li>
         </div>
     </div>
+      </div>
+    </div>
 
+    <!-- Context menu and page background remain in page component -->
     <!-- Enhanced context menu with category presets -->
     <div *ngIf="showContextMenu" class="context-menu" [style.left.px]="contextMenuPosition.x" [style.top.px]="contextMenuPosition.y">
         <ul>
@@ -316,127 +367,5 @@
     <div class="page-background" (click)="clearSelection()">
         <!-- Your existing page content -->
     </div>
-
-    <!-- Editing toolbar (visible in edit / Last Looks mode) -->
-    <div class="vertical-toolbar" *ngIf="canEditDocument">
-        <button type="button" class="tool-btn" [class.active]="touchSelectMode" (click)="toggleTouchSelectMode()" data-tooltip-left="Select Mode">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-            </svg>
-        </button>
-        <button type="button" class="tool-btn"
-                [class.disabled]="selectedLineIds.length === 0"
-                [class.active]="showContextMenu"
-                (click)="selectedLineIds.length > 0 && openContextMenuForSelection()"
-                data-tooltip-left="Line Menu (long-press)">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z"></path>
-            </svg>
-        </button>
-        <div class="toolbar-section-divider"></div>
-
-        <div class="selection-badge" *ngIf="selectedLineIds.length > 0">
-            {{ selectedLineIds.length }}
-        </div>
-        <div class="toolbar-section-divider" *ngIf="selectedLineIds.length > 0"></div>
-
-        <button type="button" class="tool-btn"
-                [class.disabled]="selectedLineIds.length === 0"
-                [class.active]="selectedLineIds.length > 0 && isVisibilityToggled()"
-                (click)="selectedLineIds.length > 0 && toggleSelectedVisibility()"
-                [attr.data-tooltip-left]="getVisibilityTooltip()">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      [attr.d]="isVisibilityToggled()
-                        ? 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21'
-                        : 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'"></path>
-            </svg>
-        </button>
-
-        <button type="button" class="tool-btn"
-                [class.disabled]="selectedLineIds.length === 0"
-                [class.active]="selectedLineIds.length > 0 && hasStartBar()"
-                (click)="selectedLineIds.length > 0 && toggleStartBarForSelected()"
-                data-tooltip-left="Start Bar">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
-            </svg>
-        </button>
-
-        <button type="button" class="tool-btn"
-                [class.disabled]="selectedLineIds.length === 0"
-                [class.active]="selectedLineIds.length > 0 && hasEndBar()"
-                (click)="selectedLineIds.length > 0 && toggleEndBarForSelected()"
-                data-tooltip-left="End Bar">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-            </svg>
-        </button>
-
-        <button type="button" class="tool-btn"
-                [class.disabled]="selectedLineIds.length === 0"
-                [class.active]="selectedLineIds.length > 0 && hasContinueTop()"
-                (click)="selectedLineIds.length > 0 && toggleContinueTopForSelected()"
-                data-tooltip-left="Continue Top">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
-            </svg>
-        </button>
-
-        <button type="button" class="tool-btn"
-                [class.disabled]="selectedLineIds.length === 0"
-                [class.active]="selectedLineIds.length > 0 && hasContinue()"
-                (click)="selectedLineIds.length > 0 && toggleContinueForSelected()"
-                data-tooltip-left="Continue">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"></path>
-            </svg>
-        </button>
-
-        <div class="toolbar-section-divider"></div>
-
-        <button type="button" class="tool-btn"
-                [class.disabled]="!canUndo"
-                (click)="canUndo && performUndo()"
-                data-tooltip-left="Undo (Ctrl+Z)">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
-            </svg>
-        </button>
-
-        <button type="button" class="tool-btn"
-                [class.disabled]="!canRedo"
-                (click)="canRedo && performRedo()"
-                data-tooltip-left="Redo (Ctrl+Y)">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10h-10a8 8 0 00-8 8v2m18-10l-6 6m6-6l-6-6"></path>
-            </svg>
-        </button>
-
-        <div class="toolbar-section-divider"></div>
-
-        <button type="button" class="tool-btn tool-btn-primary"
-                (click)="combinePages()"
-                data-tooltip-left="Condense Pages (remove hidden lines)">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-            </svg>
-        </button>
-
-        <button type="button" class="tool-btn tool-btn-danger"
-                (click)="resetToInitialState()"
-                data-tooltip-left="Reset All Changes">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-            </svg>
-        </button>
-
-        <button type="button" class="tool-btn tool-btn-success"
-                (click)="saveChanges()"
-                data-tooltip-left="Save Changes">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-        </button>
-    </div>
+  </div>
 </main>

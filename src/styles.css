@@ -136,7 +136,8 @@ body.mat-typography {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  overflow-x: clip;
+  /* visible so sticky nav + mobile menu overlay are not clipped */
+  overflow-x: visible;
 }
 
 /* Brand color utilities (used by upload/document modals) */

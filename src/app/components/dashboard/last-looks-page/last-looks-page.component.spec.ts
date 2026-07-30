@@ -89,4 +89,48 @@ describe('LastLooksPageComponent', () => {
     const overlay = fixture.debugElement.query(By.css('.callsheet-watermark-overlay'));
     expect(overlay).toBeFalsy();
   });
+
+  // ── Spec 023: pageScale @Input (FR-013, FR-017, SC-001) ──────────
+
+  it('should accept pageScale @Input and default to 1', () => {
+    expect(component.pageScale).toBe(1);
+  });
+
+  it('pageTransform should return scale() CSS string matching pageScale', () => {
+    component.pageScale = 1.5;
+    expect(component.pageTransform).toBe('scale(1.5)');
+  });
+
+  it('pageTransform should update when pageScale changes', () => {
+    component.pageScale = 0.5;
+    expect(component.pageTransform).toBe('scale(0.5)');
+    component.pageScale = 2.0;
+    expect(component.pageTransform).toBe('scale(2)');
+  });
+
+  it('should NOT own zoom state: fitScale, zoomOverride, MIN_SCALE, MAX_SCALE should not be properties', () => {
+    // SC-009: verify zoom state is NOT on LastLooksPageComponent
+    expect((component as any).fitScale).toBeUndefined();
+    expect((component as any).zoomOverride).toBeUndefined();
+    expect((component as any).MIN_SCALE).toBeUndefined();
+    expect((component as any).MAX_SCALE).toBeUndefined();
+  });
+
+  it('pageViewport ref should exist for backward-compat but not drive zoom (FR-013)', () => {
+    // The pageViewport @ViewChild exists but does not compute fitScale/zoom
+    // Just confirm the component does not have a viewportObserver that would update zoom
+    expect((component as any).viewportObserver).toBeUndefined();
+  });
+
+  it('scaledPageWidth should be 816 * pageScale', () => {
+    component.pageScale = 0.75;
+    fixture.detectChanges();
+    expect(component.scaledPageWidth).toBe(Math.round(816 * 0.75));
+  });
+
+  it('scaledPageHeight should be 1056 * pageScale', () => {
+    component.pageScale = 1.25;
+    fixture.detectChanges();
+    expect(component.scaledPageHeight).toBe(Math.round(1056 * 1.25));
+  });
 });

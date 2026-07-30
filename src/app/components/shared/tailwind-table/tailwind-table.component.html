@@ -1,4 +1,59 @@
-<div class="overflow-x-auto sw-table-wrap">
+<!-- ══ Mobile card list (< md) ══ -->
+<div class="sw-card-list" role="list">
+  <button
+    type="button"
+    class="sw-scene-card"
+    *ngFor="let item of sortedData"
+    role="listitem"
+    [class.selected]="isSelected(item)"
+    [attr.aria-pressed]="selectable ? isSelected(item) : null"
+    (click)="selectable ? toggleSelection($event, item) : onRowClick(item)">
+
+    <span *ngIf="selectable" class="sw-scene-card-check" aria-hidden="true">
+      <input
+        type="checkbox"
+        tabindex="-1"
+        [checked]="isSelected(item)"
+        (click)="$event.stopPropagation(); toggleSelection($event, item)"
+        class="sw-checkbox">
+    </span>
+
+    <span class="sw-scene-card-badge" *ngIf="badgeColumns.length">
+      <ng-container *ngFor="let column of badgeColumns">
+        {{ cellValue(item, column) }}
+      </ng-container>
+    </span>
+
+    <span class="sw-scene-card-body">
+      <span class="sw-scene-card-title">
+        <ng-container *ngFor="let column of primaryColumns">
+          {{ cellValue(item, column) }}
+        </ng-container>
+        <ng-container *ngIf="primaryColumns.length === 0 && columns[0]">
+          {{ cellValue(item, columns[0]) }}
+        </ng-container>
+      </span>
+      <span class="sw-scene-card-meta" *ngIf="metaColumns.length">
+        <ng-container *ngFor="let column of metaColumns; let i = index">
+          <ng-container *ngIf="cellValue(item, column) as value">
+            <span *ngIf="value" class="sw-scene-card-meta-item">
+              <span *ngIf="i > 0" class="sw-scene-card-meta-sep"> · </span>
+              <span class="sw-scene-card-meta-label">{{ column.header }}</span>
+              {{ value }}
+            </span>
+          </ng-container>
+        </ng-container>
+      </span>
+    </span>
+  </button>
+
+  <div *ngIf="data.length === 0" class="sw-scene-card-empty">
+    No data available
+  </div>
+</div>
+
+<!-- ══ Desktop table (≥ md) ══ -->
+<div class="overflow-x-auto sw-table-wrap sw-table-desktop">
   <table class="min-w-full sw-table">
     <thead>
       <tr>

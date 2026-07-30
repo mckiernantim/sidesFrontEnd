@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, HostListener, OnDestroy, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, HostListener, OnDestroy, AfterViewInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { Line } from 'src/app/types/Line';
 import { UndoService } from 'src/app/services/edit/undo.service';
 import { Subject, Subscription } from 'rxjs';
@@ -13,7 +13,7 @@ import { cloneDeep } from 'lodash';
   styleUrls: ['./last-looks-page.component.css'],
   standalone: false
 })
-export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
+export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, AfterViewInit {
   @Input() page: any[] = [];
   @Input() canEditDocument: boolean = false;
   @Input() selectedLine: any = null;
@@ -29,6 +29,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   @Output() proceedToCheckout = new EventEmitter<void>();
   @Output() toggleVisibilityRequest = new EventEmitter<void>();
   @Output() pageChange = new EventEmitter<number>();
+  /** Parent toggles Last Looks edit mode (Edit PDF / Save Changes). */
+  @Output() editModeToggle = new EventEmitter<void>();
 
   showContextMenu: boolean = false;
   contextMenuPosition = { x: 0, y: 0 };
@@ -48,6 +50,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   selectedLineIds: number[] = [];
   lastSelectedIndex: number | null = null;
   showInstructions: boolean = false;
+  showEditTips: boolean = false;
   changesMade: boolean = false;
   /** When true, taps toggle lines into/out of multi-select without modifier keys */
   touchSelectMode = false;
@@ -107,6 +110,29 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   
 
   @ViewChild('pdfViewer') pdfViewer: any;
+  /** pageViewport ref kept for backward-compat but no longer drives zoom — zoom is owned by LastLooksComponent. */
+  @ViewChild('pageViewport') pageViewport?: ElementRef<HTMLElement>;
+
+  /** Authoritative scale passed from LastLooksComponent (FR-013, FR-017).
+   *  All drag math divides screen-space deltas by this value to produce
+   *  canonical document-space coordinates (SC-001). */
+  @Input() pageScale: number = 1;
+
+  // Page dimensions are canonical; they must not be used for zoom computation here.
+  private static readonly PAGE_WIDTH = 816;
+  private static readonly PAGE_HEIGHT = 1056;
+
+  get pageTransform(): string {
+    return `scale(${this.pageScale})`;
+  }
+
+  get scaledPageWidth(): number {
+    return Math.round(LastLooksPageComponent.PAGE_WIDTH * this.pageScale);
+  }
+
+  get scaledPageHeight(): number {
+    return Math.round(LastLooksPageComponent.PAGE_HEIGHT * this.pageScale);
+  }
 
   // Temporary workaround to convert GCS URL to Firebase Storage URL
   public convertToFirebaseUrl(gcsUrl: string): string {
@@ -413,9 +439,10 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   handleMouseMove = (event: MouseEvent): void => {
     if (!this.mouseDragging) return;
     
-    // Calculate delta from start
-    const deltaX = event.clientX - this.dragStartX;
-    const deltaY = event.clientY - this.dragStartY;
+    // Screen movement must be divided by the page scale to stay in page coordinates
+    const scale = this.pageScale;
+    const deltaX = (event.clientX - this.dragStartX) / scale;
+    const deltaY = (event.clientY - this.dragStartY) / scale;
     
     // Calculate new position: INITIAL + DELTA
     const newX = this.initialPosition.x + deltaX;
@@ -459,9 +486,10 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     // Remove grab cursor
     document.body.classList.remove('grab-cursor');
 
-    // Calculate final position
-    const deltaX = event.clientX - this.dragStartX;
-    const deltaY = event.clientY - this.dragStartY;
+    // Calculate final position (screen delta converted to page coordinates)
+    const scale = this.pageScale;
+    const deltaX = (event.clientX - this.dragStartX) / scale;
+    const deltaY = (event.clientY - this.dragStartY) / scale;
     const finalX = this.initialPosition.x + deltaX;
     const finalY = this.initialPosition.y - deltaY;
 
@@ -569,7 +597,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
   moveBarText = (event: MouseEvent): void => {
     if (!this.barTextDragging) return;
     
-    const deltaX = event.clientX - this.barTextDragStartX;
+    const deltaX = (event.clientX - this.barTextDragStartX) / this.pageScale;
     const newOffset = this.barTextInitialOffset + deltaX;
     
     const lineIndex = this.page.findIndex(line => line.docPageLineIndex === this.barTextDragLineId);
@@ -1981,6 +2009,84 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy {
     }
     
     return '90px';
+  }
+
+  // ============= SKIPPED SECTION X-BOX METHODS =============
+
+  /**
+   * Compute bounding boxes for each contiguous block of skipped (false/hidden)
+   * content lines on the current page, for rendering SVG X-box overlays.
+   *
+   * Coordinate system:
+   *   - Lines are positioned with CSS `bottom: Npx` on a 1056px-tall page
+   *   - SVG origin is top-left, so:  svgY = PAGE_HEIGHT - bottomPx
+   */
+  getSkippedSections(): Array<{ top: number; bottom: number; left: number; right: number }> {
+    const PAGE_HEIGHT = 1056;
+    const CONTENT_LEFT = 88;
+    const CONTENT_RIGHT = 739;
+    const PAD_TOP = 16;
+    const PAD_BOTTOM = 4;
+
+    const EXCLUDED_CATEGORIES = new Set([
+      'page-number',
+      'page-number-hidden',
+      'injected-break',
+      'callsheet',
+    ]);
+
+    const sections: Array<{ top: number; bottom: number; left: number; right: number }> = [];
+
+    let groupMaxYPos: number | null = null;
+    let groupMinYPos: number | null = null;
+
+    const flushGroup = () => {
+      if (groupMaxYPos !== null && groupMinYPos !== null) {
+        const svgTop = PAGE_HEIGHT - groupMaxYPos - PAD_TOP;
+        const svgBottom = PAGE_HEIGHT - groupMinYPos + PAD_BOTTOM;
+
+        if (svgBottom > svgTop + 4) {
+          sections.push({
+            top: Math.max(0, svgTop),
+            bottom: Math.min(PAGE_HEIGHT, svgBottom),
+            left: CONTENT_LEFT,
+            right: CONTENT_RIGHT,
+          });
+        }
+      }
+      groupMaxYPos = null;
+      groupMinYPos = null;
+    };
+
+    for (const line of this.page) {
+      if (EXCLUDED_CATEGORIES.has(line.category)) {
+        continue;
+      }
+
+      if (line.hidden === 'hidden') {
+        continue;
+      }
+
+      const isSkipped = line.visible === 'false' || (line.visible as any) === false;
+
+      if (isSkipped) {
+        const scaledBottom = line.calculatedYpos
+          ? parseInt(String(line.calculatedYpos), 10)
+          : (typeof line.yPos === 'number' ? Math.round(line.yPos * 1.3) : 0);
+        const yPos = scaledBottom;
+
+        if (yPos > 0) {
+          if (groupMaxYPos === null || yPos > groupMaxYPos) groupMaxYPos = yPos;
+          if (groupMinYPos === null || yPos < groupMinYPos) groupMinYPos = yPos;
+        }
+      } else {
+        flushGroup();
+      }
+    }
+
+    flushGroup();
+
+    return sections;
   }
 
   // ============= EDITING TOOLBAR METHODS =============

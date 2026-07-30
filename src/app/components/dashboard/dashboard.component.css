@@ -23,36 +23,50 @@
     }
 }
 
+/* Viewport shell: outer page does not scroll. Scene select scrolls inside
+   app-dashboard-right; Last Looks uses overflow:hidden via --ll modifiers. */
 .dashboard-container {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-    height: auto;
+    height: 100vh;
     width: 100%;
     background: var(--paper);
     color: var(--ink);
+    overflow: hidden;
 }
 
-/* Ensure child components can grow */
-app-dashboard-right {
+.button-container {
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    height: auto;
-    overflow: visible;
-    background-color: var(--paper);
-    margin-bottom: 1rem;
+}
+
+/* Scene select: allow content height to grow and scroll here.
+   Last Looks: child .dashboard-right--ll fills 100% and clips internally. */
+app-dashboard-right {
+    display: block;
+    flex: 1;
     min-height: 0;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background-color: var(--paper);
     width: 100%;
     max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Lock host scroll while Last Looks owns the viewport */
+app-dashboard-right:has(.dashboard-right--ll) {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 @media (max-width: 768px) {
     .dashboard-container {
         overflow-x: hidden;
-    }
-
-    app-dashboard-right {
-        margin-bottom: 0.5rem;
     }
 }
 

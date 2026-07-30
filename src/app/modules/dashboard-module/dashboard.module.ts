@@ -8,6 +8,7 @@ import { DashboardComponent } from '../../components/dashboard/dashboard.compone
 import { DashboardRightComponent } from '../../components/dashboard/dashboard-right/dashboard-right.component';
 import { LastLooksComponent } from '../../components/dashboard/last-looks/last-looks.component';
 import { LastLooksPageComponent } from '../../components/dashboard/last-looks-page/last-looks-page.component';
+import { LastLooksRailComponent } from '../../components/dashboard/last-looks-rail/last-looks-rail.component';
 import { AddCallsheetComponent } from '../../components/add-callsheet/add-callsheet.component';
 import { ToolTipComponent } from '../../components/shared/tool-tip/tool-tip.component';
 import { AddWatermarkComponent } from '../../components/add-watermark/add-watermark.component';
@@ -15,6 +16,7 @@ import { SharedModule } from '../shared-module/shared.module';
 import { CheckoutComponent } from 'src/app/components/checkout/checkout.component';
 import { SceneSelectionComponent } from '../../components/dashboard/scene-selection/scene-selection.component';
 import { CheckoutModalComponent } from '../../components/dashboard/checkout-modal/checkout-modal.component';
+import { DevLastLooksComponent } from '../../components/dev/dev-last-looks/dev-last-looks.component';
 
 @NgModule({
   declarations: [
@@ -22,12 +24,14 @@ import { CheckoutModalComponent } from '../../components/dashboard/checkout-moda
     DashboardRightComponent,
     LastLooksComponent,
     LastLooksPageComponent,
+    LastLooksRailComponent,
     AddCallsheetComponent,
     ToolTipComponent,
     AddWatermarkComponent,
     CheckoutComponent,
     SceneSelectionComponent,
-    CheckoutModalComponent
+    CheckoutModalComponent,
+    DevLastLooksComponent
   ],
   imports: [
     CommonModule,
@@ -42,8 +46,10 @@ import { CheckoutModalComponent } from '../../components/dashboard/checkout-moda
     DashboardRightComponent,
     LastLooksComponent,
     LastLooksPageComponent,
+    LastLooksRailComponent,
     SceneSelectionComponent,
-    CheckoutModalComponent
+    CheckoutModalComponent,
+    DevLastLooksComponent
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
