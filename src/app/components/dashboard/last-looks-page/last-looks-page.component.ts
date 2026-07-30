@@ -4,6 +4,7 @@ import { UndoService } from 'src/app/services/edit/undo.service';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, filter } from 'rxjs/operators';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
+import { AnnotationStateService } from 'src/app/services/annotation/annotation-state.service';
 import { cloneDeep } from 'lodash';
 
 
@@ -109,6 +110,27 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
 
   
 
+
+  // ═══ X-BOX EDITING STATE ═══
+  selectedXboxIndex: string | null = null;
+  selectedAnnotationId: string | null = null;
+  private xboxDragging = false;
+  private xboxDragStartX = 0;
+  private xboxDragStartY = 0;
+  private xboxDragInitialTop = 0;
+  private xboxDragInitialLeft = 0;
+  private xboxDragInitialWidth = 0;
+  private xboxDragInitialHeight = 0;
+  private xboxResizing = false;
+  private xboxResizeEdge: string | null = null;
+  private xboxResizeInitial: { top: number; bottom: number; left: number; right: number } | null = null;
+  private xboxResizeStartX = 0;
+  private xboxResizeStartY = 0;
+  private xboxUndoSnapshot: any[] = [];
+  private xboxUndoRedoSubscription: Subscription | null = null;
+  private readonly xboxPageWidth = 816;
+  private readonly xboxPageHeight = 1056;
+
   @ViewChild('pdfViewer') pdfViewer: any;
   /** pageViewport ref kept for backward-compat but no longer drives zoom — zoom is owned by LastLooksComponent. */
   @ViewChild('pageViewport') pageViewport?: ElementRef<HTMLElement>;
@@ -162,7 +184,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
   constructor(
     private undoService: UndoService,
     public cdRef: ChangeDetectorRef,
-    private pdfService: PdfService
+    private pdfService: PdfService,
+    private annotationState: AnnotationStateService
   ) {
     // Subscribe to line updates from the service
     this.subscription = this.pdfService.finalDocumentData$.subscribe(update => {
@@ -201,6 +224,21 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
         this.cdRef.detectChanges();
       }
     );
+
+    this.xboxUndoRedoSubscription = this.undoService.undoRedo$.subscribe(({ item }) => {
+      if ((item as any)?.type === 'xbox-change') {
+        const restoredPage = this.pdfService.finalDocument?.data?.[this.currentPageIndex];
+        if (restoredPage) {
+          this.page = [...restoredPage];
+        }
+        if (this.selectedXboxIndex !== null && !this.getXboxById(this.selectedXboxIndex)) {
+          this.selectedXboxIndex = null;
+        }
+        this.pageUpdate.emit([...this.page]);
+        this.cdRef.detectChanges();
+      }
+    });
+
   }
 
   ngOnInit(): void {
@@ -330,6 +368,11 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
     document.removeEventListener('touchend', this.handleTouchUp);
     document.removeEventListener('touchmove', this.moveBarTextTouch);
     document.removeEventListener('touchend', this.endBarTextDragTouch);
+    document.removeEventListener('mousemove', this.handleXboxDragMove);
+    document.removeEventListener('mouseup', this.handleXboxDragEnd);
+    document.removeEventListener('mousemove', this.handleXboxResizeMove);
+    document.removeEventListener('mouseup', this.handleXboxResizeEnd);
+    this.xboxUndoRedoSubscription?.unsubscribe();
   }
 
   ngAfterViewInit() {
@@ -1585,6 +1628,18 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
   handleGlobalKeyDown(event: KeyboardEvent): void {
   
     if (!this.canEditDocument) return;
+
+    const target = event.target as HTMLElement | null;
+    const fromEditable = !!target && (
+      target.isContentEditable ||
+      ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+    );
+
+    if (!fromEditable && (event.key === 'Delete' || event.key === 'Backspace') && this.selectedXboxIndex !== null) {
+      this.deleteXbox(this.selectedXboxIndex, event);
+      return;
+    }
+
     // Handle Ctrl+Z for undo
     if (event.ctrlKey && event.key === 'z' && !event.shiftKey) {
       event.preventDefault();
@@ -2016,12 +2071,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
   /**
    * Compute bounding boxes for each contiguous block of skipped (false/hidden)
    * content lines on the current page, for rendering SVG X-box overlays.
-   *
-   * Coordinate system:
-   *   - Lines are positioned with CSS `bottom: Npx` on a 1056px-tall page
-   *   - SVG origin is top-left, so:  svgY = PAGE_HEIGHT - bottomPx
    */
-  getSkippedSections(): Array<{ top: number; bottom: number; left: number; right: number }> {
+  getSkippedSections(): Array<{ top: number; bottom: number; left: number; right: number; lineIds: number[]; stableKey: string }> {
     const PAGE_HEIGHT = 1056;
     const CONTENT_LEFT = 88;
     const CONTENT_RIGHT = 739;
@@ -2035,34 +2086,37 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
       'callsheet',
     ]);
 
-    const sections: Array<{ top: number; bottom: number; left: number; right: number }> = [];
+    const sections: Array<{ top: number; bottom: number; left: number; right: number; lineIds: number[]; stableKey: string }> = [];
 
     let groupMaxYPos: number | null = null;
     let groupMinYPos: number | null = null;
+    let groupLineIds: number[] = [];
 
     const flushGroup = () => {
       if (groupMaxYPos !== null && groupMinYPos !== null) {
         const svgTop = PAGE_HEIGHT - groupMaxYPos - PAD_TOP;
         const svgBottom = PAGE_HEIGHT - groupMinYPos + PAD_BOTTOM;
 
-        if (svgBottom > svgTop + 4) {
+        if (groupLineIds.length > 0 && svgBottom > svgTop + 4) {
           sections.push({
             top: Math.max(0, svgTop),
             bottom: Math.min(PAGE_HEIGHT, svgBottom),
             left: CONTENT_LEFT,
             right: CONTENT_RIGHT,
+            lineIds: [...groupLineIds],
+            stableKey: this.getXboxStableKey(groupLineIds),
           });
         }
       }
       groupMaxYPos = null;
       groupMinYPos = null;
+      groupLineIds = [];
     };
 
     for (const line of this.page) {
       if (EXCLUDED_CATEGORIES.has(line.category)) {
         continue;
       }
-
       if (line.hidden === 'hidden') {
         continue;
       }
@@ -2078,6 +2132,10 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
         if (yPos > 0) {
           if (groupMaxYPos === null || yPos > groupMaxYPos) groupMaxYPos = yPos;
           if (groupMinYPos === null || yPos < groupMinYPos) groupMinYPos = yPos;
+          const lineId = this.getXboxLineId(line);
+          if (lineId !== null) {
+            groupLineIds.push(lineId);
+          }
         }
       } else {
         flushGroup();
@@ -2085,8 +2143,501 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
     }
 
     flushGroup();
-
     return sections;
+  }
+
+  // ============= X-BOX EDITING METHODS (freestanding) =============
+
+  /**
+   * Create a freestanding X-box on the current page.
+   * Independent of line selection / visibility — geometry-only annotation.
+   */
+  addXbox(): void {
+    if (!this.canEditDocument || !this.pdfService.finalDocument) return;
+
+    const previousXboxes = this.cloneXboxesSnapshot();
+    const id = this.generateXboxId();
+    const record = {
+      id,
+      pageIndex: this.currentPageIndex,
+      top: 400,
+      bottom: 600,
+      left: 88,
+      right: 739,
+      isFreestanding: true,
+      lineIds: [] as number[],
+    };
+
+    const doc = this.pdfService.finalDocument as any;
+    if (!Array.isArray(doc.xboxes)) {
+      doc.xboxes = [];
+    }
+    doc.xboxes = [...doc.xboxes, record];
+
+    this.selectedXboxIndex = id;
+    this.selectedAnnotationId = null;
+    this.annotationState.clearSelection();
+    this.selectedLineIds = [];
+
+    this.undoService.recordXboxChange(previousXboxes, [], 'Add X-box');
+    this.cdRef.detectChanges();
+  }
+
+  /**
+   * All X visuals for the page: freestanding boxes + auto stubs over crossed-out lines.
+   */
+  getDisplayedSkippedSections(): Array<{
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+    originalIndex: string;
+    isFreestanding: boolean;
+    lineIds: number[];
+  }> {
+    const freestanding = this.getFreestandingXboxesForPage().map((xbox: any) => ({
+      top: xbox.top,
+      bottom: xbox.bottom,
+      left: xbox.left,
+      right: xbox.right,
+      originalIndex: xbox.id as string,
+      isFreestanding: true,
+      lineIds: [] as number[],
+    }));
+
+    // Auto stubs are visual-only (from line.visible === false). They do not own
+    // interactive handles — freestanding boxes are the editable objects.
+    const freestandingBounds = freestanding.map(s => ({ top: s.top, bottom: s.bottom }));
+    const stubSections = this.getSkippedSections()
+      .filter(section => {
+        const mid = (section.top + section.bottom) / 2;
+        return !freestandingBounds.some(b => mid >= b.top && mid <= b.bottom);
+      })
+      .map(section => ({
+        top: section.top,
+        bottom: section.bottom,
+        left: section.left,
+        right: section.right,
+        originalIndex: section.stableKey,
+        isFreestanding: false,
+        lineIds: [...section.lineIds],
+      }));
+
+    return [...freestanding, ...stubSections];
+  }
+
+  /** Interactive overlay targets — freestanding boxes only. */
+  getEditableXboxSections(): Array<{
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+    originalIndex: string;
+  }> {
+    return this.getFreestandingXboxesForPage().map((xbox: any) => ({
+      top: xbox.top,
+      bottom: xbox.bottom,
+      left: xbox.left,
+      right: xbox.right,
+      originalIndex: xbox.id as string,
+    }));
+  }
+
+  selectXbox(originalIndex: string, event: MouseEvent): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (!this.getXboxById(originalIndex)) return;
+    this.selectedXboxIndex = originalIndex;
+    this.selectedAnnotationId = null;
+    this.annotationState.clearSelection();
+    this.cdRef.detectChanges();
+  }
+
+  deselectXbox(): void {
+    this.selectedXboxIndex = null;
+    this.cdRef.detectChanges();
+  }
+
+  deleteXbox(originalIndex: string, event?: MouseEvent | KeyboardEvent): void {
+    event?.stopPropagation();
+    event?.preventDefault();
+
+    const xbox = this.getXboxById(originalIndex);
+    if (!xbox) return;
+
+    const previousXboxes = this.cloneXboxesSnapshot();
+    const doc = this.pdfService.finalDocument as any;
+    doc.xboxes = (doc.xboxes || []).filter((x: any) => x.id !== originalIndex);
+
+    if (this.selectedXboxIndex === originalIndex) {
+      this.selectedXboxIndex = null;
+    }
+
+    // Freestanding boxes never own line visibility — geometry-only undo.
+    this.undoService.recordXboxChange(previousXboxes, [], 'Delete X-box');
+    this.cdRef.detectChanges();
+  }
+
+  startXboxDrag(originalIndex: string, event: MouseEvent): void {
+    if (!this.canEditDocument) return;
+    if ((event.target as HTMLElement).closest('.xbox-delete-btn') ||
+        (event.target as HTMLElement).closest('.xbox-resize-handle')) {
+      return;
+    }
+
+    event.stopPropagation();
+    event.preventDefault();
+
+    const xbox = this.getXboxById(originalIndex);
+    if (!xbox) return;
+
+    this.selectedXboxIndex = originalIndex;
+    this.selectedAnnotationId = null;
+    this.annotationState.clearSelection();
+
+    this.xboxUndoSnapshot = this.cloneXboxesSnapshot();
+    this.xboxDragging = true;
+    this.xboxDragStartX = event.clientX;
+    this.xboxDragStartY = event.clientY;
+    this.xboxDragInitialTop = xbox.top;
+    this.xboxDragInitialLeft = xbox.left;
+    this.xboxDragInitialWidth = xbox.right - xbox.left;
+    this.xboxDragInitialHeight = xbox.bottom - xbox.top;
+
+    document.addEventListener('mousemove', this.handleXboxDragMove);
+    document.addEventListener('mouseup', this.handleXboxDragEnd);
+  }
+
+  handleXboxDragMove = (event: MouseEvent): void => {
+    if (!this.xboxDragging || this.selectedXboxIndex === null) return;
+    const xbox = this.getXboxById(this.selectedXboxIndex);
+    if (!xbox) return;
+
+    const scale = this.pageScale || 1;
+    const deltaX = (event.clientX - this.xboxDragStartX) / scale;
+    const deltaY = (event.clientY - this.xboxDragStartY) / scale;
+    const newTop = this.clamp(
+      this.xboxDragInitialTop + deltaY,
+      0,
+      this.xboxPageHeight - this.xboxDragInitialHeight
+    );
+    const newLeft = this.clamp(
+      this.xboxDragInitialLeft + deltaX,
+      0,
+      this.xboxPageWidth - this.xboxDragInitialWidth
+    );
+
+    xbox.top = newTop;
+    xbox.bottom = newTop + this.xboxDragInitialHeight;
+    xbox.left = newLeft;
+    xbox.right = newLeft + this.xboxDragInitialWidth;
+
+    this.cdRef.detectChanges();
+  };
+
+  handleXboxDragEnd = (_event: MouseEvent): void => {
+    document.removeEventListener('mousemove', this.handleXboxDragMove);
+    document.removeEventListener('mouseup', this.handleXboxDragEnd);
+    if (!this.xboxDragging || this.selectedXboxIndex === null) {
+      this.xboxDragging = false;
+      this.xboxUndoSnapshot = [];
+      return;
+    }
+
+    // Geometry-only — do not retie lines to the box.
+    this.undoService.recordXboxChange(this.xboxUndoSnapshot, [], 'Drag X-box');
+
+    this.xboxDragging = false;
+    this.xboxUndoSnapshot = [];
+    this.cdRef.detectChanges();
+  };
+
+  startXboxResize(originalIndex: string, edge: string, event: MouseEvent): void {
+    if (!this.canEditDocument) return;
+    event.stopPropagation();
+    event.preventDefault();
+
+    const xbox = this.getXboxById(originalIndex);
+    if (!xbox) return;
+
+    this.selectedXboxIndex = originalIndex;
+    this.selectedAnnotationId = null;
+    this.annotationState.clearSelection();
+
+    this.xboxUndoSnapshot = this.cloneXboxesSnapshot();
+    this.xboxResizing = true;
+    this.xboxResizeEdge = edge;
+    this.xboxResizeStartX = event.clientX;
+    this.xboxResizeStartY = event.clientY;
+    this.xboxResizeInitial = { top: xbox.top, bottom: xbox.bottom, left: xbox.left, right: xbox.right };
+
+    document.addEventListener('mousemove', this.handleXboxResizeMove);
+    document.addEventListener('mouseup', this.handleXboxResizeEnd);
+  }
+
+  handleXboxResizeMove = (event: MouseEvent): void => {
+    if (!this.xboxResizing || this.selectedXboxIndex === null || !this.xboxResizeInitial) return;
+    const xbox = this.getXboxById(this.selectedXboxIndex);
+    if (!xbox) return;
+
+    const scale = this.pageScale || 1;
+    const deltaX = (event.clientX - this.xboxResizeStartX) / scale;
+    const deltaY = (event.clientY - this.xboxResizeStartY) / scale;
+    const MIN_SIZE = 30;
+    const init = this.xboxResizeInitial;
+
+    switch (this.xboxResizeEdge) {
+      case 'top-left':
+        xbox.top = this.clamp(init.top + deltaY, 0, init.bottom - MIN_SIZE);
+        xbox.left = this.clamp(init.left + deltaX, 0, init.right - MIN_SIZE);
+        xbox.bottom = init.bottom;
+        xbox.right = init.right;
+        break;
+      case 'top-right':
+        xbox.top = this.clamp(init.top + deltaY, 0, init.bottom - MIN_SIZE);
+        xbox.right = this.clamp(init.right + deltaX, init.left + MIN_SIZE, this.xboxPageWidth);
+        xbox.bottom = init.bottom;
+        xbox.left = init.left;
+        break;
+      case 'bottom-left':
+        xbox.bottom = this.clamp(init.bottom + deltaY, init.top + MIN_SIZE, this.xboxPageHeight);
+        xbox.left = this.clamp(init.left + deltaX, 0, init.right - MIN_SIZE);
+        xbox.top = init.top;
+        xbox.right = init.right;
+        break;
+      case 'bottom-right':
+        xbox.bottom = this.clamp(init.bottom + deltaY, init.top + MIN_SIZE, this.xboxPageHeight);
+        xbox.right = this.clamp(init.right + deltaX, init.left + MIN_SIZE, this.xboxPageWidth);
+        xbox.top = init.top;
+        xbox.left = init.left;
+        break;
+    }
+
+    this.cdRef.detectChanges();
+  };
+
+  handleXboxResizeEnd = (_event: MouseEvent): void => {
+    document.removeEventListener('mousemove', this.handleXboxResizeMove);
+    document.removeEventListener('mouseup', this.handleXboxResizeEnd);
+    if (!this.xboxResizing || this.selectedXboxIndex === null) {
+      this.xboxResizing = false;
+      this.xboxResizeEdge = null;
+      this.xboxResizeInitial = null;
+      this.xboxUndoSnapshot = [];
+      return;
+    }
+
+    this.undoService.recordXboxChange(this.xboxUndoSnapshot, [], 'Resize X-box');
+
+    this.xboxResizing = false;
+    this.xboxResizeEdge = null;
+    this.xboxResizeInitial = null;
+    this.xboxUndoSnapshot = [];
+    this.cdRef.detectChanges();
+  };
+
+  // ============= X-BOX HELPERS =============
+
+  private generateXboxId(): string {
+    return `xbox-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 9)}`;
+  }
+
+  private getSavedXboxesForPage(): any[] {
+    if (!this.pdfService.finalDocument) return [];
+    const all = (this.pdfService.finalDocument as any).xboxes;
+    if (!Array.isArray(all)) {
+      (this.pdfService.finalDocument as any).xboxes = [];
+      return [];
+    }
+    return all.filter((xbox: any) => xbox && xbox.pageIndex === this.currentPageIndex);
+  }
+
+  private getFreestandingXboxesForPage(): any[] {
+    return this.getSavedXboxesForPage().filter((xbox: any) => !!xbox.isFreestanding);
+  }
+
+  private setSavedXboxesForPage(xboxes: any[]): void {
+    if (!this.pdfService.finalDocument) return;
+    const all = Array.isArray((this.pdfService.finalDocument as any).xboxes)
+      ? (this.pdfService.finalDocument as any).xboxes
+      : [];
+    const otherPages = all.filter((xbox: any) => xbox && xbox.pageIndex !== this.currentPageIndex);
+    (this.pdfService.finalDocument as any).xboxes = [...otherPages, ...xboxes];
+  }
+
+  private getXboxById(id: string): any | null {
+    if (!this.pdfService.finalDocument || !id) return null;
+    const all = (this.pdfService.finalDocument as any).xboxes || [];
+    return all.find((xbox: any) => xbox && xbox.id === id) || null;
+  }
+
+  private cloneXboxesSnapshot(): any[] {
+    const all = (this.pdfService.finalDocument as any)?.xboxes || [];
+    return cloneDeep(all);
+  }
+
+  private ensureXboxIsSaved(originalIndex: string): string | null {
+    if (!originalIndex) return null;
+    if (this.getXboxById(originalIndex)) return originalIndex;
+
+    const stub = this.getSkippedSections().find(s => s.stableKey === originalIndex);
+    if (!stub) return null;
+
+    const existingForSameLines = this.getSavedXboxesForPage().find((xbox: any) =>
+      this.getXboxStableKey(((xbox.lineIds || []) as number[])) === stub.stableKey
+    );
+    if (existingForSameLines) {
+      return existingForSameLines.id;
+    }
+
+    const id = this.generateXboxId();
+    const record = {
+      id,
+      pageIndex: this.currentPageIndex,
+      lineIds: [...stub.lineIds],
+      top: stub.top,
+      bottom: stub.bottom,
+      left: stub.left,
+      right: stub.right,
+    };
+    this.setSavedXboxesForPage([...this.getSavedXboxesForPage(), record]);
+    return id;
+  }
+
+  private recomputeXboxOwnedLineIds(id: string, changeDescription: string): any[] {
+    const xbox = this.getXboxById(id);
+    if (!xbox) return [];
+
+    const otherSavedLineIds = new Set<number>(
+      this.getSavedXboxesForPage()
+        .filter((other: any) => other.id !== id)
+        .flatMap((other: any) => (other.lineIds || []) as number[])
+    );
+
+    const previouslyOwned = new Set<number>((xbox.lineIds || []) as number[]);
+    const currentlyInside = this.getLineIdsInXboxBounds(xbox)
+      .filter(lineId => previouslyOwned.has(lineId) || !otherSavedLineIds.has(lineId));
+    const nextSet = new Set<number>(currentlyInside);
+
+    const toShow: number[] = [];
+    previouslyOwned.forEach(lineId => { if (!nextSet.has(lineId)) toShow.push(lineId); });
+    const toHide: number[] = [];
+    nextSet.forEach(lineId => { if (!previouslyOwned.has(lineId)) toHide.push(lineId); });
+
+    const lineChanges: any[] = [];
+    if (toShow.length > 0) {
+      lineChanges.push(...this.setXboxLinesVisibleInPage(toShow, true, changeDescription));
+    }
+    if (toHide.length > 0) {
+      lineChanges.push(...this.setXboxLinesVisibleInPage(toHide, false, changeDescription));
+    }
+
+    xbox.lineIds = currentlyInside;
+    return lineChanges;
+  }
+
+  private computeXboxGeometryForLineIds(lineIds: number[]): { top: number; bottom: number; left: number; right: number } | null {
+    if (lineIds.length === 0) return null;
+    const PAGE_HEIGHT = this.xboxPageHeight;
+    const CONTENT_LEFT = 88;
+    const CONTENT_RIGHT = 739;
+    const PAD_TOP = 16;
+    const PAD_BOTTOM = 4;
+
+    const idSet = new Set(lineIds);
+    let groupMaxYPos: number | null = null;
+    let groupMinYPos: number | null = null;
+
+    for (const line of this.page) {
+      const id = this.getXboxLineId(line);
+      if (id === null || !idSet.has(id)) continue;
+      const scaledBottom = line.calculatedYpos
+        ? parseInt(String(line.calculatedYpos), 10)
+        : (typeof line.yPos === 'number' ? Math.round(line.yPos * 1.3) : 0);
+      if (scaledBottom <= 0) continue;
+      if (groupMaxYPos === null || scaledBottom > groupMaxYPos) groupMaxYPos = scaledBottom;
+      if (groupMinYPos === null || scaledBottom < groupMinYPos) groupMinYPos = scaledBottom;
+    }
+    if (groupMaxYPos === null || groupMinYPos === null) return null;
+
+    const top = Math.max(0, PAGE_HEIGHT - groupMaxYPos - PAD_TOP);
+    const bottom = Math.min(PAGE_HEIGHT, PAGE_HEIGHT - groupMinYPos + PAD_BOTTOM);
+    if (bottom <= top + 4) return null;
+
+    return { top, bottom, left: CONTENT_LEFT, right: CONTENT_RIGHT };
+  }
+
+  private setXboxLinesVisibleInPage(
+    lineIds: number[],
+    isVisible: boolean,
+    changeDescription: string
+  ): { pageIndex: number; lineIndex: number; previousLineState: any; changeDescription: string }[] {
+    const visible = isVisible ? 'true' : 'false';
+    const lineChanges: { pageIndex: number; lineIndex: number; previousLineState: any; changeDescription: string }[] = [];
+
+    lineIds.forEach(lineId => {
+      const lineIndex = this.page.findIndex(line => this.getXboxLineId(line) === lineId);
+      if (lineIndex === -1) return;
+      const line = this.page[lineIndex];
+      if (line.visible === visible) return;
+
+      lineChanges.push({
+        pageIndex: this.currentPageIndex,
+        lineIndex,
+        previousLineState: cloneDeep(line),
+        changeDescription,
+      });
+      line.visible = visible;
+      this.pdfService.updateLine(this.currentPageIndex, lineIndex, { visible }, true);
+    });
+
+    if (lineChanges.length > 0) {
+      this.pageUpdate.emit([...this.page]);
+    }
+    return lineChanges;
+  }
+
+  private getXboxStableKey(lineIds: number[]): string {
+    return [...lineIds].sort((a, b) => a - b).join('|');
+  }
+
+  private getLineIdsInXboxBounds(section: { top: number; bottom: number; left: number; right: number }): number[] {
+    return this.page
+      .filter(line => this.isXboxContentLine(line))
+      .filter(line => {
+        const y = this.getLineSvgY(line);
+        return y >= section.top && y <= section.bottom;
+      })
+      .map(line => this.getXboxLineId(line))
+      .filter((lineId): lineId is number => lineId !== null);
+  }
+
+  private isXboxContentLine(line: any): boolean {
+    return !!line &&
+      this.getXboxLineId(line) !== null &&
+      line.hidden !== 'hidden' &&
+      !['page-number', 'page-number-hidden', 'injected-break', 'callsheet'].includes(line.category);
+  }
+
+  private getXboxLineId(line: any): number | null {
+    if (!line) {
+      return null;
+    }
+
+    return typeof line.docPageLineIndex === 'number'
+      ? line.docPageLineIndex
+      : (typeof line.index === 'number' ? line.index : null);
+  }
+
+  private getLineSvgY(line: any): number {
+    const bottom = line.calculatedYpos
+      ? parseInt(String(line.calculatedYpos), 10)
+      : (typeof line.yPos === 'number' ? Math.round(line.yPos * 1.3) : 0);
+    return this.xboxPageHeight - bottom;
+  }
+
+  private clamp(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, value));
   }
 
   // ============= EDITING TOOLBAR METHODS =============

@@ -27,6 +27,7 @@ const prodFirebaseConfig = {
 // For development
 export const environment = {
   production: false,
+  isLive: false,
   stripe: 'pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ',
   firebaseConfig: devFirebaseConfig,
   url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
@@ -38,6 +39,7 @@ export const environment = {
 // Fallback for production build (used by environment.prod.ts if not properly loaded)
 export const environmentProd = {
   production: true,
+  isLive: false,
   stripe: 'pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ',
   firebaseConfig: prodFirebaseConfig,
   url: 'https://sides3.herokuapp.com',

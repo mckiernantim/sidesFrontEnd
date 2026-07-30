@@ -328,6 +328,116 @@ svg.skipped-sections-overlay {
     overflow: visible;
 }
 
+/* Visible content lines sit above the SVG X so editing stays clickable */
+.screenbox li.true:not(.page-number):not(.page-number-hidden):not(.page-number-text) {
+    z-index: 6;
+}
+
+/* Interactive X-box controls (move / resize / delete) */
+.xbox-controls-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 816px;
+    height: 1056px;
+    pointer-events: none;
+    z-index: 115;
+}
+
+.xbox-interactive {
+    position: absolute;
+    pointer-events: auto !important;
+    cursor: grab;
+    border: 2px solid rgba(59, 130, 246, 0.45);
+    border-radius: 2px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    box-sizing: border-box;
+}
+
+.xbox-interactive:hover {
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.xbox-interactive:active {
+    cursor: grabbing;
+}
+
+.xbox-interactive.xbox-selected {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.xbox-delete-btn {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    min-height: 22px;
+    border-radius: 50%;
+    border: 2px solid #ef4444;
+    background: white;
+    color: #ef4444;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    cursor: pointer;
+    padding: 0;
+    opacity: 1;
+    transition: background-color 0.15s, color 0.15s;
+    pointer-events: auto;
+    z-index: 120;
+}
+
+.xbox-delete-btn:hover {
+    background: #ef4444;
+    color: white;
+}
+
+.xbox-resize-handle {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: white;
+    border: 2px solid #3b82f6;
+    border-radius: 2px;
+    pointer-events: auto;
+    z-index: 120;
+    /* Expand hit target without growing the visible handle */
+    box-shadow: 0 0 0 6px transparent;
+}
+
+.xbox-resize-handle.top-left {
+    top: -5px;
+    left: -5px;
+    cursor: nwse-resize;
+}
+
+.xbox-resize-handle.top-right {
+    top: -5px;
+    right: -5px;
+    cursor: nesw-resize;
+}
+
+.xbox-resize-handle.bottom-left {
+    bottom: -5px;
+    left: -5px;
+    cursor: nesw-resize;
+}
+
+.xbox-resize-handle.bottom-right {
+    bottom: -5px;
+    right: -5px;
+    cursor: nwse-resize;
+}
+
+.xbox-resize-handle:hover {
+    background: #3b82f6;
+}
+
 .legal {
     margin: 1000px 20px 0px 20px;
 }

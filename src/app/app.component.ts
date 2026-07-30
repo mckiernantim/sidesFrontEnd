@@ -1,7 +1,6 @@
-import { Component, OnInit, ApplicationRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MainNavComponent } from './components/shared/main-nav/main-nav.component';
 import { AuthService } from './services/auth/auth.service';
-import { registerScheduleConsoleHelpers } from './utils/schedule-console-helpers';
 
 @Component({
     selector: 'app-root',
@@ -12,17 +11,9 @@ import { registerScheduleConsoleHelpers } from './utils/schedule-console-helpers
 export class AppComponent implements OnInit {
   title = 'side-ways';
 
-  constructor(
-    private authService: AuthService,
-    private appRef: ApplicationRef
-  ) {}
+  constructor(private authService: AuthService) {}
 
   ngOnInit(): void {
     // The auth service will handle redirect results automatically
-
-    // Register console helpers for manual testing (only in development)
-    if (typeof window !== 'undefined') {
-      registerScheduleConsoleHelpers(this.appRef);
-    }
   }
 }

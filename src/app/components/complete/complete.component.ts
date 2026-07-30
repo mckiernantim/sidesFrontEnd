@@ -188,8 +188,8 @@ export class CompleteComponent implements OnInit, OnDestroy {
           this.error = 'Document not found. It may have been deleted';
         } else if (error.status === 401 || error.status === 400) {
           this.error = 'Your download link has expired. Please generate a new document.';
-          // Clear the expired token (both keys for safety — R8 fix)
-          localStorage.removeItem('pdfBackupToken');
+          // Clear the expired token
+          localStorage.removeItem('pdfToken');
           localStorage.removeItem('pdfTokenExpires');
           // Redirect to home after a delay
           setTimeout(() => this.router.navigate(['/']), 3000);

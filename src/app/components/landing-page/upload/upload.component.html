@@ -1,180 +1,215 @@
-<!-- ── HERO ──────────────────────────────────────────────────────────────────
-     Figma: 00_Home — full-width dark film-set hero with headline + CTA
-     ──────────────────────────────────────────────────────────────────────── -->
-<section class="sw-hero">
-  <div class="sw-hero__overlay"></div>
-  <div class="sw-hero__content">
-    <h1 class="sw-hero__headline">
-      NEVER BUILD <span class="sw-accent-text">SIDES</span><br>
-      BY HAND AGAIN.
-    </h1>
-    <p class="sw-hero__subhead">
-      We generate secure, set-ready sides automatically.<br>
-      From script to set in seconds.
-    </p>
-
-    <!-- CTA: show sign-in if logged out, hide button if logged in -->
-    <ng-container *ngIf="!(user$ | async)">
-      <button (click)="signIn()" class="sw-btn-cta">Sign In</button>
-    </ng-container>
-  </div>
-</section>
-
-<!-- ── UPLOAD SECTION (only visible when logged in) — ABOVE THE FOLD ─────── -->
-<section *ngIf="(user$ | async)" class="sw-section sw-upload-section">
-  <div class="sw-card">
-    <h2 class="sw-section-heading">
-      UPLOAD YOUR <span class="sw-accent-text">SCRIPT</span>
-    </h2>
-
-    <!-- File Upload Widget -->
-    <div class="sw-upload-widget">
-      <div class="sw-upload-dropzone">
-        <input
-          #fileInput
-          id="file-upload"
-          type="file"
-          accept=".pdf"
-          (change)="onFileSelected($event)"
-          class="sw-upload-input"
-          [disabled]="maintenanceMode"
+<div class="landing">
+  <section class="hero">
+    <div class="margin-bot mb-hero-l" aria-hidden="true">
+      <img src="assets/icons/bot-about-images/scan.jpg" alt="" />
+    </div>
+    <div class="margin-bot mb-hero-r" aria-hidden="true">
+      <img src="assets/icons/bot-about-images/select.jpg" alt="" />
+    </div>
+    <div class="hero-inner">
+      <div class="hero-content">
+        <div class="eyebrow">Built for film production</div>
+        <h1>Never build sides by hand again.</h1>
+        <p class="hero-sub">Secure, set-ready sides generated automatically. From script to set in seconds — nothing stored, ever.</p>
+        <blockquote class="quote">
+        
+          <p>“Sides used to eat an hour of someone's night, every night. Now it's a file and a click.”</p>
+          <footer>
+            <cite>Chris Carter</cite>
+            <span class="role">Creator, The X-Files</span>
+          </footer>
+        </blockquote>
+        <div class="hero-cta">
+          <button type="button" class="btn-sw btn-sw-primary" (click)="scrollToUpload()">
+            Upload a script<span class="arw" aria-hidden="true">→</span>
+          </button>
+          <a routerLink="/how-it-works" class="btn-sw btn-sw-ghost">See how it works</a>
+        </div>
+      </div>
+      <div class="hero-mark">
+        <img
+          class="hero-bot"
+          src="assets/brand/hero-bot.jpeg"
+          alt="Sides-ways script bot assembling sides"
         />
-
-        <label for="file-upload" class="sw-upload-label" [class.disabled]="maintenanceMode">
-          <svg class="sw-upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-          </svg>
-          <span class="sw-upload-text">Click to upload or drag and drop</span>
-          <span class="sw-upload-subtext">PDF files only</span>
-        </label>
-
+        <span class="hero-spark a" aria-hidden="true">✦</span>
+        <span class="hero-spark b" aria-hidden="true">✦</span>
+        <span class="hero-spark c" aria-hidden="true">✦</span>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ── MAINTENANCE BANNER (admin-visible only during maintenance) ──────────── -->
-<div *ngIf="maintenanceMode" class="sw-maintenance">
-  <div class="sw-maintenance__inner">
-    <svg class="sw-maintenance__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-    </svg>
-    <div>
-      <h3 class="sw-maintenance__title">We're Upgrading!</h3>
-      <p class="sw-maintenance__body">
-        Sides Ways is temporarily offline while we roll out exciting new features.
-        We'll be back online shortly. Thank you for your patience!
-      </p>
-      <p class="sw-maintenance__contact">
-        Questions? Email
-        <a href="mailto:sideswaysscriptsides&#64;gmail.com">sideswaysscriptsides&#64;gmail.com</a>
-      </p>
+  <div class="page-wrap">
+    <div class="mb-page mb-1" aria-hidden="true">
+      <img src="assets/icons/bot-about-images/lastLooks.jpg" alt="" />
     </div>
+    <div class="mb-page mb-2" aria-hidden="true">
+      <img src="assets/icons/bot-about-images/scan.jpg" alt="" />
+    </div>
+    <div class="mb-page mb-3" aria-hidden="true">
+      <img src="assets/icons/bot-about-images/select.jpg" alt="" />
+    </div>
+    <div class="mb-page mb-4" aria-hidden="true">
+      <img src="assets/icons/bot-about-images/lastLooks.jpg" alt="" />
+    </div>
+
+    <main class="landing-main">
+      <div class="sw-card founders-card">
+        <h2 class="founders-title">Thank You, Founding Members</h2>
+        <p>
+          After a years-long beta, we&rsquo;re closing the doors on <strong>August&nbsp;1st</strong> and
+          launching Sides-Ways officially &mdash; with new features and a subscription model.
+        </p>
+        <p>
+          As one of our <strong>Founding Members</strong>, you&rsquo;ll receive a
+          <strong>discount for life</strong>. We couldn&rsquo;t have built this without you.
+        </p>
+        <p class="founders-signoff">&mdash; Scott &amp;&amp; Tim, from Sides-Ways</p>
+      </div>
+
+      <div class="sw-card" id="upload">
+        <h2 class="sw-section-title">
+          <span class="glyph">~&gt;~&gt;</span>
+          <span>Upload your <em>script</em></span>
+          <span class="glyph">~&gt;~&gt;</span>
+        </h2>
+        <p class="sw-section-sub">PDF in, sides out. Processing takes seconds.</p>
+
+        <div *ngIf="maintenanceMode; else uploadSection" class="maintenance-banner">
+          <h3>We're Upgrading!</h3>
+          <p>Sides Ways is temporarily offline while we roll out exciting new features and improvements.</p>
+          <p>We'll be back online in a few days. Thank you for your patience!</p>
+          <p class="maintenance-email">
+            Questions? Email
+            <a href="mailto:sideswaysscriptsides&#64;gmail.com">sideswaysscriptsides&#64;gmail.com</a>
+          </p>
+        </div>
+
+        <ng-template #uploadSection>
+          <ng-container *ngIf="(user$ | async) as user; else signInPrompt">
+            <div
+              class="upload-zone"
+              id="upload-zone"
+              (click)="fileInput.click()"
+              (dragover)="$event.preventDefault()"
+              (drop)="onFileDropped($event)"
+            >
+              <img
+                class="upload-bot"
+                src="assets/icons/bot-about-images/sides-ways-bot.jpeg"
+                alt=""
+                aria-hidden="true"
+              />
+              <div class="upload-cta">Click to upload or drag and drop</div>
+              <div class="upload-hint">PDF files only · max 25MB</div>
+              <input
+                id="file-upload"
+                type="file"
+                class="hidden"
+                accept="application/pdf,.pdf"
+                (change)="onFileSelected($event)"
+                (click)="$event.stopPropagation()"
+                #fileInput
+              />
+              <div class="upload-divider"></div>
+              <div class="toggle-row" (click)="$event.stopPropagation()">
+                <button
+                  type="button"
+                  class="toggle"
+                  id="ai-toggle"
+                  [class.on]="enableAiValidation"
+                  (click)="enableAiValidation = !enableAiValidation"
+                  [attr.aria-pressed]="enableAiValidation"
+                  aria-label="Enable AI Validation"
+                ></button>
+                <span>Enable AI Validation (Beta)</span>
+                <button
+                  type="button"
+                  class="info-dot"
+                  (click)="showAiTooltip = !showAiTooltip"
+                  aria-label="AI Validation info"
+                >i</button>
+              </div>
+              <div *ngIf="showAiTooltip" class="ai-tooltip" (click)="$event.stopPropagation()">
+                <p class="ai-tooltip-title">How AI Validation Works</p>
+                <p>
+                  In rare instances, some lines are ambiguously categorized during our scan.
+                  We partner with Anthropic to validate ambiguous lines for proper classification.
+                </p>
+                <ul>
+                  <li><strong>No data is saved. EVER.</strong></li>
+                  <li><strong>Smart &amp; Efficient:</strong> Only ambiguous lines are sent to AI (~200 lines max)</li>
+                  <li><strong>Higher Accuracy:</strong> Catches edge cases rule-based scanning might miss</li>
+                </ul>
+              </div>
+            </div>
+          </ng-container>
+
+          <ng-template #signInPrompt>
+            <div class="sign-in-panel">
+              <p>Sign in to upload your script and generate sides.</p>
+              <button type="button" class="btn-sw btn-sw-primary" (click)="signIn()">Sign in with Google</button>
+            </div>
+          </ng-template>
+        </ng-template>
+      </div>
+
+      <div class="sw-card security" id="security">
+        <h2 class="sw-section-title">
+          <span class="glyph">~&gt;~&gt;</span>
+          <span>Your <em>security</em> is our priority</span>
+          <span class="glyph">~&gt;~&gt;</span>
+        </h2>
+        <p class="sw-section-sub">Scripts are processed in memory and discarded on completion.</p>
+        <div class="security-body">
+          <div class="art-slot security-art" aria-hidden="true">
+            <img src="assets/icons/bot-about-images/sides-ways-bot.jpeg" alt="" />
+          </div>
+          <div class="security-text">
+            <p>We take your privacy seriously. Your scripts are processed securely and deleted immediately after your sides are generated.</p>
+            <ul class="security-list">
+              <li><strong>Nothing is saved. Ever.</strong> Your documents are deleted as soon as processing is complete.</li>
+              <li><strong>Secure processing.</strong> All uploads are encrypted and processed in an isolated environment.</li>
+              <li><strong>No data sharing.</strong> We never share your scripts or data with third parties.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="sw-card" id="how">
+        <h2 class="sw-section-title">
+          <span class="glyph">~&gt;~&gt;</span>
+          <span>Build <em>sides</em> in <em>3 steps</em></span>
+          <span class="glyph">~&gt;~&gt;</span>
+        </h2>
+        <p class="sw-section-sub">No accounts, no setup, no training required.</p>
+        <div class="steps">
+          <div class="step">
+            <div class="art-slot step-art">
+              <img src="assets/icons/bot-about-images/scan.jpg" alt="Upload and scan your script" />
+            </div>
+            <div class="step-num">01</div>
+            <h3>Upload your script</h3>
+            <p>Simply <strong>upload your script</strong> (PDF). The document is deleted after processing. Nothing is saved, ever.</p>
+          </div>
+          <div class="step">
+            <div class="art-slot step-art">
+              <img src="assets/icons/bot-about-images/select.jpg" alt="Select your scenes" />
+            </div>
+            <div class="step-num">02</div>
+            <h3>Select your scenes</h3>
+            <p><strong>Select the scenes</strong> you need for the day and we assemble them in order.</p>
+          </div>
+          <div class="step">
+            <div class="art-slot step-art">
+              <img src="assets/icons/bot-about-images/lastLooks.jpg" alt="Last looks and download" />
+            </div>
+            <div class="step-num">03</div>
+            <h3>Last looks &amp; go</h3>
+            <p>Preview your sides and make any last-minute adjustments. <strong>Download and go.</strong></p>
+          </div>
+        </div>
+      </div>
+    </main>
   </div>
 </div>
-
-<!-- ── SECURITY SECTION ───────────────────────────────────────────────────────
-     Figma: 00_Home — "~~> YOUR SECURITY IS OUR PRIORITY ~~>" card
-     ──────────────────────────────────────────────────────────────────────── -->
-<section class="sw-section">
-  <div class="sw-card">
-    <h2 class="sw-section-heading">
-      YOUR <span class="sw-accent-text">SECURITY</span> IS OUR PRIORITY
-    </h2>
-
-    <div class="sw-security">
-      <!-- Bot illustration -->
-      <div class="sw-security__image">
-        <img src="assets/icons/bot-about-images/security.png" alt="Security illustration" />
-      </div>
-
-      <!-- Copy -->
-      <div class="sw-security__body">
-        <p class="sw-security__lead">
-          We take your privacy seriously. Your scripts are processed securely
-          and deleted immediately after your sides are generated.
-        </p>
-        <ul class="sw-security__list">
-          <li>
-            <strong>Nothing is saved. EVER.</strong>
-            Your documents are deleted as soon as processing is complete.
-          </li>
-          <li>
-            <strong>Secure processing.</strong>
-            All uploads are encrypted and processed in a secure environment.
-          </li>
-          <li>
-            <strong>No data sharing.</strong>
-            We never share your scripts or data with third parties.
-          </li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── 3 STEPS SECTION ────────────────────────────────────────────────────────
-     Figma: 00_Home — "~~> BUILD SIDES IN 3 STEPS ~~>" card
-     ──────────────────────────────────────────────────────────────────────── -->
-<section class="sw-section">
-  <div class="sw-card">
-    <h2 class="sw-section-heading">
-      BUILD <span class="sw-accent-text">SIDES</span> IN
-      <span class="sw-accent-text">3 STEPS</span>
-    </h2>
-
-    <div class="sw-steps">
-
-      <!-- Step 1 -->
-      <div class="sw-step">
-        <div class="sw-step__image">
-          <img src="assets/icons/bot-about-images/scan-bot-two.png" alt="Upload your script" />
-        </div>
-        <h3 class="sw-step__title">Upload Your Script</h3>
-        <p class="sw-step__body">
-          Simply <strong>upload your script</strong> (PDF).<br>
-          The document is deleted after processing.<br>
-          Nothing is saved. EVER.
-        </p>
-      </div>
-
-      <!-- Step 2 -->
-      <div class="sw-step">
-        <div class="sw-step__image">
-          <img src="assets/icons/bot-about-images/select-bot-two.png" alt="Select your scenes" />
-        </div>
-        <h3 class="sw-step__title">Select Your Scenes</h3>
-        <p class="sw-step__body">
-          <strong>Select the scenes</strong> you need for the day.
-        </p>
-      </div>
-
-      <!-- Step 3 -->
-      <div class="sw-step">
-        <div class="sw-step__image">
-          <img src="assets/icons/bot-about-images/last-looks-bot-two.png" alt="Last looks and download" />
-        </div>
-        <h3 class="sw-step__title">Last Looks &amp; Go</h3>
-        <p class="sw-step__body">
-          Preview your sides and make any last-minute adjustments.
-          <strong>Download and go.</strong>
-        </p>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ── BOTTOM CTA ─────────────────────────────────────────────────────────────
-     Figma: 00_Home — centered "Upload Your Script" CTA block above footer
-     ──────────────────────────────────────────────────────────────────────── -->
-<section class="sw-bottom-cta" *ngIf="!(user$ | async)">
-  <h2 class="sw-bottom-cta__title">Upload Your Script</h2>
-  <p class="sw-bottom-cta__body">
-    Start Saving Time NOW. Let Sides-Ways save you time and hassle.
-  </p>
-  <button (click)="signIn()" class="sw-bottom-cta__link">
-    SIGN IN
-  </button>
-</section>

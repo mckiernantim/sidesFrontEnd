@@ -26,6 +26,7 @@ const mockUndoService = {
   recordLineChange: jest.fn(),
   recordBatchChanges: jest.fn(),
   recordAnnotationChange: jest.fn(),
+  recordXboxChange: jest.fn(),
   undo: jest.fn(),
   redo: jest.fn(),
   canUndo: false,

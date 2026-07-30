@@ -1,5 +1,6 @@
 export const environment = {
   production: true,
+  isLive: false,
 
   // ⚠️⚠️⚠️ CRITICAL: CHANGE TO REAL STRIPE PRODUCTION KEY BEFORE GOING LIVE! ⚠️⚠️⚠️
   // Current key is TEST mode - will NOT process real payments!

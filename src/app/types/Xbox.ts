@@ -5,5 +5,7 @@ export interface XboxData {
   bottom: number;
   left: number;
   right: number;
-  isFreestanding: boolean;
+  /** Line IDs (docPageLineIndex) owned by this X-box. */
+  lineIds?: number[];
+  isFreestanding?: boolean;
 }

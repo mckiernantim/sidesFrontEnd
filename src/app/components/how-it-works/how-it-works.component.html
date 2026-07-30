@@ -1,97 +1,25 @@
-<!-- ── HERO ──────────────────────────────────────────────────────────────────
-     Figma: How It Works Page — hero section
-     ──────────────────────────────────────────────────────────────────────── -->
-<div [@fadeInOut]>
-  <section class="sw-hero">
-    <div class="sw-hero__overlay"></div>
-    <div class="sw-hero__content">
-      <h1 class="sw-hero__headline">
-        HOW IT <span class="sw-accent-text">WORKS</span>
-      </h1>
-      <p class="sw-hero__subhead">
-        Create professional sides in minutes<br>
-        with our simple 4-step process.
-      </p>
+<div class="hiw-page" [@fadeInOut]>
+  <div class="hiw-hero">
+    <div class="container mx-auto px-4 text-center">
+      <h1>How It Works</h1>
+      <p>Create professional sides in minutes with our simple 4-step process.</p>
     </div>
-  </section>
+  </div>
 
-  <!-- ── PROCESS STEPS SECTION ────────────────────────────────────────────────
-       4-step process explained
-       ──────────────────────────────────────────────────────────────────────── -->
-  <section class="sw-section">
-    <div class="sw-card">
-      <h2 class="sw-section-heading">
-        <span class="sw-arrow">~&gt;~&gt;</span>
-        THE <span class="sw-accent-text">PROCESS</span>
-        <span class="sw-arrow">~&gt;~&gt;</span>
-      </h2>
-
-      <div class="sw-process">
-        <!-- Step 1 -->
-        <div class="sw-process-step">
-          <div class="sw-process-step__number">
-            <span>1</span>
-          </div>
-          <div class="sw-process-step__content">
-            <h3 class="sw-process-step__title">Upload Your Script</h3>
-            <p class="sw-process-step__body">
-              Upload a PDF - preferably Final Draft or Celx format. Our system scans it, removes any sensitive IP information, and routes you to scene selection.
-            </p>
-          </div>
+  <section class="container mx-auto px-4 py-16">
+    <div class="max-w-4xl mx-auto">
+      <div class="hiw-step" *ngFor="let step of steps; let i = index">
+        <div class="hiw-num">{{ i + 1 }}</div>
+        <div class="hiw-copy">
+          <h2>{{ step.title }}</h2>
+          <p>{{ step.body }}</p>
         </div>
+      </div>
 
-        <!-- Step 2 -->
-        <div class="sw-process-step">
-          <div class="sw-process-step__number">
-            <span>2</span>
-          </div>
-          <div class="sw-process-step__content">
-            <h3 class="sw-process-step__title">Select Your Scenes</h3>
-            <p class="sw-process-step__body">
-              Choose any scenes you want to shoot that day from a filterable list. Search by location, page number, or any other criteria to quickly find what you need.
-            </p>
-          </div>
-        </div>
-
-        <!-- Step 3 -->
-        <div class="sw-process-step">
-          <div class="sw-process-step__number">
-            <span>3</span>
-          </div>
-          <div class="sw-process-step__content">
-            <h3 class="sw-process-step__title">Last Looks & Customization</h3>
-            <p class="sw-process-step__body">
-              Proof and edit your document before submitting. Need a callsheet? Upload it. Add watermarks - we've got you covered. Something seem off? We offer full editing of your sides before generation.
-            </p>
-          </div>
-        </div>
-
-        <!-- Step 4 -->
-        <div class="sw-process-step">
-          <div class="sw-process-step__number">
-            <span>4</span>
-          </div>
-          <div class="sw-process-step__content">
-            <h3 class="sw-process-step__title">Get Your Sides & Go</h3>
-            <p class="sw-process-step__body">
-              Get your professionally formatted sides and head to set. Your document is automatically deleted 10 minutes after completion or as soon as you request. That's it!
-            </p>
-          </div>
-        </div>
+      <div class="hiw-cta">
+        <h3>Ready to streamline your sides creation?</h3>
+        <a routerLink="/" class="btn-sw btn-sw-primary">Get Started Now</a>
       </div>
     </div>
   </section>
-
-  <!-- ── BOTTOM CTA ─────────────────────────────────────────────────────────────
-       Final call-to-action
-       ──────────────────────────────────────────────────────────────────────── -->
-  <section class="sw-bottom-cta">
-    <h2 class="sw-bottom-cta__title">Ready to streamline your sides creation?</h2>
-    <p class="sw-bottom-cta__body">
-      Start saving time and money today.
-    </p>
-    <a routerLink="/" class="sw-btn-cta">
-      GET STARTED NOW
-    </a>
-  </section>
-</div> 
+</div>

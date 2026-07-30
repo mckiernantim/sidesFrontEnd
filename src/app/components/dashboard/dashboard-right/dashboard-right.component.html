@@ -74,14 +74,14 @@
           </button>
         </div>
 
-        <!-- entire page left and right -->
+        <!-- ≥768px (iPad / laptop+): LEFT scenes | RIGHT controls. <768: Scenes|Controls toggle -->
         <div
-          class="dash-main-row flex flex-col xl:flex-row justify-center min-h-50 h-auto space-y-8 xl:space-y-0 xl:space-x-8 flex-grow min-w-0 max-w-full"
+          class="dash-main-row ss-main-row flex flex-col md:flex-row justify-center min-h-50 h-auto space-y-8 md:space-y-0 md:space-x-8 flex-grow min-w-0 max-w-full"
           [class.ss-row--scenes]="sceneSelectPanel === 'scenes'"
           [class.ss-row--controls]="sceneSelectPanel === 'controls'">
 
-          <!-- LEFT PANEL - Scene selection table -->
-          <div class="sw-panel ss-scenes-panel p-3 sm:p-6 lg:max-h-none flex flex-col justify-around w-full xl:w-3/5">
+          <!-- LEFT: Scene selection table -->
+          <div class="sw-panel ss-scenes-panel p-3 sm:p-6 lg:max-h-none flex flex-col justify-around w-full md:w-3/5 min-w-0">
             <h2 class="font-semibold text-xl sm:text-2xl m-2 sm:m-4">{{ script }} scenes</h2>
             <div class="scene-selection-container flex-grow overflow-auto">
               <div class="filter-container mb-4">
@@ -106,8 +106,8 @@
             </div>
           </div>
 
-          <!-- RIGHT PANEL - Selected scenes + checkout (rail-style, matches Last Looks Controls) -->
-          <div class="dash-side-panel ss-controls-panel w-full xl:w-2/5 xl:max-w-[40%] min-w-0" [class.edit-state]="editState">
+          <!-- RIGHT: Controls + selected scenes rail -->
+          <div class="dash-side-panel ss-controls-panel w-full md:w-2/5 md:max-w-[40%] min-w-0" [class.edit-state]="editState">
             <div class="ss-rail">
               <div class="ss-rail-header">
                 <div class="ss-rail-title-block">
@@ -115,6 +115,60 @@
                   <h3 class="ss-rail-script-name">{{ script }}</h3>
                   <p class="ss-rail-date" *ngIf="date">{{ date | date }}</p>
                 </div>
+              </div>
+
+              <div class="ss-rail-checkout">
+                <div class="ss-rail-actions">
+                  <button
+                    type="button"
+                    (click)="toggleLastLooks()"
+                    [disabled]="selected.length === 0"
+                    class="btn-sw btn-sw-primary ss-rail-action-btn">
+                    Continue
+                  </button>
+                  <button
+                    type="button"
+                    (click)="navigateBackToUpload()"
+                    class="btn-sw btn-sw-secondary ss-rail-action-btn">
+                    Back To Upload
+                  </button>
+                </div>
+
+                <div class="ss-rail-attachments">
+                  <div class="ss-rail-attach-item">
+                    <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
+                  </div>
+                  <div class="ss-rail-attach-item">
+                    <app-add-watermark
+                      [hasWatermark]="hasWatermark"
+                      (waterMarkUpdate)="addWaterMark($event)"
+                      (waterMarkRemove)="removeWatermark()">
+                    </app-add-watermark>
+                  </div>
+                </div>
+
+                <div *ngIf="callsheetReady && callSheetPath" class="ss-rail-chip ss-chip-mint">
+                  <svg class="ss-chip-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                  </svg>
+                  Callsheet Ready
+                </div>
+
+                <div *ngIf="watermark" class="ss-rail-chip ss-chip-sky">
+                  <svg class="ss-chip-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+                  </svg>
+                  Watermark: {{ watermark }}
+                </div>
+              </div>
+
+              <div class="ss-rail-status-row" *ngIf="callsheetState || watermark">
+                <p class="ss-rail-status-text" *ngIf="callsheetState">
+                  <span class="font-medium">Callsheet:</span> {{ callsheet }}
+                </p>
+                <p class="ss-rail-status-text" *ngIf="watermark">
+                  <span class="font-medium">Watermark:</span> {{ watermark }}
+                </p>
               </div>
 
               <div class="ss-rail-scenes">
@@ -185,60 +239,6 @@
                   <div *ngIf="editState && selected.length > 1" class="ss-scene-reorder-hint">
                     Drag and drop scenes to reorder them
                   </div>
-                </div>
-              </div>
-
-              <div class="ss-rail-status-row" *ngIf="callsheetState || watermark">
-                <p class="ss-rail-status-text" *ngIf="callsheetState">
-                  <span class="font-medium">Callsheet:</span> {{ callsheet }}
-                </p>
-                <p class="ss-rail-status-text" *ngIf="watermark">
-                  <span class="font-medium">Watermark:</span> {{ watermark }}
-                </p>
-              </div>
-
-              <div class="ss-rail-checkout">
-                <div class="ss-rail-actions">
-                  <button
-                    type="button"
-                    (click)="toggleLastLooks()"
-                    [disabled]="selected.length === 0"
-                    class="btn-sw btn-sw-primary ss-rail-action-btn">
-                    Continue
-                  </button>
-                  <button
-                    type="button"
-                    (click)="navigateBackToUpload()"
-                    class="btn-sw btn-sw-secondary ss-rail-action-btn">
-                    Back To Upload
-                  </button>
-                </div>
-
-                <div class="ss-rail-attachments">
-                  <div class="ss-rail-attach-item">
-                    <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
-                  </div>
-                  <div class="ss-rail-attach-item">
-                    <app-add-watermark
-                      [hasWatermark]="hasWatermark"
-                      (waterMarkUpdate)="addWaterMark($event)"
-                      (waterMarkRemove)="removeWatermark()">
-                    </app-add-watermark>
-                  </div>
-                </div>
-
-                <div *ngIf="callsheetReady && callSheetPath" class="ss-rail-chip ss-chip-mint">
-                  <svg class="ss-chip-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                  </svg>
-                  Callsheet Ready
-                </div>
-
-                <div *ngIf="watermark" class="ss-rail-chip ss-chip-sky">
-                  <svg class="ss-chip-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                    <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
-                  </svg>
-                  Watermark: {{ watermark }}
                 </div>
               </div>
             </div>

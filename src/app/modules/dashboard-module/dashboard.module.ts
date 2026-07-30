@@ -17,6 +17,8 @@ import { CheckoutComponent } from 'src/app/components/checkout/checkout.componen
 import { SceneSelectionComponent } from '../../components/dashboard/scene-selection/scene-selection.component';
 import { CheckoutModalComponent } from '../../components/dashboard/checkout-modal/checkout-modal.component';
 import { DevLastLooksComponent } from '../../components/dev/dev-last-looks/dev-last-looks.component';
+import { AnnotationToolbarComponent } from '../../components/annotation-toolbar/annotation-toolbar.component';
+import { DisclaimerToggleComponent } from '../../components/annotation-toolbar/disclaimer-toggle/disclaimer-toggle.component';
 
 @NgModule({
   declarations: [
@@ -31,7 +33,9 @@ import { DevLastLooksComponent } from '../../components/dev/dev-last-looks/dev-l
     CheckoutComponent,
     SceneSelectionComponent,
     CheckoutModalComponent,
-    DevLastLooksComponent
+    DevLastLooksComponent,
+    AnnotationToolbarComponent,
+    DisclaimerToggleComponent,
   ],
   imports: [
     CommonModule,

@@ -534,6 +534,38 @@ app-last-looks {
 
 
 
+/* ── Scene-select layout: side-by-side from iPad / laptop up (≥768px) ── */
+@media (min-width: 768px) {
+  .ss-shell .ss-main-row,
+  .ss-shell .dash-main-row {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    column-gap: 2rem;
+    row-gap: 0;
+  }
+
+  .ss-shell .ss-scenes-panel {
+    flex: 1 1 60%;
+    width: 60%;
+    max-width: 60%;
+    min-width: 0;
+  }
+
+  .ss-shell .ss-controls-panel {
+    flex: 0 0 38%;
+    width: 38%;
+    max-width: 40%;
+    min-width: 280px;
+    align-self: stretch;
+  }
+
+  .ss-shell .ss-rail {
+    height: 100%;
+    min-height: calc(100vh - 140px);
+  }
+}
+
 /* ── Scene-select mobile toggle (mirrors Last Looks Preview|Controls) ── */
 .ss-mobile-toggle {
   display: none;
@@ -680,6 +712,24 @@ app-last-looks {
   height: 100%;
   min-height: 0;
   overflow: hidden;
+}
+
+/* Desktop right rail: buttons ABOVE selected-scenes list (force visual order) */
+.ss-rail > .ss-rail-header {
+  order: 0 !important;
+}
+.ss-rail > .ss-rail-checkout {
+  order: 1 !important;
+  margin-top: 0 !important;
+}
+.ss-rail > .ss-rail-status-row {
+  order: 2 !important;
+}
+.ss-rail > .ss-rail-scenes {
+  order: 3 !important;
+  flex: 1 1 auto !important;
+  min-height: 0;
+  margin-top: 0 !important;
 }
 
 .ss-rail-header {
@@ -886,7 +936,7 @@ app-last-looks {
 
 .ss-rail-checkout {
   padding: 12px 12px 16px;
-  border-top: 1px solid var(--sw-border, var(--line));
+  border-bottom: 1px solid var(--sw-border, var(--line));
   display: flex;
   flex-direction: column;
   gap: 8px;

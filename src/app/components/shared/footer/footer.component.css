@@ -1,119 +1,111 @@
-/* ── Footer ──────────────────────────────────────────────────────────────── */
 .sw-footer {
-  background-color: var(--sw-bg);
-  border-top: 1px solid var(--sw-border);
+  background: var(--footer-bg);
+  color: var(--footer-text);
+  padding: 56px 48px 30px;
+  margin-top: auto;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  box-sizing: border-box;
 }
 
-.sw-footer__inner {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 3.5rem 2rem 2.5rem;
-  gap: 3rem;
-  flex-wrap: wrap;
+.sw-footer a {
+  color: color-mix(in oklab, var(--footer-text) 68%, transparent);
+  text-decoration: none;
 }
 
-/* ── Brand ───────────────────────────────────────────────────────────────── */
-.sw-footer__brand {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+.sw-footer a:hover {
+  color: var(--mustard);
 }
 
-.sw-footer__logo {
-  font-family: var(--sw-font-display);
-  font-size: 1.4rem;
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  color: var(--sw-text);
-}
-
-.sw-footer__logo-bolt {
-  color: var(--sw-accent);
-}
-
-.sw-footer__logo-mark {
-  font-family: cursive, sans-serif;
-  font-size: 0.85rem;
-  color: var(--sw-accent);
-  margin-left: 4px;
-}
-
-.sw-footer__tagline {
-  font-family: var(--sw-font-body);
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--sw-text-subtle);
-  margin: 0;
-}
-
-/* ── Link columns grid ───────────────────────────────────────────────────── */
-.sw-footer__links {
+.sw-footer-grid {
+  max-width: 1060px;
+  margin: 0 auto 40px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2.5rem;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
 }
 
-.sw-footer__col-heading {
-  font-family: var(--sw-font-body);
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--sw-text);
-  margin: 0 0 1rem;
+.sw-footer-brand .sw-logo {
+  margin-bottom: 10px;
+  color: var(--footer-text);
 }
 
-.sw-footer__col-list {
+.sw-footer-brand .sw-logo .bolt {
+  color: var(--mustard);
+}
+
+.sw-footer-brand .sw-logo .marker {
+  color: var(--mint);
+}
+
+.sw-footer-brand .sw-logo-mark {
+  width: 28px !important;
+  height: 28px !important;
+  max-width: 28px !important;
+  max-height: 28px !important;
+  border-color: color-mix(in oklab, var(--footer-text) 28%, transparent);
+  object-fit: cover;
+}
+
+.sw-footer-brand p {
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--mint);
+  letter-spacing: 0.03em;
+}
+
+.sw-footer-col h4 {
+  font-size: 12px;
+  color: var(--footer-text);
+  margin-bottom: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-family: var(--font-display);
+}
+
+.sw-footer-col ul {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 8px;
 }
 
-.sw-footer__link {
-  font-family: var(--sw-font-body);
-  font-size: 0.875rem;
-  color: var(--sw-text-muted);
-  text-decoration: none;
-  transition: color 0.15s;
+.sw-footer-col a {
+  font-size: 13px;
 }
 
-.sw-footer__link:hover {
-  color: var(--sw-text);
-}
-
-/* ── Bottom bar ──────────────────────────────────────────────────────────── */
-.sw-footer__bottom {
-  border-top: 1px solid var(--sw-border);
-  max-width: 1440px;
+.sw-footer-base {
+  max-width: 1060px;
   margin: 0 auto;
-  padding: 1.25rem 2rem;
+  padding-top: 22px;
+  border-top: 1px solid color-mix(in oklab, var(--footer-text) 14%, transparent);
+  font-size: 12px;
+  color: color-mix(in oklab, var(--footer-text) 45%, transparent);
 }
 
-.sw-footer__copy {
-  font-family: var(--sw-font-body);
-  font-size: 0.8125rem;
-  color: var(--sw-text-subtle);
-  margin: 0;
-}
-
-/* ── Responsive ──────────────────────────────────────────────────────────── */
-@media (max-width: 640px) {
-  .sw-footer__inner {
-    flex-direction: column;
-    gap: 2rem;
-    padding: 2.5rem 1.5rem 2rem;
+@media (max-width: 820px) {
+  .sw-footer {
+    padding: 40px 24px 24px;
   }
 
-  .sw-footer__links {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
+  .sw-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+
+  .sw-footer-brand {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 420px) {
+  .sw-footer-grid {
+    grid-template-columns: 1fr;
   }
 }
