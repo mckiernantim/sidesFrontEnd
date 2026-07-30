@@ -16,6 +16,18 @@ import {
   formatAmount,
   getDaysUntilReset
 } from 'src/app/types/SubscriptionTypes';
+import {
+  BillingInterval,
+  getAlternateInterval,
+  getOfferPriceLabel,
+  getOfferPlanTitle,
+  getStandardPriceLabel,
+  isFounderMember,
+  normalizeBillingInterval,
+  shouldShowFoundersOffer,
+  FOUNDERS_RATE_LABEL,
+  FOUNDERS_RATE_SUBTITLE
+} from 'src/app/utils/founders-offer';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
@@ -48,6 +60,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
   // UI state
   isLoading = true;
   error: string | null = null;
+  planChangeMessage: string | null = null;
+  isChangingPlan = false;
+  selectedInterval: BillingInterval = 'week';
   
   // Subscription benefits
   benefits: string[] = [
@@ -208,10 +223,116 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return formatSubscriptionStatus(status);
   }
   
+  readonly foundersRateLabel = FOUNDERS_RATE_LABEL;
+  readonly foundersRateSubtitle = FOUNDERS_RATE_SUBTITLE;
+
   // Get formatted plan name
   getFormattedPlan(): string {
+    const eligibility = {
+      isFounder: Boolean(this.subscription?.isFounder),
+      active: Boolean(this.subscription?.active)
+    };
+    if (isFounderMember(eligibility)) {
+      return getOfferPlanTitle(eligibility);
+    }
     const plan = this.subscription?.subscription?.plan;
+    if (plan?.amount === 1000) {
+      return plan.nickname || FOUNDERS_RATE_LABEL;
+    }
     return formatPlanName(plan);
+  }
+
+  isFounderMember(): boolean {
+    return isFounderMember({
+      isFounder: Boolean(this.subscription?.isFounder)
+    });
+  }
+
+  showFoundersOffer(): boolean {
+    return shouldShowFoundersOffer({
+      isFounder: Boolean(this.subscription?.isFounder),
+      active: Boolean(this.subscription?.active)
+    });
+  }
+
+  getEligibility() {
+    return {
+      isFounder: Boolean(this.subscription?.isFounder),
+      active: Boolean(this.subscription?.active)
+    };
+  }
+
+  selectInterval(interval: BillingInterval): void {
+    this.selectedInterval = interval;
+  }
+
+  getSubscribePriceLabel(interval: BillingInterval = this.selectedInterval): string {
+    return getOfferPriceLabel(this.getEligibility(), interval);
+  }
+
+  getStandardStrikePrice(): string {
+    return getStandardPriceLabel(this.selectedInterval);
+  }
+
+  getCurrentPlanInterval(): BillingInterval {
+    return normalizeBillingInterval(this.subscription?.subscription?.plan?.interval);
+  }
+
+  getAlternatePlanInterval(): BillingInterval {
+    return getAlternateInterval(this.getCurrentPlanInterval());
+  }
+
+  getAlternatePlanLabel(): string {
+    return getOfferPriceLabel(this.getEligibility(), this.getAlternatePlanInterval());
+  }
+
+  getCurrentBillingLabel(): string {
+    const plan = this.subscription?.subscription?.plan;
+    if (!plan) return 'N/A';
+    const interval = normalizeBillingInterval(plan.interval);
+    if (this.isFounderMember()) {
+      return getOfferPriceLabel(this.getEligibility(), interval);
+    }
+    return `${this.formatCurrency(plan.amount)} per ${interval}`;
+  }
+
+  hasPendingPlanChange(): boolean {
+    return Boolean(this.subscription?.subscription?.pendingPlanChange?.toInterval);
+  }
+
+  getPendingPlanChangeMessage(): string | null {
+    const pending = this.subscription?.subscription?.pendingPlanChange;
+    if (!pending?.toInterval || !pending.effectiveAt) return null;
+    const label = getOfferPriceLabel(this.getEligibility(), normalizeBillingInterval(pending.toInterval));
+    return `Switching to ${label} on ${this.formatDate(pending.effectiveAt)}. You stay on your current plan until then.`;
+  }
+
+  changePlanToAlternate(): void {
+    if (!this.user?.email) {
+      this.error = 'You must be logged in to change your plan';
+      return;
+    }
+
+    const target = this.getAlternatePlanInterval();
+    this.isChangingPlan = true;
+    this.planChangeMessage = null;
+    this.error = null;
+
+    this.stripe.changePlan(this.user.uid, this.user.email, target).subscribe({
+      next: (result) => {
+        this.isChangingPlan = false;
+        if (!result.success) {
+          this.error = result.error || 'Failed to change plan';
+          return;
+        }
+        this.planChangeMessage = result.message || 'Plan change scheduled.';
+        this.loadSubscriptionData();
+      },
+      error: () => {
+        this.isChangingPlan = false;
+        this.error = 'An error occurred while changing your plan';
+      }
+    });
   }
   
   // Get days until usage reset
@@ -241,10 +362,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
       return;
     }
     
-    console.log('Creating new subscription for user:', this.user.uid);
+    console.log('Creating new subscription for user:', this.user.uid, this.selectedInterval);
     this.isLoading = true;
     
-    this.stripe.createPortalSession(this.user.uid, this.user.email).subscribe({
+    this.stripe.createPortalSession(
+      this.user.uid,
+      this.user.email,
+      undefined,
+      this.selectedInterval
+    ).subscribe({
       next: (result) => {
         console.log('Portal session result:', result);
         this.isLoading = false;

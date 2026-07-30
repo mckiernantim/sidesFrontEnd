@@ -39,6 +39,7 @@ export const ErrorCodeMessages: Record<string, string> = {
   'PDF_TOO_MANY_PAGES': 'This PDF has too many pages (maximum 500 pages). Please upload a shorter script.',
   'PDF_UNSUPPORTED_VERSION': 'This PDF version is not supported. Please try re-exporting your script.',
   'PDF_SECURITY_RISK': 'This PDF contains features that could be a security risk. Please export a clean copy from your screenwriting software.',
+  'NO_TEXT_CONTENT': 'Unable to extract text from this PDF. It looks like a scanned image or photocopy rather than a text-based script. Please re-export from Final Draft, Celtx, or WriterDuet (or OCR the file first).',
   
   // Processing errors
   'SCAN_ERROR': 'Failed to scan your document. Please try again or contact support if the issue persists.',

@@ -1,359 +1,252 @@
-<div class="dashboard-right">
-  <div class="dashboard-right-content">
-    <div class="h-auto px-4 md:px-12 animate-fade-in position-relative z-5 flex flex-col">
-      <!-- entire page left and right -->
-      <div class="flex flex-col-reverse xl:flex-row justify-center min-h-50 h-auto space-y-8 xl:space-y-0 xl:space-x-8 flex-grow">
-        <ng-container *ngIf="!lastLooksReady; else lastLooks">
-          <!-- LEFT PANEL — full width in schedule mode, 3/5 otherwise -->
-          <div class="bg-sw-surface border border-sw-border rounded-lg p-6 lg:max-h-none flex flex-col justify-around w-full"
-               [ngClass]="viewMode === 'schedule' ? 'xl:w-full' : 'xl:w-3/5'">
-            <h2 *ngIf="viewMode !== 'schedule'" class="font-semibold text-2xl m-4 text-sw-text">{{ script }} scenes</h2>
-            
-            <!-- View Mode Tabs (Production / Casting / Schedule) -->
-            <div class="flex items-center justify-between mb-6 px-2">
-              <div class="inline-flex rounded-lg border-2 border-sw-border bg-sw-surface p-1 shadow-md">
-                <button
-                  type="button"
-                  (click)="setViewMode('production')"
-                  class="px-4 py-2 text-sm font-semibold rounded-md transition-all duration-150 uppercase tracking-wide"
-                  [class.bg-sw-accent]="viewMode === 'production'"
-                  [class.text-sw-bg]="viewMode === 'production'"
-                  [class.shadow-md]="viewMode === 'production'"
-                  [class.text-sw-text-muted]="viewMode !== 'production'"
-                  [class.hover:text-sw-text]="viewMode !== 'production'">
-                  Scenes
-                </button>
-                <button
-                  type="button"
-                  (click)="setViewMode('casting')"
-                  class="px-4 py-2 text-sm font-semibold rounded-md transition-all duration-150 uppercase tracking-wide"
-                  [class.bg-sw-accent]="viewMode === 'casting'"
-                  [class.text-sw-bg]="viewMode === 'casting'"
-                  [class.shadow-md]="viewMode === 'casting'"
-                  [class.text-sw-text-muted]="viewMode !== 'casting'"
-                  [class.hover:text-sw-text]="viewMode !== 'casting'">
-                  Casting
-                </button>
-                <button
-                  type="button"
-                  disabled
-                  class="px-4 py-2 text-sm font-semibold rounded-md uppercase tracking-wide opacity-50 cursor-not-allowed text-sw-text-muted flex items-center gap-2"
-                  title="Coming soon">
-                  Schedule
-                  <span class="text-xs font-bold bg-sw-surface-2 border border-sw-border text-sw-text-subtle px-1.5 py-0.5 rounded">Soon</span>
-                </button>
-              </div>
+<div class="dashboard-right sw-workflow" [class.dashboard-right--ll]="lastLooksReady">
+  <div class="dashboard-right-content" [class.dashboard-right-content--ll]="lastLooksReady">
 
-              <!-- Character count badge when in casting mode -->
-              <div *ngIf="viewMode === 'casting' && selectedCharacters.length > 0" class="flex items-center">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-sw-surface-2 text-sw-accent border border-sw-border">
-                  {{ selectedCharacters.length }} character{{ selectedCharacters.length > 1 ? 's' : '' }} selected
-                </span>
-                <button 
-                  (click)="clearCharacterSelection()"
-                  class="ml-2 text-sw-text-muted hover:text-sw-text focus:outline-none"
-                  title="Clear selection">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <!-- Schedule Tab Content (full-width) -->
-            <div *ngIf="viewMode === 'schedule'" class="flex-grow overflow-auto">
-              <app-schedule-tab
-                [pdfService]="pdf"
-                [projectTitle]="script">
-              </app-schedule-tab>
-            </div>
-
-            <!-- Character Selection Panel (only visible in casting mode) -->
-            <div *ngIf="viewMode === 'casting'" class="mb-4 p-4 bg-sw-surface-2 rounded-lg border border-sw-border">
-              <h3 class="text-sm font-semibold text-sw-text mb-3 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
-                </svg>
-                Select Speaking Character{{ selectedCharacters.length > 1 ? 's' : '' }}
-              </h3>
-              <p class="text-xs text-sw-text-muted mb-3">
-                Click characters to filter scenes. Select multiple to find scenes with all selected speaking characters. 
-              </p>
-              <div class="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-                <button 
-                  *ngFor="let character of availableCharacters"
-                  (click)="onCharacterSelect(character)"
-                  class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ease-in-out"
-                  [class.bg-sw-accent]="isCharacterSelected(character)"
-                  [class.text-sw-bg]="isCharacterSelected(character)"
-                  [class.bg-sw-surface]="!isCharacterSelected(character)"
-                  [class.text-sw-text]="!isCharacterSelected(character)"
-                  [class.border]="!isCharacterSelected(character)"
-                  [class.border-sw-border]="!isCharacterSelected(character)"
-                  [class.shadow-sm]="isCharacterSelected(character)">
-                  {{ character }}
-                  <svg *ngIf="isCharacterSelected(character)" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-              
-              <!-- Filtered scene count -->
-              <div class="mt-3 pt-3 border-t border-sw-border">
-                <p class="text-xs text-sw-text-muted">
-                  <span class="font-semibold text-sw-accent">{{ filteredScenes.length }}</span> scene{{ filteredScenes.length !== 1 ? 's' : '' }} 
-                  <span *ngIf="selectedCharacters.length > 0">with {{ selectedCharacters.join(' & ') }}</span>
-                  <span *ngIf="selectedCharacters.length === 0">total</span>
-                </p>
-              </div>
-            </div>
-            
-            <div *ngIf="viewMode !== 'schedule'" class="scene-selection-container flex-grow overflow-auto">
-              <div class="filter-container mb-4">
-                <input 
-                  type="text" 
-                  placeholder="Filter scenes..." 
-                  class="w-full p-2 border border-sw-border rounded-md bg-sw-surface-2 text-sw-text placeholder-sw-text-subtle focus:outline-none focus:border-sw-accent"
-                  (input)="applyFilter($event)">
-              </div>
-
-              <app-tailwind-table 
-                [data]="currentScenes" 
-                [columns]="currentTableColumns"
-                [selectable]="true"
-                [pagination]="true"
-                [pageSize]="pageSize"
-                [selectedItems]="selected"
-                (selectionChange)="onSelectionChange($event)">
-              </app-tailwind-table>
-            </div>
-          </div>
-        </ng-container>
-
-        <!-- RIGHT PANEL — hidden in schedule mode -->
-        <div *ngIf="viewMode !== 'schedule'"
-             class="bg-sw-surface border border-sw-border rounded-lg p-6 flex flex-col justify-start items-center w-full xl:w-2/5 py-12 overflow-visible"
-             [class.edit-state]="editState">
-          <h1 class="text-3xl text-center mb-6 text-sw-text font-display">Generating sides for
-            <br>
-            <p class="pt-4 text-xl text-sw-accent font-medium">{{ script }} - {{ date | date }}</p>
-          </h1>
-          
-          <!-- Selected scenes list with delete option -->
-          <div class="selected-scenes-list" 
-          cdkDropList 
-          #dropList
-          (cdkDropListDropped)="onSceneDrop($event)"
-          [cdkDropListDisabled]="!editState">
-       <div *ngFor="let scene of getSortedSelectedScenes(); let i = index; trackBy: trackBySceneIndex" 
-            cdkDrag
-            [cdkDragDisabled]="!editState"
-            class="flex justify-between items-center p-3 mb-2 bg-sw-surface-2 rounded-md border border-sw-border"
-            [class.cursor-move]="editState"
-            [class.cursor-default]="!editState">
-         
-         <!-- Drag handle - only visible in edit mode -->
-         <div class="flex items-center">
-           <div *ngIf="editState" class="h-5 w-5 mr-2 text-sw-text-subtle flex items-center justify-center" cdkDragHandle>
-             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-               <line x1="4" y1="8" x2="20" y2="8"></line>
-               <line x1="4" y1="16" x2="20" y2="16"></line>
-             </svg>
-           </div>
-           
-           <span class="font-medium scene-number" 
-                 [attr.contenteditable]="editState && scene.category === 'scene-header' ? 'true' : 'false'"
-                 (dblclick)="startEditingSceneNumber(scene)"
-                 (blur)="saveSceneNumberEdit(scene, $event)"
-                 (keydown)="handleSceneNumberKeyDown($event)"
-                 [class.editing]="editingSceneNumber === scene.sceneNumberText"
-                 [class.scene-header]="scene.category === 'scene-header'">{{ scene.sceneNumberText }}</span>: 
-           
-           <span class="scene-text ml-2"
-                 [attr.contenteditable]="editState ? 'true' : 'false'"
-                 (dblclick)="startEditingSceneText(scene)"
-                 (blur)="saveSceneTextEdit(scene, $event)"
-                 (keydown)="handleSceneTextKeyDown($event)"
-                 [class.editing]="editingSceneText === scene.text">{{ scene.text }}</span>
-         </div>
-         
-         <button (click)="removeSelectedScene(scene)" 
-                 class="text-sw-danger hover:opacity-80 focus:outline-none ml-2">
-           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-           </svg>
-         </button>
-       </div>
-       
-       <!-- Empty state message -->
-       <div *ngIf="selected.length === 0" class="text-sw-text-muted italic p-3">
-         No scenes selected. Please select scenes from the table.
-       </div>
-       
-       <!-- Reordering instructions when in edit mode -->
-       <div *ngIf="editState && selected.length > 1" class="text-xs text-sw-text-muted italic p-2 bg-sw-surface-2 rounded mt-2">
-         <i class="fas fa-info-circle mr-1"></i>
-         Drag and drop scenes to reorder them in the final document
-       </div>
-     </div>
-          
-          <!-- Rest of the right panel content -->
-          <div class="flex flex-col md:flex-row justify-between items-center w-full px-4 mb-6">
-            <p class="text-lg mb-2 md:mb-0 text-sw-text">
-              @if (callsheetState) {
-                <span class="font-medium text-sw-text-muted">Callsheet:</span> {{ callsheet }}
-              }
-            </p>
-            <p class="text-lg text-sw-text">
-              @if (watermark) {
-                <span class="font-medium text-sw-text-muted">Watermark:</span> {{ watermark}}
-              }
-            </p>
-          </div>
-
-          <!-- Checkout/Auth Section -->
-          @if (lastLooksReady) {
-            <div class="flex flex-col items-center mb-8">
-              <h2 class="p-4 text-xl font-bold text-sw-success">Total: FREE </h2>
-              <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-                @if (!userData) {
-                  <button 
-                    (click)="auth.signInWithGoogle()"
-                    class="bg-sw-accent hover:opacity-90 text-sw-bg font-bold py-2 px-6 rounded-lg shadow-md transition-colors"
-                  >
-                    Sign in to continue
-                  </button>
-                } @else {
-                  <button 
-                    (click)="openConfirmPurchaseDialog()"
-                    [disabled]="isCheckingSubscription"
-                    [class.opacity-50]="isCheckingSubscription"
-                    [class.cursor-not-allowed]="isCheckingSubscription"
-                    class="bg-sw-accent hover:opacity-90 text-sw-bg font-bold py-2 px-6 rounded-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    @if (isCheckingSubscription) {
-                      <span class="flex items-center">
-                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-sw-bg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Checking...
-                      </span>
-                    } @else {
-                      Get My Sides
-                    }
-                  </button>
-                }
-
-                <button 
-                  (click)="toggleLastLooks()" 
-                  [disabled]="selected.length === 0"
-                  class="bg-sw-surface-2 hover:bg-sw-border text-sw-text font-bold py-2 px-6 rounded-lg border border-sw-border shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Back To Scene Select
-                </button>
-              </div>
-            </div>
-          }
-
-          <!-- Controls Section -->
-          <div class="w-full">
-            <ng-container *ngIf="!lastLooksReady; else lastLooksControls">
-              <div class="controls-section" [class.edit-state]="editState">
-                <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-                  <button 
-                    (click)="toggleLastLooks()" 
-                    [disabled]="selected.length === 0"
-                    class="w-full sm:w-auto bg-sw-accent hover:opacity-90 text-sw-bg font-bold py-3 px-6 rounded-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Get PDF
-                  </button>
-                  <button 
-                    (click)="navigateBackToUpload()"
-                    class="w-full sm:w-auto bg-sw-surface-2 hover:bg-sw-border text-sw-text font-bold py-3 px-6 rounded-lg border border-sw-border shadow-md transition-colors"
-                  >
-                    Back To Upload
-                  </button>
-                </div>
-              </div>
-            </ng-container>
-
-            <ng-template #lastLooksControls>
-              <div class="controls-section" [class.edit-state]="editState">
-                <div class="flex flex-wrap justify-center items-center space-y-4 lg:space-y-0 lg:space-x-4">
-                  <!-- Callsheet and Watermark controls -->
-                  <div class="flex flex-col md:flex-row md:space-x-4 w-full lg:w-auto">
-                    <div class="p-2 w-full md:w-1/2 lg:w-auto">
-                      <!-- Updated callsheet component call -->
-                      <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
-                    </div>
-                    <div class="p-2 w-full md:w-1/2 lg:w-auto">
-                      <app-add-watermark 
-                        [hasWatermark]="hasWatermark" 
-                        [showCastingDirector]="viewMode === 'casting'"
-                        (waterMarkUpdate)="addWaterMark($event)" 
-                        (waterMarkRemove)="removeWatermark()">
-                      </app-add-watermark>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Callsheet Status Display (Optional) -->
-                <div *ngIf="callsheetReady && callSheetPath" class="mt-4 text-center">
-                  <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-sw-surface-2 text-sw-success border border-sw-border">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                    </svg>
-                    Callsheet Ready
-                  </div>
-                </div>
-                
-                <!-- Watermark Status Display (Optional) -->
-                <div *ngIf="watermark" class="mt-2 text-center">
-                  <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-sw-surface-2 text-sw-text-muted border border-sw-border">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
-                    </svg>
-                    Watermark: {{ watermark }}
-                  </div>
-                </div>
-              </div>
-            </ng-template>
-          </div>
-
-
-          <app-scene-selection 
-            [scenes]="scenes" 
-            (sceneSelected)="handleSceneSelection($event)">
-          </app-scene-selection>
-        </div>
-
-        <ng-template #lastLooks>
-          <div class="flex flex-col w-full">
-            <!-- Last Looks Component - Below header -->
-            <div class="flex-1">
-              <app-last-looks
-                [editState]="editLastLooksState"
-                [resetDocState]="resetFinalDocState"
-                [selectedLineState]="selectedLineState"
-                [undoState]="fireUndo"
-                [triggerLastLooksAction]="triggerLastLooksAction"
-                [callsheetPath]="callSheetPath"
-                (pageUpdate)="onPageUpdate($event)"
-                (editModeToggle)="triggerEditMode()">
-              </app-last-looks>
-            </div>
-          </div>
-        </ng-template>
+    <!-- ══ Last Looks full-height shell (FR-003: full-bleed, no padding) ══ -->
+    <ng-container *ngIf="lastLooksReady">
+      <div class="ll-fullbleed-host">
+        <app-last-looks
+          [editState]="editLastLooksState"
+          [resetDocState]="resetFinalDocState"
+          [selectedLineState]="selectedLineState"
+          [undoState]="fireUndo"
+          [callsheetPath]="callSheetPath"
+          [selectedScenes]="getSortedSelectedScenes()"
+          [userData]="userData"
+          [isCheckingSubscription]="isCheckingSubscription"
+          [callsheetReady]="callsheetReady"
+          [callsheetState]="callsheetState"
+          [callsheet]="callsheet"
+          [watermark]="watermark"
+          [hasWatermark]="hasWatermark"
+          [scriptName]="script"
+          [scriptDate]="date"
+          (pageUpdate)="onPageUpdate($event)"
+          (editModeToggle)="triggerEditMode()"
+          (sceneReorder)="onSceneDrop($event)"
+          (sceneRemove)="removeSelectedScene($event)"
+          (sceneNumberEdit)="onRailSceneNumberEdit($event)"
+          (sceneTextEdit)="onRailSceneTextEdit($event)"
+          (getSides)="openConfirmPurchaseDialog()"
+          (signIn)="auth.signInWithGoogle()"
+          (backToScenes)="toggleLastLooks()"
+          (callsheetUpload)="handleCallSheetUpload($event)"
+          (watermarkUpdate)="addWaterMark($event)"
+          (watermarkRemove)="removeWatermark()">
+        </app-last-looks>
       </div>
 
-      <app-checkout-modal 
+      <app-checkout-modal
         *ngIf="showCheckoutModal"
         [selectedScenes]="selected"
         [userData]="userData"
         (checkout)="handleCheckout($event)"
-        (close)="closeCheckoutModal()"
-      ></app-checkout-modal>
-    </div>
+        (close)="closeCheckoutModal()">
+      </app-checkout-modal>
+    </ng-container>
+
+    <!-- ══ Normal padded layout (scene selection) ══ -->
+    <ng-container *ngIf="!lastLooksReady">
+      <div
+        class="ss-shell h-auto px-3 sm:px-4 md:px-12 animate-fade-in position-relative z-5 flex flex-col"
+        [class.ss-shell--controls]="sceneSelectPanel === 'controls'"
+        [class.ss-shell--scenes]="sceneSelectPanel === 'scenes'">
+
+        <!-- Mobile: Scenes | Controls (same pattern as Last Looks) -->
+        <div class="ss-mobile-toggle" role="tablist" aria-label="Scene selection panels">
+          <button
+            type="button"
+            role="tab"
+            class="ss-mobile-toggle-btn"
+            [class.ss-mobile-toggle-btn--active]="sceneSelectPanel === 'scenes'"
+            [attr.aria-selected]="sceneSelectPanel === 'scenes'"
+            (click)="setSceneSelectPanel('scenes')">
+            Scenes
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="ss-mobile-toggle-btn"
+            [class.ss-mobile-toggle-btn--active]="sceneSelectPanel === 'controls'"
+            [attr.aria-selected]="sceneSelectPanel === 'controls'"
+            (click)="setSceneSelectPanel('controls')">
+            Controls
+            <span class="ss-mobile-toggle-count" *ngIf="selected.length > 0">{{ selected.length }}</span>
+          </button>
+        </div>
+
+        <!-- entire page left and right -->
+        <div
+          class="dash-main-row flex flex-col xl:flex-row justify-center min-h-50 h-auto space-y-8 xl:space-y-0 xl:space-x-8 flex-grow min-w-0 max-w-full"
+          [class.ss-row--scenes]="sceneSelectPanel === 'scenes'"
+          [class.ss-row--controls]="sceneSelectPanel === 'controls'">
+
+          <!-- LEFT PANEL - Scene selection table -->
+          <div class="sw-panel ss-scenes-panel p-3 sm:p-6 lg:max-h-none flex flex-col justify-around w-full xl:w-3/5">
+            <h2 class="font-semibold text-xl sm:text-2xl m-2 sm:m-4">{{ script }} scenes</h2>
+            <div class="scene-selection-container flex-grow overflow-auto">
+              <div class="filter-container mb-4">
+                <input
+                  type="text"
+                  placeholder="Filter scenes..."
+                  class="sw-input"
+                  (input)="applyFilter($event)">
+              </div>
+
+              <app-tailwind-table
+                [data]="scenes"
+                [columns]="tableColumns"
+                [selectable]="true"
+                [pagination]="true"
+                [pageSize]="pageSize"
+                [pageSizeOptions]="pageSizeOptions"
+                [selectedItems]="selected"
+                (selectionChange)="onSelectionChange($event)"
+                (pageSizeChange)="onPageSizeChange($event)">
+              </app-tailwind-table>
+            </div>
+          </div>
+
+          <!-- RIGHT PANEL - Selected scenes + checkout (rail-style, matches Last Looks Controls) -->
+          <div class="dash-side-panel ss-controls-panel w-full xl:w-2/5 xl:max-w-[40%] min-w-0" [class.edit-state]="editState">
+            <div class="ss-rail">
+              <div class="ss-rail-header">
+                <div class="ss-rail-title-block">
+                  <p class="ss-rail-kicker">Generating sides for</p>
+                  <h3 class="ss-rail-script-name">{{ script }}</h3>
+                  <p class="ss-rail-date" *ngIf="date">{{ date | date }}</p>
+                </div>
+              </div>
+
+              <div class="ss-rail-scenes">
+                <h4 class="ss-rail-section-label">Select a Scene</h4>
+
+                <div
+                  class="ss-scene-list selected-scenes-list"
+                  cdkDropList
+                  #dropList
+                  (cdkDropListDropped)="onSceneDrop($event)"
+                  [cdkDropListDisabled]="!editState">
+
+                  <div
+                    *ngFor="let scene of getSortedSelectedScenes(); let i = index; trackBy: trackBySceneIndex"
+                    cdkDrag
+                    [cdkDragDisabled]="!editState"
+                    class="ss-scene-row"
+                    [class.ss-scene-row--draggable]="editState">
+
+                    <div class="ss-scene-row-inner">
+                      <svg *ngIf="editState"
+                           xmlns="http://www.w3.org/2000/svg"
+                           class="ss-drag-handle"
+                           viewBox="0 0 20 20"
+                           fill="currentColor"
+                           aria-hidden="true"
+                           cdkDragHandle>
+                        <circle cx="7" cy="5" r="1.5"/>
+                        <circle cx="13" cy="5" r="1.5"/>
+                        <circle cx="7" cy="10" r="1.5"/>
+                        <circle cx="13" cy="10" r="1.5"/>
+                        <circle cx="7" cy="15" r="1.5"/>
+                        <circle cx="13" cy="15" r="1.5"/>
+                      </svg>
+
+                      <span
+                        class="ss-scene-number"
+                        [attr.contenteditable]="editState && scene.category === 'scene-header' ? 'true' : 'false'"
+                        (dblclick)="startEditingSceneNumber(scene)"
+                        (blur)="saveSceneNumberEdit(scene, $event)"
+                        (keydown)="handleSceneNumberKeyDown($event)"
+                        [class.ss-scene-editing]="editingSceneNumber === scene.sceneNumberText">{{ scene.sceneNumberText }}</span>:
+
+                      <span
+                        class="ss-scene-text"
+                        [attr.contenteditable]="editState ? 'true' : 'false'"
+                        (dblclick)="startEditingSceneText(scene)"
+                        (blur)="saveSceneTextEdit(scene, $event)"
+                        (keydown)="handleSceneTextKeyDown($event)"
+                        [class.ss-scene-editing]="editingSceneText === scene.text">{{ scene.text }}</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      (click)="removeSelectedScene(scene)"
+                      class="ss-scene-remove"
+                      aria-label="Remove scene">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="ss-scene-remove-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div *ngIf="selected.length === 0" class="ss-scene-empty">
+                    No scenes selected. Please select scenes from the table.
+                  </div>
+
+                  <div *ngIf="editState && selected.length > 1" class="ss-scene-reorder-hint">
+                    Drag and drop scenes to reorder them
+                  </div>
+                </div>
+              </div>
+
+              <div class="ss-rail-status-row" *ngIf="callsheetState || watermark">
+                <p class="ss-rail-status-text" *ngIf="callsheetState">
+                  <span class="font-medium">Callsheet:</span> {{ callsheet }}
+                </p>
+                <p class="ss-rail-status-text" *ngIf="watermark">
+                  <span class="font-medium">Watermark:</span> {{ watermark }}
+                </p>
+              </div>
+
+              <div class="ss-rail-checkout">
+                <div class="ss-rail-actions">
+                  <button
+                    type="button"
+                    (click)="toggleLastLooks()"
+                    [disabled]="selected.length === 0"
+                    class="btn-sw btn-sw-primary ss-rail-action-btn">
+                    Continue
+                  </button>
+                  <button
+                    type="button"
+                    (click)="navigateBackToUpload()"
+                    class="btn-sw btn-sw-secondary ss-rail-action-btn">
+                    Back To Upload
+                  </button>
+                </div>
+
+                <div class="ss-rail-attachments">
+                  <div class="ss-rail-attach-item">
+                    <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
+                  </div>
+                  <div class="ss-rail-attach-item">
+                    <app-add-watermark
+                      [hasWatermark]="hasWatermark"
+                      (waterMarkUpdate)="addWaterMark($event)"
+                      (waterMarkRemove)="removeWatermark()">
+                    </app-add-watermark>
+                  </div>
+                </div>
+
+                <div *ngIf="callsheetReady && callSheetPath" class="ss-rail-chip ss-chip-mint">
+                  <svg class="ss-chip-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                  </svg>
+                  Callsheet Ready
+                </div>
+
+                <div *ngIf="watermark" class="ss-rail-chip ss-chip-sky">
+                  <svg class="ss-chip-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+                  </svg>
+                  Watermark: {{ watermark }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </ng-container>
+
   </div>
 </div>

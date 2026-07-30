@@ -1,5 +1,7 @@
-<div class="dashboard-container flex flex-col min-h-screen h-auto w-full">
-  <div class="button-container">
+<div class="dashboard-container">
+  <!-- button-container must be flex:1 flex-column so app-dashboard-right can be flex:1 (FR-001) -->
+  <div class="button-container flex-1 flex flex-col min-h-0">
     <div class="white-logo"></div>
-    <app-dashboard-right class="flex-1 h-auto min-h-0 w-full"></app-dashboard-right>
+    <app-dashboard-right class="flex-1 min-h-0 w-full"></app-dashboard-right>
+  </div>
 </div>

@@ -8,6 +8,9 @@ import {
   ChangeDetectorRef,
   ViewChild,
   OnDestroy,
+  AfterViewInit,
+  ElementRef,
+  HostListener,
 } from '@angular/core';
 import { Line } from 'src/app/types/Line';
 import { UploadService } from 'src/app/services/upload/upload.service';
@@ -15,25 +18,22 @@ import { StripeService } from 'src/app/services/stripe/stripe.service';
 import { TokenService } from 'src/app/services/token/token.service';
 import { Router } from '@angular/router';
 import { Observable, Subscription } from 'rxjs';
-// import { DragDropService } from 'src/app/services/drag-drop/drag-drop.service';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
 import { LastLooksPageComponent } from '../last-looks-page/last-looks-page.component';
 import { UndoService } from 'src/app/services/edit/undo.service';
 import { cloneDeep } from 'lodash';
+import { CdkDragDrop } from '@angular/cdk/drag-drop';
 
-interface CallsheetPage {
-  type: 'callsheet';
-  imagePath: string;
-}
+import { fadeInOutAnimation } from 'src/app/animations/animations';
+
 interface QueueItem {
   pageIndex: number;
   line: Line;
 }
-import { fadeInOutAnimation } from 'src/app/animations/animations';
 
 interface Scene {
   id: string;
-  pageIndex:number;
+  pageIndex: number;
   sceneNumber: string;
   firstLine: number;
   lastLine: number;
@@ -43,23 +43,31 @@ interface Scene {
   pageRanges: {
     startPage: number;
     endPage: number;
-    sharedPages: number[]; // Pages shared with other scenes
+    sharedPages: number[];
   };
 }
 
 interface Page {
   pageNumber: number;
   lines: Line[];
-  sceneIds: string[]; // IDs of scenes that appear on this page
-  isShared: boolean;  // Whether this page contains multiple scenes
+  sceneIds: string[];
+  isShared: boolean;
 }
 
 interface DocumentState {
-  scenes: Map<string, Scene>;  // Map for quick scene lookup
+  scenes: Map<string, Scene>;
   pages: Page[];
-  sceneOrder: string[];       // Array of scene IDs in current order
-  sharedPages: Set<number>;   // Set of page numbers that contain multiple scenes
+  sceneOrder: string[];
+  sharedPages: Set<number>;
 }
+
+/** Canonical page dimensions — never sent to the PDF service. */
+const PAGE_WIDTH = 816;
+const PAGE_HEIGHT = 1056;
+/** Updated per spec FR-014: 0.25 (was 0.35) */
+const MIN_SCALE = 0.25;
+/** Updated per spec FR-014: 2.0 (was 1.5) */
+const MAX_SCALE = 2.0;
 
 @Component({
   selector: 'app-last-looks',
@@ -68,21 +76,21 @@ interface DocumentState {
   animations: [fadeInOutAnimation],
   standalone: false,
 })
-export class LastLooksComponent implements OnInit, OnDestroy {
+export class LastLooksComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(LastLooksPageComponent) public lastLooksPage: LastLooksPageComponent;
+  @ViewChild('viewerContainer') viewerContainer?: ElementRef<HTMLElement>;
 
   constructor(
     private upload: UploadService,
     private stripe: StripeService,
-    // public drag: DragDropService,
     private token: TokenService,
     private router: Router,
     private cdRef: ChangeDetectorRef,
     public pdf: PdfService,
     private undoService: UndoService,
-  ) {
-  }
-  // doc is given to our component
+  ) {}
+
+  // ── Existing Inputs (carry-over) ──────────────────────────────────────────
   doc: any;
   private documentRegeneratedSubscription: Subscription;
   @Input() editState: boolean = false;
@@ -91,8 +99,36 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   @Input() undoState: boolean = false;
   @Input() triggerLastLooksAction: string = '';
   @Input() callsheetPath: string = '';
+
+  // ── New Inputs for the rail ───────────────────────────────────────────────
+  @Input() selectedScenes: any[] = [];
+  @Input() userData: any = null;
+  @Input() isCheckingSubscription: boolean = false;
+  @Input() callsheetReady: boolean = false;
+  @Input() watermark: string = '';
+  @Input() hasWatermark: boolean = false;
+  @Input() callsheetState: boolean = false;
+  @Input() callsheet: string = '';
+  @Input() scriptName: string = '';
+  @Input() scriptDate: number | null = null;
+
+  // ── Existing Outputs (carry-over) ─────────────────────────────────────────
   @Output() pageUpdate = new EventEmitter<Line[]>();
   @Output() editModeToggle = new EventEmitter<void>();
+
+  // ── New Outputs relayed from rail ─────────────────────────────────────────
+  @Output() sceneReorder = new EventEmitter<CdkDragDrop<any[]>>();
+  @Output() sceneRemove = new EventEmitter<any>();
+  @Output() sceneNumberEdit = new EventEmitter<{ scene: any; event: FocusEvent }>();
+  @Output() sceneTextEdit = new EventEmitter<{ scene: any; event: FocusEvent }>();
+  @Output() getSides = new EventEmitter<void>();
+  @Output() signIn = new EventEmitter<void>();
+  @Output() backToScenes = new EventEmitter<void>();
+  @Output() callsheetUpload = new EventEmitter<any>();
+  @Output() watermarkUpdate = new EventEmitter<any>();
+  @Output() watermarkRemove = new EventEmitter<void>();
+
+  // ── Page / document state ────────────────────────────────────────────────
   pages: any[];
   hasCallsheet: boolean = false;
   initialDocState: any[];
@@ -105,257 +141,348 @@ export class LastLooksComponent implements OnInit, OnDestroy {
   undoQueue: Subscription;
   sceneBreaks: any[];
   acceptableCategoriesForFirstLine = [
-    'dialog',
-    'character',
-    'description',
-    'first-description',
-    'scene-header',
-    'short-dialog',
-    'parenthetical',
-    'more',
-    'shot',
+    'dialog', 'character', 'description', 'first-description',
+    'scene-header', 'short-dialog', 'parenthetical', 'more', 'shot',
   ];
-
   searchQuery: string = '';
-
-  // Add properties to track multiple selection
   selectedLines: Line[] = [];
   isMultipleSelection: boolean = false;
-
-  // Add this property to the class
   resetSubscription: Subscription;
-
-  // Add this property to track instructions visibility
   showInstructions: boolean = false;
-
   scenes: Scene[] = [];
 
   @Output() lineSelected = new EventEmitter<Line>();
-
   private finalDocumentDataSubscription: Subscription;
   private documentReorderedSubscription: Subscription;
 
+  // ── Rail state ────────────────────────────────────────────────────────────
+  /**
+   * null = auto (open when not editing, closed when editing)
+   * true = user manually pinned open
+   * false = user manually pinned closed
+   */
+  railManual: boolean | null = null;
+
+  get railOpen(): boolean {
+    return this.railManual === null ? !this.editState : this.railManual;
+  }
+
+  // ── Headline breakpoint ───────────────────────────────────────────────────
+  get showHeadline(): boolean {
+    if (typeof window === 'undefined') return false;
+    return window.innerHeight >= 860 && !this.editState;
+  }
+
+  // ── Zoom — authoritative source (FR-013, FR-014) ─────────────────────────
+  /** Fit-to-width scale; computed by ResizeObserver. */
+  fitScale: number = 1;
+  /** null = follow fitScale; number = user override */
+  zoomOverride: number | null = null;
+  /** Which fit mode is active (for control-bar highlight). */
+  zoomMode: 'fitW' | 'fitP' | 'manual' = 'fitW';
+  private viewportObserver?: ResizeObserver;
+
+  get pageScale(): number {
+    const raw = this.zoomOverride ?? this.fitScale;
+    return Math.min(MAX_SCALE, Math.max(MIN_SCALE, raw));
+  }
+
+  get zoomPercent(): number {
+    return Math.round(this.pageScale * 100);
+  }
+
+  get isFitZoom(): boolean {
+    return this.zoomMode === 'fitW';
+  }
+
+  get isFitPage(): boolean {
+    return this.zoomMode === 'fitP';
+  }
+
+  get canZoomIn(): boolean {
+    return this.pageScale < MAX_SCALE - 0.001;
+  }
+
+  get canZoomOut(): boolean {
+    return this.pageScale > MIN_SCALE + 0.001;
+  }
+
+  zoomIn(): void {
+    this.zoomMode = 'manual';
+    this.zoomOverride = Math.min(MAX_SCALE, this.pageScale + 0.1);
+    this.cdRef.detectChanges();
+  }
+
+  zoomOut(): void {
+    this.zoomMode = 'manual';
+    this.zoomOverride = Math.max(MIN_SCALE, this.pageScale - 0.1);
+    this.cdRef.detectChanges();
+  }
+
+  /**
+   * Fit Width: containerWidth / PAGE_WIDTH with NO Math.min(1,...) ceiling.
+   * Intentional: allows scale > 1.0 when the container is wider than 816px,
+   * giving users a true fit-to-viewport experience on wide monitors.
+   */
+  fitToWidth(): void {
+    this.zoomMode = 'fitW';
+    this.zoomOverride = null;
+    this.measureFitScale();
+  }
+
+  /**
+   * Fit Page: min(w/816, h/1056) so the whole page is visible.
+   */
+  fitPage(): void {
+    const el = this.viewerContainer?.nativeElement;
+    if (!el) return;
+    const w = el.clientWidth;
+    const h = el.clientHeight;
+    if (w <= 0 || h <= 0) return;
+    this.zoomMode = 'fitP';
+    this.zoomOverride = Math.min(w / PAGE_WIDTH, h / PAGE_HEIGHT);
+    this.cdRef.detectChanges();
+  }
+
+  private measureFitScale(): void {
+    const el = this.viewerContainer?.nativeElement;
+    if (!el) return;
+    const styles = getComputedStyle(el);
+    const hPad = parseFloat(styles.paddingLeft || '0') + parseFloat(styles.paddingRight || '0');
+    const available = el.clientWidth - hPad;
+    if (available <= 0) return;
+    // FR-015: No ceiling — scale may exceed 1.0 on wide containers.
+    const next = available / PAGE_WIDTH;
+    if (Math.abs(next - this.fitScale) < 0.005) return;
+    this.fitScale = next;
+    this.cdRef.detectChanges();
+  }
+
+  // ── Rail toggle (desktop / tablet strip) ──────────────────────────────────
+  toggleRail(): void {
+    this.railManual = !this.railOpen;
+  }
+
+  // ── Mobile panel: Preview (Last Looks) vs Controls ────────────────────────
+  /** Mobile-only view switcher. Desktop ignores this and uses the side rail. */
+  mobilePanel: 'preview' | 'controls' = 'preview';
+
+  setMobilePanel(panel: 'preview' | 'controls'): void {
+    this.mobilePanel = panel;
+    if (panel === 'preview') {
+      // Re-measure fit after the viewer becomes visible again
+      setTimeout(() => {
+        this.fitToWidth();
+        this.cdRef.detectChanges();
+      }, 0);
+    }
+  }
+
+  // ── Edit tools strip visibility ───────────────────────────────────────────
+  showEditTips: boolean = false;
+
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    // Initialize pages as an empty array by default
     this.pages = [];
-    
-    // Check if we have document data from the PDF service
+
+    // FR-032 / US-5: start collapsed on tablet/phone so the viewer owns the width.
+    if (typeof window !== 'undefined' && window.innerWidth < 1280) {
+      this.railManual = false;
+    }
+
     if (this.pdf.finalDocument?.data) {
       this.doc = this.pdf.finalDocument.data;
       this.pages = this.doc;
       this.currentPage = this.pages[this.currentPageIndex] || [];
-      
-      // Process lines for all pages
       this.processLinesForLastLooks(this.pages);
     }
-    
-    // Subscribe to finalDocumentData$ for updates
-    this.finalDocumentDataSubscription = this.pdf.finalDocumentData$.subscribe(
-      (data) => {
-        if (data) {
 
-          // ALWAYS sync the full pages array with PDF service state
-          // Scene number changes affect lines across ALL pages, not just current page
-          if (this.pdf.finalDocument?.data) {
-            this.pages = [...this.pdf.finalDocument.data];
-          }
-
-          // Update current page reference - Angular will automatically pass this to child component
-          if (this.pages[this.currentPageIndex]) {
-            this.currentPage = [...this.pages[this.currentPageIndex]];
-          }
-
-          // Force change detection
-          this.cdRef.detectChanges();
+    this.finalDocumentDataSubscription = this.pdf.finalDocumentData$.subscribe((data) => {
+      if (data) {
+        if (this.pdf.finalDocument?.data) {
+          this.pages = [...this.pdf.finalDocument.data];
         }
-      }
-    );
-
-    this.documentReorderedSubscription = this.pdf.documentReordered$.subscribe(
-      (reordered) => {
-        if (reordered) {
-          this.handleDocumentReorder();
+        if (this.pages[this.currentPageIndex]) {
+          this.currentPage = [...this.pages[this.currentPageIndex]];
         }
+        this.cdRef.detectChanges();
       }
-    );
-    
-    // Subscribe to document regeneration for undo/redo operations
-    this.documentRegeneratedSubscription = this.pdf.documentRegenerated$.subscribe(
-      (regenerated) => {
-        if (regenerated) {
-          this.refreshDocument();
-        }
-      }
-    );
+    });
 
-    // Subscribe to undo/redo operations to update component state
-    this.undoQueue = this.undoService.undoRedo$.subscribe(
-      ({ type, item }) => {
-        this.handleUndoRedoUpdate();
-      }
-    );
-    
-    // Clear any selected lines on initialization
+    this.documentReorderedSubscription = this.pdf.documentReordered$.subscribe((reordered) => {
+      if (reordered) this.handleDocumentReorder();
+    });
+
+    this.documentRegeneratedSubscription = this.pdf.documentRegenerated$.subscribe((regenerated) => {
+      if (regenerated) this.refreshDocument();
+    });
+
+    this.undoQueue = this.undoService.undoRedo$.subscribe(() => {
+      this.handleUndoRedoUpdate();
+    });
+
     this.selectedLine = null;
     this.selectedLines = [];
     this.isMultipleSelection = false;
-  
     this.sceneBreaks = [];
-    
-    // Check for existing callsheet data and insert it if available
+
     const callsheetData = localStorage.getItem('callsheetData');
     if (callsheetData) {
       try {
-        const parsedData = JSON.parse(callsheetData);
-        const displayUrl = parsedData.imageUrl || parsedData.previewUrl;
-        
+        const parsed = JSON.parse(callsheetData);
+        const displayUrl = parsed.imageUrl || parsed.previewUrl;
         if (displayUrl && this.pdf.finalDocument?.data && !this.pdf.isProcessingForServer()) {
           this.insertCallsheetPage(displayUrl);
         }
-      } catch (error) {
-      }
+      } catch (_) {}
     } else if (this.callsheetPath && !this.pdf.isProcessingForServer()) {
-      // Fallback to callsheetPath input if no localStorage data
       this.insertCallsheetPage(this.callsheetPath);
     }
-    
+
     this.initialDocState = this.doc?.map((page) => [...page]);
     this.establishInitialLineState();
-    
-    // Initialize scenes
     this.initializeScenes();
-  
     this.canEditDocument = this.editState;
   }
-  
-  ngOnChanges(changes: SimpleChanges) {
-    
+
+  ngAfterViewInit(): void {
+    if (this.viewerContainer && typeof ResizeObserver !== 'undefined') {
+      this.viewportObserver = new ResizeObserver(() => this.measureFitScale());
+      this.viewportObserver.observe(this.viewerContainer.nativeElement);
+    }
+    this.measureFitScale();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
     if (changes['resetDocState'] && changes['resetDocState'].currentValue) {
-      // Reset the document to initial state
       this.undoService.reset();
       this.resetDocumentToInitialState();
     }
-    
+
     if (!this.canEditDocument) {
       this.selectedLine = null;
     }
 
     if (changes['callsheetPath']) {
-      const newCallsheetPath = changes['callsheetPath'].currentValue;
-      const previousCallsheetPath = changes['callsheetPath'].previousValue;
+      const newPath = changes['callsheetPath'].currentValue;
+      const prevPath = changes['callsheetPath'].previousValue;
 
-      console.log('Callsheet path changed:', {
-        new: newCallsheetPath,
-        previous: previousCallsheetPath,
-        isFirstChange: changes['callsheetPath'].firstChange,
-        isProcessingForServer: this.pdf.isProcessingForServer()
-      });
-      
-      // Skip callsheet insertion if processing for server
-      if (this.pdf.isProcessingForServer()) {
-        return;
-      }
-      
-      if (newCallsheetPath) {
-        // Get the callsheet data from localStorage
+      if (this.pdf.isProcessingForServer()) return;
+
+      if (newPath) {
         const callsheetData = localStorage.getItem('callsheetData');
         if (callsheetData) {
           try {
-            const parsedData = JSON.parse(callsheetData);
-            const displayUrl = parsedData.imageUrl || parsedData.previewUrl;
-            
+            const parsed = JSON.parse(callsheetData);
+            const displayUrl = parsed.imageUrl || parsed.previewUrl;
             if (displayUrl) {
-              // Insert the callsheet at the start of the document
               this.insertCallsheetPage(displayUrl);
-              
-              // Update the document state
               if (this.pdf.finalDocument?.data) {
                 this.pages = this.pdf.finalDocument.data;
                 this.currentPage = this.pages[this.currentPageIndex] || [];
-                
-                // Process lines for display
                 this.processLinesForLastLooks(this.pages);
-                
-                // Force change detection
                 this.cdRef.detectChanges();
-                
               }
-            } else {
             }
-          } catch (error) {
-          }
+          } catch (_) {}
         } else {
-          // Fallback to using the path directly
-          this.insertCallsheetPage(newCallsheetPath);
-          
-          // Update the document state
+          this.insertCallsheetPage(newPath);
           if (this.pdf.finalDocument?.data) {
             this.pages = this.pdf.finalDocument.data;
             this.currentPage = this.pages[this.currentPageIndex] || [];
-            
-            // Process lines for display
             this.processLinesForLastLooks(this.pages);
-            
-            // Force change detection
             this.cdRef.detectChanges();
           }
         }
-      } else if (newCallsheetPath === null && previousCallsheetPath) {
-        // Callsheet was removed
+      } else if (newPath === null && prevPath) {
         this.removeCallsheetFromDocument();
       }
     }
 
     if (changes['editState']) {
-      const wasEditMode = changes['editState'].previousValue;
-      const isEditMode = changes['editState'].currentValue;
-      this.canEditDocument = isEditMode;
+      const wasEditing = changes['editState'].previousValue;
+      const isEditing = changes['editState'].currentValue;
+      this.canEditDocument = isEditing;
 
-      // When exiting edit mode, re-sync local pages from pdfService
-      // The child component (LastLooksPageComponent) handles the full save in its ngOnChanges,
-      // so we defer our re-sync slightly to ensure the child's save has completed.
-      if (wasEditMode && !isEditMode) {
-        console.log('LastLooks: Exiting edit mode — scheduling page re-sync');
-        setTimeout(() => {
-          if (this.pdf.finalDocument?.data) {
-            console.log('LastLooks: Re-syncing pages from pdfService.finalDocument.data');
-            this.pages = [...this.pdf.finalDocument.data];
-            if (this.pages[this.currentPageIndex]) {
-              this.currentPage = [...this.pages[this.currentPageIndex]];
-            }
-            // Re-process lines for display (recalculate positions if needed)
-            this.processLinesForLastLooks(this.pages);
-            this.cdRef.detectChanges();
-            console.log('LastLooks: Page re-sync complete. Pages:', this.pages.length,
-              'Current page lines:', this.currentPage?.length);
-          }
-        }, 0);
+      // Auto-collapse rail when entering edit mode (FR-007)
+      if (isEditing && !wasEditing) {
+        if (this.railManual === null) {
+          // auto: rail will be closed (railOpen = !editing = false)
+          // no change needed; railOpen getter handles it
+        }
+      }
+
+      // Clear railManual on Save/Reset exit from edit (FR-007)
+      if (!isEditing && wasEditing) {
+        this.railManual = null;
       }
     }
   }
 
+  ngOnDestroy(): void {
+    this.viewportObserver?.disconnect();
+    this.finalDocumentDataSubscription?.unsubscribe();
+    this.documentReorderedSubscription?.unsubscribe();
+    this.documentRegeneratedSubscription?.unsubscribe();
+    this.undoQueue?.unsubscribe();
+    this.pages = null;
+    this.currentPage = null;
+    this.doc = null;
+    this.scenes = [];
+    this.selectedLines = [];
+    this.selectedLine = null;
+  }
+
+  // ── Edit mode control bar handlers ───────────────────────────────────────
+  onEditPdfClick(): void {
+    this.editModeToggle.emit();
+  }
+
+  onSaveChanges(): void {
+    // Delegate to page component if available
+    if (this.lastLooksPage) {
+      this.lastLooksPage.saveChanges();
+    }
+    this.editModeToggle.emit();
+    this.railManual = null; // Clear manual pin on exit
+  }
+
+  onUndoClick(): void {
+    this.lastLooksPage?.performUndo();
+  }
+
+  onRedoClick(): void {
+    this.lastLooksPage?.performRedo();
+  }
+
+  onResetClick(): void {
+    this.lastLooksPage?.resetToInitialState();
+    this.railManual = null; // Clear manual pin on exit
+  }
+
+  get canUndo(): boolean {
+    return this.lastLooksPage?.canUndo ?? this.undoService.canUndo;
+  }
+
+  get canRedo(): boolean {
+    return this.lastLooksPage?.canRedo ?? this.undoService.canRedo;
+  }
+
+  // ── Existing document methods (carry-over, unchanged) ─────────────────────
+
   isCallsheetPage(page: any): boolean {
-    const isCallsheet = page && page[0] && (
+    return page && page[0] && (
       page[0].type === 'callsheet' ||
       page[0].category === 'callsheet'
     );
-
-    console.log('isCallsheetPage check:', {
-      page: page,
-      firstElement: page?.[0],
-      type: page?.[0]?.type,
-      category: page?.[0]?.category,
-      isCallsheet: isCallsheet
-    });
-
-    return isCallsheet;
   }
 
-  establishInitialLineState() {
+  establishInitialLineState(): void {
     this.processLinesForLastLooks(this.pages);
     this.updateDisplayedPage();
   }
-  findLastLinesOfScenes(pages) {
+
+  findLastLinesOfScenes(pages): object {
     const lastLinesOfScenes = {};
     pages.forEach((page) => {
       page.forEach((line) => {
@@ -366,162 +493,82 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     });
     return lastLinesOfScenes;
   }
-  private insertCallsheetPage(imagePath: string) {
 
-    // Check if we're processing for server - if so, don't insert callsheet
-    if (this.pdf.isProcessingForServer()) {
-      return;
-    }
+  private insertCallsheetPage(imagePath: string): void {
+    if (this.pdf.isProcessingForServer()) return;
 
-    // Record undo state before inserting callsheet (save complete document state)
     if (this.pdf.finalDocument?.data) {
       this.undoService.recordDocumentReorderChange(
         cloneDeep(this.pdf.finalDocument.data),
-        `Insert callsheet page`
+        'Insert callsheet page'
       );
     }
 
-    // Create a new callsheet page with proper structure
     const callsheetPage = [{
-      type: 'callsheet',
-      category: 'callsheet',
-      imagePath: imagePath,
-      visible: 'true',
-      docPageIndex: 0,
-      docPageLineIndex: 0,
-      // Ensure consistent positioning
-      calculatedXpos: '0px',
-      calculatedYpos: '0px',
-      xPos: 0,
-      yPos: 0,
-      // Required properties for line consistency
-      text: 'CALLSHEET',
-      index: -1, // Special index for callsheet
-      page: 0,
-      // Error handling
-      loadError: null,
-      // Prevent any bars or markers
-      bar: 'hideBar',
-      cont: 'hideCont',
-      end: 'hideEnd',
-      hidden: '',
-      trueScene: ''
+      type: 'callsheet', category: 'callsheet', imagePath,
+      visible: 'true', docPageIndex: 0, docPageLineIndex: 0,
+      calculatedXpos: '0px', calculatedYpos: '0px',
+      xPos: 0, yPos: 0, text: 'CALLSHEET', index: -1, page: 0,
+      loadError: null, bar: 'hideBar', cont: 'hideCont',
+      end: 'hideEnd', hidden: '', trueScene: ''
     }];
 
-
-    // Insert at the start of the document
     if (this.pdf.finalDocument?.data) {
-
-      // Remove any existing callsheet page first
       this.pdf.finalDocument.data = this.pdf.finalDocument.data.filter(page =>
         !(page[0] && (page[0].type === 'callsheet' || page[0].category === 'callsheet'))
       );
-
-      // Insert the new callsheet page at the beginning
       this.pdf.finalDocument.data = [callsheetPage, ...this.pdf.finalDocument.data];
-
-      // Update local state
       this.pages = this.pdf.finalDocument.data;
       this.hasCallsheet = true;
-
-      // Reset to first page to show the callsheet
       this.currentPageIndex = 0;
       this.currentPage = this.pages[0] || [];
-
-
-      // Save the document state
       this.pdf.saveDocumentState();
-
-      // Force change detection on this component
       this.cdRef.detectChanges();
-
-      // Force change detection on child component if available
-      if (this.lastLooksPage) {
-        this.lastLooksPage.cdRef.detectChanges();
-      }
-
-      // Emit page update to parent
+      if (this.lastLooksPage) this.lastLooksPage.cdRef.detectChanges();
       this.pageUpdate.emit(this.currentPage);
-
-    } else {
     }
   }
+
   private handleDocumentReorder(): void {
-    
-    if (!this.pdf.finalDocument?.data) {
-      return;
-    }
-  
-    // FIXED: Reset to first page (index 0) as requested
+    if (!this.pdf.finalDocument?.data) return;
     this.currentPageIndex = 0;
-    
-    // Update pages with new order from PDF service
     this.pages = this.pdf.finalDocument.data;
-    
-    // Set current page to first page
     this.currentPage = this.pages[0] || [];
-    
-    // Re-process lines for the new document order
     this.processLinesForLastLooks(this.pages);
-    
-    // Clear any selections since we're on a new page order
     this.selectedLine = null;
     this.selectedLines = [];
     this.isMultipleSelection = false;
-    
-    // Force change detection
     this.cdRef.detectChanges();
-    
   }
-  handlePageUpdate(updatedPage: any) {
 
+  handlePageUpdate(updatedPage: any): void {
     if (!this.isCallsheetPage(updatedPage)) {
-      // Update the page in our local state
       this.pages[this.currentPageIndex] = [...updatedPage];
-
-      // Update the PDF service for each line in the page (skip undo recording since this is a sync operation)
-      updatedPage.forEach((line: any, lineIndex: number) => {
+      updatedPage.forEach((line: any) => {
         if (line && line.docPageIndex !== undefined && line.docPageLineIndex !== undefined) {
-          this.pdf.updateLine(line.docPageIndex, line.docPageLineIndex, line, true); // skipUndoRecording = true
+          this.pdf.updateLine(line.docPageIndex, line.docPageLineIndex, line, true);
         }
       });
-
-      // Update current page reference if needed
-      if (this.currentPageIndex === this.currentPageIndex) {
-        this.currentPage = [...updatedPage];
-      }
-
-      // Force change detection
+      this.currentPage = [...updatedPage];
       this.cdRef.detectChanges();
-
     }
   }
-  handleWaterMarkUpdate(newWatermark: string) {}
 
-  processLinesForLastLooks(pages: Line[][]) {
-    if (!pages || pages.length === 0) {
-      return;
-    }
-    
+  handleWaterMarkUpdate(_newWatermark: string): void {}
+
+  processLinesForLastLooks(pages: Line[][]): void {
+    if (!pages || pages.length === 0) return;
     pages.forEach(page => {
-      if (!page || page.length === 0) {
-        return; // Skip empty pages
-      }
-      
+      if (!page || page.length === 0) return;
       page.forEach(line => {
-        // Apply all the position calculations
         if (line) {
           this.adjustSceneNumberPosition(line);
           this.adjustBarPosition(line);
           this.calculateYPositions(line);
-          
-          // Set calculated X position if not already set or if it's clearly invalid
           if (!line.calculatedXpos || line.calculatedXpos === 'undefinedpx' || line.calculatedXpos === 'NaNpx') {
-            const xPosValue = line.xPos !== undefined ? Number(line.xPos) : 0; // Default to 0 if xPos is undefined
+            const xPosValue = line.xPos !== undefined ? Number(line.xPos) : 0;
             line.calculatedXpos = (xPosValue * 1.3 + 'px');
           }
-
-          // Set calculated end position
           if (line.endY !== undefined) {
             if (!line.calculatedEnd || line.calculatedEnd === 'undefinedpx' || line.calculatedEnd === 'NaNpx') {
               line.calculatedEnd = (Number(line.endY) * 1.3 + 'px');
@@ -531,181 +578,73 @@ export class LastLooksComponent implements OnInit, OnDestroy {
               line.calculatedEnd = Number(line.yPos) > 90 ? Number(line.yPos) * 1.3 + 'px' : '90px';
             }
           }
-          
-          // Ensure visibility is set
-          if (line.visible === undefined) {
-            line.visible = 'true';
-          }
+          if (line.visible === undefined) line.visible = 'true';
         }
       });
     });
   }
-  getSceneBreaks(sceneArr) {
-    sceneArr.forEach((scene) => {
-      // RECORD SCENE BREAKS FOR TRUE AND FALSE VALUES LATER
-      // not getting firstLine for all scenes for some reason
-      let breaks = {
-        first: scene.firstLine,
-        last: scene.lastLine,
-        scene: scene.sceneNumber,
-        firstPage: scene.page,
-      };
 
-      this.sceneBreaks.push(breaks);
-    });
-  }
-  hideBars(line: Line) {
-    if (line.bar != 'bar') line.bar = 'hideBar';
-    if (line.end != 'END') line.bar = 'hideEnd';
+  hideBars(line: Line): void {
+    if (line.bar !== 'bar') line.bar = 'hideBar';
+    if (line.end !== 'END') line.bar = 'hideEnd';
     if (!line.cont) line.cont = 'hideCont';
   }
-  //
 
-  private logLinePositions(page: Line[], message: string) {
-  }
-
-  resetDocumentToInitialState() {
-
-    // Use PDF service to reset to initial state
+  resetDocumentToInitialState(): void {
     this.pdf.resetToInitialState();
-
-    // Sync with PDF service state - Angular will pass updated page to child component
     this.pages = JSON.parse(JSON.stringify(this.pdf.finalDocument?.data || []));
-    this.currentPageIndex = 0; // Reset to first page
+    this.currentPageIndex = 0;
     this.currentPage = JSON.parse(JSON.stringify(this.pages[this.currentPageIndex] || []));
-
-    // Clear selections
     this.selectedLine = null;
     this.selectedLines = [];
     this.isMultipleSelection = false;
-
-    // Process lines for display with the reset data
     this.processLinesForLastLooks(this.pages);
-
-    // Force change detection to update the UI
     this.cdRef.detectChanges();
-
   }
+
   updateDisplayedPage(forceDeepClone = true): void {
-    
-    if (!this.pages || this.pages.length === 0) {
-      return;
-    }
-
+    if (!this.pages || this.pages.length === 0) return;
     const currentPage = this.pages[this.currentPageIndex];
-    
-    if (!currentPage) {
-      return;
-    }
-    
-    
-    // Handle callsheet page if present
+    if (!currentPage) return;
     this.handleCallsheetPage(currentPage);
-
-    // Update current page
-    if (forceDeepClone) {
-      this.currentPage = JSON.parse(JSON.stringify(currentPage));
-    } else {
-      this.currentPage = [...currentPage];
-    }
-    
-    // Clear any selections when changing pages
+    this.currentPage = forceDeepClone
+      ? JSON.parse(JSON.stringify(currentPage))
+      : [...currentPage];
     this.selectedLine = null;
     this.selectedLines = [];
     this.isMultipleSelection = false;
-    
     this.cdRef.detectChanges();
   }
-  previousPage() {
+
+  previousPage(): void {
     if (this.currentPageIndex > 0) {
-      // Save current page state if needed
-      if (this.editState) {
-        this.saveCurrentPageState();
-      }
-      
+      if (this.editState) this.saveCurrentPageState();
       this.currentPageIndex--;
-      this.updateDisplayedPage(false); // Pass false to avoid deep cloning
-    } else {
+      this.updateDisplayedPage(false);
     }
   }
-  nextPage() {
+
+  nextPage(): void {
     if (this.currentPageIndex < this.pages.length - 1) {
-      // Save current page state if needed
-      if (this.editState) {
-        this.saveCurrentPageState();
-      }
-
+      if (this.editState) this.saveCurrentPageState();
       this.currentPageIndex++;
-      this.updateDisplayedPage(false); // Pass false to avoid deep cloning
-    } else {
+      this.updateDisplayedPage(false);
     }
   }
 
-  // Toggle edit mode - emits event to parent component
-  toggleEditMode(): void {
-    this.editModeToggle.emit();
-  }
-
-  adjustLinesForDisplay(pages) {
-    // const lastLinesOfScenes = this.findLastLinesOfScenes(pages);
-    // pages.forEach((page, pageIndex, pagesArray) => {
-    //   page.forEach((line, lineIndex) => {
-    //     // Reset properties
-    //     line.bar = 'hideBar';
-    //     line.cont = 'hideCont';
-    //     line.end = 'hideEnd';
-    //   });
-    // });
-  }
-
-  adjustSceneNumberPosition(line: Line) {
-    if (line.category === 'scene-header') {
-      // Set scene number position if needed
-      if (!line.calculatedXpos) {
-        line.calculatedXpos = Number(line.xPos) * 1.3 + 'px';
-      }
+  adjustSceneNumberPosition(line: Line): void {
+    if (line.category === 'scene-header' && !line.calculatedXpos) {
+      line.calculatedXpos = Number(line.xPos) * 1.3 + 'px';
     }
   }
 
-  revealContSubcategoryLines(line: Line) {
-    // this is what is causing all cont lines to be revealead
-    // check in later
-    if (line.subCategory === "CON'T" && (line.yPos > 720 || line.yPos < 150)) {
-      line.visible = 'true';
-    }
-  }
-
-  adjustStartingLinesOfDoc(line: Line) {
-    // if (
-    //   line.bar === 'bar' &&
-    //   !this.startingLinesOfDoc.includes(line.sceneIndex) &&
-    //   line.sceneIndex > 0
-    // ) {
-    //   // add this to list so ENDS can be shows
-    //   this.startingLinesOfDoc.push(line.sceneIndex);
-    // }
-  }
-
-  adjustSceneHeader(line: Line) {
-    if (line.category === 'scene-header') {
-      if (line.visible === 'true') {
-        line.trueScene = 'true-scene';
-        line.bar = 'bar';
-      } else {
-        line.bar = 'hideBar';
-      }
-    }
-  }
-
-  adjustBarPosition(line: Line) {
+  adjustBarPosition(line: Line): void {
     if (line.barY) {
       line.calculatedBarY = line.calculatedBarY || (Number(line.barY) * 1.3 + 'px');
     }
   }
-  adjustYpositionAndReturnString(lineYPos: number): string {
-    return Number(lineYPos) > 1 ? Number(lineYPos) * 1.3 + 'px' : '0';
-  }
-  calculateYPositions(line: Line) {
+
+  calculateYPositions(line: Line): void {
     if (line.yPos !== undefined) {
       if (!line.calculatedYpos || line.calculatedYpos === 'undefinedpx' || line.calculatedYpos === 'NaNpx') {
         line.calculatedYpos = (Number(line.yPos) * 1.3 + 'px');
@@ -713,346 +652,7 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     }
   }
 
-  restorePositionsInDocument(arr) {
-    const scriptPages = arr.data;
-
-    for (let page of scriptPages) {
-      page.forEach((line, ind) => {
-        if (line.calculatedXpos) {
-          line.xPos =
-            Number(
-              line.calculatedXpos.substr(0, line.calculatedXpos.length - 2)
-            ) / 1.3;
-        }
-        if (line.calculatedYpos) {
-          line.yPos =
-            Number(
-              line.calculatedYpos.substr(0, line.calculatedYpos.length - 2)
-            ) / 1.3;
-        }
-        // Restore other properties if needed
-      });
-    }
-
-    return arr;
-  }
-  findFirstLineOfNextPage(pageIndex) {
-    const nextPage = this.doc[pageIndex + 1];
-    const acceptableCategories = this.acceptableCategoriesForFirstLine;
-    let nextPageFirst = undefined;
-
-    if (nextPage) {
-      for (let j = 0; j < 15; j++) {
-        const lineToCheck = nextPage[j];
-        if (
-          lineToCheck &&
-          acceptableCategories.includes(lineToCheck.category)
-        ) {
-          nextPageFirst = lineToCheck;
-          break;
-        }
-      }
-    }
-
-    return nextPageFirst;
-  }
-
-  /**
-   * Updates the component to use the PDF service for continuation markers
-   * and only handle END markers locally
-   */
-  
-
-  // Handle position changes from drag operations
-  handlePositionChange(event: any): void {
-    const { line, lineIndex, newPosition, originalPosition, isEndSpan, isContinueSpan, isStartSpan } = event;
-
-    // Update page
-    this.pages[this.currentPageIndex][lineIndex] = line;
-
-    // Update PDF service position properties (no undo recording since we already recorded at drag start)
-    this.pdf.updateLinePosition(this.currentPageIndex, lineIndex, {
-      // Bar positions
-      calculatedBarY: line.calculatedBarY,
-      calculatedEnd: line.calculatedEnd,
-      barY: line.barY,
-      endY: line.endY,
-      // Line positions
-      calculatedXpos: line.calculatedXpos,
-      calculatedYpos: line.calculatedYpos,
-      xPos: line.xPos,
-      yPos: line.yPos
-    });
-  }
-
-  // Handle category changes from context menu
-  handleCategoryChange(event: any): void {
-    const { line, lineIndex, category } = event;
-
-    // Update the page
-    this.pages[this.currentPageIndex][lineIndex] = line;
-    this.pageUpdate.emit(this.pages[this.currentPageIndex]);
-
-    // Update the PDF service
-    this.saveChangesToPdfService();
-  }
-
-  // Update the toggleVisibility method to force change detection
-  toggleVisibility() {
-    if (this.isMultipleSelection && this.selectedLines.length > 0) {
-      // Handle multiple lines - use batch undo recording
-      const newVisibility = this.selectedLine?.visible === 'true' ? 'false' : 'true';
-
-      // Record undo state for all selected lines as one batch operation
-      const batchChanges = this.selectedLines.map(line => {
-        const lineIndex = this.pages[this.currentPageIndex].findIndex(l => l.docPageLineIndex === line.docPageLineIndex);
-        return {
-          pageIndex: this.currentPageIndex,
-          lineIndex,
-          currentLineState: { ...line }, // Clone current state
-          changeDescription: `Toggle visibility: ${line.visible} → ${newVisibility} (batch operation)`
-        };
-      });
-      this.undoService.recordBatchChanges(batchChanges);
-
-      // Update all selected lines
-      this.selectedLines.forEach(line => {
-        // Set the new visibility
-        line.visible = newVisibility;
-      });
-
-      // Update the page and force change detection
-      this.pageUpdate.emit([...this.pages[this.currentPageIndex]]);
-      this.cdRef.detectChanges();
-    } else if (this.selectedLine) {
-      // Handle single line - use individual undo recording
-      const newVisibility = this.selectedLine.visible === 'true' ? 'false' : 'true';
-
-      // Record undo state for single line
-      const lineIndex = this.pages[this.currentPageIndex].findIndex(l => l.docPageLineIndex === this.selectedLine.docPageLineIndex);
-      this.undoService.recordLineChange(
-        this.currentPageIndex,
-        lineIndex,
-        { ...this.selectedLine }, // Clone current state
-        `Toggle visibility: ${this.selectedLine.visible} → ${newVisibility}`
-      );
-
-      // Toggle visibility
-      this.selectedLine.visible = newVisibility;
-
-      // Update the page and force change detection
-      this.pageUpdate.emit([...this.pages[this.currentPageIndex]]);
-      this.cdRef.detectChanges();
-    }
-
-    // Save changes to PDF service
-    this.saveChangesToPdfService();
-  }
-
-  // Update these methods in last-looks.component.ts
-  toggleStartBar(line: Line): void {
-    // Toggle the start bar
-    if (line.bar === 'bar') {
-      line.bar = 'hideBar';
-      line.calculatedBarY = undefined;
-      line.startTextOffset = undefined;
-    } else {
-      line.bar = 'bar';
-      
-      // Set default position if not already set
-      if (!line.calculatedBarY) {
-        line.calculatedBarY = (parseInt(line.calculatedYpos as string) + 20) + 'px';
-        line.barY = parseInt(line.calculatedBarY) / 1.3; // Store raw value
-      }
-      
-      // Position on the left side of the page
-      line.startTextOffset = 10; // Default left offset
-    }
-    
-    // Update the page in pages array
-    this.pages[this.currentPageIndex] = [...this.pages[this.currentPageIndex]];
-    
-    // Save to PDF service (which updates finalDocument.data)
-    this.saveChangesToPdfService();
-    
-    // Force change detection
-    this.cdRef.detectChanges();
-  }
-
-  toggleEndBar(line: Line): void {
-    // Toggle the end bar
-    if (line.end === 'END') {
-      line.end = 'hideEnd';
-      line.calculatedEnd = undefined;
-      line.endTextOffset = undefined;
-    } else {
-      line.end = 'END';
-      
-      // Set default position if not already set
-      if (!line.calculatedEnd) {
-        line.calculatedEnd = (parseInt(line.calculatedYpos as string) - 20) + 'px';
-        line.endY = parseInt(line.calculatedEnd) / 1.3; // Store raw value
-      }
-      
-      // Position on the right side of the page
-      line.endTextOffset = 10; // Default right offset
-    }
-    
-    // Update the page in pages array
-    this.pages[this.currentPageIndex] = [...this.pages[this.currentPageIndex]];
-    
-    // Save to PDF service (which updates finalDocument.data)
-    this.saveChangesToPdfService();
-    
-    // Force change detection
-    this.cdRef.detectChanges();
-  }
-
-  toggleContinueBar(line: Line): void {
-    // Toggle the continue bar
-    if (line.cont === 'CONTINUE') {
-      line.cont = 'hideCont';
-      line.calculatedBarY = undefined;
-      line.continueTextOffset = undefined;
-    } else {
-      // First, remove any CONTINUE-TOP if it exists
-      if (line.cont === 'CONTINUE-TOP') {
-        line.cont = 'hideCont';
-      }
-      
-      line.cont = 'CONTINUE';
-      
-      // Set default position if not already set - CHANGED FROM 900px TO 90px
-      if (!line.calculatedBarY) {
-        line.calculatedBarY = '90px'; // Default bottom position (90px from bottom)
-        line.barY = 90; // Store raw value
-      }
-      
-      // Set default text offset if not already set
-      if (!line.continueTextOffset) {
-        line.continueTextOffset = 10;
-      }
-    }
-    
-    // Update the page in pages array
-    this.pages[this.currentPageIndex] = [...this.pages[this.currentPageIndex]];
-    
-    // Save to PDF service (which updates finalDocument.data)
-    this.saveChangesToPdfService();
-    
-    // Force change detection
-    this.cdRef.detectChanges();
-  }
-
-  toggleContinueTopBar(line: Line): void {
-    // Toggle the continue-top bar
-    if (line.cont === 'CONTINUE-TOP') {
-      line.cont = 'hideCont';
-      line.calculatedBarY = undefined;
-      line.continueTopTextOffset = undefined;
-    } else {
-      // First, remove any CONTINUE if it exists
-      if (line.cont === 'CONTINUE') {
-        line.cont = 'hideCont';
-      }
-      
-      line.cont = 'CONTINUE-TOP';
-      
-      // Set default position if not already set
-      if (!line.calculatedBarY) {
-        line.calculatedBarY = '40px'; // Default top position (40px from top)
-        line.barY = 40; // Store raw value
-      }
-      
-      // Set default text offset if not already set
-      if (!line.continueTopTextOffset) {
-        line.continueTopTextOffset = 10;
-      }
-    }
-    
-    // Update the page in pages array
-    this.pages[this.currentPageIndex] = [...this.pages[this.currentPageIndex]];
-    
-    // Save to PDF service (which updates finalDocument.data)
-    this.saveChangesToPdfService();
-    
-    // Force change detection
-    this.cdRef.detectChanges();
-  }
-
-  /**
-   * Initialize scenes from the document
-   */
-  initializeScenes(): void {
-    this.scenes = [];
-    let currentScene: Scene | null = null;
-
-    this.pages.forEach((page, pageIndex) => {
-      page.forEach((line, lineIndex) => {
-        if (line.category === 'scene-header' && line.visible === 'true') {
-          // If we have a current scene, push it before starting a new one
-          if (currentScene) {
-            this.scenes.push(currentScene);
-          }
-
-          // Start a new scene
-          currentScene = {
-            id: '',
-            sceneNumber: line.sceneNumberText || '',
-            pageIndex: pageIndex,
-            firstLine: line.index,
-            lastLine: line.lastLine,
-            firstPage: pageIndex,
-            lastPage: pageIndex,
-            lines: [line],
-            pageRanges: {
-              startPage: pageIndex,
-              endPage: pageIndex,
-              sharedPages: []
-            }
-          };
-        } else if (currentScene) {
-          // Add line to current scene
-          currentScene.lines.push(line);
-          currentScene.lastLine = line.index;
-          currentScene.lastPage = pageIndex;
-        }
-      });
-    });
-
-    // Don't forget to push the last scene
-    if (currentScene) {
-      this.scenes.push(currentScene);
-    }
-  }
-
-
-
-  /**
-   * Navigate to a specific scene
-   */
-  navigateToScene(scene: Scene): void {
-    if (scene && scene.pageIndex >= 0) {
-      this.currentPageIndex = scene.pageIndex;
-      this.updateDisplayedPage();
-      
-      // Find the scene header line to highlight it
-      const headerLine = scene.lines.find(line => line.category === 'scene-header');
-      if (headerLine) {
-        this.selectedLine = headerLine;
-        this.onLineSelected(headerLine);
-      }
-      
-      // Scroll the page to bring the scene into view
-      setTimeout(() => {
-        const sceneElement = document.querySelector(`[data-scene-number="${scene.sceneNumber}"]`);
-        if (sceneElement) {
-          sceneElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 100);
-    }
-  }
-  public   refreshDocument(): void {
+  public refreshDocument(): void {
     if (this.pdf.finalDocument?.data) {
       this.pages = this.pdf.finalDocument.data;
       this.currentPage = this.pages[this.currentPageIndex] || [];
@@ -1061,376 +661,175 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Handle undo/redo operations by updating component state
-   */
   handleUndoRedoUpdate(): void {
-    // Sync component state with PDF service state
     if (this.pdf.finalDocument?.data) {
       this.pages = [...this.pdf.finalDocument.data];
-
-      // Update current page reference
       if (this.pages[this.currentPageIndex]) {
         this.currentPage = [...this.pages[this.currentPageIndex]];
       } else {
-        // If current page index is out of bounds, reset to first page
         this.currentPageIndex = 0;
         this.currentPage = this.pages[0] || [];
       }
-
-      // Process lines for display
       this.processLinesForLastLooks(this.pages);
-
-      // Clear selections after undo/redo as they may no longer be valid
       this.selectedLine = null;
       this.selectedLines = [];
       this.isMultipleSelection = false;
-
-      // Force change detection
       this.cdRef.detectChanges();
     }
   }
-  /**
-   * Update scene number
-   */
-  updateSceneNumber(event: Event, scene: Scene): void {
-    if (!this.canEditDocument) {
-      return;
-    }
-    event.stopPropagation();
-    const element = event.target as HTMLElement;
-    const newSceneNumber = element.textContent?.trim() || '';
-    
-    if (newSceneNumber !== scene.sceneNumber) {
-      // Find all lines in this scene that need updating
-      const affectedLines = scene.lines.filter(line => 
-        line.sceneNumberText === scene.sceneNumber ||
-        (line.customStartText && line.customStartText.includes(scene.sceneNumber)) ||
-        (line.customEndText && line.customEndText.includes(scene.sceneNumber)) ||
-        (line.customContinueText && line.customContinueText.includes(scene.sceneNumber)) ||
-        (line.customContinueTopText && line.customContinueTopText.includes(scene.sceneNumber))
-      );
 
-      // Update the scene number
-      scene.sceneNumber = newSceneNumber;
-
-      // Update all affected lines
-      affectedLines.forEach(line => {
-        line.sceneNumberText = newSceneNumber;
-        
-        if (line.customStartText && line.customStartText.includes(scene.sceneNumber)) {
-          line.customStartText = line.customStartText.replace(scene.sceneNumber, newSceneNumber);
-        }
-        if (line.customEndText && line.customEndText.includes(scene.sceneNumber)) {
-          line.customEndText = line.customEndText.replace(scene.sceneNumber, newSceneNumber);
-        }
-        if (line.customContinueText && line.customContinueText.includes(scene.sceneNumber)) {
-          line.customContinueText = line.customContinueText.replace(scene.sceneNumber, newSceneNumber);
-        }
-        if (line.customContinueTopText && line.customContinueTopText.includes(scene.sceneNumber)) {
-          line.customContinueTopText = line.customContinueTopText.replace(scene.sceneNumber, newSceneNumber);
-        }
-      });
-
-      // Update all pages that might have lines with this scene number
-      this.pages.forEach(page => {
-        if (!page) return;
-        
-        page.forEach(line => {
-          if (line.sceneNumberText === scene.sceneNumber) {
-            line.sceneNumberText = newSceneNumber;
-          }
-        });
-      });
-
-      // Save changes to PDF service immediately
-      this.pdf.updateSceneNumber(scene, newSceneNumber).subscribe({
-        next: (response) => {
-          if (response.success) {
-            // Update the page and force refresh
-            this.pageUpdate.emit(this.pages[scene.pageIndex]);
-            if (this.currentPageIndex === scene.pageIndex) {
-              this.updateDisplayedPage();
-            }
-          }
-        },
-        error: (error) => {
-          // Revert changes if PDF service update fails
-          scene.sceneNumber = scene.sceneNumber;
-          affectedLines.forEach(line => {
-            line.sceneNumberText = scene.sceneNumber;
-            if (line.customStartText && line.customStartText.includes(newSceneNumber)) {
-              line.customStartText = line.customStartText.replace(newSceneNumber, scene.sceneNumber);
-            }
-            if (line.customEndText && line.customEndText.includes(newSceneNumber)) {
-              line.customEndText = line.customEndText.replace(newSceneNumber, scene.sceneNumber);
-            }
-            if (line.customContinueText && line.customContinueText.includes(newSceneNumber)) {
-              line.customContinueText = line.customContinueText.replace(newSceneNumber, scene.sceneNumber);
-            }
-            if (line.customContinueTopText && line.customContinueTopText.includes(newSceneNumber)) {
-              line.customContinueTopText = line.customContinueTopText.replace(newSceneNumber, scene.sceneNumber);
-            }
-          });
-          this.pages.forEach(page => {
-            if (!page) return;
-            page.forEach(line => {
-              if (line.sceneNumberText === newSceneNumber) {
-                line.sceneNumberText = scene.sceneNumber;
-              }
-            });
-          });
-          this.pageUpdate.emit(this.pages[scene.pageIndex]);
-          if (this.currentPageIndex === scene.pageIndex) {
-            this.updateDisplayedPage();
-          }
-        }
-      });
-    }
+  handlePositionChange(event: any): void {
+    const { line, lineIndex } = event;
+    this.pages[this.currentPageIndex][lineIndex] = line;
+    this.pdf.updateLinePosition(this.currentPageIndex, lineIndex, {
+      calculatedBarY: line.calculatedBarY,
+      calculatedEnd: line.calculatedEnd,
+      barY: line.barY,
+      endY: line.endY,
+      calculatedXpos: line.calculatedXpos,
+      calculatedYpos: line.calculatedYpos,
+      xPos: line.xPos,
+      yPos: line.yPos
+    });
   }
 
-  
-  /**
-   * Toggle line visibility
-   */
-  toggleLineVisibility(line: Line): void {
-    // Toggle visibility
-    line.visible = line.visible === 'true' ? 'false' : 'true';
-
-    // Update the page
-    this.pageUpdate.emit(this.pages[this.currentPageIndex]);
+  handleCategoryChange(_event: any): void {
+    this.saveChangesToPdfService();
   }
 
   handleLineChange(event: any): void {
-    const { line, lineIndex, property, value } = event;
-    
-    // Update the line in our local state
+    const { line } = event;
     if (this.pages && this.pages[this.currentPageIndex]) {
       const page = this.pages[this.currentPageIndex];
-      const lineIndex = page.findIndex(l => l.docPageLineIndex === line.docPageLineIndex);
+      const lineIndex = page.findIndex((l: Line) => l.docPageLineIndex === line.docPageLineIndex);
       if (lineIndex !== -1) {
-        // Update the line
         page[lineIndex] = { ...line };
-        
-        // Update current page if this is the current page
-        if (this.currentPageIndex === this.currentPageIndex) {
-          this.currentPage = [...page];
-        }
-        
-        // Update the PDF service
+        this.currentPage = [...page];
         this.pdf.updateLine(this.currentPageIndex, line.docPageLineIndex, line);
-        
-        // Force change detection
         this.cdRef.detectChanges();
       }
     }
-  }
-
-  // Add new method to update scene numbers and CONTINUE bars
-  private updateSceneNumberAndContinueBars(line: Line, newSceneNumber: string, oldSceneNumber: string): void {
-    // Use a Set to track unique affected lines
-    const affectedLines = new Set<Line>();
-    const regex = new RegExp(oldSceneNumber, 'g');
-
-    // Helper function to update bar texts
-    const updateBarTexts = (l: Line) => {
-      if (l.customStartText?.includes(oldSceneNumber)) {
-        l.customStartText = l.customStartText.replace(regex, newSceneNumber);
-      }
-      if (l.customEndText?.includes(oldSceneNumber)) {
-        l.customEndText = l.customEndText.replace(regex, newSceneNumber);
-      }
-      if (l.customContinueText?.includes(oldSceneNumber)) {
-        l.customContinueText = l.customContinueText.replace(regex, newSceneNumber);
-      }
-      if (l.customContinueTopText?.includes(oldSceneNumber)) {
-        l.customContinueTopText = l.customContinueTopText.replace(regex, newSceneNumber);
-      }
-    };
-
-    // Update current page
-    for (const l of this.pages[this.currentPageIndex]) {
-      if (l.sceneNumberText === oldSceneNumber) {
-        l.sceneNumberText = newSceneNumber;
-        updateBarTexts(l);
-        affectedLines.add(l);
-      }
-    }
-
-    // Update subsequent pages
-    for (let i = this.currentPageIndex + 1; i < this.pages.length; i++) {
-      for (const l of this.pages[i]) {
-        if (l.sceneNumberText === oldSceneNumber) {
-          l.sceneNumberText = newSceneNumber;
-          updateBarTexts(l);
-          affectedLines.add(l);
-        }
-      }
-    }
-
-    // Force change detection
-    this.cdRef.detectChanges();
   }
 
   handleLineSelected(line: Line): void {
     this.selectedLine = line;
     this.lineSelected.emit(line);
   }
-  
-  handleProceedToCheckout(): void {
-    // Implement checkout logic
-  }
-  
+
+  handleProceedToCheckout(): void {}
+
   handleToggleVisibilityRequest(): void {
     if (this.selectedLine) {
-      this.toggleVisibility();
-      
-      // Update the PDF service
       this.saveChangesToPdfService();
     }
   }
-  
+
   handlePageChange(pageIndex: number): void {
     this.currentPageIndex = pageIndex;
     this.updateDisplayedPage();
   }
 
-  // Sync local pages state to PDF service (lightweight — no deep copy).
-  // The actual persistent save (saveDocumentState) only happens when
-  // the user explicitly clicks Save or exits edit mode.
-  saveChangesToPdfService(): void {
-    if (this.pdf.finalDocument?.data) {
-      // Sync all pages to the PDF service's live data
-      this.pdf.finalDocument.data = [...this.pages];
-    }
-  }
-
-  // Add a method to save the current page state
-  saveCurrentPageState() {
-    // Only save if we're in edit mode and have changes
-    if (this.editState && this.currentPage) {
-      // Update the pages array with the current page
-      this.pages[this.currentPageIndex] = [...this.currentPage];
-    }
-  }
-
-  // Add this method to handle callsheet removal
-  private removeCallsheetFromDocument(): void {
-
-    // Record undo state before removing callsheet (save complete document state)
-    if (this.pdf.finalDocument?.data) {
-      this.undoService.recordDocumentReorderChange(
-        cloneDeep(this.pdf.finalDocument.data),
-        'Remove callsheet page'
-      );
-    }
-
-    if (this.pdf.finalDocument?.data) {
-      // Remove any callsheet pages
-      this.pdf.finalDocument.data = this.pdf.finalDocument.data.filter(page =>
-        !(page[0] && (page[0].type === 'callsheet' || page[0].category === 'callsheet'))
-      );
-
-      // Update local state
-      this.pages = this.pdf.finalDocument.data;
-      this.hasCallsheet = false;
-
-      // Reset to first page if we were on the callsheet page
-      if (this.currentPageIndex === 0 && this.isCallsheetPage(this.currentPage)) {
-        this.currentPageIndex = 0;
-        this.currentPage = this.pages[0] || [];
-      }
-
-      // Save the document state
-      this.pdf.saveDocumentState();
-
-      // Force change detection
-      this.cdRef.detectChanges();
-
-      // Force change detection on child component if available
-      if (this.lastLooksPage) {
-        this.lastLooksPage.cdRef.detectChanges();
-      }
-
-      // Emit page update to parent
-      this.pageUpdate.emit(this.currentPage);
-
-    }
-  }
-
-  // Ensure we're cleaning up subscriptions
-  ngOnDestroy() {
-    // Clean up subscriptions
-    if (this.finalDocumentDataSubscription) {
-      this.finalDocumentDataSubscription.unsubscribe();
-    }
-    if (this.documentReorderedSubscription) {
-      this.documentReorderedSubscription.unsubscribe();
-    }
-    if (this.documentRegeneratedSubscription) {
-      this.documentRegeneratedSubscription.unsubscribe();
-    }
-    if (this.undoQueue) {
-      this.undoQueue.unsubscribe();
-    }
-
-    // Clear large data structures
-    this.pages = null;
-    this.currentPage = null;
-    this.doc = null;
-    this.scenes = [];
-    this.selectedLines = [];
-    this.selectedLine = null;
-  }
-
-  // Add this method to toggle instructions visibility
-  toggleInstructions(): void {
-    this.showInstructions = !this.showInstructions;
-  }
-
-  // Add back the onLineSelected method
-  onLineSelected(line: Line | null) {
+  onLineSelected(line: Line | null): void {
     if (!line) {
       this.selectedLine = null;
       this.selectedLines = [];
       this.isMultipleSelection = false;
       return;
     }
-    
-    // Check if this is a multiple selection
     if (line.multipleSelected) {
       this.isMultipleSelection = true;
-      
-      // Find all selected lines
-      this.selectedLines = this.currentPage.filter(l => 
-        this.lastLooksPage.selectedLineIds.includes(l.index)
+      this.selectedLines = this.currentPage.filter((l: Line) =>
+        this.lastLooksPage?.selectedLineIds.includes(l.index)
       );
-      
-      // Set the primary selected line
       this.selectedLine = line;
-      
     } else {
-      // Single selection
       this.isMultipleSelection = false;
       this.selectedLines = [line];
       this.selectedLine = line;
     }
   }
 
-  // Add back the onSearch method
-  onSearch() {
-    if (!this.searchQuery || this.searchQuery.trim() === '') {
-      return;
-    }
+  saveChangesToPdfService(): void {
+    this.pdf.finalDocument.data = [...this.pages];
+    this.pdf.saveDocumentState();
+  }
 
+  saveCurrentPageState(): void {
+    if (this.editState && this.currentPage) {
+      this.pages[this.currentPageIndex] = [...this.currentPage];
+    }
+  }
+
+  private removeCallsheetFromDocument(): void {
+    if (this.pdf.finalDocument?.data) {
+      this.undoService.recordDocumentReorderChange(
+        cloneDeep(this.pdf.finalDocument.data),
+        'Remove callsheet page'
+      );
+      this.pdf.finalDocument.data = this.pdf.finalDocument.data.filter(page =>
+        !(page[0] && (page[0].type === 'callsheet' || page[0].category === 'callsheet'))
+      );
+      this.pages = this.pdf.finalDocument.data;
+      this.hasCallsheet = false;
+      if (this.currentPageIndex === 0 && this.isCallsheetPage(this.currentPage)) {
+        this.currentPageIndex = 0;
+        this.currentPage = this.pages[0] || [];
+      }
+      this.pdf.saveDocumentState();
+      this.cdRef.detectChanges();
+      if (this.lastLooksPage) this.lastLooksPage.cdRef.detectChanges();
+      this.pageUpdate.emit(this.currentPage);
+    }
+  }
+
+  private handleCallsheetPage(page: any): void {
+    if (this.isCallsheetPage(page) && page[0]) {
+      page[0].visible = 'true';
+      this.hasCallsheet = true;
+      if (!page[0].calculatedXpos) page[0].calculatedXpos = '0px';
+      if (!page[0].calculatedYpos) page[0].calculatedYpos = '0px';
+      this.cdRef?.detectChanges();
+    }
+  }
+
+  initializeScenes(): void {
+    this.scenes = [];
+    let currentScene: Scene | null = null;
+    this.pages.forEach((page, pageIndex) => {
+      page.forEach((line: Line) => {
+        if (line.category === 'scene-header' && line.visible === 'true') {
+          if (currentScene) this.scenes.push(currentScene);
+          currentScene = {
+            id: '',
+            sceneNumber: line.sceneNumberText || '',
+            pageIndex,
+            firstLine: line.index,
+            lastLine: line.lastLine,
+            firstPage: pageIndex,
+            lastPage: pageIndex,
+            lines: [line],
+            pageRanges: { startPage: pageIndex, endPage: pageIndex, sharedPages: [] }
+          };
+        } else if (currentScene) {
+          currentScene.lines.push(line);
+          currentScene.lastLine = line.index;
+          currentScene.lastPage = pageIndex;
+        }
+      });
+    });
+    if (currentScene) this.scenes.push(currentScene);
+  }
+
+  toggleInstructions(): void {
+    this.showInstructions = !this.showInstructions;
+  }
+
+  onSearch(): void {
+    if (!this.searchQuery?.trim()) return;
     const query = this.searchQuery.toLowerCase();
-    
-    // Example: Find pages with matching text
     for (let i = 0; i < this.pages.length; i++) {
-      const page = this.pages[i];
-      for (const line of page) {
+      for (const line of this.pages[i]) {
         if (line.text && line.text.toLowerCase().includes(query)) {
-          // Navigate to the page with the match
           this.currentPageIndex = i;
           this.updateDisplayedPage();
           return;
@@ -1439,47 +838,24 @@ export class LastLooksComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Add a method to handle scene order changes
-  handleSceneOrderChange(newOrder: any[]): void {
-    // Update the pages with the new scene order
-    this.pages = this.pages.map(page => {
-      // Create a new page reference
-      const newPage = [...page];
-      
-      // Update scene order in the page
-      newPage.sort((a, b) => {
-        const aIndex = newOrder.findIndex(scene => scene.index === a.index);
-        const bIndex = newOrder.findIndex(scene => scene.index === b.index);
-        return aIndex - bIndex;
-      });
-      
-      return newPage;
-    });
-
-    // Force update of the displayed page
-    this.updateDisplayedPage(true);
+  adjustYpositionAndReturnString(lineYPos: number): string {
+    return Number(lineYPos) > 1 ? Number(lineYPos) * 1.3 + 'px' : '0';
   }
 
-  // Add this method to handle callsheet page display
-  private handleCallsheetPage(page: any): void {
-    if (this.isCallsheetPage(page)) {
-      
-      // Ensure the callsheet is visible
-      if (page[0]) {
-        page[0].visible = 'true';
-        this.hasCallsheet = true;
-        
-        // Ensure proper positioning
-        if (!page[0].calculatedXpos) {
-          page[0].calculatedXpos = '0px';
-        }
-        if (!page[0].calculatedYpos) {
-          page[0].calculatedYpos = '0px';
-        }
-
-        // Force change detection
-        this.cdRef?.detectChanges();
-      }
+  revealContSubcategoryLines(line: Line): void {}
+  adjustStartingLinesOfDoc(_line: Line): void {}
+  adjustSceneHeader(line: Line): void {
+    if (line.category === 'scene-header') {
+      if (line.visible === 'true') { line.trueScene = 'true-scene'; line.bar = 'bar'; }
+      else { line.bar = 'hideBar'; }
     }
+  }
+  getSceneBreaks(sceneArr: any[]): void {
+    sceneArr.forEach((scene) => {
+      this.sceneBreaks.push({
+        first: scene.firstLine, last: scene.lastLine,
+        scene: scene.sceneNumber, firstPage: scene.page,
+      });
+    });
   }
 }

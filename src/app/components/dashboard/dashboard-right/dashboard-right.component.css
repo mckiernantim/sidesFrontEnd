@@ -10,193 +10,207 @@ li{
     padding: 0 5% 1% 5%;
 }
 tr, th{
+  text-shadow: white 1px 1px;
   font-weight:600 !important;
   font-size:1.1rem;
   overflow-x: hidden;
-  color: var(--sw-text);
 }
 
 .mat-mdc-form-field{
-  color: var(--sw-text);
+  color:black
 }
-
-/* Toggle switch */
 .switch {
     position: relative;
     display: inline-block;
     width: 60px;
     height: 34px;
-}
-.switch input {
+  }
+  
+  .switch input { 
     opacity: 0;
     width: 0;
     height: 0;
-}
-.slider {
+  }
+  
+  .slider {
     position: absolute;
     cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: var(--sw-border);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
     -webkit-transition: .4s;
     transition: .4s;
-}
-.slider:before {
+  }
+  
+  .slider:before {
     position: absolute;
     content: "";
     height: 26px;
     width: 26px;
     left: 4px;
     bottom: 4px;
-    background-color: var(--sw-text);
+    background-color: white;
     -webkit-transition: .4s;
     transition: .4s;
-}
-input:checked + .slider {
-    background-color: var(--sw-accent);
-}
-input:focus + .slider {
-    box-shadow: 0 0 1px var(--sw-accent);
-}
-input:checked + .slider:before {
+  }
+  
+  input:checked + .slider {
+    background-color: var(--coral);
+  }
+  
+  input:focus + .slider {
+    box-shadow: 0 0 1px var(--coral);
+  }
+  
+  input:checked + .slider:before {
     -webkit-transform: translateX(26px);
     -ms-transform: translateX(26px);
     transform: translateX(26px);
-}
-.slider.round { border-radius: 34px; }
-.slider.round:before { border-radius: 50%; }
-
+  }
+  
+  /* Rounded sliders */
+  .slider.round {
+    border-radius: 34px;
+  }
+  
+  .slider.round:before {
+    border-radius: 50%;
+  }
 .table-container {
   overflow: auto;
   max-height:70vh;
+
 }
+
 table {
   width:100%;
 }
-
 @media screen and (max-width:1200px) {
   .dash-container {
-    flex-direction: column-reverse;
+    flex-direction: column-reverse;;
   }
 }
-@media screen and (max-width: 768px) {
+  @media screen and (max-width: 768px) {
   .mat-mdc-cell{
-    text-overflow: ellipsis;
-    overflow: hidden;
+    text-overflow: ellipsis; 
+    overflow: hidden; 
     white-space: nowrap;
     text-align: left;
-    width:10px;
-  }
-  .dash-containerr{
-    max-width: 95vw;
+    width: auto;
+    max-width: 100%;
+   }
+   .dash-container{
+    max-width: 100vw;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-content: space-around;
     align-items: center;
-  }
+}
   .cell {
     width:95%;
     margin: 0 auto;
     padding: 0;
+
   }
   .main{
-    width:90%;
+    width:90%
   }
-  .table-preview, .table-page-num{
-    display: none;
-  }
-  .table-scene-header{
-    max-width: 196px;
-  }
-  .mat-mdc-paginator{
-    max-width: 380px;
-  }
+   .table-preview, .table-page-num{
+     display: none;
+   }
+   .table-scene-header{
+     max-width: 196px;
+   }
+   .mat-mdc-paginator{
+     max-width: 380px;
+   }
 }
 
 .min-h-screen {
   min-height: 100vh;
-  height: auto;
+  height: auto
 }
 
 /* Update the container for last-looks */
 app-last-looks {
   display: block;
-  height: auto;
+  height: auto; /* Force full height */
   width: 100%;
 }
 
-/* === CDK Drag & Drop === */
 .cdk-drag-preview {
   box-sizing: border-box;
   border-radius: 4px;
-  box-shadow: 0 5px 5px -3px rgba(0,0,0,0.4),
-              0 8px 10px 1px rgba(0,0,0,0.3),
-              0 3px 14px 2px rgba(0,0,0,0.2);
-}
-.cdk-drag-placeholder { opacity: 0; }
-.cdk-drag-animating {
-  transition: transform 250ms cubic-bezier(0,0,0.2,1);
-}
-.selected-scenes-list.cdk-drop-list-dragging .scene-item:not(.cdk-drag-placeholder) {
-  transition: transform 250ms cubic-bezier(0,0,0.2,1);
+  box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+              0 8px 10px 1px rgba(0, 0, 0, 0.14),
+              0 3px 14px 2px rgba(0, 0, 0, 0.12);
 }
 
-/* === Dashboard Shell === */
+.cdk-drag-placeholder {
+  opacity: 0;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.selected-scenes-list.cdk-drop-list-dragging .scene-item:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.scene-item {
+  cursor: move;
+  background: var(--white-brand);
+  border-radius: 10px;
+  margin: 8px 0;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.scene-item:hover {
+  box-shadow: var(--shadow-lift);
+}
+
 .dashboard-right {
     display: flex;
     flex-direction: column;
     height: auto;
-    overflow: hidden;
+    /* Scene select must grow and scroll via app-dashboard-right; do not clip here. */
+    overflow: visible;
     margin-bottom: 1rem;
-    background-color: var(--sw-bg);
+    background-color: var(--paper);
 }
+
 .dashboard-right-content {
     flex: 1;
-    overflow: hidden;
+    overflow: visible;
     display: flex;
     flex-direction: column;
     min-width: 0;
     height: auto;
 }
 
-/* === Header Section === */
+/* Header Section Styles */
 .header-section {
-    background-color: var(--sw-surface);
-    border: 1px solid var(--sw-border);
+    background-color: white;
     border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    color: var(--sw-text);
 }
 
-/* === Selected Scenes List === */
 .selected-scenes-list {
     max-height: 300px;
     overflow-y: auto;
-    margin-top: 1rem;
+    margin-top: 0;
+    width: 100%;
 }
 
-/* === Scene Items === */
-.scene-item {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
-    background-color: var(--sw-surface-2);
-    border: 1px solid var(--sw-border);
-    border-radius: 0.375rem;
-    transition: all 0.2s ease;
-    color: var(--sw-text);
-    cursor: move;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-.scene-item:hover {
-    transform: translateX(4px);
-    background-color: var(--sw-border);
-    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-}
-
-/* === Last Looks Container === */
+/* Last Looks Container */
 .last-looks-container {
     flex: 1;
     display: flex;
@@ -204,77 +218,758 @@ app-last-looks {
     min-height: 0;
 }
 
-/* === Controls Section === */
+/* Medium screens and below */
+@media (max-width: 1200px) {
+    .dashboard-right-content {
+        height: auto;
+        min-height: 0;
+    }
+
+    .header-section {
+        margin: 1rem;
+    }
+
+    .selected-scenes-list {
+        max-height: 200px;
+    }
+}
+
+/* Small screens */
+@media (max-width: 768px) {
+    .dashboard-right-content {
+        padding: 0.5rem;
+    }
+
+    .header-section {
+        margin: 0.5rem;
+        padding: 1rem;
+    }
+}
+
+/* Scene item styles */
+.scene-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background-color: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.scene-item:hover {
+    transform: translateX(4px);
+    background-color: var(--tint);
+}
+
+.drag-handle-icon {
+  color: var(--ink-faint);
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.drag-handle-icon:active {
+  cursor: grabbing;
+  color: var(--ink-soft);
+}
+
+.scene-row:hover .drag-handle-icon {
+  color: var(--ink-soft);
+}
+
+.scene-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  width: 100%;
+}
+
+.scene-remove {
+  background: none;
+  border: none;
+  color: var(--coral);
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.scene-remove:hover {
+  color: #b8442d;
+}
+
+.empty-scenes {
+  color: var(--ink-faint);
+  font-style: italic;
+  padding: 12px;
+}
+
+.reorder-hint {
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-style: italic;
+  padding: 8px 10px;
+  margin-top: 8px;
+  background: #e8f0f7;
+  border: 1px solid rgba(74, 126, 163, 0.22);
+  border-radius: 8px;
+}
+
+.edit-tips {
+  background: var(--white-brand);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lift);
+  width: 100%;
+  max-width: calc(100vw - 1.5rem);
+}
+
+@media (min-width: 640px) {
+  .edit-tips {
+    width: 20rem;
+  }
+}
+
+.edit-tips summary {
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.edit-tips-hint {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-faint);
+}
+
+.edit-tips-body {
+  padding: 0 16px 16px;
+}
+
+.edit-tips-body ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* Drag and drop styles */
+.cdk-drag-preview {
+    box-sizing: border-box;
+    border-radius: 4px;
+    box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+                0 8px 10px 1px rgba(0, 0, 0, 0.14),
+                0 3px 14px 2px rgba(0, 0, 0, 0.12);
+}
+
+.cdk-drag-placeholder {
+    opacity: 0;
+}
+
+.cdk-drag-animating {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.selected-scenes-list.cdk-drop-list-dragging .scene-item:not(.cdk-drag-placeholder) {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Tablet / mid widths — keep scene header above the list; scroll page stage */
+@media (max-width: 1400px) {
+    .last-looks-container {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        min-height: calc(100vh - 64px);
+    }
+
+    .main-content-area {
+        order: 1;
+        margin-bottom: 2rem;
+    }
+
+    .right-side-content {
+        order: 2;
+        width: 100%;
+        max-width: none;
+    }
+
+    .scene-list-container {
+        max-height: 300px;
+        width: 100%;
+    }
+
+    .page-container {
+        padding: 1rem;
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .controls-container {
+        width: 100%;
+    }
+
+    /* Scene-select mobile uses Scenes | Controls toggle — do not force side panel first */
+}
+
+/* Small screens */
+@media (max-width: 900px) {
+    .last-looks-container {
+        padding: 0.5rem;
+    }
+
+    .controls-container {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .scene-list-container {
+        max-height: 200px;
+    }
+
+    .page-container {
+        padding: 0.5rem;
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .page-container {
+        padding: 0.25rem;
+    }
+
+    .controls-section {
+        padding: 0.75rem;
+    }
+}
+
+/* Controls Section with Edit State */
 .controls-section {
-    background-color: var(--sw-surface);
-    border: 1px solid var(--sw-border);
-    border-radius: 0.5rem;
+    background-color: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
     padding: 1rem;
     margin-top: 1rem;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
+
 .controls-section.edit-state {
-    background-color: var(--sw-surface-2);
-    border-color: var(--sw-accent);
+    background-color: var(--tint);
+    border-color: rgba(184, 144, 26, 0.28);
 }
 
-/* Right panel edit state */
-.edit-state {
-    border: 1px solid var(--sw-accent) !important;
+.dash-side-panel {
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-/* === Scene Number / Text Editable === */
+.selected-scenes-heading {
+  width: 100%;
+  margin: 0 0 0.75rem;
+  text-align: left;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.last-looks-host {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.dash-main-row {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .scene-number, .scene-text {
   padding: 2px 4px;
   border-radius: 4px;
   transition: all 0.2s ease;
-  color: var(--sw-text);
 }
+
 .scene-number.editing, .scene-text.editing {
-  background-color: var(--sw-surface-2);
-  border: 1px solid var(--sw-accent);
+  background-color: var(--mint-soft);
+  border: 1px solid rgba(63, 170, 141, 0.4);
   outline: none;
 }
+
 .scene-number:focus, .scene-text:focus {
-  background-color: var(--sw-surface-2);
-  border: 1px solid var(--sw-accent);
+  background-color: var(--mint-soft);
+  border: 1px solid rgba(63, 170, 141, 0.4);
   outline: none;
 }
-.edit-state .scene-number { cursor: text; }
-.edit-state .scene-text { cursor: text; }
-.edit-state .scene-number:hover,
-.edit-state .scene-text:hover {
-  background-color: var(--sw-border);
+
+.edit-state .scene-number, .edit-state .scene-text {
+  cursor: text;
 }
 
-/* === Responsive === */
-@media (max-width: 1200px) {
-    .dashboard-right-content { height: auto; min-height: 0; }
-    .header-section { margin: 1rem; }
-    .selected-scenes-list { max-height: 200px; }
-}
-@media (max-width: 768px) {
-    .dashboard-right-content { padding: 0.5rem; }
-    .header-section { margin: 0.5rem; padding: 1rem; }
+.edit-state .scene-number:hover, .edit-state .scene-text:hover {
+  background-color: rgba(20, 40, 43, 0.05);
 }
 
-/* === Last Looks responsive breakpoints === */
-@media (max-width: 1400px) {
-    .last-looks-container {
-        display: flex;
-        flex-direction: column-reverse;
-        height: auto;
-        min-height: calc(100vh - 64px);
-    }
-    .main-content-area { order: 1; margin-bottom: 2rem; }
-    .right-side-content { order: 2; width: 100%; max-width: none; }
-    .scene-list-container { max-height: 300px; width: 100%; }
-    .page-container { padding: 1rem; min-width: calc(816px + 2rem); }
-    .controls-container { width: 100%; }
+
+
+
+/* ── Scene-select mobile toggle (mirrors Last Looks Preview|Controls) ── */
+.ss-mobile-toggle {
+  display: none;
 }
-@media (max-width: 900px) {
-    .last-looks-container { padding: 0.5rem; }
-    .controls-container { flex-direction: column; gap: 0.5rem; }
-    .scene-list-container { max-height: 200px; }
-    .page-container { padding: 0.5rem; min-width: calc(816px + 1rem); }
+
+.ss-mobile-toggle-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--sw-accent, var(--coral));
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+@media (max-width: 767px) {
+  .ss-shell {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  /* Controls: flush under toggle like Last Looks rail (eye stays put) */
+  .ss-shell--controls {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .ss-shell--controls .ss-mobile-toggle {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    margin-bottom: 0;
+  }
+
+  .ss-mobile-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    flex-shrink: 0;
+    padding: 8px 0 6px;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--sw-surface, var(--paper));
+    border-bottom: 1px solid var(--sw-border, var(--line));
+    margin-bottom: 10px;
+  }
+
+  .ss-mobile-toggle-btn {
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--sw-border, var(--line));
+    border-radius: 9px;
+    background: var(--sw-surface-2, var(--sw-bg, var(--paper-2, var(--white-brand))));
+    color: var(--sw-text-muted, var(--ink-soft));
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+
+  .ss-mobile-toggle-btn--active {
+    background: var(--sw-accent, var(--coral));
+    border-color: var(--sw-accent, var(--coral));
+    color: #fff;
+  }
+
+  .ss-mobile-toggle-btn--active .ss-mobile-toggle-count {
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  /* Kill stacked gap when only one panel is visible */
+  .ss-shell .dash-main-row {
+    row-gap: 0;
+  }
+
+  .ss-shell .dash-main-row > * + * {
+    margin-top: 0;
+  }
+
+  /* Scenes first — hide controls panel */
+  .ss-row--scenes .ss-controls-panel {
+    display: none !important;
+  }
+
+  .ss-row--scenes .ss-scenes-panel {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Controls panel — hide scene table */
+  .ss-row--controls .ss-scenes-panel {
+    display: none !important;
+  }
+
+  .ss-row--controls .ss-controls-panel {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    order: 0;
+    /* Full-bleed rail under the toggle — same eye position as Last Looks Controls */
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: var(--sw-surface, var(--paper));
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  .ss-row--controls .ss-rail {
+    min-height: calc(100dvh - 120px);
+  }
+
+  .ss-row--controls .ss-rail-header {
+    padding: 12px 12px 10px;
+  }
+
+  .ss-row--controls .ss-rail-checkout {
+    padding: 10px 12px 14px;
+  }
+}
+
+/* ── Scene-select Controls rail (mirrors last-looks-rail) ── */
+.ss-controls-panel {
+  padding: 0;
+  overflow: hidden;
+  background: var(--sw-surface, var(--paper));
+  border: 1px solid var(--sw-border, var(--line));
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.ss-rail {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ss-rail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--sw-border, var(--line));
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.ss-rail-title-block {
+  min-width: 0;
+}
+
+.ss-rail-kicker {
+  margin: 0 0 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sw-text-muted, var(--ink-soft));
+}
+
+.ss-rail-script-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sw-text, var(--ink));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ss-rail-date {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: var(--sw-text-muted, var(--ink-soft));
+}
+
+.ss-rail-scenes {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 12px 8px;
+  min-height: 0;
+}
+
+.ss-rail-section-label {
+  margin: 0 0 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sw-text-muted, var(--ink-soft));
+}
+
+.ss-scene-list,
+.ss-scene-list.selected-scenes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: none !important;
+  margin-top: 0;
+  width: 100%;
+  overflow: visible;
+}
+
+.ss-scene-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  margin-bottom: 0;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: var(--sw-bg, transparent);
+  transition: background 0.12s, border-color 0.12s;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+
+.ss-scene-row:hover {
+  background: var(--sw-surface-2, var(--sw-surface, var(--tint)));
+  border-color: var(--sw-border, var(--line));
+}
+
+.ss-scene-row--draggable {
+  cursor: grab;
+}
+
+.ss-scene-row--draggable:active {
+  cursor: grabbing;
+}
+
+.ss-scene-row-inner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.ss-drag-handle {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--sw-text-muted, var(--ink-faint));
+  cursor: grab;
+}
+
+.ss-scene-number {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sw-text, var(--ink));
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 1.5rem;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.ss-scene-text {
+  font-size: 12px;
+  color: var(--sw-text-muted, var(--ink-soft));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.ss-scene-number[contenteditable='true']:focus,
+.ss-scene-text[contenteditable='true']:focus,
+.ss-scene-editing {
+  outline: 2px solid var(--sw-accent, var(--coral));
+  border-radius: 3px;
+  background: var(--sw-bg, var(--mint-soft));
+}
+
+.ss-scene-remove {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--sw-text-muted, var(--ink-soft));
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0;
+  transition: color 0.12s, background 0.12s;
+}
+
+.ss-scene-remove:hover {
+  color: var(--coral, var(--sw-accent));
+  background: var(--sw-surface-2, transparent);
+}
+
+.ss-scene-remove-icon {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+.ss-scene-empty {
+  padding: 12px 8px;
+  font-size: 12px;
+  color: var(--sw-text-muted, var(--ink-faint));
+  text-align: center;
+}
+
+.ss-scene-reorder-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--sw-text-muted, var(--ink-soft));
+  text-align: center;
+  font-style: italic;
+}
+
+.ss-rail-status-row {
+  padding: 6px 12px;
+  border-top: 1px solid var(--sw-border, var(--line));
+  flex-shrink: 0;
+}
+
+.ss-rail-status-text {
+  margin: 2px 0;
+  font-size: 12px;
+  color: var(--sw-text-muted, var(--ink-soft));
+}
+
+.ss-rail-checkout {
+  padding: 12px 12px 16px;
+  border-top: 1px solid var(--sw-border, var(--line));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ss-rail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ss-rail-action-btn {
+  width: 100%;
+  min-height: 44px;
+}
+
+.ss-rail-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ss-rail-attach-item {
+  width: 100%;
+}
+
+.ss-rail-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  width: 100%;
+  justify-content: center;
+}
+
+.ss-chip-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.ss-chip-mint {
+  background: rgba(63, 170, 141, 0.15);
+  color: var(--mint, #3faa8d);
+}
+
+.ss-chip-sky {
+  background: rgba(74, 144, 226, 0.15);
+  color: var(--sky, #4a90e2);
+}
+
+/* ── Last Looks full-height mode (FR-001, FR-003) ─────────── */
+/* These --ll rules MUST stay scoped; scene select uses height:auto / overflow:visible above. */
+
+.dashboard-right--ll {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.dashboard-right-content--ll {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ll-fullbleed-host {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ll-fullbleed-host app-last-looks {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }

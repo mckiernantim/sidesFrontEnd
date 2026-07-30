@@ -1,0 +1,191 @@
+.dev-harness {
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #111827;
+}
+
+/* ── Harness chrome ─────────────────────────────────────────────────────── */
+
+.dev-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  padding: 10px 16px;
+  background: #111827;
+  color: #f9fafb;
+}
+
+.dev-bar__group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dev-bar__title {
+  font-size: 14px;
+}
+
+.dev-bar__hint {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.dev-field,
+.dev-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.dev-field input[type='number'] {
+  width: 56px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #374151;
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+.dev-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #374151;
+  background: #1f2937;
+  color: #f9fafb;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dev-btn:hover {
+  background: #374151;
+}
+
+.dev-btn--file {
+  position: relative;
+  overflow: hidden;
+}
+
+.dev-btn--file input[type='file'] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.dev-metrics {
+  padding: 8px 16px 12px;
+  background: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 12px;
+}
+
+.dev-metrics--bad {
+  background: #fef2f2;
+  border-bottom-color: #fecaca;
+}
+
+.dev-metrics__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dev-metrics__verdict {
+  font-weight: 700;
+}
+
+.dev-metrics--bad .dev-metrics__verdict {
+  color: #b91c1c;
+}
+
+.dev-metrics table {
+  border-collapse: collapse;
+}
+
+.dev-metrics th,
+.dev-metrics td {
+  padding: 2px 14px 2px 0;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.dev-metrics th {
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.dev-metrics tr.bad td {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+.dev-stub {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+/* Debug aid: reveal every container boundary in the chain */
+.show-outlines ::ng-deep .dash-main-row,
+.show-outlines ::ng-deep .last-looks-host,
+.show-outlines ::ng-deep app-last-looks,
+.show-outlines ::ng-deep .page-container,
+.show-outlines ::ng-deep app-last-looks-page,
+.show-outlines ::ng-deep .ll-stage,
+.show-outlines ::ng-deep .ll-page-rail,
+.show-outlines ::ng-deep .ll-page-viewport,
+.show-outlines ::ng-deep .ll-page-scaler {
+  outline: 1px dashed rgba(220, 38, 38, 0.9);
+  outline-offset: -1px;
+}
+
+/* ── Mirrored from dashboard-right.component.css ─────────────────────────
+   These are component-scoped in production, so the harness must restate them
+   or the widths under test would not match. Keep in sync.                  */
+
+.dashboard-right {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  background-color: var(--paper);
+}
+
+.dashboard-right-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: auto;
+}
+
+.last-looks-host {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.dash-main-row {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.selected-scenes-heading {
+  width: 100%;
+  margin-bottom: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+@media (max-width: 1400px) {
+  .dash-side-panel {
+    order: -1;
+  }
+}

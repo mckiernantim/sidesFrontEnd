@@ -1,65 +1,241 @@
-<main [@fadeInOut] class="last-looks-container h-screen">
-  <div class="flex h-full">
-    <!-- Document Viewer (Main Content) -->
-    <div class="w-full flex flex-col overflow-hidden min-w-0 h-full">
-      <!-- Simplified Top Bar -->
-      <div class="top-bar bg-sw-surface border-b border-sw-border p-3">
-        <div class="flex justify-between items-center">
-          <div class="flex items-center gap-3">
-            <button
-              class="nav-btn"
-              (click)="previousPage()"
-              [disabled]="currentPageIndex === 0">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-              </svg>
-            </button>
-            <div class="page-display">
-              Page {{currentPageIndex + 1}} <span class="text-sw-text-subtle">/</span> {{pages?.length || 0}}
-            </div>
-            <button
-              class="nav-btn"
-              (click)="nextPage()"
-              [disabled]="currentPageIndex === (pages?.length - 1)">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-              </svg>
-            </button>
-          </div>
+<!-- Last Looks Shell — full-height, two-column grid with collapsible rail -->
+<div
+  class="ll-shell"
+  [class.ll-shell--editing]="editState"
+  [class.ll-shell--mobile-controls]="mobilePanel === 'controls'">
 
-          <div class="flex items-center gap-4">
-            <div class="mode-indicator">
-              <div class="mode-dot" [class.active]="canEditDocument"></div>
-              <span>{{canEditDocument ? 'Edit Mode' : 'View Mode'}}</span>
-            </div>
+  <!-- ── Headline (shown only when height ≥ 860 and not editing) ── -->
+  <div class="ll-headline" *ngIf="showHeadline">
+    <p class="ll-headline-kicker">Almost there</p>
+    <h2 class="ll-headline-title">Last Looks</h2>
+    <p class="ll-headline-sub">Review and fine-tune your sides before you complete.</p>
+  </div>
 
-            <!-- Edit Mode Toggle Button -->
-            <button
-              (click)="toggleEditMode()"
-              class="edit-toggle-btn"
-              [class.active]="canEditDocument"
-              [attr.title]="canEditDocument ? 'Exit Edit Mode (saves changes)' : 'Enter Edit Mode'">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path *ngIf="!canEditDocument" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                <path *ngIf="canEditDocument" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M5 13l4 4L19 7"></path>
-              </svg>
-              <span class="ml-2">{{ canEditDocument ? 'Save' : 'Edit' }}</span>
-            </button>
-          </div>
+  <!-- ── Mobile panel toggle: Preview ↔ Controls ── -->
+  <div class="ll-mobile-toggle" role="tablist" aria-label="Last Looks panels">
+    <button
+      type="button"
+      role="tab"
+      class="ll-mobile-toggle-btn"
+      [class.ll-mobile-toggle-btn--active]="mobilePanel === 'preview'"
+      [attr.aria-selected]="mobilePanel === 'preview'"
+      (click)="setMobilePanel('preview')">
+      Last Looks
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="ll-mobile-toggle-btn"
+      [class.ll-mobile-toggle-btn--active]="mobilePanel === 'controls'"
+      [attr.aria-selected]="mobilePanel === 'controls'"
+      (click)="setMobilePanel('controls')">
+      Controls
+    </button>
+  </div>
+
+  <!-- ── Unified Control Bar (pager / zoom / edit — preview tools) ── -->
+  <nav
+    class="ll-control-bar"
+    aria-label="Page controls"
+    [class.ll-control-bar--mobile-hidden]="mobilePanel === 'controls'">
+    <!-- Compact inline title (when headline is hidden; desktop/tablet) -->
+    <span class="ll-bar-title ll-bar-title--desktop" *ngIf="!showHeadline">Last Looks</span>
+
+    <!-- Pager -->
+    <div class="ll-bar-pager" role="group" aria-label="Page navigation">
+      <button
+        type="button"
+        class="ll-bar-btn"
+        (click)="previousPage()"
+        [disabled]="currentPageIndex === 0"
+        aria-label="Previous page">
+        ‹
+      </button>
+      <span class="ll-bar-page-label">{{ currentPageIndex + 1 }} / {{ pages?.length || 0 }}</span>
+      <button
+        type="button"
+        class="ll-bar-btn"
+        (click)="nextPage()"
+        [disabled]="currentPageIndex === (pages?.length - 1)"
+        aria-label="Next page">
+        ›
+      </button>
+    </div>
+
+    <div class="ll-bar-divider" aria-hidden="true"></div>
+
+    <!-- Zoom controls -->
+    <div class="ll-bar-zoom" role="group" aria-label="Page zoom">
+      <button type="button" class="ll-bar-btn" (click)="zoomOut()" [disabled]="!canZoomOut" aria-label="Zoom out">−</button>
+      <span class="ll-bar-zoom-label">{{ zoomPercent }}%</span>
+      <button type="button" class="ll-bar-btn" (click)="zoomIn()" [disabled]="!canZoomIn" aria-label="Zoom in">+</button>
+      <button type="button" class="ll-bar-btn ll-bar-btn--text" (click)="fitToWidth()" [class.ll-bar-btn--active]="isFitZoom" aria-label="Fit width">Fit W</button>
+      <button type="button" class="ll-bar-btn ll-bar-btn--text" (click)="fitPage()" [class.ll-bar-btn--active]="isFitPage" aria-label="Fit page">Fit Page</button>
+    </div>
+
+    <div class="ll-bar-divider" aria-hidden="true"></div>
+
+    <!-- Mode controls -->
+    <div class="ll-bar-mode" role="group" aria-label="Edit controls">
+      <ng-container *ngIf="!editState">
+        <button type="button" class="ll-bar-btn ll-bar-btn--primary" (click)="onEditPdfClick()">Edit PDF</button>
+      </ng-container>
+      <ng-container *ngIf="editState">
+        <button type="button" class="ll-bar-btn" (click)="onUndoClick()" [disabled]="!canUndo">Undo</button>
+        <button type="button" class="ll-bar-btn" (click)="onResetClick()">Reset</button>
+        <button type="button" class="ll-bar-btn ll-bar-btn--text" (click)="showEditTips = !showEditTips" [class.ll-bar-btn--active]="showEditTips">Edit Tips</button>
+        <button type="button" class="ll-bar-btn ll-bar-btn--success" (click)="onSaveChanges()">Save Changes</button>
+      </ng-container>
+    </div>
+  </nav>
+
+  <!-- ── Main body: viewer column + rail ── -->
+  <div
+    class="ll-body"
+    [class.ll-body--rail-open]="railOpen"
+    [class.ll-body--rail-closed]="!railOpen"
+    [class.ll-body--mobile-controls]="mobilePanel === 'controls'"
+    [class.ll-body--mobile-preview]="mobilePanel === 'preview'">
+
+    <!-- ── Viewer column ── -->
+    <div class="ll-viewer-col">
+
+      <!-- Horizontal line-tools strip (edit mode, ≥768px) -->
+      <div class="ll-tools-strip" *ngIf="editState" aria-label="Line editing tools" role="toolbar">
+        <!-- Select Mode -->
+        <button type="button" class="ll-tool-btn"
+                [class.ll-tool-btn--active]="lastLooksPage?.touchSelectMode"
+                (click)="lastLooksPage?.toggleTouchSelectMode()"
+                data-tooltip="Select Mode"
+                aria-label="Select Mode">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+        </button>
+
+        <!-- Line Menu -->
+        <button type="button" class="ll-tool-btn"
+                [class.ll-tool-btn--disabled]="!lastLooksPage || lastLooksPage.selectedLineIds.length === 0"
+                [class.ll-tool-btn--active]="lastLooksPage?.showContextMenu"
+                (click)="lastLooksPage?.selectedLineIds?.length > 0 && lastLooksPage?.openContextMenuForSelection()"
+                data-tooltip="Line Menu"
+                aria-label="Line Menu">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z"></path>
+          </svg>
+        </button>
+
+        <div class="ll-tool-divider" aria-hidden="true"></div>
+
+        <!-- Selection count badge -->
+        <div class="ll-selection-badge" *ngIf="lastLooksPage && lastLooksPage.selectedLineIds.length > 0">
+          {{ lastLooksPage.selectedLineIds.length }}
+        </div>
+
+        <!-- Visibility toggle -->
+        <button type="button" class="ll-tool-btn"
+                [class.ll-tool-btn--disabled]="!lastLooksPage || lastLooksPage.selectedLineIds.length === 0"
+                [class.ll-tool-btn--active]="lastLooksPage && lastLooksPage.selectedLineIds.length > 0 && lastLooksPage.isVisibilityToggled()"
+                (click)="lastLooksPage?.selectedLineIds?.length > 0 && lastLooksPage?.toggleSelectedVisibility()"
+                [attr.aria-label]="lastLooksPage?.getVisibilityTooltip() || 'Toggle visibility'">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  [attr.d]="lastLooksPage?.isVisibilityToggled()
+                    ? 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21'
+                    : 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'"></path>
+          </svg>
+        </button>
+
+        <div class="ll-tool-divider" aria-hidden="true"></div>
+
+        <!-- Start bar -->
+        <button type="button" class="ll-tool-btn"
+                [class.ll-tool-btn--disabled]="!lastLooksPage || lastLooksPage.selectedLineIds.length === 0"
+                [class.ll-tool-btn--active]="lastLooksPage && lastLooksPage.selectedLineIds.length > 0 && lastLooksPage.hasStartBar()"
+                (click)="lastLooksPage?.selectedLineIds?.length > 0 && lastLooksPage?.toggleStartBarForSelected()"
+                aria-label="Start Bar">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+          </svg>
+        </button>
+
+        <!-- End bar -->
+        <button type="button" class="ll-tool-btn"
+                [class.ll-tool-btn--disabled]="!lastLooksPage || lastLooksPage.selectedLineIds.length === 0"
+                [class.ll-tool-btn--active]="lastLooksPage && lastLooksPage.selectedLineIds.length > 0 && lastLooksPage.hasEndBar()"
+                (click)="lastLooksPage?.selectedLineIds?.length > 0 && lastLooksPage?.toggleEndBarForSelected()"
+                aria-label="End Bar">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+          </svg>
+        </button>
+
+        <!-- Continue Top bar -->
+        <button type="button" class="ll-tool-btn"
+                [class.ll-tool-btn--disabled]="!lastLooksPage || lastLooksPage.selectedLineIds.length === 0"
+                [class.ll-tool-btn--active]="lastLooksPage && lastLooksPage.selectedLineIds.length > 0 && lastLooksPage.hasContinueTop()"
+                (click)="lastLooksPage?.selectedLineIds?.length > 0 && lastLooksPage?.toggleContinueTopForSelected()"
+                aria-label="Continue Top">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
+          </svg>
+        </button>
+
+        <!-- Continue bar -->
+        <button type="button" class="ll-tool-btn"
+                [class.ll-tool-btn--disabled]="!lastLooksPage || lastLooksPage.selectedLineIds.length === 0"
+                [class.ll-tool-btn--active]="lastLooksPage && lastLooksPage.selectedLineIds.length > 0 && lastLooksPage.hasContinue()"
+                (click)="lastLooksPage?.selectedLineIds?.length > 0 && lastLooksPage?.toggleContinueForSelected()"
+                aria-label="Continue">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"></path>
+          </svg>
+        </button>
+
+        <div class="ll-tool-divider" aria-hidden="true"></div>
+
+        <!-- Redo -->
+        <button type="button" class="ll-tool-btn"
+                [class.ll-tool-btn--disabled]="!canRedo"
+                (click)="canRedo && onRedoClick()"
+                aria-label="Redo">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10h-10a8 8 0 00-8 8v2m18-10l-6 6m6-6l-6-6"></path>
+          </svg>
+        </button>
+
+        <div class="ll-tool-divider" aria-hidden="true"></div>
+
+        <!-- Condense Pages -->
+        <button type="button" class="ll-tool-btn ll-tool-btn--primary"
+                (click)="lastLooksPage?.combinePages()"
+                aria-label="Condense Pages (remove hidden lines)">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+          </svg>
+          <span class="ll-tool-label">Condense</span>
+        </button>
+
+        <!-- Edit tips inline panel -->
+        <div class="ll-tips-inline" *ngIf="showEditTips">
+          <strong>Tools:</strong> visibility · bars · redo · condense &nbsp;|&nbsp;
+          <strong>Select:</strong> tap · Select Mode for multi &nbsp;|&nbsp;
+          <strong>Edit text:</strong> double-tap &nbsp;|&nbsp;
+          <strong>Move:</strong> drag &nbsp;|&nbsp;
+          <strong>Category:</strong> long-press or Line Menu ⋮
         </div>
       </div>
 
-      <!-- Script Page Container -->
-      <div class="page-container h-full">
+      <!-- Page viewport (scrollable, contains the scaled page) -->
+      <div class="ll-viewer-scroll" #viewerContainer>
         <app-last-looks-page
           [page]="currentPage"
           [canEditDocument]="canEditDocument"
           [selectedLine]="selectedLine"
           [currentPageIndex]="currentPageIndex"
-          [totalPages]="pages.length"
+          [totalPages]="pages?.length || 0"
           [editMode]="editState"
+          [pageScale]="pageScale"
           (lineChanged)="handleLineChange($event)"
           (lineSelected)="handleLineSelected($event)"
           (categoryChanged)="handleCategoryChange($event)"
@@ -67,80 +243,40 @@
           (pageUpdate)="handlePageUpdate($event)"
           (proceedToCheckout)="handleProceedToCheckout()"
           (toggleVisibilityRequest)="handleToggleVisibilityRequest()"
-          (pageChange)="handlePageChange($event)">
+          (pageChange)="handlePageChange($event)"
+          (editModeToggle)="editModeToggle.emit()">
         </app-last-looks-page>
       </div>
+    </div>
 
-      <!-- Keyboard Shortcuts Help -->
-      <button class="help-fab" (click)="showInstructions = !showInstructions" *ngIf="canEditDocument" title="Keyboard Shortcuts">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-      </button>
-
-      <!-- Keyboard Shortcuts Overlay -->
-      <div class="shortcuts-overlay" *ngIf="showInstructions" (click)="showInstructions = false">
-        <div class="shortcuts-panel" (click)="$event.stopPropagation()">
-          <div class="shortcuts-header">
-            <h3>Keyboard Shortcuts</h3>
-            <button class="close-btn" (click)="showInstructions = false">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-          <div class="shortcuts-content">
-            <div class="shortcut-group">
-              <div class="group-title">Selection</div>
-              <div class="shortcut-item">
-                <kbd>Click</kbd>
-                <span>Select line</span>
-              </div>
-              <div class="shortcut-item">
-                <kbd>Ctrl</kbd> + <kbd>Click</kbd>
-                <span>Multi-select</span>
-              </div>
-              <div class="shortcut-item">
-                <kbd>Shift</kbd> + <kbd>Click</kbd>
-                <span>Range select</span>
-              </div>
-            </div>
-            <div class="shortcut-group">
-              <div class="group-title">Editing</div>
-              <div class="shortcut-item">
-                <kbd>Double Click</kbd>
-                <span>Edit text</span>
-              </div>
-              <div class="shortcut-item">
-                <kbd>Right Click</kbd>
-                <span>Context menu</span>
-              </div>
-              <div class="shortcut-item">
-                <kbd>X</kbd>
-                <span>Toggle visibility</span>
-              </div>
-            </div>
-            <div class="shortcut-group">
-              <div class="group-title">History</div>
-              <div class="shortcut-item">
-                <kbd>Ctrl</kbd> + <kbd>Z</kbd>
-                <span>Undo</span>
-              </div>
-              <div class="shortcut-item">
-                <kbd>Ctrl</kbd> + <kbd>Y</kbd>
-                <span>Redo</span>
-              </div>
-            </div>
-            <div class="shortcut-group">
-              <div class="group-title">Drag & Drop</div>
-              <div class="shortcut-item">
-                <span class="drag-icon">⋮⋮</span>
-                <span>Drag to reposition lines or bars</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <!-- ── Rail column ── -->
+    <div class="ll-rail-col" [class.ll-rail-col--collapsed]="!railOpen">
+      <app-last-looks-rail
+        [scriptName]="scriptName"
+        [scriptDate]="scriptDate"
+        [selectedScenes]="selectedScenes"
+        [userData]="userData"
+        [isCheckingSubscription]="isCheckingSubscription"
+        [callsheetReady]="callsheetReady"
+        [callSheetPath]="callsheetPath"
+        [watermark]="watermark"
+        [hasWatermark]="hasWatermark"
+        [callsheetState]="callsheetState"
+        [callsheet]="callsheet"
+        [editState]="editState"
+        [isCollapsed]="mobilePanel === 'controls' ? false : !railOpen"
+        (sceneReorder)="sceneReorder.emit($event)"
+        (sceneRemove)="sceneRemove.emit($event)"
+        (sceneNumberEdit)="sceneNumberEdit.emit($event)"
+        (sceneTextEdit)="sceneTextEdit.emit($event)"
+        (getSides)="getSides.emit()"
+        (signIn)="signIn.emit()"
+        (backToScenes)="backToScenes.emit()"
+        (toggleRail)="toggleRail()"
+        (callsheetUpload)="callsheetUpload.emit($event)"
+        (watermarkUpdate)="watermarkUpdate.emit($event)"
+        (watermarkRemove)="watermarkRemove.emit()">
+      </app-last-looks-rail>
     </div>
   </div>
-</main>
+</div>

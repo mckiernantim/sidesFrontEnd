@@ -1,96 +1,135 @@
 <nav class="sw-nav">
-  <div class="sw-nav__inner">
-
-    <!-- Logo -->
-    <a [routerLink]="['/']" class="sw-nav__logo">
-      SIDES<span class="sw-nav__logo-bolt">⚡</span>WAYS
-      <span class="sw-nav__logo-mark">~&gt;~&gt;</span>
+  <div class="sw-nav-inner">
+    <a [routerLink]="['/']" class="sw-logo" (click)="closeMobileMenu()">
+      <img
+        class="sw-logo-mark"
+        src="assets/brand/hero-bot.jpeg"
+        width="28"
+        height="28"
+        alt=""
+        aria-hidden="true"
+      />
+      SIDES<span class="bolt">⚡</span>WAYS<span class="marker">~&gt;~&gt;</span>
     </a>
 
-    <!-- Desktop links -->
-    <ul class="sw-nav__links">
-      <li><a routerLink="/how-it-works" routerLinkActive="sw-nav__link--active" class="sw-nav__link">How It Works</a></li>
-      <li><a routerLink="/pricing"      routerLinkActive="sw-nav__link--active" class="sw-nav__link">Pricing</a></li>
-      <li><a routerLink="/about"        routerLinkActive="sw-nav__link--active" class="sw-nav__link">About</a></li>
-      <li><a routerLink="/contact"      routerLinkActive="sw-nav__link--active" class="sw-nav__link">Contact</a></li>
-      <li><a routerLink="/help"         routerLinkActive="sw-nav__link--active" class="sw-nav__link">Help</a></li>
-    </ul>
+    <div class="sw-nav-links">
+      <a routerLink="/how-it-works" routerLinkActive="active">How it works</a>
+      <a routerLink="/pricing" routerLinkActive="active">Pricing</a>
+      <a routerLink="/about" routerLinkActive="active">About</a>
+      <a routerLink="/contact" routerLinkActive="active">Contact</a>
+    </div>
 
-    <!-- Right side: script badge + auth -->
-    <div class="sw-nav__right">
-
-      <!-- Current script badge (logged in + script loaded) -->
-      <a
-        *ngIf="currentScriptName && isLoggedIn"
-        [routerLink]="['/dashboard']"
-        class="sw-nav__script-badge"
-        [title]="'Open ' + currentScriptName + ' in Dashboard'">
-        <svg class="sw-nav__script-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    <div class="sw-nav-user">
+      <button
+        type="button"
+        class="theme-btn"
+        (click)="toggleTheme()"
+        [attr.aria-label]="isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'"
+        [attr.title]="isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'"
+      >
+        <svg *ngIf="!isDarkTheme" class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+          <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"></path>
         </svg>
-        <span class="sw-nav__script-name">{{ currentScriptName }}</span>
-        <svg class="sw-nav__script-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd"
-            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-            clip-rule="evenodd" />
+        <svg *ngIf="isDarkTheme" class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.2"></circle>
+          <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"></path>
         </svg>
-      </a>
+      </button>
 
-      <!-- Logged out -->
+      <div *ngIf="currentScriptName && isLoggedIn" class="sw-script-badge" [title]="currentScriptName">
+        <span class="sw-script-badge-label">Script</span>
+        <span class="sw-script-badge-name">{{ currentScriptName }}</span>
+      </div>
+
       <ng-container *ngIf="!isLoggedIn; else loggedInTemplate">
-        <button (click)="signIn()" class="sw-nav__signin">Sign In</button>
+        <button type="button" (click)="signIn()" class="sw-login-btn sw-login-desktop">Login</button>
       </ng-container>
 
-      <!-- Logged in: avatar + dropdown -->
       <ng-template #loggedInTemplate>
-        <div class="sw-nav__user" (click)="toggleUserMenu()" (clickOutside)="closeUserMenu()">
-          <button class="sw-nav__user-btn">
-            <img
-              *ngIf="userAvatar; else avatarFallback"
-              [src]="userAvatar"
-              alt="User avatar"
-              class="sw-nav__avatar"
-            />
-            <ng-template #avatarFallback>
-              <svg class="sw-nav__avatar sw-nav__avatar--placeholder" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
-              </svg>
-            </ng-template>
-            <span class="sw-nav__username">{{ username }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="sw-nav__chevron" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd"
-                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                clip-rule="evenodd" />
-            </svg>
+        <div class="sw-user-menu" (click)="toggleUserMenu(); $event.stopPropagation()" (clickOutside)="closeUserMenu()">
+          <button type="button" class="sw-user-trigger" aria-haspopup="true" [attr.aria-expanded]="isUserMenuOpen">
+            <span class="sw-avatar-wrap">
+              <img
+                *ngIf="userAvatar; else letterAvatar"
+                [src]="userAvatar"
+                alt="User avatar"
+                class="sw-avatar-img"
+              />
+              <ng-template #letterAvatar>
+                <span class="sw-avatar">{{ (username || 'U').charAt(0) | uppercase }}</span>
+              </ng-template>
+              <span
+                *ngIf="isFounder"
+                class="founder-avatar-check"
+                title="Founder"
+                aria-label="Founder"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-2.5 h-2.5">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              </span>
+            </span>
+            <span class="sw-username">{{ username }}</span>
+            <span class="sw-chevron">↓</span>
           </button>
 
-          <div *ngIf="isUserMenuOpen" class="sw-nav__dropdown">
-            <a [routerLink]="['/profile']"  class="sw-nav__dropdown-item">Profile</a>
-            <a [routerLink]="['/dashboard']" class="sw-nav__dropdown-item">Dashboard</a>
-            <button (click)="logout()"      class="sw-nav__dropdown-item sw-nav__dropdown-item--danger">Logout</button>
+          <div *ngIf="isUserMenuOpen" class="sw-user-dropdown">
+            <a [routerLink]="['/profile']">Profile</a>
+            <a [routerLink]="['/settings']">Settings</a>
+            <a (click)="logout()">Logout</a>
           </div>
         </div>
       </ng-template>
+
+      <button
+        type="button"
+        class="sw-mobile-toggle"
+        (click)="toggleMobileMenu($event)"
+        [attr.aria-label]="isMobileMenuOpen ? 'Close menu' : 'Open menu'"
+        [attr.aria-expanded]="isMobileMenuOpen"
+        aria-controls="sw-mobile-menu"
+      >
+        <svg *ngIf="!isMobileMenuOpen" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        <svg *ngIf="isMobileMenuOpen" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
     </div>
-
-    <!-- Mobile hamburger -->
-    <button class="sw-nav__hamburger" (click)="toggleMobileMenu()" aria-label="Toggle menu">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    </button>
-
-  </div>
-
-  <!-- Mobile menu drawer -->
-  <div *ngIf="isMobileMenuOpen" class="sw-nav__mobile">
-    <a routerLink="/how-it-works" class="sw-nav__mobile-link">Features</a>
-    <a routerLink="/pricing"      class="sw-nav__mobile-link">Pricing</a>
-    <a routerLink="/about"        class="sw-nav__mobile-link">Useage</a>
-    <a routerLink="/contact"      class="sw-nav__mobile-link">Contact</a>
-    <a routerLink="/help"         class="sw-nav__mobile-link">Help</a>
-    <button *ngIf="!isLoggedIn" (click)="signIn()" class="sw-nav__mobile-signin">Sign In</button>
-    <button *ngIf="isLoggedIn"  (click)="logout()" class="sw-nav__mobile-link">Logout</button>
   </div>
 </nav>
+
+<!-- Fixed overlay menu (outside overflow-clipped nav) -->
+<div
+  *ngIf="isMobileMenuOpen"
+  class="sw-mobile-backdrop"
+  (click)="closeMobileMenu()"
+  aria-hidden="true"
+></div>
+
+<div
+  *ngIf="isMobileMenuOpen"
+  id="sw-mobile-menu"
+  class="sw-mobile-menu"
+  role="navigation"
+  aria-label="Mobile"
+>
+  <a routerLink="/" (click)="closeMobileMenu()">Home</a>
+  <a routerLink="/how-it-works" (click)="closeMobileMenu()">How it works</a>
+  <a routerLink="/pricing" (click)="closeMobileMenu()">Pricing</a>
+  <a routerLink="/about" (click)="closeMobileMenu()">About</a>
+  <a routerLink="/contact" (click)="closeMobileMenu()">Contact</a>
+
+  <div class="sw-mobile-divider" aria-hidden="true"></div>
+
+  <ng-container *ngIf="isLoggedIn; else mobileLogin">
+    <p *ngIf="username" class="sw-mobile-user-label">{{ username }}</p>
+    <a [routerLink]="['/profile']" (click)="closeMobileMenu()">Profile</a>
+    <a [routerLink]="['/settings']" (click)="closeMobileMenu()">Settings</a>
+    <button type="button" class="sw-mobile-logout" (click)="logout()">Logout</button>
+  </ng-container>
+  <ng-template #mobileLogin>
+    <button type="button" class="sw-mobile-login" (click)="signIn(); closeMobileMenu()">Login</button>
+  </ng-template>
+</div>

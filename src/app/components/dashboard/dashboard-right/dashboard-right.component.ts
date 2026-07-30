@@ -114,7 +114,7 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     },
     {
       title: 'Reclassifying Lines:',
-      text: 'Right Click a line to reclassify or toggle line-through',
+      text: 'Long-press a line (or tap Line Menu) to reclassify, edit, or delete',
       ind: 1,
     },
     {
@@ -163,16 +163,23 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
   private analytics: any;
 
   pageSize: number = 10;
+  /** 0 = show all scenes */
+  pageSizeOptions: number[] = [10, 20, 50, 0];
+
+  onPageSizeChange(size: number): void {
+    this.pageSize = size;
+  }
 
   tableColumns = [
-    { key: 'sceneNumberText', header: 'Scene' },
-    { key: 'text', header: 'Location' },
+    { key: 'sceneNumberText', header: 'Scene', role: 'badge' as const },
+    { key: 'text', header: 'Location', role: 'primary' as const },
     {
       key: 'preview',
       header: 'Preview',
+      role: 'meta' as const,
       cell: (item: any) => this.truncateText(item.preview, 50),
     },
-    { key: 'page', header: 'Page' },
+    { key: 'page', header: 'Page', role: 'meta' as const },
   ];
 
   // Add a selectedScenes map to track selections
@@ -198,6 +205,13 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
 
   showCheckoutModal: boolean = false;
   isCheckingSubscription: boolean = false;
+
+  /** Mobile scene-select panel: Scenes list first, Controls for checkout / attachments. */
+  sceneSelectPanel: 'scenes' | 'controls' = 'scenes';
+
+  setSceneSelectPanel(panel: 'scenes' | 'controls'): void {
+    this.sceneSelectPanel = panel;
+  }
 
   // Scene editing properties
   editingSceneNumber: string | null = null;
@@ -399,14 +413,15 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.tableColumns = [
-      { key: 'sceneNumberText', header: 'Scene' },
-      { key: 'text', header: 'Location' },
+      { key: 'sceneNumberText', header: 'Scene', role: 'badge' },
+      { key: 'text', header: 'Location', role: 'primary' },
       {
         key: 'preview',
         header: 'Preview',
+        role: 'meta',
         cell: (item: any) => this.truncateText(item.preview, 50),
       },
-      { key: 'page', header: 'Page' },
+      { key: 'page', header: 'Page', role: 'meta' },
     ];
 
     this.intizilazeState();
@@ -1699,6 +1714,16 @@ async sendFinalDocumentToServer(finalDocument) {
     // the child's latest local state (annotations, page changes).
     this.editState = !this.editState;
     this.editLastLooksState = this.editState;
+  }
+
+  /** Handle scene number edit emitted from LastLooksRailComponent via LastLooksComponent. */
+  onRailSceneNumberEdit(payload: { scene: any; event: FocusEvent }): void {
+    this.saveSceneNumberEdit(payload.scene, payload.event);
+  }
+
+  /** Handle scene text edit emitted from LastLooksRailComponent via LastLooksComponent. */
+  onRailSceneTextEdit(payload: { scene: any; event: FocusEvent }): void {
+    this.saveSceneTextEdit(payload.scene, payload.event);
   }
 
   // Scene editing methods

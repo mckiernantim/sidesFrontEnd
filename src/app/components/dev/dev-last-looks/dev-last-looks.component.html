@@ -1,0 +1,87 @@
+<div class="dev-harness" [class.show-outlines]="showOutlines">
+  <header class="dev-bar">
+    <div class="dev-bar__group">
+      <strong class="dev-bar__title">Last Looks harness</strong>
+      <span class="dev-bar__hint">dev only &middot; source: {{ loadedFrom }}</span>
+    </div>
+
+    <div class="dev-bar__group">
+      <label class="dev-field">
+        Pages
+        <input type="number" min="1" max="12" [(ngModel)]="pageCount">
+      </label>
+      <button type="button" class="dev-btn" (click)="reload()">Regenerate</button>
+      <button type="button" class="dev-btn" (click)="toggleEditMode()">
+        {{ editState ? 'Leave edit mode' : 'Enter edit mode' }}
+      </button>
+    </div>
+
+    <div class="dev-bar__group">
+      <label class="dev-check">
+        <input type="checkbox" [(ngModel)]="showSidePanel"> Side panel (40%)
+      </label>
+      <label class="dev-check">
+        <input type="checkbox" [(ngModel)]="showOutlines"> Outline containers
+      </label>
+      <label class="dev-btn dev-btn--file">
+        Load JSON…
+        <input type="file" accept="application/json" (change)="onFixtureSelected($event)">
+      </label>
+    </div>
+  </header>
+
+  <!-- Layout readout: which container is overflowing, in pixels -->
+  <section class="dev-metrics" [class.dev-metrics--bad]="worstOverflow > 0">
+    <div class="dev-metrics__head">
+      <span>viewport {{ viewportWidth }}px &middot; dpr {{ devicePixelRatio }}</span>
+      <span>page scale {{ pageScale === null ? '—' : pageScale }}</span>
+      <span class="dev-metrics__verdict">
+        {{ worstOverflow > 0 ? 'OVERFLOW ' + worstOverflow + 'px' : 'no overflow' }}
+      </span>
+    </div>
+    <table>
+      <thead>
+        <tr><th>container</th><th>client</th><th>scroll</th><th>overflow</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of metrics" [class.bad]="m.overflow > 0">
+          <td>{{ m.label }}</td>
+          <td>{{ m.clientWidth }}</td>
+          <td>{{ m.scrollWidth }}</td>
+          <td>{{ m.overflow > 0 ? '+' + m.overflow : '0' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── Mirrors dashboard-right.component.html so widths match production ── -->
+  <div class="dashboard-right sw-workflow">
+    <div class="dashboard-right-content">
+      <div class="h-auto px-4 md:px-12 position-relative z-5 flex flex-col">
+        <div class="dash-main-row flex flex-col xl:flex-row justify-center min-h-50 h-auto space-y-8 xl:space-y-0 xl:space-x-8 flex-grow min-w-0 max-w-full">
+
+          <div *ngIf="showSidePanel"
+               class="sw-panel dash-side-panel p-6 flex flex-col justify-start items-center w-full xl:w-2/5 xl:max-w-[40%] min-w-0 py-12 overflow-hidden">
+            <h1 class="text-3xl text-center mb-6">Generating sides for</h1>
+            <h2 class="selected-scenes-heading">Select a Scene</h2>
+            <p class="dev-stub">(side panel stand-in — occupies the same 40% as production)</p>
+          </div>
+
+          <div class="last-looks-host min-w-0 w-full xl:flex-1 xl:max-w-[60%]">
+            <app-last-looks
+              *ngIf="ready"
+              [editState]="editState"
+              [resetDocState]="false"
+              [selectedLineState]="''"
+              [undoState]="false"
+              [triggerLastLooksAction]="''"
+              [callsheetPath]="''"
+              (editModeToggle)="toggleEditMode()">
+            </app-last-looks>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -536,7 +536,7 @@ export class UploadComponent implements OnInit, OnDestroy {
             let errorMessage = 'An error occurred while processing your document.';
             let errorCode = 'INTERNAL_ERROR';
 
-            // Try to extract structured error from backend
+            // Try to extract structured error from backend / pollUntilComplete
             if (error && error.error && error.error.error) {
               const backendError = error.error.error;
               errorCode = backendError.code || errorCode;
@@ -545,9 +545,13 @@ export class UploadComponent implements OnInit, OnDestroy {
               // Use user-friendly message if error code is recognized
               errorMessage = getUserFriendlyMessage(errorCode, errorMessage);
             } else if (error && error.error && error.error.code) {
-              // Handle direct error code
+              // Handle direct error code (sync 422 or typed poll error)
               errorCode = error.error.code;
               errorMessage = getUserFriendlyMessage(errorCode, error.error.message);
+            } else if (error && error.code) {
+              // Typed Error from pollUntilComplete (err.code + err.message)
+              errorCode = error.code;
+              errorMessage = getUserFriendlyMessage(errorCode, error.message);
             } else if (error && error.message) {
               // Handle simple error with message
               errorMessage = error.message;
@@ -630,9 +634,18 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   scrollToUpload(): void {
-    const uploadElement = document.querySelector('.upload-component');
+    const uploadElement = document.getElementById('upload');
     if (uploadElement) {
-      uploadElement.scrollIntoView({ behavior: 'smooth' });
+      uploadElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  onFileDropped(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.onFileSelected({ target: { files } });
     }
   }
 

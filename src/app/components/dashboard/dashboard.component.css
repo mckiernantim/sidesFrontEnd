@@ -2,13 +2,13 @@
     min-height: 100vh;
     height: auto;
     text-align: center;
+    /* background: var(--white); */
+    /* text-shadow: 1px 1px black; */
     overflow: visible;
+    
 }
-.white-logo{
-    background-image: url("../../../assets/icons/logoFlatWhite.png");
-    background-size: contain;
-    background-repeat:no-repeat;
-    margin:0 auto;
+.white-logo {
+  display: none;
 }
 .main-container {
     display:flex;
@@ -22,27 +22,52 @@
         height: auto;
     }
 }
-@media screen and (max-width: 768px) {
-    .white-logo{
-        display:none
-    }
-}
 
+/* Viewport shell: outer page does not scroll. Scene select scrolls inside
+   app-dashboard-right; Last Looks uses overflow:hidden via --ll modifiers. */
 .dashboard-container {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-    height: auto;
+    height: 100vh;
     width: 100%;
-    background-color: var(--sw-bg);
+    background: var(--paper);
+    color: var(--ink);
+    overflow: hidden;
 }
 
-/* Ensure child components can grow */
-app-dashboard-right {
+.button-container {
+    flex: 1;
+    min-height: 0;
+    display: flex;
     flex-direction: column;
-    height: auto;
-    overflow: hidden;
-    background-color: var(--sw-bg);
-    margin-bottom: 1rem;
-    min-height: 1200px;
 }
+
+/* Scene select: allow content height to grow and scroll here.
+   Last Looks: child .dashboard-right--ll fills 100% and clips internally. */
+app-dashboard-right {
+    display: block;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background-color: var(--paper);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Lock host scroll while Last Looks owns the viewport */
+app-dashboard-right:has(.dashboard-right--ll) {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        overflow-x: hidden;
+    }
+}
+
+

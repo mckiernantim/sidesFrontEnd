@@ -126,7 +126,7 @@ describe('PricingComponent', () => {
 
       await component.subscribe();
 
-      expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('test-user-123', 'test@example.com');
+      expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('test-user-123', 'test@example.com', undefined, 'week');
       expect(window.location.href).toBe('https://billing.stripe.com/checkout_123');
     });
 
@@ -142,7 +142,7 @@ describe('PricingComponent', () => {
 
       await component.subscribe();
 
-      expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('test-user-123', 'test@example.com');
+      expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('test-user-123', 'test@example.com', undefined, 'week');
       expect(window.location.href).toBe('https://billing.stripe.com/checkout_123');
     });
 
@@ -327,7 +327,7 @@ describe('PricingComponent', () => {
 
       await component.subscribe();
 
-      expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('test-user-123', 'test@example.com');
+      expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('test-user-123', 'test@example.com', undefined, 'week');
       expect(window.location.href).toBe('https://billing.stripe.com/checkout_123');
     });
 

@@ -1,11 +1,11 @@
 <ng-container *ngIf="dialogOption == 'scan'">
-  <div class="dialog-content flex flex-col justify-center items-center h-full text-center">
-    <div class="bg-white h-[50vh] w-[35vw] shadow-lg rounded-lg flex flex-col justify-center items-center">
-      <h3 class="title text-base md:text-lg lg:text-xl font-bold mb-4">Processing: <em>{{ title }}</em></h3>
+  <div class="dialog-content flex flex-col justify-center items-center h-full text-center px-4">
+    <div class="sw-dialog-panel w-full max-w-md min-h-[40vh] flex flex-col justify-center items-center p-6">
+      <h3 class="title text-base md:text-lg lg:text-xl font-bold mb-4 text-sw-text">Processing: <em>{{ title }}</em></h3>
       <div class="animation-container flex flex-col items-center">
-        <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" class="w-1/2" />
+        <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" class="w-1/2 max-w-[180px]" />
         <div class="message mt-4">
-          <p class="text-sm md:text-base lg:text-lg">Sit Tight.</p>
+          <p class="text-sm md:text-base lg:text-lg text-sw-text-muted">Sit Tight.</p>
         </div>
       </div>
     </div>
@@ -14,13 +14,13 @@
 
 
 <ng-container *ngIf="dialogOption == 'payment'">
-  <div class="dialog-content  h-full flex flex-col justify-center items-center text-center">
-    <div class="bg-white h-[50vh] w-[35vw] shadow-lg rounded-lg flex flex-col justify-center items-center">
-      <h3 class="title text-base md:text-lg lg:text-xl font-bold mb-4">{{ paymentMsg }}</h3>
+  <div class="dialog-content h-full flex flex-col justify-center items-center text-center px-4">
+    <div class="sw-dialog-panel w-full max-w-md min-h-[40vh] flex flex-col justify-center items-center p-6">
+      <h3 class="title text-base md:text-lg lg:text-xl font-bold mb-4 text-sw-text">{{ paymentMsg }}</h3>
       <div class="animation-container flex flex-col items-center mt-4">
-        <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" class="w-1/2" />
+        <img src="../../assets/animations/ScriptBot_Animation-BW.gif" alt="Loading Animation" class="w-1/2 max-w-[180px]" />
         <div class="message mt-4">
-          <p class="text-sm md:text-base lg:text-lg"></p>
+          <p class="text-sm md:text-base lg:text-lg text-sw-text-muted"></p>
         </div>
       </div>
     </div>
@@ -41,4 +41,3 @@
     </div>
   </div>
 </div>
-

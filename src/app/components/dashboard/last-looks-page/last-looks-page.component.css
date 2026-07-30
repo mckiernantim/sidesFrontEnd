@@ -1,290 +1,8 @@
-/* ═══════════════════════════════════════════════════════════════════════════
-   ⚠️  SACRED SCREENPLAY FORMATTING - DO NOT MODIFY ⚠️
-
-   This file contains traditional Hollywood screenplay formatting.
-   The following elements are SACRED and must never be changed:
-
-   1. Font: Courier Prime, monospace (industry standard)
-   2. Font Size: 12pt for script text, 16pt for bars
-   3. Page Size: 816px × 1056px (standard US Letter)
-   4. Colors: Black text on white background
-   5. Margins: Industry-standard screenplay margins
-
-   These styles use !important to override global design system styles.
-   Modifying these will break industry-standard script formatting.
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 @import url('https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap');
 
 @page {
     width: 816px;
     height: 1056px;
-}
-
-/* ════════════════════════════════════════════════════════════
-   VERTICAL RIGHT-SIDE TOOLBAR (MIRO STYLE)
-   ════════════════════════════════════════════════════════════ */
-
-.vertical-toolbar {
-    position: absolute;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 8px;
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
-    z-index: 200;
-    animation: toolbarSlideIn 0.3s ease-out;
-}
-
-@keyframes toolbarSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-50%) translateX(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(-50%) translateX(0);
-    }
-}
-
-.tool-btn {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border: none;
-    background: transparent;
-    border-radius: 8px;
-    cursor: grab;
-    transition: all 0.15s ease;
-}
-
-.tool-btn svg {
-    width: 20px;
-    height: 20px;
-    color: #6b7280;
-    transition: all 0.15s ease;
-}
-
-/* Hover State */
-.tool-btn:hover:not(.disabled) {
-    background-color: #f3f4f6;
-}
-
-.tool-btn:hover:not(.disabled) svg {
-    color: #111827;
-}
-
-/* Active State */
-.tool-btn.active {
-    background-color: #00ffc4;
-}
-
-.tool-btn.active svg {
-    color: #000;
-}
-
-/* Disabled State */
-.tool-btn.disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-}
-
-/* Danger Button (Reset) */
-.tool-btn-danger {
-    border: 1px solid transparent;
-}
-
-.tool-btn-danger:hover:not(.disabled) {
-    background-color: #fef2f2;
-    border-color: #fecaca;
-}
-
-.tool-btn-danger:hover:not(.disabled) svg {
-    color: #ef4444;
-}
-
-/* Primary Button (Condense) */
-.tool-btn-primary {
-    border: 1px solid transparent;
-}
-
-.tool-btn-primary:hover:not(.disabled) {
-    background-color: #eff6ff;
-    border-color: #bfdbfe;
-}
-
-.tool-btn-primary:hover:not(.disabled) svg {
-    color: #3b82f6;
-}
-
-/* Success Button (Save) */
-.tool-btn-success {
-    border: 1px solid transparent;
-}
-
-.tool-btn-success:hover:not(.disabled) {
-    background-color: #f0fdf4;
-    border-color: #bbf7d0;
-}
-
-.tool-btn-success:hover:not(.disabled) svg {
-    color: #22c55e;
-}
-
-/* Tooltip (Left Side) */
-.tool-btn[data-tooltip-left]::after {
-    content: attr(data-tooltip-left);
-    position: absolute;
-    right: calc(100% + 12px);
-    top: 50%;
-    transform: translateY(-50%);
-    padding: 6px 10px;
-    background: #1f2937;
-    color: white;
-    font-size: 12px;
-    font-weight: 500;
-    border-radius: 6px;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-    z-index: 1000;
-}
-
-.tool-btn[data-tooltip-left]::before {
-    content: '';
-    position: absolute;
-    right: calc(100% + 6px);
-    top: 50%;
-    transform: translateY(-50%);
-    border-top: 5px solid transparent;
-    border-bottom: 5px solid transparent;
-    border-left: 6px solid #1f2937;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-    z-index: 1000;
-}
-
-.tool-btn:hover[data-tooltip-left]::after,
-.tool-btn:hover[data-tooltip-left]::before {
-    opacity: 1;
-}
-
-/* Toolbar Section Divider */
-.toolbar-section-divider {
-    width: 32px;
-    height: 1px;
-    background-color: #e5e7eb;
-    margin: 4px 0;
-}
-
-/* Phase 1: Annotation Toolbar Styles */
-.tool-emoji {
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.preset-dropdown-container {
-    position: relative;
-}
-
-.preset-menu {
-    position: absolute;
-    right: calc(100% + 12px);
-    top: 0;
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
-    min-width: 150px;
-    z-index: 1000;
-    animation: menuSlideIn 0.2s ease-out;
-}
-
-@keyframes menuSlideIn {
-    from {
-        opacity: 0;
-        transform: translateX(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-.preset-item {
-    display: block;
-    width: 100%;
-    padding: 10px 14px;
-    background: transparent;
-    border: none;
-    text-align: left;
-    font-size: 13px;
-    font-weight: 500;
-    color: #374151;
-    cursor: grab;
-    transition: all 0.15s ease;
-    border-radius: 0;
-}
-
-.preset-item:first-child {
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-}
-
-.preset-item:last-child {
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
-}
-
-.preset-item:hover {
-    background-color: #f3f4f6;
-    color: #111827;
-}
-
-.preset-item:active {
-    background-color: #e5e7eb;
-}
-
-/* Selection Badge */
-.selection-badge {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 36px;
-    height: 36px;
-    padding: 8px;
-    background: linear-gradient(135deg, #00ffc4, #00d9ae);
-    color: #000;
-    font-size: 14px;
-    font-weight: 700;
-    border-radius: 50%;
-    animation: badgePop 0.2s ease-out;
-}
-
-@keyframes badgePop {
-    0% {
-        transform: scale(0.8);
-    }
-    50% {
-        transform: scale(1.1);
-    }
-    100% {
-        transform: scale(1);
-    }
 }
 
 .hidden {
@@ -306,17 +24,193 @@
     cursor: grab;
 }
 
-/* ═══ SACRED SCREENPLAY STYLING - DO NOT MODIFY ═══ */
-/* This preserves traditional Courier font for script pages */
+/* Stage: control bar on top, scaled page below. Never wider than its container. */
+.ll-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.ll-page-viewport {
+    order: 2;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    /* Only scrolls when the user zooms past fit */
+    overflow-x: auto;
+    box-sizing: border-box;
+}
+
+/* Holds the scaled page's real footprint; centered in the viewport */
+.ll-page-scaler {
+    position: relative;
+    margin: 0 auto;
+}
+
 .page {
-    font-family: 'Courier Prime', monospace !important;
+    font-family: 'Courier Prime', monospace;
     height: 1056px;
     width: 816px;
-    background-color: white !important;
-    margin: 0 auto;
-    position: relative;
+    /* FR-023: paper preview must stay white in light AND dark themes */
+    background-color: #ffffff !important;
+    color: #16181c;
+    margin: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    color: black !important;
+    box-sizing: border-box;
+}
+
+html[data-theme='dark'] .page {
+    background-color: #ffffff !important;
+    color: #16181c;
+}
+
+/* Ordered above the page even though it is rendered after it in the DOM */
+.ll-page-rail {
+    order: 1;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    position: sticky;
+    top: 0;
+    z-index: 210;
+    padding: 0.5rem 0;
+    background: #f9fafb;
+    font-family: system-ui, -apple-system, sans-serif;
+    color: var(--ink, #111827);
+}
+
+.ll-rail-primary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.ll-rail-btn {
+    justify-content: center;
+    white-space: nowrap;
+}
+
+/* Zoom stepper — keeps the page readable without locking the layout to 816px */
+.ll-zoom {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-left: auto;
+    padding: 2px;
+    border: 1px solid var(--line, #e5e7eb);
+    border-radius: 10px;
+    background: var(--white-brand, #fff);
+}
+
+.ll-zoom-btn,
+.ll-zoom-fit {
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--ink, #111827);
+    line-height: 1;
+}
+
+.ll-zoom-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+}
+
+.ll-zoom-fit {
+    height: 28px;
+    padding: 0 10px;
+    font-size: 12px;
+}
+
+.ll-zoom-btn:hover:not(:disabled),
+.ll-zoom-fit:hover {
+    background: var(--wash, #f3f4f6);
+}
+
+.ll-zoom-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.ll-zoom-fit.active {
+    background: var(--wash, #f3f4f6);
+}
+
+.ll-zoom-value {
+    min-width: 3.25rem;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-soft, #6b7280);
+}
+
+.ll-tips-toggle {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line, #e5e7eb);
+    background: var(--white-brand, #fff);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--ink, #111827);
+}
+
+.ll-tips-panel {
+    flex: 1 1 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line, #e5e7eb);
+    background: var(--white-brand, #fff);
+    box-shadow: var(--shadow-lift, 0 4px 20px rgba(0, 0, 0, 0.08));
+}
+
+.ll-tips-panel p {
+    margin: 0 0 6px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--ink-soft, #6b7280);
+    position: static;
+}
+
+.ll-tips-panel p:last-child {
+    margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+    .ll-rail-primary {
+        flex: 1 1 100%;
+    }
+
+    .ll-rail-btn,
+    .ll-tips-toggle {
+        flex: 1 1 auto;
+    }
+
+    .ll-zoom {
+        margin-left: 0;
+        flex: 1 1 100%;
+        justify-content: center;
+    }
 }
 
 .grab-cursor {
@@ -337,25 +231,21 @@
     overflow: visible;
 }
 
+/* Non-scrolling: the parent .page-container owns the scroll so the control bar can stick */
 .last-looks-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    display: block;
     padding: 1rem;
-    padding-right: 100px; /* Make room for right toolbar */
     background-color: #f9fafb;
-    min-width: 816px;
-    height: 100%;
-    position: relative;
-    z-index: 0;
-    isolation: isolate;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: visible;
+    height: auto;
+    box-sizing: border-box;
 }
 
-/* Sacred screenplay elements */
 p {
     display: block;
-    font-family: 'Courier Prime', monospace !important;
-    color: black !important;
 }
 
 .screenbox {
@@ -364,20 +254,18 @@ p {
     width: 100%;
     height: 100%;
     padding: 0;
-    font-family: 'Courier Prime', monospace !important;
 }
 
-/* Script elements MUST use Courier Prime - override global styles */
-li,
-span {
+/* Scope to the letter page only — must NOT hit Edit tips / control rail */
+.page li,
+.page span {
     position: absolute;
     list-style-type: none;
     line-height: normal;
     padding: 0;
     margin: 0;
-    font-size: 12pt !important;
-    font-family: 'Courier Prime', monospace !important;
-    color: black !important;
+    font-size: 12pt;
+    color: black;
 }
 
 .bar-span {
@@ -417,18 +305,18 @@ li.page-number {
 }
 
 .false {
-    /* strike-through removed: X-box SVG overlay communicates exclusion */
+    text-decoration: line-through;
+    text-decoration-thickness: 25%;
 }
 
-/* Removed/skipped lines: grey background + strikethrough beneath the X-box SVG overlay. */
+/* Skipped (false) lines: white background + strikethrough.
+   Contiguous blocks get the SVG X-box overlay (not a grey fill). */
 li.false:not(.page-number):not(.page-number-text):not(.page-number-hidden) {
     z-index: 2;
-    background-color: #e8e8e8;
-    text-decoration: line-through;
-    text-decoration-color: rgba(0, 0, 0, 0.5);
+    background-color: #ffffff;
 }
 
-/* SVG X-box overlay — sits above skipped (false) content, BELOW visible lines */
+/* SVG X-box overlay — above skipped content, no pointer events */
 svg.skipped-sections-overlay {
     position: absolute;
     top: 0;
@@ -438,19 +326,6 @@ svg.skipped-sections-overlay {
     pointer-events: none;
     z-index: 3;
     overflow: visible;
-}
-
-/* ═══ Z-INDEX FIX: Ensure visible content lines sit ABOVE the SVG X-box overlay ═══
-   SVG overlay is at z-index 3.  Visible lines must be higher so text editing,
-   clicking, dragging, and all other interactions work reliably beneath the X's. */
-.screenbox li.true:not(.page-number):not(.page-number-hidden):not(.page-number-text) {
-    z-index: 6;
-}
-
-/* In edit mode, ALL lines (including crossed-out) need a high z-index
-   so the user can interact with them (re-select, toggle visibility, etc.) */
-.edit-mode li:not(.page-number):not(.page-number-hidden):not(.page-number-text) {
-    z-index: 10 !important;
 }
 
 .legal {
@@ -492,7 +367,6 @@ svg.skipped-sections-overlay {
 .scene-number-left {
     left: 45px;
     font-weight: 900;
-    z-index: 10;
 }
 
 .scene-number-left.selected,
@@ -525,7 +399,6 @@ span.scene-number-right.true {
     right: 85px;
     text-align: right;
     font-weight: 900;
-    z-index: 10;
 }
 
 .docTitle {
@@ -551,11 +424,27 @@ span.scene-number-right.true {
     width: 100%;
     border-top: 1px solid #000;
     padding-top: 5px;
+    text-align: right;
     right: 0;
     font-size: 10px;
     font-weight: bold;
-    z-index: 5;
+    z-index: 1;
     pointer-events: auto;
+}
+
+.CONTINUE .bar-text {
+    position: relative;
+    width: auto;
+    border: none;
+    padding-right: 10px;
+    text-align: right;
+    font-size: 16pt;
+    font-weight: bold;
+    cursor: move;
+    pointer-events: auto;
+    z-index: 2;
+    display: inline-block;
+    margin-left: auto;
 }
 
 .bar-span.CONTINUE,
@@ -563,6 +452,7 @@ span.CONTINUE {
     width: 95%;
     border-top: 2.5px solid;
     padding-top: 2.5px;
+    text-align: right;
     right: 5px;
     font-size: 16pt;
     font-weight: 900;
@@ -639,7 +529,7 @@ span.CONTINUE {
     right: 0;
     bottom: 0;
     pointer-events: none;
-    z-index: 5;
+    z-index: 1;
     overflow: hidden;
 }
 
@@ -699,27 +589,6 @@ span.CONTINUE {
     font-family: 'Arial', sans-serif;
     margin: 0 15px;
     white-space: nowrap;
-}
-
-/* Casting Director watermark styling */
-.watermark-casting-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: nowrap;
-    width: 100%;
-    margin-top: -15px; /* Reduce gap from timestamp row */
-}
-
-.watermark-casting-block {
-    font-size: 16px;
-    color: #666;
-    opacity: 0.25;
-    font-weight: 500;
-    letter-spacing: 1px;
-    font-family: 'Arial', sans-serif;
-    margin: 0 15px;
-    white-space: nowrap;
     display: inline-block;
 }
 
@@ -739,112 +608,27 @@ span.CONTINUE {
     right: 20px;
 }
 
-/* === Modern Context Menu === */
-.modern-context-menu {
+.context-menu {
     position: fixed;
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 5px 10px rgba(0, 0, 0, 0.08);
+    background-color: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     z-index: 9999;
-    min-width: 220px;
-    overflow: hidden;
-    animation: contextMenuFadeIn 0.15s ease-out;
 }
 
-@keyframes contextMenuFadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.95) translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
+.context-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
-.context-menu-header {
-    padding: 10px 12px;
-    background: linear-gradient(135deg, rgba(0, 255, 196, 0.1), rgba(0, 255, 196, 0.05));
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.selection-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 10px;
-    background-color: rgba(0, 255, 196, 0.2);
-    border: 1px solid rgba(0, 255, 196, 0.4);
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #00c9a7;
-}
-
-.context-menu-section {
-    padding: 6px;
-}
-
-.section-label {
-    padding: 8px 12px 6px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #9ca3af;
-}
-
-.context-menu-item {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    padding: 10px 12px;
-    border: none;
-    background: transparent;
-    border-radius: 8px;
+.context-menu li {
+    padding: 8px 12px;
     cursor: pointer;
-    transition: all 0.15s ease;
-    font-size: 14px;
-    color: #374151;
-    text-align: left;
 }
 
-.context-menu-item:hover {
-    background-color: #f3f4f6;
-    transform: translateX(2px);
-}
-
-.context-menu-item-primary {
-    color: #3b82f6;
-}
-
-.context-menu-item-primary:hover {
-    background-color: #eff6ff;
-}
-
-.context-menu-item-danger {
-    color: #ef4444;
-}
-
-.context-menu-item-danger:hover {
-    background-color: #fef2f2;
-}
-
-.item-icon {
-    width: 18px;
-    height: 18px;
-    margin-right: 10px;
-    flex-shrink: 0;
-}
-
-.item-label {
-    font-weight: 500;
-}
-
-.context-menu-divider {
-    height: 1px;
-    background-color: #e5e7eb;
-    margin: 6px 0;
+.context-menu li:hover {
+    background-color: #f0f0f0;
 }
 
 /* Selected line styling */
@@ -1075,9 +859,175 @@ li.page-number {
     padding: 1rem;
 }
 
-/* Legacy UI styles removed - now using vertical toolbar */
+/* Pagination controls */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    margin: 15px 0;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
 
-/* Bar controls - DEPRECATED: Now using vertical toolbar */
+.pagination-button {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 16px;
+    margin: 0 5px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:hover {
+    background-color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-button:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.page-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 10px;
+    color: #1f2937;
+}
+
+/* Editing instructions */
+.editing-instructions {
+    background-color: rgba(255, 251, 235, 0.95);
+    border-left: 4px solid #f59e0b;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.editing-instructions h3 {
+    color: #b45309;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.editing-instructions ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.editing-instructions li {
+    margin-bottom: 8px;
+    color: #4b5563;
+    font-size: 14px;
+}
+
+.editing-instructions kbd {
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 3px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    color: #1f2937;
+    display: inline-block;
+    font-size: 12px;
+    line-height: 1;
+    padding: 2px 5px;
+    margin: 0 2px;
+}
+
+/* Help button */
+.help-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+.help-button:hover {
+    background-color: #2563eb;
+    transform: scale(1.1);
+}
+
+/* Bar controls */
+.bar-controls {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 10px 0;
+}
+
+.bar-controls h4 {
+    color: #374151;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.bar-controls-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.bar-controls button {
+    background-color: white;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.bar-controls button:hover {
+    background-color: #eff6ff;
+    border-color: #93c5fd;
+}
+
+.bar-controls button.active {
+    background-color: #dbeafe;
+    border-color: #60a5fa;
+    color: #1e40af;
+}
+
+.bar-controls button svg {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+}
 
 @media (max-width: 1200px) {
     .last-looks-container {
@@ -1092,17 +1042,27 @@ li.page-number {
 
 @media (max-width: 900px) {
     .page {
+        transform-origin: top center;
         transform: scale(0.8);
     }
 }
 
 @media (max-width: 700px) {
     .page {
-        transform: scale(0.7);
+        transform-origin: top center;
+        transform: scale(0.55);
+    }
+}
+
+@media (max-width: 420px) {
+    .page {
+        transform-origin: top center;
+        transform: scale(0.42);
     }
 }
 
 .callsheet-container {
+    position: relative;
     width: 100%;
     height: 100%;
     display: flex;
@@ -1111,6 +1071,7 @@ li.page-number {
     padding: 20px;
     box-sizing: border-box;
     background: white;
+    overflow: hidden;
 }
 
 .callsheet-image {
@@ -1122,24 +1083,36 @@ li.page-number {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Annotation Canvas Overlay */
-.annotation-canvas-overlay {
+/* Page-sized float over the callsheet image — same −45° band as sides */
+.callsheet-watermark-overlay {
     position: absolute;
     top: 0;
     left: 0;
-    width: 816px;
-    height: 1056px;
-    z-index: 100;
+    right: 0;
+    bottom: 0;
     pointer-events: none;
+    z-index: 2;
+    overflow: hidden;
 }
 
-/* Annotation Toolbar Floating Panel */
-.annotation-toolbar-floating {
-    position: fixed;
-    top: 100px;
-    right: 20px;
-    z-index: 1000;
-    pointer-events: auto;
+.callsheet-watermark-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    white-space: nowrap;
+    width: 300%;
+    height: 300%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+.callsheet-watermark-container .watermark-casting-block {
+    font-size: 28px;
+    font-weight: 500;
 }
 
 .callsheet-error {
@@ -1299,10 +1272,8 @@ li.crossed-out {
     padding: 2px 10px !important;
     margin: 0;
     border-radius: 3px;
-    font-size: 16pt !important;
+    font-size: 16pt;
     font-weight: 900 !important;
-    font-family: 'Courier Prime', monospace !important;
-    color: black !important;
 }
 
 .edit-mode .bar-text:hover {
@@ -1432,512 +1403,396 @@ li.page-number {
     padding: 1rem;
 }
 
-/* Legacy UI styles removed - now using vertical toolbar */
-
-/* Bar controls - DEPRECATED: Now using vertical toolbar */
-/* ═══════════════════════════════════════════════════════════
-   X-BOX INTERACTIVE CONTROLS (edit mode only)
-   Provides move, resize, delete for each skipped-section X-box.
-   ═══════════════════════════════════════════════════════════ */
-
-.xbox-controls-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 816px;
-    height: 1056px;
-    pointer-events: none;   /* Container doesn't block — children opt-in */
-    z-index: 115;           /* Above annotation/edit overlays so X-box controls receive events */
+/* Pagination controls */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    margin: 15px 0;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.xbox-interactive {
-    position: absolute;
-    pointer-events: auto !important; /* Each X-box is individually clickable */
-    cursor: grab;
-    border: 2px solid transparent;
-    border-radius: 2px;
-    transition: border-color 0.15s, box-shadow 0.15s;
-    box-sizing: border-box;
-}
-
-.xbox-interactive:hover {
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
-}
-
-.xbox-interactive:active {
-    cursor: grabbing;
-}
-
-.xbox-interactive.xbox-selected {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-}
-
-/* X-box delete button */
-.xbox-delete-btn {
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    border: 2px solid #ef4444;
-    background: white;
-    color: #ef4444;
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 18px;
-    text-align: center;
-    cursor: pointer;
-    padding: 0;
-    opacity: 0;
-    transition: opacity 0.15s, background-color 0.15s, color 0.15s;
-    pointer-events: auto;
-    z-index: 120;
-}
-
-.xbox-interactive:hover .xbox-delete-btn,
-.xbox-interactive.xbox-selected .xbox-delete-btn {
-    opacity: 1;
-}
-
-.xbox-delete-btn:hover {
-    background: #ef4444;
+.pagination-button {
+    background-color: #3b82f6;
     color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 16px;
+    margin: 0 5px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-/* X-box resize handles (corners) */
-.xbox-resize-handle {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: white;
-    border: 2px solid #3b82f6;
-    border-radius: 2px;
-    pointer-events: auto;
-    z-index: 120;
+.pagination-button:hover {
+    background-color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.xbox-resize-handle.top-left {
-    top: -5px;
-    left: -5px;
-    cursor: nwse-resize;
+.pagination-button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.xbox-resize-handle.top-right {
-    top: -5px;
-    right: -5px;
-    cursor: nesw-resize;
+.pagination-button:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
-.xbox-resize-handle.bottom-left {
-    bottom: -5px;
-    left: -5px;
-    cursor: nesw-resize;
-}
-
-.xbox-resize-handle.bottom-right {
-    bottom: -5px;
-    right: -5px;
-    cursor: nwse-resize;
-}
-
-.xbox-resize-handle:hover {
-    background: #3b82f6;
-}
-
-/* ===== OMITTED SCENE STYLING ===== */
-/* Hollywood-style crossed out scene box */
-.omitted-scene-container {
-    position: absolute;
-    left: 40px;
-    right: 40px;
-    min-height: 50px;
-    background-color: #e8e8e8;
-    border: 3px solid #000;
+.page-indicator {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 5;
-    overflow: hidden;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 10px;
+    color: #1f2937;
 }
 
-/* The X pattern - using pseudo-elements for diagonal lines */
-.omitted-scene-container::before,
-.omitted-scene-container::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    pointer-events: none;
+/* Editing instructions */
+.editing-instructions {
+    background-color: rgba(255, 251, 235, 0.95);
+    border-left: 4px solid #f59e0b;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* First diagonal line (top-left to bottom-right) */
-.omitted-scene-container::before {
-    background: linear-gradient(
-        to bottom right,
-        transparent calc(50% - 1.5px),
-        #000 calc(50% - 1.5px),
-        #000 calc(50% + 1.5px),
-        transparent calc(50% + 1.5px)
-    );
+.editing-instructions h3 {
+    color: #b45309;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 18px;
 }
 
-/* Second diagonal line (top-right to bottom-left) */
-.omitted-scene-container::after {
-    background: linear-gradient(
-        to bottom left,
-        transparent calc(50% - 1.5px),
-        #000 calc(50% - 1.5px),
-        #000 calc(50% + 1.5px),
-        transparent calc(50% + 1.5px)
-    );
+.editing-instructions ul {
+    margin: 0;
+    padding-left: 20px;
 }
 
-/* The omitted scene text content */
-.omitted-scene-content {
-    position: relative;
-    z-index: 10;
-    background-color: #e8e8e8;
-    padding: 4px 12px;
-    font-weight: 900;
-    font-size: 12pt;
-    text-align: center;
+.editing-instructions li {
+    margin-bottom: 8px;
+    color: #4b5563;
+    font-size: 14px;
 }
 
-/* Scene numbers on sides of omitted box */
-.omitted-scene-number {
-    position: absolute;
-    font-weight: 900;
-    font-size: 12pt;
-    z-index: 10;
-    background-color: #e8e8e8;
-    padding: 2px 6px;
-}
-
-.omitted-scene-number.left {
-    left: 8px;
-}
-
-.omitted-scene-number.right {
-    right: 8px;
-}
-
-/* ════════════════════════════════════════════════════════════
-   EDITABLE TEXT BOX OVERLAY (EDIT MODE)
-   ════════════════════════════════════════════════════════════ */
-
-/* ════════════════════════════════════════════════════════════
-   ARROW SVG OVERLAY (always visible — both edit and view mode)
-   ════════════════════════════════════════════════════════════ */
-
-.annotation-arrow-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none; /* Container doesn't block page interactions */
-    z-index: 130; /* Above X-box controls so arrows remain editable */
-    overflow: visible;
-}
-
-.annotation-arrow-edit {
-    pointer-events: auto !important;
-    cursor: grab;
-    overflow: visible !important;
-}
-
-.annotation-arrow-edit.dragging {
-    cursor: grabbing;
-}
-
-.annotation-arrow-edit.selected {
-    filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.8));
-}
-
-.annotation-arrow-svg {
-    width: 100%;
-    height: 100%;
-    overflow: visible; /* Arrowheads extend past bounding box */
-    pointer-events: none;
-}
-
-.arrow-delete-btn {
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    border: 2px solid #ef4444;
-    background: white;
-    color: #ef4444;
+.editing-instructions kbd {
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 3px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    color: #1f2937;
+    display: inline-block;
     font-size: 12px;
-    font-weight: 700;
-    line-height: 18px;
-    text-align: center;
-    cursor: pointer;
-    padding: 0;
-    pointer-events: auto;
-    z-index: 120;
+    line-height: 1;
+    padding: 2px 5px;
+    margin: 0 2px;
 }
 
-.arrow-delete-btn:hover {
-    background: #ef4444;
+/* Help button */
+.help-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #3b82f6;
     color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+    z-index: 1000;
 }
 
-.arrow-rotate-btn {
-    position: absolute;
-    top: -10px;
-    right: 18px;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    border: 2px solid #3b82f6;
-    background: white;
-    color: #3b82f6;
+.help-button:hover {
+    background-color: #2563eb;
+    transform: scale(1.1);
+}
+
+/* Bar controls */
+.bar-controls {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 10px 0;
+}
+
+.bar-controls h4 {
+    color: #374151;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.bar-controls-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.bar-controls button {
+    background-color: white;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 6px 12px;
     font-size: 13px;
-    font-weight: 700;
-    line-height: 18px;
-    text-align: center;
-    cursor: grab;
-    padding: 0;
-    pointer-events: auto;
-    z-index: 120;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
 }
 
-.arrow-rotate-btn:hover {
-    background: #3b82f6;
-    color: white;
+.bar-controls button:hover {
+    background-color: #eff6ff;
+    border-color: #93c5fd;
 }
 
-.arrow-rotate-btn:active {
-    cursor: grabbing;
+.bar-controls button.active {
+    background-color: #dbeafe;
+    border-color: #60a5fa;
+    color: #1e40af;
 }
 
-.arrow-resize-handle {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    margin-left: -5px;
-    margin-top: -5px;
-    background: white;
-    border: 2px solid #3b82f6;
-    border-radius: 50%;
-    pointer-events: auto;
-    z-index: 120;
+.bar-controls button svg {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
 }
 
-.arrow-resize-handle-start {
-    cursor: move;
-}
-
-.arrow-resize-handle-end {
-    cursor: nwse-resize;
-}
-
-.arrow-resize-handle:hover {
-    background: #3b82f6;
-}
-
-/* DOM hit-areas for highlights — canvas draws fill at z-index 100; this layer must receive drag/delete. */
-.annotation-highlight-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 108;
-}
-
-.annotation-highlight-edit {
-    pointer-events: auto !important;
-    cursor: grab;
-    background: transparent !important;
-    box-sizing: border-box;
-}
-
-.annotation-highlight-edit.dragging {
-    cursor: grabbing;
-}
-
-.annotation-highlight-edit.selected {
-    box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.7);
-}
-
-.annotation-textbox-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none; /* Container doesn't block page interactions */
-    z-index: 140; /* Above X-box controls and arrows */
-}
-
-.annotation-textbox-edit {
-    pointer-events: auto !important;
-    position: relative; /* Required so .textbox-delete-btn (position:absolute) anchors to this box */
-    cursor: grab;
-    border: 1px dashed rgba(0, 0, 0, 0.3);
-    border-radius: 2px;
-    background-color: transparent;
-    font-size: 16pt !important;
-    font-weight: 900 !important;
-    font-family: 'Courier Prime', monospace !important;
-    color: black !important;
-    line-height: normal !important;
-    padding: 2px 5px !important;
-    min-height: 1.4em;
-    overflow: visible !important;
-    user-select: none; /* Prevent browser text-selection from hijacking mousedown drag */
-    -webkit-user-select: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.annotation-textbox-edit:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
-}
-
-.annotation-textbox-edit.editing {
-    cursor: text;
-    border-color: #3b82f6;
-    border-style: solid;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-    background-color: rgba(255, 255, 255, 0.95);
-    user-select: text; /* Re-enable text selection while the box is in edit mode */
-    -webkit-user-select: text;
-}
-
-.annotation-textbox-edit.dragging {
-    cursor: grabbing;
-    opacity: 0.8;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.annotation-textbox-edit.selected {
-    border-color: #3b82f6;
-    border-style: solid;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
-}
-
-.textbox-editable {
-    outline: none;
-    display: block;
-    width: 100%;
-    min-height: 1em;
-    font-size: inherit !important;
-    font-weight: inherit !important;
-    font-family: inherit !important;
-    color: inherit !important;
-    line-height: inherit !important;
-    position: static !important;
-}
-
-.textbox-display {
-    display: block;
-    width: 100%;
-    font-size: inherit !important;
-    font-weight: inherit !important;
-    font-family: inherit !important;
-    color: inherit !important;
-    line-height: inherit !important;
-    position: static !important;
-}
-
-.textbox-display:empty::before,
-.annotation-textbox-edit .textbox-display:not(:empty) {
-    /* Placeholder handled by Angular template text */
-}
-
-.textbox-delete-btn {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    border: 1px solid #ccc;
-    background: white;
-    color: #666;
-    font-size: 10px;
-    line-height: 16px;
-    text-align: center;
-    cursor: pointer;
-    padding: 0;
-    opacity: 0;
-    transition: opacity 0.15s;
-    pointer-events: auto;
-    z-index: 120;
-}
-
-.annotation-textbox-edit:hover .textbox-delete-btn {
-    opacity: 1;
-}
-
-.textbox-delete-btn:hover {
-    background: #ef4444;
-    color: white;
-    border-color: #ef4444;
-}
-
-.textbox-resize-handle {
-    position: absolute;
-    right: -6px;
-    bottom: -6px;
-    width: 12px;
-    height: 12px;
-    background: white;
-    border: 2px solid #3b82f6;
-    border-radius: 2px;
-    cursor: nwse-resize;
-    pointer-events: auto;
-    z-index: 120;
-}
-
-.textbox-resize-handle:hover {
-    background: #3b82f6;
-}
 
 /* ════════════════════════════════════════════════════════════
-   ANNOTATION PREVIEW OVERLAY (NON-EDIT MODE)
+   EDIT TOOLBAR (edit mode only) — horizontal row inside the control bar.
+   Kept separate from sacred screenplay formatting below.
    ════════════════════════════════════════════════════════════ */
 
-.annotation-preview-overlay {
+.vertical-toolbar {
+  position: relative;
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: var(--white-brand, #fff);
+  border: 1px solid var(--line, #e5e7eb);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lift, 0 4px 20px rgba(0, 0, 0, 0.08));
+  z-index: 200;
+  box-sizing: border-box;
+}
+
+.tool-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  padding: 0;
+}
+
+.tool-btn svg {
+  width: 20px;
+  height: 20px;
+  color: var(--ink-soft, #6b7280);
+}
+
+.tool-btn:hover:not(.disabled) {
+  background-color: var(--paper, #f3f4f6);
+}
+
+.tool-btn:hover:not(.disabled) svg {
+  color: var(--ink, #111827);
+}
+
+.tool-btn.active {
+  background-color: var(--mint, #00ffc4);
+}
+
+.tool-btn.active svg {
+  color: var(--ink, #000);
+}
+
+.tool-btn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.tool-btn-danger:hover:not(.disabled) {
+  background-color: #fef2f2;
+}
+
+.tool-btn-danger:hover:not(.disabled) svg {
+  color: #ef4444;
+}
+
+.tool-btn-primary:hover:not(.disabled) {
+  background-color: #eff6ff;
+}
+
+.tool-btn-primary:hover:not(.disabled) svg {
+  color: #3b82f6;
+}
+
+.tool-btn-success:hover:not(.disabled) {
+  background-color: #f0fdf4;
+}
+
+.tool-btn-success:hover:not(.disabled) svg {
+  color: #22c55e;
+}
+
+/* Toolbar sits at the top of the stage, so tooltips open downward */
+.tool-btn[data-tooltip-left]::after {
+  content: attr(data-tooltip-left);
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  background: #1f2937;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: system-ui, sans-serif;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 1000;
+}
+
+.tool-btn[data-tooltip-left]::before {
+  content: '';
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 6px solid #1f2937;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 1000;
+}
+
+.tool-btn:hover[data-tooltip-left]::after,
+.tool-btn:hover[data-tooltip-left]::before {
+  opacity: 1;
+}
+
+.toolbar-section-divider {
+  width: 1px;
+  align-self: stretch;
+  min-height: 24px;
+  background-color: var(--line, #e5e7eb);
+  margin: 0 4px;
+}
+
+.selection-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 8px;
+  background: linear-gradient(135deg, var(--mint, #7dd9c4), #5ec9b3);
+  color: #0f1f21;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: system-ui, sans-serif;
+  border-radius: 50%;
+}
+
+
+/* Isolate screenplay preview from app theme / dark-mode inheritance */
+:host {
+  color: #000;
+  font-family: 'Courier Prime', monospace;
+}
+
+.page,
+.page .screenbox,
+.page .screenbox li,
+.page .screenbox span {
+  color: #000;
+  font-family: 'Courier Prime', monospace;
+}
+
+/* ── Mobile / touch Last Looks editing ── */
+@media (hover: none), (pointer: coarse) {
+  .edit-mode li {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+
+  .edit-mode li.editing {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Always show drag affordance (no hover on phones) */
+  .edit-mode li::before {
+    content: "⋮";
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none; /* Don't interfere with page interactions */
-    z-index: 5; /* Below toolbar but above page content */
-}
+    left: -15px;
+    color: #888;
+  }
 
-.annotation-preview-item {
+  .edit-mode .bar-span,
+  .edit-mode .END,
+  .edit-mode .CONTINUE,
+  .edit-mode .CONTINUE-TOP {
+    touch-action: none;
+    min-height: 28px;
+  }
+
+  .classification-option {
+    padding: 12px 16px;
+    min-height: 44px;
     display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    line-height: normal;
-    user-select: none;
-    font-size: 16pt !important;
-    font-weight: 900 !important;
-    font-family: 'Courier Prime', monospace !important;
-    color: black !important;
+    align-items: center;
+    font-size: 15px;
+  }
+
+  .context-menu {
+    min-width: 220px;
+    max-width: min(92vw, 280px);
+    border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  }
+
+  .tool-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 
-.annotation-preview-arrow {
-    pointer-events: none;
-    overflow: visible;
-}
-
-.annotation-preview-shape {
-    pointer-events: none;
-    user-select: none;
+.tool-btn:focus[data-tooltip-left]::after,
+.tool-btn:focus[data-tooltip-left]::before {
+  opacity: 1;
 }

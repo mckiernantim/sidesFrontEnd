@@ -1,45 +1,112 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { StripeService } from '../../services/stripe/stripe.service';
 import { AuthService } from '../../services/auth/auth.service';
 import { Observable, firstValueFrom, take } from 'rxjs';
 import { User } from '@angular/fire/auth';
 import { SubscriptionStatus } from '../../types/SubscriptionTypes';
 import { fadeInOutAnimation } from '../../animations/animations';
+import {
+  BillingInterval,
+  effectiveOfferFromQuery,
+  getBillingFaqText,
+  getOfferPlanTitle,
+  getOfferPriceCents,
+  getOfferPriceLabel,
+  getStandardPriceLabel,
+  shouldShowFoundersOffer,
+  FOUNDERS_RATE_SUBTITLE
+} from '../../utils/founders-offer';
 
 @Component({
-  selector: 'app-pricing',
-  templateUrl: './pricing.component.html',
-  styleUrls: ['./pricing.component.css'],
-  animations: [fadeInOutAnimation],
-  standalone: false
+    selector: 'app-pricing',
+    templateUrl: './pricing.component.html',
+    styleUrls: ['./pricing.component.css'],
+    animations: [fadeInOutAnimation],
+    standalone: false
 })
 export class PricingComponent implements OnInit {
   user$: Observable<User | null>;
   currentUser: User | null = null;
   subscriptionStatus$: Observable<SubscriptionStatus>;
   isLoading = true;
+  isFounder = false;
+  showFoundersOffer = false;
+  planTitle = 'Professional Plan';
+  priceLabel = '$20 per week';
+  priceDollars = 20;
+  selectedInterval: BillingInterval = 'week';
+  billingFaqText = getBillingFaqText({ isFounder: false, active: false }, 'week');
+  readonly foundersRateSubtitle = FOUNDERS_RATE_SUBTITLE;
+  private offerQuery: string | null = null;
   
   constructor(
     private stripeService: StripeService,
-    private authService: AuthService
+    private authService: AuthService,
+    private route: ActivatedRoute
   ) { }
 
   ngOnInit(): void {
     this.user$ = this.authService.user$;
     this.subscriptionStatus$ = this.stripeService.subscriptionStatus$;
+    this.offerQuery = this.route.snapshot.queryParamMap.get('offer');
     
-    // Get current user
     this.user$.pipe(take(1)).subscribe(user => {
       this.currentUser = user;
     
       if (user) {
-        this.stripeService.getSubscriptionStatus(user.uid);
+        this.stripeService.getSubscriptionStatus(user.uid).subscribe(status => {
+          this.applyEligibility(status);
+        });
+      } else {
+        this.applyEligibility({ isFounder: false, active: false } as SubscriptionStatus);
       }
       
       setTimeout(() => {
         this.isLoading = false;
       }, 1000);
     });
+
+    this.subscriptionStatus$.subscribe(status => {
+      if (status) {
+        this.applyEligibility(status);
+      }
+    });
+  }
+
+  private applyEligibility(status: Pick<SubscriptionStatus, 'isFounder' | 'active'>): void {
+    const eligibility = {
+      isFounder: Boolean(status?.isFounder),
+      active: Boolean(status?.active)
+    };
+    // Query param is display-only; forged ?offer=founders cannot elevate non-founders
+    effectiveOfferFromQuery(eligibility, this.offerQuery);
+    this.isFounder = eligibility.isFounder;
+    this.showFoundersOffer = shouldShowFoundersOffer(eligibility);
+    this.planTitle = getOfferPlanTitle(eligibility);
+    this.refreshPriceCopy(eligibility);
+  }
+
+  private refreshPriceCopy(eligibility = {
+    isFounder: this.isFounder,
+    active: false
+  }): void {
+    this.priceDollars = getOfferPriceCents(eligibility, this.selectedInterval) / 100;
+    this.priceLabel = getOfferPriceLabel(eligibility, this.selectedInterval);
+    this.billingFaqText = getBillingFaqText(eligibility, this.selectedInterval);
+  }
+
+  selectInterval(interval: BillingInterval): void {
+    this.selectedInterval = interval;
+    this.refreshPriceCopy({ isFounder: this.isFounder, active: false });
+  }
+
+  getStruckThroughPrice(): string {
+    return getStandardPriceLabel(this.selectedInterval);
+  }
+
+  getIntervalSuffix(): string {
+    return this.selectedInterval === 'month' ? '/month' : '/week';
   }
 
   signIn(): void {
@@ -54,7 +121,13 @@ export class PricingComponent implements OnInit {
       return;
     }
 
-    this.stripeService.createPortalSession(user.uid, user.email).subscribe({
+    // No client priceId — backend selects Founders vs standard from founders/{uid} + interval
+    this.stripeService.createPortalSession(
+      user.uid,
+      user.email,
+      undefined,
+      this.selectedInterval
+    ).subscribe({
       next: (response) => {
         if (response.success && response.url) {
           window.location.href = response.url;
@@ -67,7 +140,6 @@ export class PricingComponent implements OnInit {
   }
 
   manageSubscription(): void {
-    // Use the stored user if available
     if (this.currentUser) {
       this.stripeService.createPortalSession(this.currentUser.uid, this.currentUser.email).subscribe({
         next: (response) => {
@@ -84,7 +156,13 @@ export class PricingComponent implements OnInit {
 
   formatDate(timestamp: any): string {
     if (!timestamp) return '';
-    const date = new Date(timestamp.seconds * 1000);
-    return date.toLocaleDateString();
+    if (typeof timestamp === 'string') {
+      return new Date(timestamp).toLocaleDateString();
+    }
+    if (timestamp.seconds) {
+      const date = new Date(timestamp.seconds * 1000);
+      return date.toLocaleDateString();
+    }
+    return '';
   }
-} 
+}

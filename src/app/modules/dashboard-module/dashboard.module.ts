@@ -8,17 +8,15 @@ import { DashboardComponent } from '../../components/dashboard/dashboard.compone
 import { DashboardRightComponent } from '../../components/dashboard/dashboard-right/dashboard-right.component';
 import { LastLooksComponent } from '../../components/dashboard/last-looks/last-looks.component';
 import { LastLooksPageComponent } from '../../components/dashboard/last-looks-page/last-looks-page.component';
+import { LastLooksRailComponent } from '../../components/dashboard/last-looks-rail/last-looks-rail.component';
 import { AddCallsheetComponent } from '../../components/add-callsheet/add-callsheet.component';
 import { ToolTipComponent } from '../../components/shared/tool-tip/tool-tip.component';
 import { AddWatermarkComponent } from '../../components/add-watermark/add-watermark.component';
 import { SharedModule } from '../shared-module/shared.module';
-import { ScheduleModule } from '../schedule-module/schedule.module';
 import { CheckoutComponent } from 'src/app/components/checkout/checkout.component';
 import { SceneSelectionComponent } from '../../components/dashboard/scene-selection/scene-selection.component';
 import { CheckoutModalComponent } from '../../components/dashboard/checkout-modal/checkout-modal.component';
-import { AnnotationCanvasComponent } from '../../components/annotation-canvas/annotation-canvas.component';
-import { AnnotationToolbarComponent } from '../../components/annotation-toolbar/annotation-toolbar.component';
-import { DisclaimerToggleComponent } from '../../components/annotation-toolbar/disclaimer-toggle/disclaimer-toggle.component';
+import { DevLastLooksComponent } from '../../components/dev/dev-last-looks/dev-last-looks.component';
 
 @NgModule({
   declarations: [
@@ -26,15 +24,14 @@ import { DisclaimerToggleComponent } from '../../components/annotation-toolbar/d
     DashboardRightComponent,
     LastLooksComponent,
     LastLooksPageComponent,
+    LastLooksRailComponent,
     AddCallsheetComponent,
     ToolTipComponent,
     AddWatermarkComponent,
     CheckoutComponent,
     SceneSelectionComponent,
     CheckoutModalComponent,
-    AnnotationCanvasComponent,
-    AnnotationToolbarComponent,
-    DisclaimerToggleComponent
+    DevLastLooksComponent
   ],
   imports: [
     CommonModule,
@@ -42,16 +39,17 @@ import { DisclaimerToggleComponent } from '../../components/annotation-toolbar/d
     ReactiveFormsModule,
     RouterModule,
     SharedModule,
-    DragDropModule,
-    ScheduleModule
+    DragDropModule
   ],
   exports: [
     DashboardComponent,
     DashboardRightComponent,
     LastLooksComponent,
     LastLooksPageComponent,
+    LastLooksRailComponent,
     SceneSelectionComponent,
-    CheckoutModalComponent
+    CheckoutModalComponent,
+    DevLastLooksComponent
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
