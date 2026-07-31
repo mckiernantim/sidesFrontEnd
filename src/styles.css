@@ -593,6 +593,86 @@ html[data-theme='dark'] .sw-success-text {
   position: relative;
 }
 
+/* Shared page-hero banner (production BG + cinematic overlay) */
+.sw-hero {
+  position: relative;
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  background-image: url('/assets/productionBG.png');
+  background-size: cover;
+  background-position: center;
+}
+
+.sw-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(6, 10, 20, 0.72) 0%,
+    rgba(6, 10, 20, 0.82) 60%,
+    rgba(6, 10, 20, 1) 100%
+  );
+  z-index: 1;
+}
+
+.sw-hero__content {
+  position: relative;
+  z-index: 2;
+  max-width: 860px;
+  padding: 4rem 2rem 3rem;
+}
+
+.sw-hero__headline {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 6vw, 4rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  margin: 0 0 1rem;
+}
+
+.sw-hero__subhead {
+  font-family: var(--font-body);
+  font-size: clamp(1rem, 2vw, 1.125rem);
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.sw-accent-text {
+  color: var(--mustard, #f0c93e);
+  font-style: italic;
+}
+
+.sw-btn-cta {
+  display: inline-block;
+  margin-top: 1.5rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #14282b;
+  background-color: var(--mustard, #f0c93e);
+  border: none;
+  border-radius: 999px;
+  padding: 1rem 2.5rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s, transform 0.1s;
+}
+
+.sw-btn-cta:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
 .marketing-page {
   background: var(--paper);
   color: var(--ink);

@@ -1,10 +1,10 @@
 <div class="landing">
   <section class="hero">
     <div class="margin-bot mb-hero-l" aria-hidden="true">
-      <img src="assets/icons/bot-about-images/scan.jpg" alt="" />
+      <img src="assets/icons/bot-about-images/scan-bot-two.png" alt="" />
     </div>
     <div class="margin-bot mb-hero-r" aria-hidden="true">
-      <img src="assets/icons/bot-about-images/select.jpg" alt="" />
+      <img src="assets/icons/bot-about-images/select-bot-two.png" alt="" />
     </div>
     <div class="hero-inner">
       <div class="hero-content">
@@ -29,8 +29,8 @@
       <div class="hero-mark">
         <img
           class="hero-bot"
-          src="assets/brand/hero-bot.jpeg"
-          alt="Sides-ways script bot assembling sides"
+          src="assets/icons/logoFlat.png"
+          alt="Sides-Ways logo"
         />
         <span class="hero-spark a" aria-hidden="true">✦</span>
         <span class="hero-spark b" aria-hidden="true">✦</span>
@@ -41,16 +41,16 @@
 
   <div class="page-wrap">
     <div class="mb-page mb-1" aria-hidden="true">
-      <img src="assets/icons/bot-about-images/lastLooks.jpg" alt="" />
+      <img src="assets/icons/bot-about-images/last-looks-bot-two.png" alt="" />
     </div>
     <div class="mb-page mb-2" aria-hidden="true">
-      <img src="assets/icons/bot-about-images/scan.jpg" alt="" />
+      <img src="assets/icons/bot-about-images/scan-bot-two.png" alt="" />
     </div>
     <div class="mb-page mb-3" aria-hidden="true">
-      <img src="assets/icons/bot-about-images/select.jpg" alt="" />
+      <img src="assets/icons/bot-about-images/select-bot-two.png" alt="" />
     </div>
     <div class="mb-page mb-4" aria-hidden="true">
-      <img src="assets/icons/bot-about-images/lastLooks.jpg" alt="" />
+      <img src="assets/icons/bot-about-images/security.png" alt="" />
     </div>
 
     <main class="landing-main">
@@ -81,7 +81,7 @@
           <p>We'll be back online in a few days. Thank you for your patience!</p>
           <p class="maintenance-email">
             Questions? Email
-            <a href="mailto:sideswaysscriptsides&#64;gmail.com">sideswaysscriptsides&#64;gmail.com</a>
+            <a href="mailto:admin&#64;sides-ways.com">admin&#64;sides-ways.com</a>
           </p>
         </div>
 
@@ -96,7 +96,7 @@
             >
               <img
                 class="upload-bot"
-                src="assets/icons/bot-about-images/sides-ways-bot.jpeg"
+                src="assets/icons/bot-about-images/scan-bot-two.png"
                 alt=""
                 aria-hidden="true"
               />
@@ -111,44 +111,14 @@
                 (click)="$event.stopPropagation()"
                 #fileInput
               />
-              <div class="upload-divider"></div>
-              <div class="toggle-row" (click)="$event.stopPropagation()">
-                <button
-                  type="button"
-                  class="toggle"
-                  id="ai-toggle"
-                  [class.on]="enableAiValidation"
-                  (click)="enableAiValidation = !enableAiValidation"
-                  [attr.aria-pressed]="enableAiValidation"
-                  aria-label="Enable AI Validation"
-                ></button>
-                <span>Enable AI Validation (Beta)</span>
-                <button
-                  type="button"
-                  class="info-dot"
-                  (click)="showAiTooltip = !showAiTooltip"
-                  aria-label="AI Validation info"
-                >i</button>
-              </div>
-              <div *ngIf="showAiTooltip" class="ai-tooltip" (click)="$event.stopPropagation()">
-                <p class="ai-tooltip-title">How AI Validation Works</p>
-                <p>
-                  In rare instances, some lines are ambiguously categorized during our scan.
-                  We partner with Anthropic to validate ambiguous lines for proper classification.
-                </p>
-                <ul>
-                  <li><strong>No data is saved. EVER.</strong></li>
-                  <li><strong>Smart &amp; Efficient:</strong> Only ambiguous lines are sent to AI (~200 lines max)</li>
-                  <li><strong>Higher Accuracy:</strong> Catches edge cases rule-based scanning might miss</li>
-                </ul>
-              </div>
             </div>
           </ng-container>
 
           <ng-template #signInPrompt>
             <div class="sign-in-panel">
               <p>Sign in to upload your script and generate sides.</p>
-              <button type="button" class="btn-sw btn-sw-primary" (click)="signIn()">Sign in with Google</button>
+              <button type="button" class="btn-sw btn-sw-primary" (click)="signIn()">Sign in</button>
+              <p class="sign-in-hint">Email or Google · .edu emails get Student Rate for 2 years</p>
             </div>
           </ng-template>
         </ng-template>
@@ -163,7 +133,7 @@
         <p class="sw-section-sub">Scripts are processed in memory and discarded on completion.</p>
         <div class="security-body">
           <div class="art-slot security-art" aria-hidden="true">
-            <img src="assets/icons/bot-about-images/sides-ways-bot.jpeg" alt="" />
+            <img src="assets/icons/bot-about-images/security.png" alt="Security robot mascot" />
           </div>
           <div class="security-text">
             <p>We take your privacy seriously. Your scripts are processed securely and deleted immediately after your sides are generated.</p>
@@ -186,7 +156,7 @@
         <div class="steps">
           <div class="step">
             <div class="art-slot step-art">
-              <img src="assets/icons/bot-about-images/scan.jpg" alt="Upload and scan your script" />
+              <img src="assets/icons/bot-about-images/scan-bot-two.png" alt="Upload and scan your script" />
             </div>
             <div class="step-num">01</div>
             <h3>Upload your script</h3>
@@ -194,7 +164,7 @@
           </div>
           <div class="step">
             <div class="art-slot step-art">
-              <img src="assets/icons/bot-about-images/select.jpg" alt="Select your scenes" />
+              <img src="assets/icons/bot-about-images/select-bot-two.png" alt="Select your scenes" />
             </div>
             <div class="step-num">02</div>
             <h3>Select your scenes</h3>
@@ -202,7 +172,7 @@
           </div>
           <div class="step">
             <div class="art-slot step-art">
-              <img src="assets/icons/bot-about-images/lastLooks.jpg" alt="Last looks and download" />
+              <img src="assets/icons/bot-about-images/last-looks-bot-two.png" alt="Last looks and download" />
             </div>
             <div class="step-num">03</div>
             <h3>Last looks &amp; go</h3>

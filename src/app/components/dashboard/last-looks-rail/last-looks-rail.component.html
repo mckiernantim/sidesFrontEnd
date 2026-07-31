@@ -101,19 +101,17 @@
   </div>
 
   <!-- Callsheet / watermark status row -->
-  <div class="ll-rail-status-row">
-    <p class="ll-rail-status-text" *ngIf="callsheetState">
-      <span class="font-medium">Callsheet:</span> {{ callsheet }}
+  <div class="ll-rail-status-row" *ngIf="(callsheetState && callsheetLabel) || watermark">
+    <p class="ll-rail-status-text" *ngIf="callsheetState && callsheetLabel">
+      <span class="font-medium">Callsheet:</span> {{ callsheetLabel }}
     </p>
     <p class="ll-rail-status-text" *ngIf="watermark">
       <span class="font-medium">Watermark:</span> {{ watermark }}
     </p>
   </div>
 
-  <!-- Total + actions -->
+  <!-- Actions -->
   <div class="ll-rail-checkout">
-    <h2 class="ll-rail-total">Total: <span class="ll-rail-free">FREE</span></h2>
-
     <div class="ll-rail-actions">
       <!-- Not signed in -->
       <button *ngIf="!userData"

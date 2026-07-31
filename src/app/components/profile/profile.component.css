@@ -1,3 +1,24 @@
+.profile-hero-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.profile-hero-name {
+  display: block;
+  font-weight: 700;
+  color: #fff;
+  font-size: 1.125rem;
+}
+
+.profile-hero-email {
+  display: block;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.95rem;
+  word-break: break-all;
+}
+
 /* Profile container with dark theme */
 .profile-container {
     min-height: calc(100vh - 64px);

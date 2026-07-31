@@ -7,6 +7,6 @@ import { Component, OnInit } from '@angular/core';
   standalone: false
 })
 export class PrivacyPolicyComponent implements OnInit {
-  lastUpdated = 'April 23, 2026';
+  lastUpdated = 'July 31, 2026';
   ngOnInit(): void {}
 }

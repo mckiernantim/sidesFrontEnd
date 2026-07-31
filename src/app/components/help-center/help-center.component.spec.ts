@@ -107,28 +107,33 @@ describe('HelpCenterComponent', () => {
   });
 
   describe('Canonical support email (T6)', () => {
-    it('should use sideswaysscriptsides@gmail.com in every FAQ answer string', () => {
+    it('should use admin@sides-ways.com in FAQ answer strings that include a contact email', () => {
       const allAnswers = component.sections.flatMap((s: FaqSection) => s.items.map(i => i.answer));
-      const oldEmail = 'support@sides-ways.com';
-      const newEmail = 'sideswaysscriptsides@gmail.com';
+      const canonical = 'admin@sides-ways.com';
+      const retired = [
+        'support@sides-ways.com',
+        'sideswaysscriptsides@gmail.com',
+        'tim@sides-ways.com',
+      ];
       allAnswers.forEach(answer => {
-        expect(answer).not.toContain(oldEmail);
+        retired.forEach(oldEmail => expect(answer).not.toContain(oldEmail));
       });
-      const answersWithEmail = allAnswers.filter(a => a.includes(newEmail));
+      const answersWithEmail = allAnswers.filter(a => a.includes(canonical));
       expect(answersWithEmail.length).toBeGreaterThan(0);
     });
 
     it('should render the canonical mailto link in the bottom CTA', () => {
       const compiled: HTMLElement = fixture.nativeElement;
-      const link = compiled.querySelector('a[href="mailto:sideswaysscriptsides@gmail.com"]') as HTMLAnchorElement;
+      const link = compiled.querySelector('a[href="mailto:admin@sides-ways.com"]') as HTMLAnchorElement;
       expect(link).toBeTruthy();
-      expect(link.textContent?.trim()).toBe('sideswaysscriptsides@gmail.com');
+      expect(link.textContent?.trim()).toBe('admin@sides-ways.com');
     });
 
-    it('should NOT render the old support@sides-ways.com mailto link', () => {
+    it('should NOT render retired support mailto links', () => {
       const compiled: HTMLElement = fixture.nativeElement;
-      const oldLink = compiled.querySelector('a[href="mailto:support@sides-ways.com"]');
-      expect(oldLink).toBeNull();
+      expect(compiled.querySelector('a[href="mailto:support@sides-ways.com"]')).toBeNull();
+      expect(compiled.querySelector('a[href="mailto:sideswaysscriptsides@gmail.com"]')).toBeNull();
+      expect(compiled.querySelector('a[href="mailto:tim@sides-ways.com"]')).toBeNull();
     });
   });
 

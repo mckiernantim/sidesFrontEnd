@@ -48,12 +48,19 @@ export class LastLooksRailComponent {
   private originalSceneNumber: string | null = null;
   private originalSceneText: string | null = null;
 
-  get freeCount(): number {
+  get sceneCount(): number {
     return this.selectedScenes?.length ?? 0;
   }
 
   get verticalLabel(): string {
-    return `Scenes · ${this.freeCount} · Free`;
+    return `Scenes · ${this.sceneCount}`;
+  }
+
+  /** Filename portion of the callsheet storage path, for display in the status row. */
+  get callsheetLabel(): string {
+    if (!this.callsheet) return '';
+    const withoutQuery = this.callsheet.split('?')[0];
+    return decodeURIComponent(withoutQuery.split('/').pop() || withoutQuery);
   }
 
   onSceneDrop(event: CdkDragDrop<any[]>): void {

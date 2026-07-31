@@ -31,7 +31,11 @@ export class PdfService {
   finalPdfData: any; 
   callsheet: string;
   selected: any[]; 
-  watermark: string;
+  watermark: string | null = null;
+  /** Optional casting-director line persisted with the watermark across processPdf rebuilds */
+  watermarkCastingDirector: string | null = null;
+  /** Validated callsheet preview URL, persisted so processPdf rebuilds can re-insert the page */
+  callsheetPreviewUrl: string | null = null;
   script: string; 
   finalDocument: any; 
   initialFinalDocState: any; 
@@ -1243,6 +1247,13 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     }
 
     this.updatePageNumberVisibility();
+
+    // Put the callsheet and watermark back — this rebuild replaced the page
+    // objects they were attached to.
+    this.restoreAttachmentsAfterRebuild();
+
+    // Re-snapshot so undo/reset reflect the document the user actually sees.
+    this.initialDocumentState = JSON.parse(JSON.stringify(this.finalDocument));
 
     this.finalDocReady = true;
     this._documentRegenerated$.next(true);
@@ -2797,17 +2808,51 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     }
   
     console.log('Using validated preview URL:', validPreviewUrl);
+
+    // Remember the callsheet so processPdf rebuilds can put the page back
+    this.callsheetPreviewUrl = validPreviewUrl;
+
+    // Store original document length for validation
+    const originalLength = this.finalDocument.data.length;
+
+    this.insertCallsheetPageAtStart(validPreviewUrl);
   
+    // Validate the final structure
+    console.log('Document structure after callsheet insertion:', {
+      originalPages: originalLength,
+      newTotalPages: this.finalDocument.data.length,
+      firstPageType: this.finalDocument.data[0]?.[0]?.type,
+      firstPageLines: this.finalDocument.data[0]?.length,
+      secondPageType: this.finalDocument.data[1]?.[0]?.category,
+      secondPageLines: this.finalDocument.data[1]?.length,
+      callsheetImagePath: this.finalDocument.data[0]?.[0]?.imagePath
+    });
+  
+    // Save the new state
+    this.initialDocumentState = JSON.parse(JSON.stringify(this.finalDocument));
+  
+    // Force document update with a longer delay to ensure image is ready
+    setTimeout(() => {
+      this._documentRegenerated$.next(true);
+      console.log('Document regeneration triggered after callsheet insertion');
+    }, 200); // Increased delay to 200ms
+  }
+
+  /**
+   * Build the callsheet page and splice it in at index 0, reindexing the pages
+   * behind it. Shared by the user-initiated upload and by rebuild restoration,
+   * so both paths produce an identical page object.
+   */
+  private insertCallsheetPageAtStart(previewUrl: string): void {
     // Carry active watermark onto the callsheet so Last Looks can preview the stamp
     const existingWatermark = this.finalDocument.data
       .find((p) => p && p[0] && p[0].watermarkData && p[0].watermarkData.isActive)?.[0]
       ?.watermarkData;
 
-    // Create a callsheet page object with the preview image
     const callsheetPage = [{
       type: 'callsheet',
       category: 'callsheet',
-      imagePath: validPreviewUrl,
+      imagePath: previewUrl,
       visible: 'true',
       docPageIndex: 0,
       docPageLineIndex: 0,
@@ -2831,17 +2876,13 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
       // Spec 022: preview watermark on callsheet in Last Looks
       watermarkData: existingWatermark ? { ...existingWatermark } : null
     }];
-  
-    // Store original document length for validation
-    const originalLength = this.finalDocument.data.length;
-    
-    // Insert the callsheet at the beginning
+
     this.finalDocument.data.unshift(callsheetPage);
-  
+
     // CRITICAL: Properly reindex ALL subsequent pages
     for (let i = 1; i < this.finalDocument.data.length; i++) {
       const page = this.finalDocument.data[i];
-      
+
       // Validate that this is actually a page with lines
       if (!Array.isArray(page) || page.length === 0) {
         console.warn(`Found empty or invalid page at index ${i}, removing it`);
@@ -2849,14 +2890,14 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
         i--; // Adjust index after removal
         continue;
       }
-  
+
       // Update each line in the page
       page.forEach((line, lineIndex) => {
         if (line) {
           // Update document-wide indexes
           line.docPageIndex = i;
           line.docPageLineIndex = lineIndex;
-          
+
           // Update page numbers for display (keep original script page numbering)
           if (line.category === 'page-number') {
             // Keep original page numbering (don't account for callsheet)
@@ -2865,29 +2906,31 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
         }
       });
     }
-  
+
     // Update document metadata
     this.finalDocument.numPages = this.finalDocument.data.length;
-  
-    // Validate the final structure
-    console.log('Document structure after callsheet insertion:', {
-      originalPages: originalLength,
-      newTotalPages: this.finalDocument.data.length,
-      firstPageType: this.finalDocument.data[0]?.[0]?.type,
-      firstPageLines: this.finalDocument.data[0]?.length,
-      secondPageType: this.finalDocument.data[1]?.[0]?.category,
-      secondPageLines: this.finalDocument.data[1]?.length,
-      callsheetImagePath: this.finalDocument.data[0]?.[0]?.imagePath
-    });
-  
-    // Save the new state
-    this.initialDocumentState = JSON.parse(JSON.stringify(this.finalDocument));
-  
-    // Force document update with a longer delay to ensure image is ready
-    setTimeout(() => {
-      this._documentRegenerated$.next(true);
-      console.log('Document regeneration triggered after callsheet insertion');
-    }, 200); // Increased delay to 200ms
+  }
+
+  /**
+   * processPdf rebuilds finalDocument.data from scratch, which drops the
+   * callsheet page and the page-stamped watermark. Put both back so a scene
+   * reorder or the move into Last Looks doesn't silently lose attachments.
+   */
+  private restoreAttachmentsAfterRebuild(): void {
+    if (this.callsheetPreviewUrl && !this.hasCallsheet()) {
+      console.log('PDF Service: Re-inserting callsheet after document rebuild');
+      this.insertCallsheetPageAtStart(this.callsheetPreviewUrl);
+    }
+
+    // Watermark last so the restored callsheet page gets stamped too.
+    if (this.watermark) {
+      console.log('PDF Service: Re-applying watermark after document rebuild');
+      this.watermarkPages(
+        this.watermark,
+        this.finalDocument.data,
+        this.watermarkCastingDirector || undefined
+      );
+    }
   }
 
   hasCallsheet(): boolean {
@@ -2916,7 +2959,10 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     }
   
     console.log('Removing callsheet from start of document');
-    
+
+    // Don't let a rebuild resurrect a callsheet the user removed
+    this.callsheetPreviewUrl = null;
+
     // Record the current document state for undo
     const currentDocumentState = JSON.parse(JSON.stringify(this.finalDocument));
     this.undoService.recordDocumentReorderChange(
@@ -3172,6 +3218,8 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     this.callsheet = null;
     this.selected = [];
     this.watermark = null;
+    this.watermarkCastingDirector = null;
+    this.callsheetPreviewUrl = null;
     this.script = null;
     this.finalDocument = null;
     this.initialFinalDocState = null;
@@ -3260,6 +3308,11 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
   watermarkPages(watermark: string, doc: any[], castingDirector?: string) {
     console.log('PDF Service: Adding watermark:', watermark, castingDirector ? `(Casting: ${castingDirector})` : '');
 
+    // Persist on the service so processPdf / scene-order rebuilds can re-apply it
+    this.watermark = watermark;
+    this.watermarkCastingDirector =
+      castingDirector && castingDirector.trim() ? castingDirector.trim() : null;
+
     // Record undo state before adding watermark (save complete document state)
     if (this.undoService) {
       this.undoService.recordDocumentReorderChange(
@@ -3317,6 +3370,9 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
   
   removeWatermark(doc: any[]) {
     console.log('PDF Service: Removing watermark');
+
+    this.watermark = null;
+    this.watermarkCastingDirector = null;
 
     // Record undo state before removing watermark (save complete document state)
     if (this.undoService) {

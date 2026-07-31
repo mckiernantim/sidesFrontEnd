@@ -13,10 +13,6 @@
           <span class="font-medium">{{ scene.sceneNumberText }}:</span> {{ scene.text }}
         </li>
       </ul>
-      <div class="mt-4 text-center">
-        <h2 class="text-xl font-bold sw-success-text">Total: FREE FOR BETA</h2>
-        <p class="text-sm text-sw-text-muted">Note: Stripe will process a test payment. Your card will not be charged.</p>
-      </div>
     </div>
 
     <!-- Terms and Conditions -->
@@ -24,7 +20,10 @@
       <div class="flex items-center justify-between gap-3 flex-wrap">
         <label class="flex items-center space-x-2">
           <input type="checkbox" [(ngModel)]="agreeToTerms" class="form-checkbox h-4 w-4 text-sw-accent">
-          <span class="text-sw-text">I agree to the Terms of Service</span>
+          <span class="text-sw-text">
+            I agree to the
+            <a href="/terms" target="_blank" rel="noopener" class="text-sw-accent hover:underline">Terms of Service</a>
+          </span>
         </label>
         <button type="button" (click)="toggleTerms()" class="text-sw-accent hover:underline text-sm">
           {{ showTerms ? 'Hide Terms' : 'Show Terms' }}
@@ -39,8 +38,11 @@
           <li>You understand that we do not store your script data beyond the processing period.</li>
           <li>You acknowledge that this service is provided "as is" without warranty of any kind.</li>
           <li>You agree not to use this service for any illegal or unauthorized purpose.</li>
-          <li>You understand that during the beta period, the service is provided free of charge.</li>
         </ul>
+        <p class="mt-2">
+          This summary is not a substitute for the full
+          <a href="/terms" target="_blank" rel="noopener" class="text-sw-accent hover:underline">Terms of Service</a>.
+        </p>
       </div>
     </div>
 

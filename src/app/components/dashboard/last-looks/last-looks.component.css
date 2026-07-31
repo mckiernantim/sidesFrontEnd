@@ -335,6 +335,9 @@
   background: var(--sw-surface);
   border-left: 1px solid var(--sw-border);
   min-width: 0;
+  /* Grid items default to min-height: auto, which would let the rail's content
+     push past the row and defeat the rail's internal scrolling. */
+  min-height: 0;
 }
 
 /* ── Responsive ───────────────────────────────────── */

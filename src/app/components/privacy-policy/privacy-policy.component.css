@@ -218,7 +218,9 @@
   border-bottom: none;
 }
 
-.sw-legal__table code {
+.sw-legal__table code,
+.sw-legal__body code,
+.sw-legal__list li code {
   font-family: monospace;
   font-size: 0.8125rem;
   color: var(--sw-accent);

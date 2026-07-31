@@ -25,19 +25,29 @@ describe('LastLooksRailComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should compute freeCount from selectedScenes length', () => {
+  it('should compute sceneCount from selectedScenes length', () => {
     component.selectedScenes = [{ sceneNumberText: '1' }, { sceneNumberText: '2' }];
-    expect(component.freeCount).toBe(2);
+    expect(component.sceneCount).toBe(2);
   });
 
-  it('should compute verticalLabel', () => {
+  it('should compute verticalLabel without pricing wording', () => {
     component.selectedScenes = [{ sceneNumberText: '1' }];
-    expect(component.verticalLabel).toBe('Scenes · 1 · Free');
+    expect(component.verticalLabel).toBe('Scenes · 1');
+  });
+
+  it('should show the callsheet filename rather than its storage path', () => {
+    component.callsheet = 'previews/prod%20day%201.png?alt=media&token=abc';
+    expect(component.callsheetLabel).toBe('prod day 1.png');
+  });
+
+  it('should return an empty callsheet label when no callsheet is attached', () => {
+    component.callsheet = '';
+    expect(component.callsheetLabel).toBe('');
   });
 
   it('should emit toggleRail when collapsed area is clicked', () => {
     component.isCollapsed = true;
-    const spy = spyOn(component.toggleRail, 'emit');
+    const spy = jest.spyOn(component.toggleRail, 'emit');
     fixture.detectChanges();
     const collapsed = fixture.nativeElement.querySelector('.ll-rail-collapsed');
     collapsed?.click();
@@ -46,7 +56,7 @@ describe('LastLooksRailComponent', () => {
 
   it('should emit toggleRail when collapse button is clicked in expanded state', () => {
     component.isCollapsed = false;
-    const spy = spyOn(component.toggleRail, 'emit');
+    const spy = jest.spyOn(component.toggleRail, 'emit');
     fixture.detectChanges();
     const btn = fixture.nativeElement.querySelector('.ll-rail-collapse-btn');
     btn?.click();
@@ -57,7 +67,7 @@ describe('LastLooksRailComponent', () => {
     const scene = { sceneNumberText: '1', text: 'EXT. HOUSE', docPageIndex: 0 };
     component.selectedScenes = [scene];
     component.isCollapsed = false;
-    const spy = spyOn(component.sceneRemove, 'emit');
+    const spy = jest.spyOn(component.sceneRemove, 'emit');
     fixture.detectChanges();
     const btn = fixture.nativeElement.querySelector('.ll-scene-remove');
     btn?.click();
@@ -81,7 +91,7 @@ describe('LastLooksRailComponent', () => {
   it('should emit getSides on get-sides button click', () => {
     component.userData = { uid: 'abc' };
     component.isCollapsed = false;
-    const spy = spyOn(component.getSides, 'emit');
+    const spy = jest.spyOn(component.getSides, 'emit');
     fixture.detectChanges();
     const btn = fixture.nativeElement.querySelector('.btn-sw-primary');
     btn?.click();
@@ -91,7 +101,7 @@ describe('LastLooksRailComponent', () => {
   it('should emit backToScenes on back button click', () => {
     component.isCollapsed = false;
     component.selectedScenes = [{ sceneNumberText: '1' }];
-    const spy = spyOn(component.backToScenes, 'emit');
+    const spy = jest.spyOn(component.backToScenes, 'emit');
     fixture.detectChanges();
     const btn = fixture.nativeElement.querySelector('.btn-sw-secondary');
     btn?.click();

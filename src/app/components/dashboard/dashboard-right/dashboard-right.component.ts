@@ -679,13 +679,25 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     // Handle both string and object formats
     if (typeof data === 'string') {
       this.watermark = data;
+      this.pdf.watermark = data;
+      this.pdf.watermarkCastingDirector = null;
       console.log('Dashboard: Watermark added:', data);
-      this.pdf.watermarkPages(data, this.pdf.finalDocument.data);
+      if (data) {
+        this.pdf.watermarkPages(data, this.pdf.finalDocument.data);
+      } else {
+        this.pdf.removeWatermark(this.pdf.finalDocument.data);
+      }
     } else {
       // Object format with castingDirector
       this.watermark = data.actorName;
+      this.pdf.watermark = data.actorName;
+      this.pdf.watermarkCastingDirector = data.castingDirector?.trim() || null;
       console.log('Dashboard: Watermark added:', data.actorName, 'Casting:', data.castingDirector || 'none');
-      this.pdf.watermarkPages(data.actorName, this.pdf.finalDocument.data, data.castingDirector);
+      if (data.actorName) {
+        this.pdf.watermarkPages(data.actorName, this.pdf.finalDocument.data, data.castingDirector);
+      } else {
+        this.pdf.removeWatermark(this.pdf.finalDocument.data);
+      }
     }
     // Trigger change detection to update the hasWatermark status
     this.cdr.detectChanges();
@@ -693,6 +705,8 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
 
   removeWatermark() {
     this.watermark = null;
+    this.pdf.watermark = null;
+    this.pdf.watermarkCastingDirector = null;
     console.log('Dashboard: Watermark removed');
     this.pdf.removeWatermark(this.pdf.finalDocument.data);
     // Trigger change detection to update the hasWatermark status
@@ -756,6 +770,8 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
         console.log('Removing callsheet from document');
         this.callSheetPath = null;
         this.callsheetReady = false;
+        this.callsheetState = false;
+        this.callsheet = null;
         
         // Remove callsheet from document if it exists
         if (this.pdf.finalDocument?.data) {
@@ -774,6 +790,9 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
       // Store callsheet information
       this.callSheetPath = callsheetData.filePath; // Store Firebase Storage path for PDF processing
       this.callsheetReady = callsheetData.callSheetReady;
+      this.callsheetState = true;
+      // Keep this a storage path — processPdf consumes it as callSheetPath.
+      this.callsheet = callsheetData.filePath;
       
       console.log('Callsheet data received from backend:', {
         success: callsheetData.success,
@@ -1371,12 +1390,18 @@ async sendFinalDocumentToServer(finalDocument) {
         this.callsheet
       );
 
+      // Keep component watermark in sync with service (survives scene reorder → last looks)
+      if (this.pdf.watermark) {
+        this.watermark = this.pdf.watermark;
+      }
+
       // Ensure both flags are set
       this.pdf.finalDocReady = true;
 
       console.log('After toggle:', {
         lastLooksReady: this.lastLooksReady,
-        pdfFinalDocReady: this.pdf.finalDocReady
+        pdfFinalDocReady: this.pdf.finalDocReady,
+        watermark: this.watermark
       });
     } else {
       // User is navigating back to scene select - clear selected scenes in the service

@@ -1,5 +1,21 @@
+<section class="sw-hero">
+  <div class="sw-hero__overlay"></div>
+  <div class="sw-hero__content">
+    <h1 class="sw-hero__headline">YOUR <span class="sw-accent-text">PROFILE</span></h1>
+    <ng-container *ngIf="user; else profileHeroGuest">
+      <p class="sw-hero__subhead profile-hero-identity">
+        <span class="profile-hero-name">{{ user.displayName || 'SidesWays member' }}</span>
+        <span class="profile-hero-email" *ngIf="user.email">{{ user.email }}</span>
+      </p>
+    </ng-container>
+    <ng-template #profileHeroGuest>
+      <p class="sw-hero__subhead">Sign in to manage your subscription and account.</p>
+    </ng-template>
+  </div>
+</section>
+
 <!-- ⚠️ BETA TEST MODE WARNING BANNER ⚠️ -->
-<div class="bg-gradient-to-r from-sw-warning via-yellow-400 to-sw-warning border-b-4 border-yellow-300 shadow-2xl mb-8">
+<div class="bg-gradient-to-r from-sw-warning via-yellow-400 to-sw-warning border-b-4 border-yellow-300 shadow-2xl">
   <div class="container mx-auto px-4 py-6">
     <div class="flex flex-col items-center justify-center space-y-2">
       <div class="flex items-center space-x-3">
@@ -72,7 +88,21 @@
 
   <!-- Profile content (logged in) -->
   <div *ngIf="!isLoading && user && !error" class="bg-sw-surface border border-sw-border rounded-lg shadow-lg p-8 mx-auto max-w-3xl">
-    <h1 class="text-2xl font-bold mb-8 text-center text-sw-text">Your Profile</h1>
+
+    <!-- Account identity -->
+    <div class="mb-10">
+      <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-sw-border text-sw-text">Account</h2>
+      <div class="bg-sw-surface-2 p-6 rounded-lg border-2 border-sw-border shadow-md grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <p class="text-sm text-sw-text-muted mb-1">Name</p>
+          <p class="font-medium text-lg text-sw-text">{{ user.displayName || '—' }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-sw-text-muted mb-1">Email</p>
+          <p class="font-medium text-lg text-sw-text break-all">{{ user.email || '—' }}</p>
+        </div>
+      </div>
+    </div>
 
     <!-- Subscription Section -->
     <div class="mb-10">
@@ -377,19 +407,12 @@
     <div class="mt-10">
       <h2 class="text-xl font-semibold mb-6 pb-2 border-b border-sw-border text-sw-text">Account Settings</h2>
       <div class="bg-sw-surface-2 p-6 rounded-lg border-2 border-sw-border shadow-md">
-        <div *ngIf="user" class="mb-6">
-          <p class="text-sm text-sw-text-muted mb-1">Email</p>
-          <p class="font-medium text-lg text-sw-text">{{ user.email }}</p>
-        </div>
-
-        <div class="mt-6 pt-4 border-t border-sw-border">
-          <button
-            (click)="logout()"
-            class="border-2 border-sw-danger text-sw-danger hover:bg-sw-surface-2 font-semibold py-2 px-4 rounded-md transition-all shadow-md"
-          >
-            Sign Out
-          </button>
-        </div>
+        <button
+          (click)="logout()"
+          class="border-2 border-sw-danger text-sw-danger hover:bg-sw-surface-2 font-semibold py-2 px-4 rounded-md transition-all shadow-md"
+        >
+          Sign Out
+        </button>
       </div>
     </div>
   </div>

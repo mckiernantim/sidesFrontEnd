@@ -193,3 +193,242 @@ describe('PdfService — scene boundary / trailing page metadata (Last Looks bar
     });
   });
 });
+
+/**
+ * Regression tests for watermarks disappearing after a scene reorder or on the
+ * transition into Last Looks.
+ *
+ * Root cause: watermarkPages() stamped watermarkData onto the page objects but
+ * never recorded the watermark on the service. processPdf() rebuilds the page
+ * objects from scratch, and its re-apply step is gated on `this.watermark`, so
+ * the gate was always false and the stamp was silently dropped.
+ */
+describe('PdfService — watermark persistence across document rebuilds', () => {
+  let service: PdfService;
+
+  const makePages = () => [
+    [{ index: 0, category: 'scene-header' }, { index: 1, category: 'dialog' }],
+    [{ index: 2, category: 'action' }],
+  ];
+
+  beforeEach(() => {
+    const mockUpload: Partial<UploadService> = {};
+    const mockUndo = {
+      setPdfService: jest.fn(),
+      reset$: new Subject<void>(),
+      reset: jest.fn(),
+      recordDocumentReorderChange: jest.fn(),
+    } as unknown as Partial<UndoService>;
+
+    TestBed.configureTestingModule({
+      providers: [
+        PdfService,
+        { provide: UploadService, useValue: mockUpload },
+        { provide: UndoService, useValue: mockUndo },
+      ],
+    });
+
+    service = TestBed.inject(PdfService);
+  });
+
+  it('records the watermark on the service so a rebuild can re-apply it', () => {
+    service.watermarkPages('JANE DOE', makePages());
+
+    expect(service.watermark).toBe('JANE DOE');
+  });
+
+  it('records the casting director alongside the watermark', () => {
+    service.watermarkPages('JANE DOE', makePages(), 'Casting by Sam');
+
+    expect(service.watermark).toBe('JANE DOE');
+    expect(service.watermarkCastingDirector).toBe('Casting by Sam');
+  });
+
+  it('treats a blank casting director as absent', () => {
+    service.watermarkPages('JANE DOE', makePages(), '   ');
+
+    expect(service.watermarkCastingDirector).toBeNull();
+  });
+
+  it('stamps watermarkData onto the first line of every page', () => {
+    const doc = makePages();
+
+    service.watermarkPages('JANE DOE', doc);
+
+    doc.forEach((page) => {
+      const stamped = (page[0] as any).watermarkData;
+      expect(stamped.actorName).toBe('JANE DOE');
+      expect(stamped.isActive).toBe(true);
+    });
+  });
+
+  it('THE BUG: a freshly rebuilt document re-acquires the watermark', () => {
+    // Watermark the document the user is looking at.
+    service.watermarkPages('JANE DOE', makePages(), 'Casting by Sam');
+
+    // processPdf discards the old page objects and builds new ones.
+    const rebuilt = makePages();
+    expect((rebuilt[0][0] as any).watermarkData).toBeUndefined();
+
+    // The re-apply step in processPdf is gated on this.watermark.
+    expect(service.watermark).toBeTruthy();
+    service.watermarkPages(
+      service.watermark as string,
+      rebuilt,
+      service.watermarkCastingDirector || undefined
+    );
+
+    rebuilt.forEach((page) => {
+      const stamped = (page[0] as any).watermarkData;
+      expect(stamped.actorName).toBe('JANE DOE');
+      expect(stamped.castingDirector).toBe('Casting by Sam');
+      expect(stamped.isActive).toBe(true);
+    });
+  });
+
+  it('clears the recorded watermark on removal so rebuilds stay clean', () => {
+    const doc = makePages();
+    service.watermarkPages('JANE DOE', doc, 'Casting by Sam');
+
+    service.removeWatermark(doc);
+
+    expect(service.watermark).toBeNull();
+    expect(service.watermarkCastingDirector).toBeNull();
+    doc.forEach((page) => {
+      expect((page[0] as any).watermarkData).toBeNull();
+    });
+  });
+
+  it('clears the recorded watermark when document state is reset', () => {
+    service.watermarkPages('JANE DOE', makePages(), 'Casting by Sam');
+
+    service.resetDocumentState();
+
+    expect(service.watermark).toBeNull();
+    expect(service.watermarkCastingDirector).toBeNull();
+  });
+});
+
+/**
+ * Regression tests for a callsheet added before Last Looks disappearing, and for
+ * the restored callsheet page not carrying the active watermark.
+ *
+ * Root cause: processPdf assigns `this.finalDocument.data = reorderedPages`,
+ * discarding the callsheet page that insertCallsheetAtStart had unshifted onto
+ * the previous array.
+ */
+describe('PdfService — callsheet persistence across document rebuilds', () => {
+  let service: PdfService;
+
+  const makePages = () => [
+    [{ index: 0, category: 'scene-header' }, { index: 1, category: 'dialog' }],
+    [{ index: 2, category: 'action' }],
+  ];
+
+  const rebuild = () => {
+    // Stand in for processPdf replacing the page objects wholesale.
+    service.finalDocument.data = makePages();
+    (service as any).restoreAttachmentsAfterRebuild();
+  };
+
+  beforeEach(() => {
+    const mockUpload: Partial<UploadService> = {};
+    const mockUndo = {
+      setPdfService: jest.fn(),
+      reset$: new Subject<void>(),
+      reset: jest.fn(),
+      recordDocumentReorderChange: jest.fn(),
+    } as unknown as Partial<UndoService>;
+
+    TestBed.configureTestingModule({
+      providers: [
+        PdfService,
+        { provide: UploadService, useValue: mockUpload },
+        { provide: UndoService, useValue: mockUndo },
+      ],
+    });
+
+    service = TestBed.inject(PdfService);
+    service.finalDocument = { data: makePages() };
+  });
+
+  it('inserts the callsheet as the first page', () => {
+    service.insertCallsheetAtStart('/previews/callsheet.png');
+
+    expect(service.hasCallsheet()).toBe(true);
+    expect(service.finalDocument.data[0][0].imagePath).toBe('/previews/callsheet.png');
+  });
+
+  it('remembers the callsheet preview url so a rebuild can restore it', () => {
+    service.insertCallsheetAtStart('/previews/callsheet.png');
+
+    expect(service.callsheetPreviewUrl).toBe('/previews/callsheet.png');
+  });
+
+  it('THE BUG: a callsheet added before Last Looks survives the rebuild', () => {
+    service.insertCallsheetAtStart('/previews/callsheet.png');
+
+    rebuild();
+
+    expect(service.hasCallsheet()).toBe(true);
+    expect(service.finalDocument.data[0][0].imagePath).toBe('/previews/callsheet.png');
+  });
+
+  it('THE BUG: the restored callsheet carries the active watermark', () => {
+    service.insertCallsheetAtStart('/previews/callsheet.png');
+    service.watermarkPages('JANE DOE', service.finalDocument.data, 'Casting by Sam');
+
+    rebuild();
+
+    const callsheetLine = service.finalDocument.data[0][0];
+    expect(callsheetLine.type).toBe('callsheet');
+    expect(callsheetLine.watermarkData.actorName).toBe('JANE DOE');
+    expect(callsheetLine.watermarkData.castingDirector).toBe('Casting by Sam');
+  });
+
+  it('stamps the watermark onto the callsheet when it is added first', () => {
+    service.insertCallsheetAtStart('/previews/callsheet.png');
+
+    service.watermarkPages('JANE DOE', service.finalDocument.data);
+
+    expect(service.finalDocument.data[0][0].watermarkData.actorName).toBe('JANE DOE');
+  });
+
+  it('carries the watermark onto a callsheet added after the watermark', () => {
+    service.watermarkPages('JANE DOE', service.finalDocument.data);
+
+    service.insertCallsheetAtStart('/previews/callsheet.png');
+
+    expect(service.finalDocument.data[0][0].watermarkData.actorName).toBe('JANE DOE');
+  });
+
+  it('does not duplicate the callsheet when a rebuild already kept one', () => {
+    service.insertCallsheetAtStart('/previews/callsheet.png');
+
+    (service as any).restoreAttachmentsAfterRebuild();
+
+    const callsheetPages = service.finalDocument.data.filter(
+      (page: any[]) => page?.[0]?.type === 'callsheet'
+    );
+    expect(callsheetPages.length).toBe(1);
+  });
+
+  it('does not resurrect a callsheet the user removed', () => {
+    service.insertCallsheetAtStart('/previews/callsheet.png');
+    service.removeCallsheetFromStart();
+
+    expect(service.callsheetPreviewUrl).toBeNull();
+
+    rebuild();
+
+    expect(service.hasCallsheet()).toBe(false);
+  });
+
+  it('clears the remembered callsheet when document state is reset', () => {
+    service.insertCallsheetAtStart('/previews/callsheet.png');
+
+    service.resetDocumentState();
+
+    expect(service.callsheetPreviewUrl).toBeNull();
+  });
+});

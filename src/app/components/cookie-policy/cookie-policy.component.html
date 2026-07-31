@@ -16,132 +16,146 @@
     <p class="sw-legal__updated">Last updated: {{ lastUpdated }}</p>
 
     <div class="sw-legal__section">
-      <h2 class="sw-legal__heading">1. What Are Cookies?</h2>
+      <h2 class="sw-legal__heading">1. Cookies and Browser Storage</h2>
       <p class="sw-legal__body">
         Cookies are small text files stored on your device when you visit a
-        website. They allow the site to remember your actions and preferences
-        (such as login status) over a period of time, so you don't have to
-        re-enter them each time you return.
+        website. Websites can also use related browser technologies, such as
+        <strong>localStorage</strong> and <strong>IndexedDB</strong>, which store
+        information in your browser but are not automatically sent along with
+        network requests.
+      </p>
+      <p class="sw-legal__body">
+        This policy covers both. We use the term "browser storage" to refer to
+        these technologies collectively.
       </p>
     </div>
 
     <div class="sw-legal__section">
-      <h2 class="sw-legal__heading">2. Cookies We Use</h2>
+      <h2 class="sw-legal__heading">2. What We Use</h2>
 
-      <h3 class="sw-legal__subheading">2.1 Strictly Necessary Cookies</h3>
+      <h3 class="sw-legal__subheading">2.1 Cookies Set by SidesWays</h3>
       <p class="sw-legal__body">
-        These cookies are required for the Service to function. Without them,
-        features like authentication and session management will not work.
-        They cannot be disabled.
+        <strong>SidesWays does not set any first-party cookies.</strong> We do
+        not use cookies to authenticate you, to track you, or to remember your
+        preferences.
+      </p>
+      <p class="sw-legal__body">
+        Instead, the information the Service needs is kept in your browser's
+        local storage, as described in Sections 2.2 and 2.3. Cookies may still be
+        set by the third-party providers described in Section 2.5.
+      </p>
+
+      <h3 class="sw-legal__subheading">2.2 Strictly Necessary Browser Storage</h3>
+      <p class="sw-legal__body">
+        This storage is required for the Service to function. Without it,
+        features like signing in and staying signed in will not work. It cannot
+        be disabled while you are using the Service.
       </p>
       <div class="sw-legal__table-wrapper">
         <table class="sw-legal__table">
           <thead>
             <tr>
-              <th>Cookie Name</th>
+              <th>Stored By</th>
               <th>Purpose</th>
               <th>Duration</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td><code>__session</code></td>
-              <td>Firebase authentication session token</td>
+              <td>Firebase Authentication (Google)</td>
+              <td>Keeps you signed in between visits so you do not have to re-authenticate each time. Stored in your browser's local storage and IndexedDB by the Firebase SDK.</td>
+              <td>Until you sign out or clear site data</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sw-legal__subheading">2.3 Functional Browser Storage</h3>
+      <p class="sw-legal__body">
+        This storage remembers a display preference so the interface looks the
+        way you left it.
+      </p>
+      <div class="sw-legal__table-wrapper">
+        <table class="sw-legal__table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Purpose</th>
+              <th>Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Theme preference</td>
+              <td>Remembers whether you selected the light or dark interface theme</td>
+              <td>Until you clear site data</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="sw-legal__body">
+        Temporary storage used while generating a document is described
+        separately in Section 2.4.
+      </p>
+
+      <h3 class="sw-legal__subheading">2.4 Temporary Document-Generation Storage</h3>
+      <p class="sw-legal__body">
+        We use your browser's <strong>localStorage</strong> to temporarily maintain
+        information needed during document generation and your current session.
+        localStorage is stored in your browser and is not automatically included
+        with network requests. SidesWays may access specific values when needed
+        to provide features such as document processing and download authorization.
+      </p>
+      <p class="sw-legal__body">
+        The following types of information may be stored temporarily:
+      </p>
+      <div class="sw-legal__table-wrapper">
+        <table class="sw-legal__table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Purpose</th>
+              <th>Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Download authorization token</td>
+              <td>Authorizes access to your generated PDF</td>
+              <td>Up to 10 minutes</td>
+            </tr>
+            <tr>
+              <td>Token expiration time</td>
+              <td>Displays the download expiration countdown</td>
+              <td>Up to 10 minutes</td>
+            </tr>
+            <tr>
+              <td>Uploaded filename</td>
+              <td>Labels your generated document and maintains session continuity</td>
               <td>Session</td>
             </tr>
             <tr>
-              <td><code>sw_auth_state</code></td>
-              <td>Stores authentication state to prevent unnecessary re-authentication</td>
-              <td>7 days</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h3 class="sw-legal__subheading">2.2 Functional Cookies</h3>
-      <p class="sw-legal__body">
-        These cookies enhance your experience by remembering your preferences.
-      </p>
-      <div class="sw-legal__table-wrapper">
-        <table class="sw-legal__table">
-          <thead>
-            <tr>
-              <th>Cookie Name</th>
-              <th>Purpose</th>
-              <th>Duration</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>sw_ui_prefs</code></td>
-              <td>Stores user interface preferences (e.g., last selected call sheet settings)</td>
-              <td>30 days</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h3 class="sw-legal__subheading">2.3 Analytics Cookies</h3>
-      <p class="sw-legal__body">
-        We currently do not use third-party analytics cookies. If we add
-        analytics in the future, this policy will be updated and you will be
-        notified before any analytics cookies are set.
-      </p>
-
-      <h3 class="sw-legal__subheading">2.4 Local Browser Storage (localStorage)</h3>
-      <p class="sw-legal__body">
-        In addition to cookies, we use your browser's <strong>localStorage</strong> to store
-        temporary session data during document generation. localStorage is never automatically
-        sent to our servers — it is only accessible by the SidesWays application running in
-        your browser. The following items are stored:
-      </p>
-      <div class="sw-legal__table-wrapper">
-        <table class="sw-legal__table">
-          <thead>
-            <tr>
-              <th>Key</th>
-              <th>Purpose</th>
-              <th>Duration</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>pdfBackupToken</code></td>
-              <td>Temporary signed token that authorizes your PDF download on the /complete page. Never shared or transmitted except as an HTTP header when you click Download.</td>
-              <td>Cleared when you download, delete your document, or navigate away</td>
+              <td>Call sheet information</td>
+              <td>Maintains call sheet information associated with your current document</td>
+              <td>Session</td>
             </tr>
             <tr>
-              <td><code>pdfTokenExpires</code></td>
-              <td>Expiration timestamp for the PDF token. Used to drive the on-screen countdown and auto-delete the document after 10 minutes.</td>
-              <td>Cleared with <code>pdfBackupToken</code></td>
+              <td>Selected scenes and scene order</td>
+              <td>Maintains your selections during document generation</td>
+              <td>Session</td>
             </tr>
             <tr>
-              <td><code>name</code></td>
-              <td>Your uploaded script filename, used to label your download and maintain session continuity across the upload → dashboard → complete flow.</td>
-              <td>Cleared at end of session</td>
-            </tr>
-            <tr>
-              <td><code>callsheetData</code> / <code>callSheetPath</code></td>
-              <td>Temporary call sheet data attached to your current document session.</td>
-              <td>Cleared at end of session</td>
-            </tr>
-            <tr>
-              <td><code>selectedScenes</code> / <code>sceneOrder</code></td>
-              <td>The scenes you have selected and their order within your current session.</td>
-              <td>Cleared at end of session</td>
-            </tr>
-            <tr>
-              <td><code>currentJobId</code></td>
-              <td>Tracks the active processing job so the app can poll for completion status.</td>
-              <td>Cleared when the job completes</td>
+              <td>Processing status</td>
+              <td>Tracks your active document-generation session</td>
+              <td>Until processing completes</td>
             </tr>
           </tbody>
         </table>
       </div>
       <p class="sw-legal__body">
-        None of this data persists beyond your active session. All localStorage items related
-        to document state are cleared when you return to the home page, complete a download,
-        or delete your document.
+        None of this browser storage is intended to persist beyond your active session.
+        Temporary document-related data is cleared when you return to the home page,
+        complete a download, or delete your document.
       </p>
 
       <h3 class="sw-legal__subheading">2.5 Third-Party Cookies</h3>
@@ -151,20 +165,45 @@
         <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="sw-legal__link">Google Privacy Policy</a>.
       </p>
       <p class="sw-legal__body">
-        <strong>Stripe:</strong> If you complete a payment, Stripe may set
-        cookies governed by the
+        <strong>Stripe:</strong> Checkout and subscription management take place
+        on Stripe-hosted pages. Stripe may set cookies and use browser storage on
+        those pages, including for fraud prevention and payment security. This
+        activity is governed by the
         <a href="https://stripe.com/privacy" target="_blank" rel="noopener" class="sw-legal__link">Stripe Privacy Policy</a>.
+      </p>
+      <p class="sw-legal__body">
+        These providers set this storage on their own domains and under their own
+        policies. We do not control it, and it is not covered by Section 2.1.
+      </p>
+
+      <h3 class="sw-legal__subheading">2.6 Analytics and Advertising</h3>
+      <p class="sw-legal__body">
+        We do not use analytics cookies, advertising cookies, or third-party
+        tracking technologies on the Service.
+      </p>
+      <p class="sw-legal__body">
+        If we introduce analytics in the future, we will update this policy
+        before doing so and will obtain consent where required by applicable law.
       </p>
     </div>
 
     <div class="sw-legal__section">
       <h2 class="sw-legal__heading">3. Managing Cookies &amp; Storage</h2>
       <p class="sw-legal__body">
-        You can control cookies through your browser settings. Note that blocking strictly
-        necessary cookies will prevent you from logging in to the Service.
-        To clear localStorage data, open your browser's developer tools → Application →
-        Local Storage → sides-ways.com and delete the keys listed in Section 2.4.
-        All localStorage items are also cleared automatically when your session ends.
+        You can clear browser storage for this site, including localStorage and
+        IndexedDB, through your browser's privacy or site-settings controls.
+        Clearing it will sign you out and discard any in-progress document
+        session. Temporary document-generation items are also cleared
+        automatically as described in Section 2.4.
+      </p>
+      <p class="sw-legal__body">
+        You can control third-party cookies, such as those set by Google or
+        Stripe, through your browser settings. Blocking storage required for
+        authentication will prevent you from signing in to the Service.
+      </p>
+      <p class="sw-legal__body">
+        The links below explain how to manage cookies and site data in common
+        browsers:
       </p>
       <ul class="sw-legal__list">
         <li><a href="https://support.google.com/chrome/answer/95647" target="_blank" rel="noopener" class="sw-legal__link">Google Chrome</a></li>
@@ -178,8 +217,9 @@
       <h2 class="sw-legal__heading">4. Changes to This Policy</h2>
       <p class="sw-legal__body">
         We may update this Cookie Policy as the Service evolves. The "Last
-        updated" date reflects the most recent revision. Material changes will
-        be communicated via in-app notification.
+        updated" date reflects the most recent revision. Where a material change
+        requires notice or consent under applicable law, we will provide it
+        before the change takes effect.
       </p>
     </div>
 
@@ -187,7 +227,7 @@
       <h2 class="sw-legal__heading">5. Contact</h2>
       <p class="sw-legal__body">
         Questions? Email us at
-        <a href="mailto:tim@sides-ways.com" class="sw-legal__link">tim&#64;sides-ways.com</a>.
+        <a href="mailto:admin@sides-ways.com" class="sw-legal__link">admin&#64;sides-ways.com</a>.
       </p>
     </div>
   </div>

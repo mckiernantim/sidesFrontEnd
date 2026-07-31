@@ -45,6 +45,9 @@ export class UploadComponent implements OnInit, OnDestroy {
   user$: Observable<User | null>;
   selectedFiles: File[] = [];
   private currentUploadSubscription: Subscription = null;
+  // True between a successful scan and the user leaving for the dashboard, so a
+  // tab switch while the "document ready" modal is open can't wipe the scan.
+  private awaitingDocumentHandoff = false;
   private routerSubscription: Subscription = null;
 
   private scanProgressSubscription: Subscription = null;
@@ -135,7 +138,7 @@ export class UploadComponent implements OnInit, OnDestroy {
                                  localStorage.getItem('pdfBackupToken');
           
           // Don't kill an in-flight upload/poll — localStorage.name is set as soon as a file is selected.
-          if (hasDocumentData && !this.currentUploadSubscription) {
+          if (hasDocumentData && !this.currentUploadSubscription && !this.awaitingDocumentHandoff) {
             console.log('UploadComponent: Tab visibility change detected with document data - resetting state');
             this.resetLocalData();
           }
@@ -517,6 +520,7 @@ export class UploadComponent implements OnInit, OnDestroy {
             this.pdf.initializeData();
             this.resetFileInput();
             this.currentUploadSubscription = null;
+            this.awaitingDocumentHandoff = true;
 
             // Extract document metadata from response
             const metadata = this.extractDocumentMetadata(response, file.name);
@@ -531,6 +535,12 @@ export class UploadComponent implements OnInit, OnDestroy {
               }
             });
 
+            // Once the modal is gone the scan is either handed off or abandoned,
+            // so normal tab-visibility cleanup can resume.
+            successDialog.afterClosed().subscribe(() => {
+              this.awaitingDocumentHandoff = false;
+            });
+
             // Wait for component to be created and subscribe to continue event
             setTimeout(() => {
               const dialogComponent = successDialog.componentRef?.instance as TailwindDialogComponent;
@@ -538,8 +548,9 @@ export class UploadComponent implements OnInit, OnDestroy {
               
               if (docReadyComponent && docReadyComponent.continue) {
                 docReadyComponent.continue.subscribe(() => {
-                  successDialog.close();
-                  this.router.navigate(['/dashboard']);
+                  this.router.navigate(['/dashboard']).then(() => {
+                    successDialog.close();
+                  });
                 });
               }
             }, 100);
