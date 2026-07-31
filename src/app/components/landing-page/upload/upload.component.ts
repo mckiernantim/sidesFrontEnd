@@ -134,7 +134,8 @@ export class UploadComponent implements OnInit, OnDestroy {
                                  localStorage.getItem('callSheetPath') || 
                                  localStorage.getItem('pdfBackupToken');
           
-          if (hasDocumentData) {
+          // Don't kill an in-flight upload/poll — localStorage.name is set as soon as a file is selected.
+          if (hasDocumentData && !this.currentUploadSubscription) {
             console.log('UploadComponent: Tab visibility change detected with document data - resetting state');
             this.resetLocalData();
           }

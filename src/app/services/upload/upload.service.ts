@@ -1179,7 +1179,6 @@ export class UploadService {
                 message = 'Almost done...';
               }
             }
-            debugger
             // Emit progress for modal updates
             const progressUpdate = {
               stage: status.status,

@@ -304,13 +304,9 @@ li.page-number {
     display: none;
 }
 
-.false {
-    text-decoration: line-through;
-    text-decoration-thickness: 25%;
-}
-
-/* Skipped (false) lines: white background + strikethrough.
-   Contiguous blocks get the SVG X-box overlay (not a grey fill). */
+/* Skipped (false) lines: white background only.
+   Contiguous blocks get the SVG X-box overlay (not strikethrough — that
+   does not appear in the final PDF). */
 li.false:not(.page-number):not(.page-number-text):not(.page-number-hidden) {
     z-index: 2;
     background-color: #ffffff;
@@ -790,13 +786,6 @@ span.CONTINUE {
     position: absolute;
     left: -15px;
     color: #888;
-}
-
-/* Add this CSS to show crossed-out lines */
-li[crossedout="true"], 
-li.crossed-out {
-    text-decoration: line-through;
-    color: #ff0000;
 }
 
 /* Style for draggable end spans */
@@ -1334,13 +1323,6 @@ li.page-number {
     position: absolute;
     left: -15px;
     color: #888;
-}
-
-/* Add this CSS to show crossed-out lines */
-li[crossedout="true"], 
-li.crossed-out {
-    text-decoration: line-through;
-    color: #ff0000;
 }
 
 /* Style for draggable end spans */
