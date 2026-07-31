@@ -50,6 +50,8 @@ export class AuthComponent implements OnInit, OnDestroy {
   // ─── Lifecycle ───────────────────────────────────────────────────────────────
 
   private authSub: Subscription | null = null;
+  /** When true, skip the "already signed in" auto-redirect — interactive auth handles routing. */
+  private handlingAuthAction = false;
 
   constructor(
     private fb: FormBuilder,
@@ -78,7 +80,9 @@ export class AuthComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.authSub = this.authService.user$.subscribe(user => {
-      if (user) {
+      // Only auto-leave when the user was already signed in (e.g. opened /auth while logged in).
+      // Interactive register / Google / sign-in set handlingAuthAction and route themselves.
+      if (user && !this.handlingAuthAction) {
         if (this.isModal) {
           this.closeModal.emit();
         } else {
@@ -86,6 +90,25 @@ export class AuthComponent implements OnInit, OnDestroy {
         }
       }
     });
+  }
+
+  /**
+   * After a successful interactive auth: new accounts → /profile (subscribe / student rate);
+   * returning users close the modal or go home.
+   */
+  private afterAuthSuccess(isNewUser: boolean): void {
+    if (this.isModal) {
+      this.closeModal.emit();
+    }
+
+    if (isNewUser) {
+      void this.router.navigate(['/profile'], { queryParams: { welcome: '1' } });
+      return;
+    }
+
+    if (!this.isModal) {
+      void this.router.navigate(['/']);
+    }
   }
 
   ngOnDestroy(): void {
@@ -126,10 +149,12 @@ export class AuthComponent implements OnInit, OnDestroy {
 
     const { email, password } = this.signInForm.value as { email: string; password: string };
 
+    this.handlingAuthAction = true;
     try {
-      await this.authService.signInWithEmail(email, password);
-      // onAuthStateChanged will fire; the ngOnInit subscriber navigates away
+      const { isNewUser } = await this.authService.signInWithEmail(email, password);
+      this.afterAuthSuccess(isNewUser);
     } catch (error) {
+      this.handlingAuthAction = false;
       this.signInError = this.authService.getErrorMessage(
         error as { code?: string; message?: string },
       );
@@ -140,9 +165,12 @@ export class AuthComponent implements OnInit, OnDestroy {
 
   async onGoogleSignIn(): Promise<void> {
     this.signInError = null;
+    this.handlingAuthAction = true;
     try {
-      await this.authService.signInWithGoogle();
+      const { isNewUser } = await this.authService.signInWithGoogle();
+      this.afterAuthSuccess(isNewUser);
     } catch (error) {
+      this.handlingAuthAction = false;
       this.signInError = this.authService.getErrorMessage(
         error as { code?: string; message?: string },
       );
@@ -172,10 +200,12 @@ export class AuthComponent implements OnInit, OnDestroy {
       confirmPassword: string;
     };
 
+    this.handlingAuthAction = true;
     try {
-      await this.authService.registerWithEmail(email, password, displayName);
-      // onAuthStateChanged fires; ngOnInit subscriber navigates away
+      const { isNewUser } = await this.authService.registerWithEmail(email, password, displayName);
+      this.afterAuthSuccess(isNewUser);
     } catch (error) {
+      this.handlingAuthAction = false;
       this.registerError = this.authService.getErrorMessage(
         error as { code?: string; message?: string },
       );

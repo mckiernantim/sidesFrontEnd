@@ -6,9 +6,10 @@ import { AuthService } from '../../services/auth/auth.service';
 import { ScheduleApiService } from '../../services/schedule/schedule-api.service';
 import { PdfService } from '../../services/pdf/pdf.service';
 import { FunDataService } from '../../services/fundata/fundata.service';
-import { Router, NavigationEnd } from '@angular/router';
+import { ActivatedRoute, Router, NavigationEnd, convertToParamMap } from '@angular/router';
 import { SubscriptionStatus } from '../../types/SubscriptionTypes';
 import { User } from '@angular/fire/auth';
+import { AuthModalService } from '../../services/auth-modal/auth-modal.service';
 
 // Create mock user inline
 const createMockUser = (overrides: Partial<User> = {}): User => {
@@ -185,6 +186,15 @@ describe('ProfileComponent', () => {
       events: new Subject<any>(),
     };
 
+    const mockActivatedRoute = {
+      queryParamMap: of(convertToParamMap({})),
+    };
+
+    const mockAuthModal = {
+      open: jest.fn(),
+      close: jest.fn(),
+    };
+
     await TestBed.configureTestingModule({
       declarations: [ProfileComponent],
       providers: [
@@ -193,7 +203,9 @@ describe('ProfileComponent', () => {
         { provide: ScheduleApiService, useValue: mockScheduleApiService },
         { provide: PdfService, useValue: mockPdfService },
         { provide: FunDataService, useValue: mockFunDataService },
-        { provide: Router, useValue: mockRouter }
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute },
+        { provide: AuthModalService, useValue: mockAuthModal },
       ]
     }).compileComponents();
 
@@ -311,7 +323,12 @@ describe('ProfileComponent', () => {
 
       // of() resolves synchronously, so isLoading is already reset
       setTimeout(() => {
-        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('test-user-123', 'test@example.com');
+        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith(
+          'test-user-123',
+          'test@example.com',
+          undefined,
+          'week',
+        );
         expect(component.isLoading).toBe(false);
         done();
       }, 0);
@@ -542,7 +559,12 @@ describe('ProfileComponent', () => {
       component.handleNewSubscription();
 
       setTimeout(() => {
-        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('test-user-123', 'test@example.com');
+        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith(
+          'test-user-123',
+          'test@example.com',
+          undefined,
+          'week',
+        );
         
         // Later, manage active subscription
         component.subscription = mockActiveSubscription;
@@ -560,6 +582,26 @@ describe('ProfileComponent', () => {
           done();
         }, 0);
       }, 0);
+    });
+  });
+
+  describe('isStudentUser', () => {
+    it('returns true when subscription.isStudent is set', () => {
+      component.user = mockUser;
+      component.subscription = { ...mockActiveSubscription, isStudent: true };
+      expect(component.isStudentUser()).toBe(true);
+    });
+
+    it('returns true for .edu emails before status loads', () => {
+      component.user = createMockUser({ email: 'actor@nyu.edu' });
+      component.subscription = null;
+      expect(component.isStudentUser()).toBe(true);
+    });
+
+    it('returns false for non-.edu emails without student flag', () => {
+      component.user = mockUser;
+      component.subscription = { ...mockActiveSubscription, isStudent: false };
+      expect(component.isStudentUser()).toBe(false);
     });
   });
 });

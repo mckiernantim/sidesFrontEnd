@@ -200,9 +200,11 @@
       <div *ngIf="loginRequired" class="login-container">
         <h2>Sign In Required</h2>
         <p>{{ message }}</p>
-        <button mat-raised-button color="primary" (click)="login()">
-          <img src="assets/google-icon.png" alt="Google" class="google-icon">
-          Sign in with Google
+        <p class="text-sm text-sw-text-muted mb-4">
+          Sign in with email or Google. .edu emails get Student Rate for 2 years.
+        </p>
+        <button type="button" class="btn-sw btn-sw-primary" (click)="login()">
+          Sign in
         </button>
       </div>
 

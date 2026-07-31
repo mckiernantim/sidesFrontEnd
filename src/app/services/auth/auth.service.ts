@@ -11,11 +11,18 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
   updateProfile,
+  getAdditionalUserInfo,
 } from '@angular/fire/auth';
 import { Firestore, doc, getDoc, setDoc } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Router } from '@angular/router';
 import { SubscriptionStatus } from '../../types/SubscriptionTypes';
+
+/** Result of an interactive sign-in / register call. */
+export interface AuthResult {
+  /** True for brand-new accounts (email register or first Google sign-in). */
+  isNewUser: boolean;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -135,11 +142,13 @@ export class AuthService {
 
   // ─── Google sign-in ─────────────────────────────────────────────────────────
 
-  async signInWithGoogle(): Promise<void> {
+  async signInWithGoogle(): Promise<AuthResult> {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(this.auth, provider);
-      // User is automatically updated via onAuthStateChanged
+      const credential = await signInWithPopup(this.auth, provider);
+      const additional = getAdditionalUserInfo(credential);
+      // First-time Google accounts should land on profile to subscribe.
+      return { isNewUser: Boolean(additional?.isNewUser) };
     } catch (error) {
       console.error('Error signing in with Google:', error);
       throw error;
@@ -153,20 +162,22 @@ export class AuthService {
    * display name via updateProfile so the Firestore record reflects the name
    * the user entered during registration.
    */
-  async registerWithEmail(email: string, password: string, displayName: string): Promise<void> {
+  async registerWithEmail(email: string, password: string, displayName: string): Promise<AuthResult> {
     const credential = await createUserWithEmailAndPassword(this.auth, email, password);
     await updateProfile(credential.user, { displayName });
     // onAuthStateChanged fires automatically after createUserWithEmailAndPassword;
     // updateUserData will pick up the display name from the updated profile.
+    return { isNewUser: true };
   }
 
   /**
    * Sign in with an existing email/password account.
    * Throws the raw Firebase error so the caller can map it via getErrorMessage.
    */
-  async signInWithEmail(email: string, password: string): Promise<void> {
+  async signInWithEmail(email: string, password: string): Promise<AuthResult> {
     await signInWithEmailAndPassword(this.auth, email, password);
-    // User is automatically updated via onAuthStateChanged
+    // Returning users — do not force profile redirect.
+    return { isNewUser: false };
   }
 
   /**

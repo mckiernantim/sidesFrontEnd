@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { PricingComponent } from './pricing.component';
 import { StripeService } from '../../services/stripe/stripe.service';
 import { AuthService } from '../../services/auth/auth.service';
+import { AuthModalService } from '../../services/auth-modal/auth-modal.service';
 import { User } from '@angular/fire/auth';
 
 // Create mock user inline
@@ -45,6 +47,7 @@ describe('PricingComponent', () => {
   let fixture: ComponentFixture<PricingComponent>;
   let mockStripeService: jest.Mocked<StripeService>;
   let mockAuthService: jest.Mocked<AuthService>;
+  let mockAuthModal: { open: jest.Mock; close: jest.Mock; isOpen$: ReturnType<typeof of> };
 
   const mockUser = createMockUser();
 
@@ -65,11 +68,18 @@ describe('PricingComponent', () => {
       checkSubscriptionStatus: jest.fn()
     } as any;
 
+    mockAuthModal = { open: jest.fn(), close: jest.fn(), isOpen$: of(false) };
+
     await TestBed.configureTestingModule({
       declarations: [PricingComponent],
       providers: [
         { provide: StripeService, useValue: mockStripeService },
-        { provide: AuthService, useValue: mockAuthService }
+        { provide: AuthService, useValue: mockAuthService },
+        { provide: AuthModalService, useValue: mockAuthModal },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: { get: () => null } } },
+        },
       ]
     }).compileComponents();
 
@@ -99,10 +109,10 @@ describe('PricingComponent', () => {
   });
 
   describe('signIn', () => {
-    it('should call auth service sign in', () => {
+    it('should open the auth modal for email or Google sign-in', () => {
       component.signIn();
 
-      expect(mockAuthService.signInWithGoogle).toHaveBeenCalled();
+      expect(mockAuthModal.open).toHaveBeenCalled();
     });
   });
 
@@ -311,7 +321,7 @@ describe('PricingComponent', () => {
 
       // User signs in
       component.signIn();
-      expect(mockAuthService.signInWithGoogle).toHaveBeenCalled();
+      expect(mockAuthModal.open).toHaveBeenCalled();
 
       // User becomes authenticated
       mockAuthService.user$ = of(mockUser);

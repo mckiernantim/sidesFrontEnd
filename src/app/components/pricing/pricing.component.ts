@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { StripeService } from '../../services/stripe/stripe.service';
 import { AuthService } from '../../services/auth/auth.service';
+import { AuthModalService } from '../../services/auth-modal/auth-modal.service';
 import { Observable, firstValueFrom, take } from 'rxjs';
 import { User } from '@angular/fire/auth';
 import { SubscriptionStatus } from '../../types/SubscriptionTypes';
@@ -31,6 +32,7 @@ export class PricingComponent implements OnInit {
   subscriptionStatus$: Observable<SubscriptionStatus>;
   isLoading = true;
   isFounder = false;
+  isStudent = false;
   showFoundersOffer = false;
   planTitle = 'Professional Plan';
   priceLabel = '$20 per week';
@@ -43,6 +45,7 @@ export class PricingComponent implements OnInit {
   constructor(
     private stripeService: StripeService,
     private authService: AuthService,
+    private authModal: AuthModalService,
     private route: ActivatedRoute
   ) { }
 
@@ -74,7 +77,7 @@ export class PricingComponent implements OnInit {
     });
   }
 
-  private applyEligibility(status: Pick<SubscriptionStatus, 'isFounder' | 'active'>): void {
+  private applyEligibility(status: Pick<SubscriptionStatus, 'isFounder' | 'isStudent' | 'active'>): void {
     const eligibility = {
       isFounder: Boolean(status?.isFounder),
       active: Boolean(status?.active)
@@ -82,8 +85,11 @@ export class PricingComponent implements OnInit {
     // Query param is display-only; forged ?offer=founders cannot elevate non-founders
     effectiveOfferFromQuery(eligibility, this.offerQuery);
     this.isFounder = eligibility.isFounder;
+    this.isStudent = Boolean(status?.isStudent);
     this.showFoundersOffer = shouldShowFoundersOffer(eligibility);
-    this.planTitle = getOfferPlanTitle(eligibility);
+    this.planTitle = this.isStudent && !this.isFounder
+      ? 'Student Rate'
+      : getOfferPlanTitle(eligibility);
     this.refreshPriceCopy(eligibility);
   }
 
@@ -110,7 +116,7 @@ export class PricingComponent implements OnInit {
   }
 
   signIn(): void {
-    this.authService.signInWithGoogle();
+    this.authModal.open();
   }
 
   async subscribe(): Promise<void> {

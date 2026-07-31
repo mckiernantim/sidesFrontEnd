@@ -25,14 +25,41 @@ describe('LastLooksRailComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should compute freeCount from selectedScenes length', () => {
+  it('should compute sceneCount from selectedScenes length', () => {
     component.selectedScenes = [{ sceneNumberText: '1' }, { sceneNumberText: '2' }];
-    expect(component.freeCount).toBe(2);
+    expect(component.sceneCount).toBe(2);
   });
 
-  it('should compute verticalLabel', () => {
+  it('should compute verticalLabel from subscription type', () => {
     component.selectedScenes = [{ sceneNumberText: '1' }];
-    expect(component.verticalLabel).toBe('Scenes · 1 · Free');
+    component.userData = { uid: 'u1' };
+    component.subscriptionStatus = {
+      active: true,
+      isFounder: true,
+      subscription: {
+        id: 'sub_1',
+        status: 'active',
+        created: null,
+        currentPeriodEnd: '2026-08-15T00:00:00Z',
+        currentPeriodStart: '2026-08-08T00:00:00Z',
+        cancelAtPeriodEnd: false,
+        willAutoRenew: true,
+        originalStartDate: null,
+        plan: { id: 'p1', nickname: 'Founders Rate', amount: 1000, interval: 'week' },
+      },
+      usage: {
+        pdfsGenerated: 0,
+        lastPdfGeneration: null,
+        pdfUsageLimit: 100,
+        subscriptionStatus: 'active',
+        subscriptionFeatures: { pdfGeneration: true, unlimitedPdfs: true, pdfLimit: null },
+        resetDate: null,
+        remainingPdfs: 100,
+      },
+      plan: 'Founders Rate',
+    };
+    expect(component.verticalLabel).toBe('Scenes · 1 · Founders Rate');
+    expect(component.subscriptionExpirationLabel).toContain('Renews');
   });
 
   it('should emit toggleRail when collapsed area is clicked', () => {

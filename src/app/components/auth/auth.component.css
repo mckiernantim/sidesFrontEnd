@@ -37,6 +37,22 @@
   line-height: 1.5;
 }
 
+.auth-student-note {
+  font-size: 0.8125rem;
+  color: var(--sw-text-muted, #9ca3af);
+  margin: -0.75rem 0 1.5rem;
+  line-height: 1.45;
+  text-align: center;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--sw-border, #2a2a2a);
+  background: color-mix(in oklab, var(--sw-accent, #3faa8d) 10%, transparent);
+}
+
+.auth-student-note strong {
+  color: var(--sw-text, #f0f0f0);
+}
+
 /* ─── Fields ──────────────────────────────────────────────────────────────── */
 
 .auth-field {

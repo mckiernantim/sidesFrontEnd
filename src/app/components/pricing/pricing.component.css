@@ -75,16 +75,16 @@
 .pricing-interval {
   margin-top: 20px;
   display: inline-flex;
-  border: 1px solid rgba(255, 253, 249, 0.28);
+  border: 1px solid var(--sw-border, var(--line));
   border-radius: 10px;
   padding: 4px;
-  background: rgba(255, 253, 249, 0.08);
+  background: var(--sw-surface, var(--paper));
 }
 
 .pricing-interval button {
   border: none;
   background: transparent;
-  color: rgba(255, 253, 249, 0.8);
+  color: var(--sw-text-muted, var(--ink-soft));
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 13px;
@@ -94,8 +94,8 @@
 }
 
 .pricing-interval button.active {
-  background: var(--mustard);
-  color: var(--ink);
+  background: var(--sw-accent, var(--coral));
+  color: var(--sw-bg, #fff);
 }
 
 .pricing-cta {

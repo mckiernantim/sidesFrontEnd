@@ -26,7 +26,85 @@
     </button>
   </div>
 
-  <!-- Scene list -->
+  <!-- TOP 50%: Controls (scrollable) — always above scenes -->
+  <div class="ll-rail-controls">
+    <div class="ll-rail-checkout">
+      <div class="ll-rail-subscription">
+        <h2 class="ll-rail-total">{{ subscriptionTypeLabel }}</h2>
+        <p class="ll-rail-expiration" *ngIf="subscriptionExpirationLabel">{{ subscriptionExpirationLabel }}</p>
+      </div>
+
+      <div class="ll-rail-actions">
+        <button *ngIf="!userData"
+          type="button"
+          (click)="signIn.emit()"
+          class="btn-sw btn-sw-primary ll-rail-action-btn">
+          Sign in
+        </button>
+
+        <button *ngIf="userData"
+          type="button"
+          (click)="getSides.emit()"
+          [disabled]="isCheckingSubscription"
+          class="btn-sw btn-sw-primary ll-rail-action-btn">
+          <span *ngIf="isCheckingSubscription" class="flex items-center justify-center">
+            <svg class="animate-spin mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Checking...
+          </span>
+          <span *ngIf="!isCheckingSubscription">Get My Sides</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="backToScenes.emit()"
+          [disabled]="!selectedScenes || selectedScenes.length === 0"
+          class="btn-sw btn-sw-secondary ll-rail-action-btn">
+          Back To Scene Select
+        </button>
+      </div>
+
+      <div class="ll-rail-attachments">
+        <div class="ll-rail-attach-item">
+          <app-add-callsheet (callsheetInfo)="callsheetUpload.emit($event)"></app-add-callsheet>
+        </div>
+        <div class="ll-rail-attach-item">
+          <app-add-watermark
+            [hasWatermark]="hasWatermark"
+            (waterMarkUpdate)="watermarkUpdate.emit($event)"
+            (waterMarkRemove)="watermarkRemove.emit()">
+          </app-add-watermark>
+        </div>
+      </div>
+
+      <div *ngIf="callsheetReady && callSheetPath" class="ll-rail-chip ll-chip-mint">
+        <svg class="ll-chip-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+        </svg>
+        Callsheet Ready
+      </div>
+
+      <div *ngIf="watermark" class="ll-rail-chip ll-chip-sky">
+        <svg class="ll-chip-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+          <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+        </svg>
+        Watermark: {{ watermark }}
+      </div>
+    </div>
+
+    <div class="ll-rail-status-row" *ngIf="callsheetState || watermark">
+      <p class="ll-rail-status-text" *ngIf="callsheetState">
+        <span class="font-medium">Callsheet:</span> {{ callsheet }}
+      </p>
+      <p class="ll-rail-status-text" *ngIf="watermark">
+        <span class="font-medium">Watermark:</span> {{ watermark }}
+      </p>
+    </div>
+  </div>
+
+  <!-- BOTTOM 50%: Selected scenes (scrollable) -->
   <div class="ll-rail-scenes">
     <h4 class="ll-rail-section-label">Select a Scene</h4>
 
@@ -43,7 +121,6 @@
         class="ll-scene-row"
         [class.ll-scene-row--draggable]="editState">
 
-        <!-- Drag handle -->
         <div class="ll-scene-row-inner">
           <svg *ngIf="editState"
                xmlns="http://www.w3.org/2000/svg"
@@ -88,93 +165,13 @@
         </button>
       </div>
 
-      <!-- Empty state -->
       <div *ngIf="!selectedScenes || selectedScenes.length === 0" class="ll-scene-empty">
         No scenes selected. Please select scenes from the table.
       </div>
 
-      <!-- Reorder hint (edit mode) -->
       <div *ngIf="editState && selectedScenes && selectedScenes.length > 1" class="ll-scene-reorder-hint">
         Drag and drop scenes to reorder them
       </div>
-    </div>
-  </div>
-
-  <!-- Callsheet / watermark status row -->
-  <div class="ll-rail-status-row">
-    <p class="ll-rail-status-text" *ngIf="callsheetState">
-      <span class="font-medium">Callsheet:</span> {{ callsheet }}
-    </p>
-    <p class="ll-rail-status-text" *ngIf="watermark">
-      <span class="font-medium">Watermark:</span> {{ watermark }}
-    </p>
-  </div>
-
-  <!-- Total + actions -->
-  <div class="ll-rail-checkout">
-    <h2 class="ll-rail-total">Total: <span class="ll-rail-free">FREE</span></h2>
-
-    <div class="ll-rail-actions">
-      <!-- Not signed in -->
-      <button *ngIf="!userData"
-        type="button"
-        (click)="signIn.emit()"
-        class="btn-sw btn-sw-primary ll-rail-action-btn">
-        Sign in to continue
-      </button>
-
-      <!-- Signed in -->
-      <button *ngIf="userData"
-        type="button"
-        (click)="getSides.emit()"
-        [disabled]="isCheckingSubscription"
-        class="btn-sw btn-sw-primary ll-rail-action-btn">
-        <span *ngIf="isCheckingSubscription" class="flex items-center justify-center">
-          <svg class="animate-spin mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          Checking...
-        </span>
-        <span *ngIf="!isCheckingSubscription">Get My Sides</span>
-      </button>
-
-      <button
-        type="button"
-        (click)="backToScenes.emit()"
-        [disabled]="!selectedScenes || selectedScenes.length === 0"
-        class="btn-sw btn-sw-secondary ll-rail-action-btn">
-        Back To Scene Select
-      </button>
-    </div>
-
-    <!-- Callsheet + watermark add controls -->
-    <div class="ll-rail-attachments">
-      <div class="ll-rail-attach-item">
-        <app-add-callsheet (callsheetInfo)="callsheetUpload.emit($event)"></app-add-callsheet>
-      </div>
-      <div class="ll-rail-attach-item">
-        <app-add-watermark
-          [hasWatermark]="hasWatermark"
-          (waterMarkUpdate)="watermarkUpdate.emit($event)"
-          (waterMarkRemove)="watermarkRemove.emit()">
-        </app-add-watermark>
-      </div>
-    </div>
-
-    <!-- Status chips -->
-    <div *ngIf="callsheetReady && callSheetPath" class="ll-rail-chip ll-chip-mint">
-      <svg class="ll-chip-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-      </svg>
-      Callsheet Ready
-    </div>
-
-    <div *ngIf="watermark" class="ll-rail-chip ll-chip-sky">
-      <svg class="ll-chip-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-        <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
-      </svg>
-      Watermark: {{ watermark }}
     </div>
   </div>
 </div>

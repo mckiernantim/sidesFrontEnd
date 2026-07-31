@@ -25,6 +25,7 @@ import { cloneDeep } from 'lodash';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 
 import { fadeInOutAnimation } from 'src/app/animations/animations';
+import { SubscriptionStatus } from 'src/app/types/SubscriptionTypes';
 
 interface QueueItem {
   pageIndex: number;
@@ -103,6 +104,7 @@ export class LastLooksComponent implements OnInit, AfterViewInit, OnDestroy {
   // ── New Inputs for the rail ───────────────────────────────────────────────
   @Input() selectedScenes: any[] = [];
   @Input() userData: any = null;
+  @Input() subscriptionStatus: SubscriptionStatus | null = null;
   @Input() isCheckingSubscription: boolean = false;
   @Input() callsheetReady: boolean = false;
   @Input() watermark: string = '';
@@ -496,6 +498,34 @@ export class LastLooksComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private insertCallsheetPage(imagePath: string): void {
     if (this.pdf.isProcessingForServer()) return;
+    if (!this.pdf.finalDocument?.data) return;
+
+    const first = this.pdf.finalDocument.data[0];
+    const alreadyPresent =
+      first?.[0]?.type === 'callsheet' &&
+      first[0].imagePath === imagePath;
+
+    // Always carry / refresh active watermark onto the callsheet page so
+    // Last Looks preview matches generated PDFs (spec 022). When the service
+    // already inserted the callsheet (handleCallSheetUpload → insertCallsheetAtStart),
+    // only ensure watermarkData is present — do not wipe it by rebuilding the page.
+    const existingWatermark = this.pdf.finalDocument.data
+      .find((p) => p && p[0] && p[0].watermarkData && p[0].watermarkData.isActive)?.[0]
+      ?.watermarkData;
+
+    if (alreadyPresent) {
+      if (existingWatermark && (!first[0].watermarkData || !first[0].watermarkData.isActive)) {
+        first[0].watermarkData = { ...existingWatermark };
+      }
+      this.pages = this.pdf.finalDocument.data;
+      this.hasCallsheet = true;
+      this.currentPageIndex = 0;
+      this.currentPage = this.pages[0] || [];
+      this.cdRef.detectChanges();
+      if (this.lastLooksPage) this.lastLooksPage.cdRef.detectChanges();
+      this.pageUpdate.emit(this.currentPage);
+      return;
+    }
 
     if (this.pdf.finalDocument?.data) {
       this.undoService.recordDocumentReorderChange(
@@ -510,7 +540,9 @@ export class LastLooksComponent implements OnInit, AfterViewInit, OnDestroy {
       calculatedXpos: '0px', calculatedYpos: '0px',
       xPos: 0, yPos: 0, text: 'CALLSHEET', index: -1, page: 0,
       loadError: null, bar: 'hideBar', cont: 'hideCont',
-      end: 'hideEnd', hidden: '', trueScene: ''
+      end: 'hideEnd', hidden: '', trueScene: '',
+      // Spec 022: preview watermark on callsheet in Last Looks
+      watermarkData: existingWatermark ? { ...existingWatermark } : null
     }];
 
     if (this.pdf.finalDocument?.data) {

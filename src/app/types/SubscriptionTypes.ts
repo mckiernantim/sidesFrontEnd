@@ -178,6 +178,73 @@ export function formatPlanName(plan: SubscriptionPlan | null): string {
   return plan.nickname || `$${(plan.amount / 100).toFixed(2)}/${plan.interval}`;
 }
 
+/** Interval label without a dollar amount — for checkout / Last Looks summaries. */
+export function formatBillingInterval(interval: string | null | undefined): string {
+  if (!interval) return '';
+  const normalized = interval.toLowerCase();
+  if (normalized === 'month' || normalized === 'monthly') return 'Monthly';
+  if (normalized === 'week' || normalized === 'weekly') return 'Weekly';
+  if (normalized === 'year' || normalized === 'yearly') return 'Yearly';
+  return interval.charAt(0).toUpperCase() + interval.slice(1);
+}
+
+/**
+ * Human-readable subscription type for checkout UI (no price).
+ * Prefers Student / Founders flags, then plan nickname, then Professional + interval.
+ */
+export function getSubscriptionTypeLabel(status: SubscriptionStatus | null | undefined): string {
+  if (!status?.active) return 'No active subscription';
+
+  const interval = formatBillingInterval(status.subscription?.plan?.interval);
+  let base: string;
+
+  if (status.isStudent) {
+    base = 'Student Rate';
+  } else if (status.isFounder) {
+    base = 'Founders Rate';
+  } else if (status.subscription?.plan?.nickname) {
+    base = status.subscription.plan.nickname;
+  } else if (status.plan) {
+    base = status.plan;
+  } else {
+    base = 'Professional Plan';
+  }
+
+  // Avoid duplicating interval if nickname already includes it
+  if (interval && !base.toLowerCase().includes(interval.toLowerCase())) {
+    return `${base} · ${interval}`;
+  }
+  return base;
+}
+
+export function formatSubscriptionDate(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+/**
+ * Expiration / renewal line for checkout UI using currentPeriodEnd.
+ * Canceling subscriptions show "Expires …"; active renewing show "Renews …".
+ */
+export function getSubscriptionExpirationLabel(
+  status: SubscriptionStatus | null | undefined
+): string {
+  const end = status?.subscription?.currentPeriodEnd;
+  const formatted = formatSubscriptionDate(end);
+  if (!formatted) return 'Expiration unavailable';
+
+  if (status?.subscription?.cancelAtPeriodEnd) {
+    return `Expires ${formatted}`;
+  }
+  return `Renews ${formatted}`;
+}
+
 export function formatAmount(amountInCents: number): string {
   return `$${(amountInCents / 100).toFixed(2)}`;
 }

@@ -5,6 +5,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { of, throwError, BehaviorSubject } from 'rxjs';
 import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../../services/auth/auth.service';
+import { AuthModalService } from '../../../services/auth-modal/auth-modal.service';
 import { UploadService } from '../../../services/upload/upload.service';
 import { PdfService } from '../../../services/pdf/pdf.service';
 import { TailwindDialogService } from '../../../services/tailwind-dialog/tailwind-dialog.service';
@@ -19,6 +20,7 @@ describe('UploadComponent', () => {
   let mockPdfService: jasmine.SpyObj<PdfService>;
   let mockRouter: jasmine.SpyObj<Router>;
   let mockAuthService: jasmine.SpyObj<AuthService>;
+  let mockAuthModal: jasmine.SpyObj<AuthModalService>;
   let mockDialogService: jasmine.SpyObj<TailwindDialogService>;
   let mockAuth: jasmine.SpyObj<Auth>;
   let userSubject: BehaviorSubject<User | null>;
@@ -67,7 +69,12 @@ describe('UploadComponent', () => {
     const authServiceSpy = jasmine.createSpyObj('AuthService', [
       'signInWithGoogle', 'signOut'
     ], {
-      user$: userSubject.asObservable()
+      user$: userSubject.asObservable(),
+      isAdmin$: of(false)
+    });
+
+    const authModalSpy = jasmine.createSpyObj('AuthModalService', ['open', 'close'], {
+      isOpen$: of(false)
     });
     
     const dialogServiceSpy = jasmine.createSpyObj('TailwindDialogService', [
@@ -90,6 +97,7 @@ describe('UploadComponent', () => {
         { provide: PdfService, useValue: pdfServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: AuthService, useValue: authServiceSpy },
+        { provide: AuthModalService, useValue: authModalSpy },
         { provide: TailwindDialogService, useValue: dialogServiceSpy },
         { provide: Auth, useValue: authSpy }
       ]
@@ -101,6 +109,7 @@ describe('UploadComponent', () => {
     mockPdfService = TestBed.inject(PdfService) as jasmine.SpyObj<PdfService>;
     mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
     mockAuthService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
+    mockAuthModal = TestBed.inject(AuthModalService) as jasmine.SpyObj<AuthModalService>;
     mockDialogService = TestBed.inject(TailwindDialogService) as jasmine.SpyObj<TailwindDialogService>;
     mockAuth = TestBed.inject(Auth) as jasmine.SpyObj<Auth>;
   });
@@ -199,7 +208,6 @@ describe('UploadComponent', () => {
         component.handleFileInput(mockFileList);
 
         expect(mockUploadService.postFile).not.toHaveBeenCalled();
-        expect(mockAuthService.signInWithGoogle).toHaveBeenCalled();
       });
 
       it('should handle empty file list', () => {
@@ -233,7 +241,6 @@ describe('UploadComponent', () => {
         component.skipUploadForTest();
 
         expect(mockUploadService.getTestJSON).not.toHaveBeenCalled();
-        expect(mockAuthService.signInWithGoogle).toHaveBeenCalled();
       });
     });
 
@@ -279,9 +286,9 @@ describe('UploadComponent', () => {
 
   describe('Authentication Integration', () => {
     describe('signIn()', () => {
-      it('should call authService.signInWithGoogle()', () => {
+      it('should open the auth modal for email or Google sign-in', () => {
         component.signIn();
-        expect(mockAuthService.signInWithGoogle).toHaveBeenCalled();
+        expect(mockAuthModal.open).toHaveBeenCalled();
       });
     });
 

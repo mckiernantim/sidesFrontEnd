@@ -9,9 +9,9 @@ import { Component } from '@angular/core';
 export class AboutItemGridComponent {
   titles: string[] = [`Scan Securely`, ` Select Scenes`, `Last Looks`];
   images: string[] = [
-    `../../../../../assets/icons/bot-about-images/scan-bot.jpg`,
-    `../../../../../assets/icons/bot-about-images/select-bot.jpg`,
-    `../../../../../assets/icons/bot-about-images/happy-bot.jpg`,
+    `../../../../../assets/icons/bot-about-images/scan-bot-two.png`,
+    `../../../../../assets/icons/bot-about-images/select-bot-two.png`,
+    `../../../../../assets/icons/bot-about-images/last-looks-bot-two.png`,
   ];
   content: string[] = [
     `Your script is scanned, returned, 

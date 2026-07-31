@@ -62,11 +62,16 @@
   <div *ngIf="!isLoading && !user" class="bg-sw-surface border border-sw-border rounded-lg shadow-lg p-8 text-center">
     <h1 class="text-2xl font-bold mb-6 text-sw-text">Sign In to View Your Profile</h1>
     <p class="mb-8 text-sw-text-muted">You need to be signed in to view your profile and manage your subscription.</p>
+    <p class="mb-6 text-sm text-sw-text-muted">
+      Use email or Google. School emails ending in <strong class="text-sw-text">.edu</strong> unlock
+      <strong class="text-sw-accent">Student Rate</strong> for 2 years.
+    </p>
     <button
+      type="button"
       (click)="signIn()"
       class="bg-sw-accent hover:opacity-90 text-sw-bg font-bold py-3 px-6 rounded-md transition-all shadow-md"
     >
-      Sign in with Google
+      Sign in
     </button>
   </div>
 
@@ -75,8 +80,49 @@
     <h1 class="text-2xl font-bold mb-8 text-center text-sw-text">Your Profile</h1>
 
     <!-- Subscription Section -->
-    <div class="mb-10">
+    <div class="mb-10" id="subscription">
       <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-sw-border text-sw-text">Subscription</h2>
+
+      <!-- Welcome: new signup / first Google sign-in → subscribe -->
+      <div
+        *ngIf="showWelcomeSubscribe && !isStudentUser()"
+        class="mb-6 rounded-lg border-4 border-sw-accent bg-sw-surface-2 p-6 text-center shadow-lg"
+      >
+        <p class="text-2xl md:text-3xl font-black uppercase tracking-wide text-sw-accent font-display">
+          Welcome to SidesWays
+        </p>
+        <p class="mt-2 text-base md:text-lg font-semibold text-sw-text">
+          Subscribe below to unlock unlimited sides.
+        </p>
+        <button
+          type="button"
+          (click)="dismissWelcome()"
+          class="mt-3 text-sm text-sw-text-muted underline hover:text-sw-text"
+        >
+          Dismiss
+        </button>
+      </div>
+
+      <!-- STUDENT RATE — loud banner for .edu users -->
+      <div
+        *ngIf="isStudentUser()"
+        class="mb-6 rounded-lg border-4 border-sw-accent bg-gradient-to-br from-sw-accent/20 via-sw-surface-2 to-sw-surface p-6 md:p-8 text-center shadow-xl"
+        role="status"
+        aria-live="polite"
+      >
+        <p class="text-3xl md:text-5xl font-black uppercase tracking-wide text-sw-accent font-display">
+          Student Rate
+        </p>
+        <p class="mt-3 text-lg md:text-2xl font-bold text-sw-text">
+          Your .edu email unlocked Student Rate for 2 years
+        </p>
+        <p class="mt-2 text-sm md:text-base text-sw-text-muted max-w-xl mx-auto">
+          Full access is included with your school email — no paid plan required while Student Rate is active.
+        </p>
+        <p *ngIf="user?.email" class="mt-4 text-xs md:text-sm font-mono text-sw-text-subtle">
+          {{ user.email }}
+        </p>
+      </div>
 
       <!-- Beta Test Mode Notice -->
       <div class="bg-yellow-400 border-2 border-yellow-500 rounded-lg p-4 mb-6">
@@ -99,6 +145,22 @@
             </p>
           </div>
         </div>
+      </div>
+
+      <!-- Student entitlement active (no Stripe renew plan) -->
+      <div
+        *ngIf="isStudentUser() && isSubscriptionActive() && !subscription?.subscription?.willAutoRenew"
+        class="p-6 bg-sw-surface-2 rounded-lg border-2 border-sw-success shadow-md mb-4"
+      >
+        <div class="text-sw-success font-semibold mb-2 flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+          </svg>
+          Student Rate is active
+        </div>
+        <p class="text-sm text-sw-text-muted">
+          You can process scripts and generate sides with your .edu Student Rate benefit.
+        </p>
       </div>
       
       <!-- Active subscription that will renew -->
@@ -209,7 +271,12 @@
       
       <!-- No subscription yet or pending subscription -->
       <div *ngIf="!isSubscriptionActive() && subscription?.subscription?.status !== 'canceled'" class="p-6 bg-sw-surface-2 rounded-lg border-2 border-sw-accent shadow-md">
-        <h3 class="text-xl font-semibold mb-4 text-sw-accent">Upgrade to Premium</h3>
+        <h3 class="text-xl font-semibold mb-4 text-sw-accent">
+          {{ isStudentUser() ? 'Student Rate' : 'Upgrade to Premium' }}
+        </h3>
+        <p *ngIf="isStudentUser()" class="mb-4 text-sm font-semibold text-sw-text">
+          .edu Student Rate — confirm below to activate billing if needed.
+        </p>
 
         <!-- Show pending message if status is pending -->
         <div *ngIf="subscription?.subscription?.status === 'pending'" class="mb-4 p-3 bg-sw-surface-2 border-2 border-sw-warning rounded text-sw-warning">
@@ -241,8 +308,30 @@
           </ul>
         </div>
         
-        <div class="flex justify-between items-center">
-          <p class="text-xl font-bold text-sw-accent">$20 per week</p>
+        <!-- Weekly / Monthly choice before Stripe Checkout -->
+        <div class="mb-4 inline-flex rounded-lg border-2 border-sw-border bg-sw-surface p-1" role="group" aria-label="Billing interval">
+          <button
+            type="button"
+            (click)="selectInterval('week')"
+            [class.bg-sw-accent]="selectedInterval === 'week'"
+            [class.text-sw-bg]="selectedInterval === 'week'"
+            [class.text-sw-text]="selectedInterval !== 'week'"
+            class="px-4 py-2 text-sm font-semibold rounded-md transition-colors">
+            Weekly
+          </button>
+          <button
+            type="button"
+            (click)="selectInterval('month')"
+            [class.bg-sw-accent]="selectedInterval === 'month'"
+            [class.text-sw-bg]="selectedInterval === 'month'"
+            [class.text-sw-text]="selectedInterval !== 'month'"
+            class="px-4 py-2 text-sm font-semibold rounded-md transition-colors">
+            Monthly
+          </button>
+        </div>
+
+        <div class="flex justify-between items-center gap-4 flex-wrap">
+          <p class="text-xl font-bold text-sw-accent">{{ getSubscribePriceLabel() }}</p>
           <button
             (click)="handleNewSubscription()"
             [disabled]="subscription?.subscription?.status === 'pending'"

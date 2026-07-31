@@ -113,10 +113,12 @@ describe('AuthComponent', () => {
     });
 
     it('onSignIn() calls authService.signInWithEmail on valid submission', async () => {
-      authService.signInWithEmail.mockResolvedValueOnce(undefined);
+      authService.signInWithEmail.mockResolvedValueOnce({ isNewUser: false });
+      const navigateSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);
       component.signInForm.setValue({ email: 'user@example.com', password: 'secret' });
       await component.onSignIn();
       expect(authService.signInWithEmail).toHaveBeenCalledWith('user@example.com', 'secret');
+      expect(navigateSpy).toHaveBeenCalledWith(['/']);
     });
 
     it('onSignIn() sets signInError from authService.getErrorMessage on failure', async () => {
@@ -135,9 +137,16 @@ describe('AuthComponent', () => {
     });
 
     it('onGoogleSignIn() calls authService.signInWithGoogle', async () => {
-      authService.signInWithGoogle.mockResolvedValueOnce(undefined);
+      authService.signInWithGoogle.mockResolvedValueOnce({ isNewUser: false });
       await component.onGoogleSignIn();
       expect(authService.signInWithGoogle).toHaveBeenCalled();
+    });
+
+    it('onGoogleSignIn() routes first-time Google users to /profile', async () => {
+      authService.signInWithGoogle.mockResolvedValueOnce({ isNewUser: true });
+      const navigateSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);
+      await component.onGoogleSignIn();
+      expect(navigateSpy).toHaveBeenCalledWith(['/profile'], { queryParams: { welcome: '1' } });
     });
 
     it('onGoogleSignIn() sets signInError on failure', async () => {
@@ -187,7 +196,8 @@ describe('AuthComponent', () => {
     });
 
     it('onRegister() calls authService.registerWithEmail on valid submission', async () => {
-      authService.registerWithEmail.mockResolvedValueOnce(undefined);
+      authService.registerWithEmail.mockResolvedValueOnce({ isNewUser: true });
+      const navigateSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);
       component.registerForm.setValue({
         displayName: 'Jane Doe',
         email: 'jane@example.com',
@@ -200,6 +210,7 @@ describe('AuthComponent', () => {
         'secure1',
         'Jane Doe',
       );
+      expect(navigateSpy).toHaveBeenCalledWith(['/profile'], { queryParams: { welcome: '1' } });
     });
 
     it('onRegister() sets registerError on auth/email-already-in-use', async () => {

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../services/auth/auth.service';
+import { AuthModalService } from '../../services/auth-modal/auth-modal.service';
 import { Observable } from 'rxjs';
 import { User } from '@angular/fire/auth';
 import { fadeInOutAnimation } from '../../animations/animations';
@@ -21,7 +22,8 @@ export class ContactComponent implements OnInit {
   
   constructor(
     private fb: FormBuilder,
-    private authService: AuthService
+    private authService: AuthService,
+    private authModal: AuthModalService
   ) {
     this.contactForm = this.fb.group({
       name: ['', Validators.required],
@@ -46,7 +48,7 @@ export class ContactComponent implements OnInit {
   }
 
   signIn(): void {
-    this.authService.signInWithGoogle();
+    this.authModal.open();
   }
 
   onSubmit(): void {

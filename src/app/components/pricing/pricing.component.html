@@ -63,6 +63,10 @@
       <p class="text-lg md:text-xl max-w-2xl mx-auto mb-6 text-sw-text-muted">
         One affordable plan for unlimited sides generation.
       </p>
+      <p class="text-sm md:text-base max-w-xl mx-auto mb-4 text-sw-text-muted">
+        Students with a <strong class="text-sw-text">.edu</strong> email get
+        <strong class="text-sw-accent">Student Rate</strong> for 2 years — sign in to unlock it automatically.
+      </p>
 
       <!-- Compact testimonial -->
       <div class="max-w-xl mx-auto bg-sw-surface-2 backdrop-blur-sm rounded-lg p-6 mt-6 text-white border-2 border-sw-border shadow-lg">
@@ -100,12 +104,34 @@
         </div>
 
         <div class="bg-gradient-to-br from-sw-surface-2 to-sw-surface text-white p-8 text-center border-b-4 border-sw-accent">
-          <h2 class="text-3xl font-bold text-sw-text mb-2">Professional Plan</h2>
-          <div class="mt-6 flex items-center justify-center">
-            <span class="text-6xl font-bold text-sw-accent">$20</span>
-            <span class="ml-3 text-2xl text-sw-text-muted">/week</span>
+          <h2 class="text-3xl font-bold text-sw-text mb-2">{{ planTitle }}</h2>
+          <p *ngIf="isStudent" class="text-sm text-sw-accent font-semibold mb-2">
+            Student Rate active — .edu benefit for 2 years
+          </p>
+
+          <!-- Weekly / Monthly — both options before Stripe Checkout -->
+          <div class="pricing-interval mt-5" role="group" aria-label="Billing interval">
+            <button
+              type="button"
+              (click)="selectInterval('week')"
+              [class.active]="selectedInterval === 'week'">
+              Weekly
+            </button>
+            <button
+              type="button"
+              (click)="selectInterval('month')"
+              [class.active]="selectedInterval === 'month'">
+              Monthly
+            </button>
           </div>
-          <p class="mt-4 text-sw-text-subtle font-medium">Cancel anytime</p>
+
+          <div class="mt-6 flex items-center justify-center">
+            <span class="text-6xl font-bold text-sw-accent">${{ priceDollars }}</span>
+            <span class="ml-3 text-2xl text-sw-text-muted">{{ getIntervalSuffix() }}</span>
+          </div>
+          <p *ngIf="isFounder" class="mt-2 text-sm text-sw-accent">{{ foundersRateSubtitle }}</p>
+          <p *ngIf="isFounder" class="mt-1 text-sm text-sw-text-muted line-through">{{ getStruckThroughPrice() }}</p>
+          <p class="mt-4 text-sw-text-subtle font-medium">Cancel anytime · switch plans later</p>
           <div class="mt-4 bg-yellow-400 text-black px-4 py-2 rounded-lg inline-block">
             <p class="font-bold text-sm">BETA PRICING - NOT FINAL</p>
           </div>
@@ -174,8 +200,13 @@
 
             <ng-template #signInTemplate>
               <div class="text-center">
-                <p class="mb-4 text-sw-text-muted">Sign in to subscribe to our service</p>
+                <p class="mb-4 text-sw-text-muted">Sign in with email or Google to subscribe</p>
+                <p class="mb-4 text-sm text-sw-text-muted">
+                  School emails ending in <strong class="text-sw-text">.edu</strong> unlock
+                  <strong class="text-sw-accent">Student Rate</strong> for 2 years.
+                </p>
                 <button
+                  type="button"
                   (click)="signIn()"
                   class="w-full bg-sw-accent hover:opacity-90 text-sw-bg font-bold py-4 px-6 rounded-lg transition-all shadow-md">
                   Sign In to Continue
@@ -210,8 +241,8 @@
           </div>
 
           <div class="bg-sw-surface p-6 rounded-lg shadow-lg border-2 border-sw-border">
-            <h4 class="text-lg font-semibold mb-3 text-sw-accent">How does the weekly billing work?</h4>
-            <p class="text-sw-text-muted">You'll be charged $20 every week until you cancel. Your subscription will automatically renew each week.</p>
+            <h4 class="text-lg font-semibold mb-3 text-sw-accent">How does billing work?</h4>
+            <p class="text-sw-text-muted">{{ billingFaqText }} Choose weekly or monthly when you subscribe — you can switch later and the change takes effect at the end of your current billing period.</p>
           </div>
 
           <div class="bg-sw-surface p-6 rounded-lg shadow-lg border-2 border-sw-border">

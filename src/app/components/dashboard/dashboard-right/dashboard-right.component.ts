@@ -15,6 +15,7 @@ import {
 
 import { StripeService } from '../../../services/stripe/stripe.service';
 import { Subscription, firstValueFrom, filter } from 'rxjs';
+import { take } from 'rxjs/operators';
 import { UndoService } from '../../../services/edit/undo.service';
 import { Line } from 'src/app/types/Line';
 import { PdfService } from '../../../services/pdf/pdf.service';
@@ -23,6 +24,7 @@ import { fadeInOutAnimation } from '../../../animations/animations';
 import { SpinningBotComponent } from '../../shared/spinning-bot/spinning-bot.component';
 import { TokenService } from 'src/app/services/token/token.service';
 import { AuthService } from 'src/app/services/auth/auth.service';
+import { AuthModalService } from 'src/app/services/auth-modal/auth-modal.service';
 import { privateDecrypt } from 'crypto';
 import { getAnalytics } from '@angular/fire/analytics';
 import {
@@ -47,6 +49,7 @@ import { LastLooksComponent } from '../last-looks/last-looks.component';
 import { TailwindDialogComponent } from '../../../components/shared/tailwind-dialog/tailwind-dialog.component';
 import { SubscriptionModalComponent } from '../../../components/subscription-modal/subscription-modal.component';
 import { CdkDropList } from '@angular/cdk/drag-drop';
+import { SubscriptionStatus } from 'src/app/types/SubscriptionTypes';
 
 interface toolTipOption {
   title: string;
@@ -205,6 +208,9 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
 
   showCheckoutModal: boolean = false;
   isCheckingSubscription: boolean = false;
+  /** Latest Stripe subscription status for Last Looks / checkout summaries (no price). */
+  subscriptionStatus: SubscriptionStatus | null = null;
+  private subscriptionStatusSubscription: Subscription;
 
   /** Mobile scene-select panel: Scenes list first, Controls for checkout / attachments. */
   sceneSelectPanel: 'scenes' | 'controls' = 'scenes';
@@ -245,6 +251,7 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     public pdf: PdfService,
     public token: TokenService,
     public auth: AuthService,
+    private authModal: AuthModalService,
     private dialog: TailwindDialogService
   ) {
     try {
@@ -433,9 +440,29 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
       this.syncSceneDataWithOrder(sceneOrder);
     });
 
+    this.subscriptionStatusSubscription = this.stripe.subscriptionStatus$.subscribe(
+      (status) => {
+        this.subscriptionStatus = status;
+        this.cdr.detectChanges();
+      }
+    );
+
     this.auth.user$.subscribe((data) => {
       console.log('Auth state changed:', data);
       this.userData = data;
+      if (data?.uid) {
+        this.stripe.getSubscriptionStatus(data.uid).subscribe({
+          next: (status) => {
+            this.subscriptionStatus = status;
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            console.warn('Unable to load subscription status for checkout summary:', err);
+          },
+        });
+      } else {
+        this.subscriptionStatus = null;
+      }
       this.cdr.detectChanges();
     });
 
@@ -679,13 +706,19 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     // Handle both string and object formats
     if (typeof data === 'string') {
       this.watermark = data;
+      this.pdf.watermark = data;
       console.log('Dashboard: Watermark added:', data);
-      this.pdf.watermarkPages(data, this.pdf.finalDocument.data);
+      if (this.pdf.finalDocument?.data) {
+        this.pdf.watermarkPages(data, this.pdf.finalDocument.data);
+      }
     } else {
       // Object format with castingDirector
       this.watermark = data.actorName;
+      this.pdf.watermark = data.actorName;
       console.log('Dashboard: Watermark added:', data.actorName, 'Casting:', data.castingDirector || 'none');
-      this.pdf.watermarkPages(data.actorName, this.pdf.finalDocument.data, data.castingDirector);
+      if (this.pdf.finalDocument?.data) {
+        this.pdf.watermarkPages(data.actorName, this.pdf.finalDocument.data, data.castingDirector);
+      }
     }
     // Trigger change detection to update the hasWatermark status
     this.cdr.detectChanges();
@@ -693,8 +726,11 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
 
   removeWatermark() {
     this.watermark = null;
+    this.pdf.watermark = null;
     console.log('Dashboard: Watermark removed');
-    this.pdf.removeWatermark(this.pdf.finalDocument.data);
+    if (this.pdf.finalDocument?.data) {
+      this.pdf.removeWatermark(this.pdf.finalDocument.data);
+    }
     // Trigger change detection to update the hasWatermark status
     this.cdr.detectChanges();
   }
@@ -976,32 +1012,23 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
   }
 
   private handleLoginRequired(finalDocument: any): Promise<void> {
-    return new Promise((resolve) => {
-      const loginDialog = this.dialog.open(IssueComponent, {
-        width: '500px',
-        height: '600px',
-        data: {
-          error: 'Please sign in to continue',
-          showLoginButton: true,
-        },
+    this.authModal.open();
+    return firstValueFrom(
+      this.auth.user$.pipe(
+        filter((user) => !!user),
+        take(1)
+      )
+    )
+      .then(() => {
+        this.sendFinalDocumentToServer(finalDocument);
+      })
+      .catch(() => {
+        // User closed modal / never signed in — nothing to send
       });
+  }
 
-      loginDialog.afterClosed().subscribe(async (result) => {
-        if (result === 'login') {
-          try {
-            await this.auth.signInWithGoogle();
-            this.sendFinalDocumentToServer(finalDocument);
-          } catch (error) {
-            console.error('Login failed:', error);
-            this.handleError(
-              'Login failed. Please try again.',
-              error.message || 'Unknown error'
-            );
-          }
-        }
-        resolve();
-      });
-    });
+  openSignIn(): void {
+    this.authModal.open();
   }
 // Complete sendFinalDocumentToServer method for dashboard-right.component.ts
 
@@ -1464,6 +1491,7 @@ async sendFinalDocumentToServer(finalDocument) {
     this.stripe.getSubscriptionStatus(this.userData.uid).subscribe({
       next: (subscriptionStatus) => {
         console.log('Subscription status received:', subscriptionStatus);
+        this.subscriptionStatus = subscriptionStatus;
         this.isCheckingSubscription = false;
         if (subscriptionStatus.active) {
           console.log('User has active subscription, proceeding with checkout');
@@ -1932,6 +1960,10 @@ async sendFinalDocumentToServer(finalDocument) {
 
     if (this.sceneOrderUpdatedSubscription) {
       this.sceneOrderUpdatedSubscription.unsubscribe();
+    }
+
+    if (this.subscriptionStatusSubscription) {
+      this.subscriptionStatusSubscription.unsubscribe();
     }
   }
 

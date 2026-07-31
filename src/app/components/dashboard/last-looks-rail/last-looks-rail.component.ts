@@ -6,6 +6,11 @@ import {
   ChangeDetectorRef,
 } from '@angular/core';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
+import {
+  SubscriptionStatus,
+  getSubscriptionExpirationLabel,
+  getSubscriptionTypeLabel,
+} from 'src/app/types/SubscriptionTypes';
 
 @Component({
   selector: 'app-last-looks-rail',
@@ -20,6 +25,7 @@ export class LastLooksRailComponent {
   @Input() scriptDate: number | null = null;
   @Input() selectedScenes: any[] = [];
   @Input() userData: any = null;
+  @Input() subscriptionStatus: SubscriptionStatus | null = null;
   @Input() isCheckingSubscription: boolean = false;
   @Input() callsheetReady: boolean = false;
   @Input() callSheetPath: string = '';
@@ -48,12 +54,31 @@ export class LastLooksRailComponent {
   private originalSceneNumber: string | null = null;
   private originalSceneText: string | null = null;
 
-  get freeCount(): number {
+  get sceneCount(): number {
     return this.selectedScenes?.length ?? 0;
   }
 
+  /** @deprecated Use sceneCount — kept for any callers that still bind freeCount. */
+  get freeCount(): number {
+    return this.sceneCount;
+  }
+
+  get subscriptionTypeLabel(): string {
+    if (!this.userData) return 'Sign in required';
+    if (!this.subscriptionStatus) return 'Checking subscription…';
+    return getSubscriptionTypeLabel(this.subscriptionStatus);
+  }
+
+  get subscriptionExpirationLabel(): string {
+    if (!this.userData || !this.subscriptionStatus?.active) return '';
+    return getSubscriptionExpirationLabel(this.subscriptionStatus);
+  }
+
   get verticalLabel(): string {
-    return `Scenes · ${this.freeCount} · Free`;
+    const planShort = this.subscriptionStatus?.active
+      ? this.subscriptionTypeLabel.split(' · ')[0]
+      : 'Plan';
+    return `Scenes · ${this.sceneCount} · ${planShort}`;
   }
 
   onSceneDrop(event: CdkDragDrop<any[]>): void {

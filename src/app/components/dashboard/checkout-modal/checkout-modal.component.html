@@ -13,9 +13,10 @@
           <span class="font-medium">{{ scene.sceneNumberText }}:</span> {{ scene.text }}
         </li>
       </ul>
-      <div class="mt-4 text-center">
-        <h2 class="text-xl font-bold sw-success-text">Total: FREE FOR BETA</h2>
-        <p class="text-sm text-sw-text-muted">Note: Stripe will process a test payment. Your card will not be charged.</p>
+      <div class="mt-4 text-center space-y-1">
+        <h2 class="text-xl font-bold text-sw-text">{{ subscriptionTypeLabel }}</h2>
+        <p class="text-sm font-medium sw-success-text">{{ subscriptionExpirationLabel }}</p>
+        <p class="text-xs text-sw-text-muted">Included with your active subscription — no additional charge for this download.</p>
       </div>
     </div>
 
@@ -39,7 +40,7 @@
           <li>You understand that we do not store your script data beyond the processing period.</li>
           <li>You acknowledge that this service is provided "as is" without warranty of any kind.</li>
           <li>You agree not to use this service for any illegal or unauthorized purpose.</li>
-          <li>You understand that during the beta period, the service is provided free of charge.</li>
+          <li>PDF downloads are included with your active subscription for the current billing period.</li>
         </ul>
       </div>
     </div>

@@ -1244,6 +1244,32 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
 
     this.updatePageNumberVisibility();
 
+    // Re-apply watermark after rebuild so scene-select → Last Looks keeps the stamp
+    // (callsheet insert paths copy this onto the cover page). Skip undo/regen —
+    // processPdf already emits documentRegenerated below.
+    if (this.watermark && this.finalDocument?.data) {
+      const now = new Date();
+      const watermarkData: any = {
+        actorName: this.watermark,
+        timestamp: now.toLocaleString('en-US', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        }),
+        isActive: true,
+        repetitions: 10
+      };
+      this.finalDocument.data.forEach((page) => {
+        if (page && page[0]) {
+          page[0].watermarkData = watermarkData;
+        }
+      });
+    }
+
     this.finalDocReady = true;
     this._documentRegenerated$.next(true);
     return true;

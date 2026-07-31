@@ -17,6 +17,7 @@ jest.mock('@angular/fire/auth', () => ({
     return jest.fn(); // unsubscribe no-op
   }),
   signInWithPopup: jest.fn(),
+  getAdditionalUserInfo: jest.fn(),
   GoogleAuthProvider: jest.fn(),
   signOut: jest.fn(),
   createUserWithEmailAndPassword: jest.fn(),
@@ -44,6 +45,8 @@ import {
   sendPasswordResetEmail,
   updateProfile,
   onAuthStateChanged,
+  signInWithPopup,
+  getAdditionalUserInfo,
 } from '@angular/fire/auth';
 
 import { doc, getDoc, setDoc } from '@angular/fire/firestore';
@@ -53,6 +56,8 @@ const mockSignIn = signInWithEmailAndPassword as jest.Mock;
 const mockSendReset = sendPasswordResetEmail as jest.Mock;
 const mockUpdateProfile = updateProfile as jest.Mock;
 const mockOnAuthStateChanged = onAuthStateChanged as jest.Mock;
+const mockSignInWithPopup = signInWithPopup as jest.Mock;
+const mockGetAdditionalUserInfo = getAdditionalUserInfo as jest.Mock;
 const mockDoc = doc as jest.Mock;
 const mockGetDoc = getDoc as jest.Mock;
 const mockSetDoc = setDoc as jest.Mock;
@@ -180,15 +185,28 @@ describe('AuthService', () => {
   // ─── Google sign-in (must remain working) ──────────────────────────────────
 
   describe('signInWithGoogle()', () => {
-    it('should successfully sign in with Google popup', async () => {
-      jest.spyOn(service, 'signInWithGoogle').mockResolvedValue(undefined);
-      await service.signInWithGoogle();
-      expect(service.signInWithGoogle).toHaveBeenCalled();
+    it('should return isNewUser true for first-time Google accounts', async () => {
+      const credential = { user: mockGoogleUser };
+      mockSignInWithPopup.mockResolvedValueOnce(credential);
+      mockGetAdditionalUserInfo.mockReturnValueOnce({ isNewUser: true });
+
+      const result = await service.signInWithGoogle();
+
+      expect(mockSignInWithPopup).toHaveBeenCalled();
+      expect(result).toEqual({ isNewUser: true });
+    });
+
+    it('should return isNewUser false for returning Google accounts', async () => {
+      mockSignInWithPopup.mockResolvedValueOnce({ user: mockGoogleUser });
+      mockGetAdditionalUserInfo.mockReturnValueOnce({ isNewUser: false });
+
+      const result = await service.signInWithGoogle();
+      expect(result).toEqual({ isNewUser: false });
     });
 
     it('should re-throw errors from Google sign-in', async () => {
       const error = new Error('Google sign-in failed');
-      jest.spyOn(service, 'signInWithGoogle').mockRejectedValue(error);
+      mockSignInWithPopup.mockRejectedValueOnce(error);
       let caught: unknown;
       try { await service.signInWithGoogle(); } catch (e) { caught = e; }
       expect(caught).toBe(error);
@@ -203,10 +221,11 @@ describe('AuthService', () => {
       mockCreateUser.mockResolvedValueOnce({ user: fakeUser });
       mockUpdateProfile.mockResolvedValueOnce(undefined);
 
-      await service.registerWithEmail('new@example.com', 'password123', 'Jane Doe');
+      const result = await service.registerWithEmail('new@example.com', 'password123', 'Jane Doe');
 
       expect(mockCreateUser).toHaveBeenCalledWith(mockAuth, 'new@example.com', 'password123');
       expect(mockUpdateProfile).toHaveBeenCalledWith(fakeUser, { displayName: 'Jane Doe' });
+      expect(result).toEqual({ isNewUser: true });
     });
 
     it('should re-throw auth/email-already-in-use when email is taken', async () => {
@@ -230,9 +249,10 @@ describe('AuthService', () => {
     it('should call signInWithEmailAndPassword on success', async () => {
       mockSignIn.mockResolvedValueOnce({ user: mockGoogleUser });
 
-      await service.signInWithEmail('user@example.com', 'correctpassword');
+      const result = await service.signInWithEmail('user@example.com', 'correctpassword');
 
       expect(mockSignIn).toHaveBeenCalledWith(mockAuth, 'user@example.com', 'correctpassword');
+      expect(result).toEqual({ isNewUser: false });
     });
 
     it('should re-throw auth/wrong-password for wrong password', async () => {

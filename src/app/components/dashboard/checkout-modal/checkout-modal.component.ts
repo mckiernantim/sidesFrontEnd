@@ -1,4 +1,9 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import {
+  SubscriptionStatus,
+  getSubscriptionExpirationLabel,
+  getSubscriptionTypeLabel,
+} from 'src/app/types/SubscriptionTypes';
 
 @Component({
   selector: 'app-checkout-modal',
@@ -9,6 +14,7 @@ import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 export class CheckoutModalComponent implements OnInit {
   @Input() selectedScenes: any[] = [];
   @Input() userData: any;
+  @Input() subscriptionStatus: SubscriptionStatus | null = null;
   @Output() checkout = new EventEmitter<boolean>();
   @Output() close = new EventEmitter<void>();
 
@@ -18,6 +24,14 @@ export class CheckoutModalComponent implements OnInit {
   constructor() { }
 
   ngOnInit(): void {
+  }
+
+  get subscriptionTypeLabel(): string {
+    return getSubscriptionTypeLabel(this.subscriptionStatus);
+  }
+
+  get subscriptionExpirationLabel(): string {
+    return getSubscriptionExpirationLabel(this.subscriptionStatus);
   }
 
   toggleTerms(): void {
@@ -33,4 +47,4 @@ export class CheckoutModalComponent implements OnInit {
   onClose(): void {
     this.close.emit();
   }
-} 
+}

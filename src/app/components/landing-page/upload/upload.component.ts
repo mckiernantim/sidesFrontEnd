@@ -8,6 +8,7 @@ import { fadeInOutAnimation } from '../../../animations/animations';
 import { getConfig } from '../../../../environments/environment';
 import { Auth, User } from '@angular/fire/auth';
 import { AuthService } from '../../../services/auth/auth.service';
+import { AuthModalService } from '../../../services/auth-modal/auth-modal.service';
 import { take } from 'rxjs/operators';
 import { TailwindDialogService } from '../../../services/tailwind-dialog/tailwind-dialog.service';
 import { TailwindDialogComponent } from '../../../components/shared/tailwind-dialog/tailwind-dialog.component';
@@ -50,17 +51,14 @@ export class UploadComponent implements OnInit, OnDestroy {
   private scanProgressSubscription: Subscription = null;
   private progressModalComponent: ComponentRef<UploadProgressModalComponent> | null = null;
 
-  // AI Validation toggle
-  enableAiValidation: boolean = false;
-  showAiTooltip: boolean = false;
-
   constructor(
     public upload: UploadService,
     public router: Router,
     private dialogService: TailwindDialogService,
     public pdf: PdfService,
     private auth: Auth,
-    private authService: AuthService
+    private authService: AuthService,
+    private authModal: AuthModalService
   ) {}
 
   ngOnInit(): void {
@@ -236,13 +234,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   signIn() {
-    this.authService.signInWithGoogle()
-      .then(() => {
-        console.log('Successfully signed in');
-      })
-      .catch(error => {
-        console.error('Error signing in:', error);
-      });
+    this.authModal.open();
   }
 
   signOut() {
@@ -486,20 +478,6 @@ export class UploadComponent implements OnInit, OnDestroy {
 
           // Use async polling upload (Cloud Run + Firestore polling)
           // The /api endpoint automatically routes to async when Cloud Run is enabled
-          // Pass AI validation flag to the service
-          
-          // ========================================
-          // 🆕 AI VALIDATION TRACKING LOG (FRONTEND)
-          // ========================================
-          console.log('╔═══════════════════════════════════════════════════════════════');
-          console.log('║ [FRONTEND] UPLOADING FILE WITH AI VALIDATION FLAG');
-          console.log('╠═══════════════════════════════════════════════════════════════');
-          console.log('║ File:', file.name);
-          console.log('║ enableAiValidation:', this.enableAiValidation);
-          console.log('║ Type:', typeof this.enableAiValidation);
-          console.log('║ Will send to backend:', this.enableAiValidation ? 'YES ✅' : 'NO ❌');
-          console.log('╚═══════════════════════════════════════════════════════════════');
-          
           this.currentUploadSubscription = this.upload.postFile(file).subscribe({
           next: (response) => {
             // Clean up progress subscription and component reference

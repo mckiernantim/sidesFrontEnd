@@ -1038,12 +1038,20 @@ mat-form-field { display: block; }
     
     
 
-/* Scene-select right rail: action buttons ABOVE selected-scenes list */
+/* Scene-select right rail: 50/50 controls (top) / scenes (bottom) */
 .ss-rail {
   display: flex !important;
   flex-direction: column !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
 }
-.ss-rail .ss-rail-header { order: 0 !important; }
-.ss-rail .ss-rail-checkout { order: 1 !important; margin-top: 0 !important; }
-.ss-rail .ss-rail-status-row { order: 2 !important; }
-.ss-rail .ss-rail-scenes { order: 3 !important; flex: 1 1 auto !important; }
+.ss-rail .ss-rail-controls {
+  flex: 1 1 50% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+.ss-rail .ss-rail-scenes {
+  flex: 1 1 50% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}

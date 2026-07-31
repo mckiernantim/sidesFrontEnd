@@ -2179,7 +2179,9 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
     this.annotationState.clearSelection();
     this.selectedLineIds = [];
 
-    this.undoService.recordXboxChange(previousXboxes, [], 'Add X-box');
+    // Strike through every content line under the new box.
+    const lineChanges = this.recomputeXboxOwnedLineIds(id, 'Add X-box');
+    this.undoService.recordXboxChange(previousXboxes, lineChanges, 'Add X-box');
     this.cdRef.detectChanges();
   }
 
@@ -2266,6 +2268,10 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
     if (!xbox) return;
 
     const previousXboxes = this.cloneXboxesSnapshot();
+    const ownedIds: number[] = (Array.isArray(xbox.lineIds) && xbox.lineIds.length > 0)
+      ? [...xbox.lineIds]
+      : this.getLineIdsInXboxBounds(xbox);
+
     const doc = this.pdfService.finalDocument as any;
     doc.xboxes = (doc.xboxes || []).filter((x: any) => x.id !== originalIndex);
 
@@ -2273,8 +2279,14 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
       this.selectedXboxIndex = null;
     }
 
-    // Freestanding boxes never own line visibility — geometry-only undo.
-    this.undoService.recordXboxChange(previousXboxes, [], 'Delete X-box');
+    // Restore strike-through for lines no longer covered by another X-box.
+    const stillCovered = new Set<number>(
+      this.getFreestandingXboxesForPage().flatMap((other: any) => this.getLineIdsInXboxBounds(other))
+    );
+    const toShow = ownedIds.filter(lineId => !stillCovered.has(lineId));
+    const lineChanges = this.setXboxLinesVisibleInPage(toShow, true, 'Delete X-box');
+
+    this.undoService.recordXboxChange(previousXboxes, lineChanges, 'Delete X-box');
     this.cdRef.detectChanges();
   }
 
@@ -2344,8 +2356,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
       return;
     }
 
-    // Geometry-only — do not retie lines to the box.
-    this.undoService.recordXboxChange(this.xboxUndoSnapshot, [], 'Drag X-box');
+    const lineChanges = this.recomputeXboxOwnedLineIds(this.selectedXboxIndex, 'Drag X-box');
+    this.undoService.recordXboxChange(this.xboxUndoSnapshot, lineChanges, 'Drag X-box');
 
     this.xboxDragging = false;
     this.xboxUndoSnapshot = [];
@@ -2427,7 +2439,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
       return;
     }
 
-    this.undoService.recordXboxChange(this.xboxUndoSnapshot, [], 'Resize X-box');
+    const lineChanges = this.recomputeXboxOwnedLineIds(this.selectedXboxIndex, 'Resize X-box');
+    this.undoService.recordXboxChange(this.xboxUndoSnapshot, lineChanges, 'Resize X-box');
 
     this.xboxResizing = false;
     this.xboxResizeEdge = null;
@@ -2504,25 +2517,30 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
     return id;
   }
 
+  /**
+   * Keep freestanding X-box geometry and line strike-through in sync:
+   * - every content line under the box → visible false (line-through)
+   * - lines that left this box (and aren't under another) → visible true
+   */
   private recomputeXboxOwnedLineIds(id: string, changeDescription: string): any[] {
     const xbox = this.getXboxById(id);
     if (!xbox) return [];
 
-    const otherSavedLineIds = new Set<number>(
-      this.getSavedXboxesForPage()
-        .filter((other: any) => other.id !== id)
-        .flatMap((other: any) => (other.lineIds || []) as number[])
-    );
+    const otherBoxes = this.getFreestandingXboxesForPage().filter((other: any) => other.id !== id);
+    const coveredByOther = (lineId: number): boolean =>
+      otherBoxes.some((box: any) => this.getLineIdsInXboxBounds(box).includes(lineId));
 
     const previouslyOwned = new Set<number>((xbox.lineIds || []) as number[]);
-    const currentlyInside = this.getLineIdsInXboxBounds(xbox)
-      .filter(lineId => previouslyOwned.has(lineId) || !otherSavedLineIds.has(lineId));
-    const nextSet = new Set<number>(currentlyInside);
+    const currentlyInside = this.getLineIdsInXboxBounds(xbox);
 
-    const toShow: number[] = [];
-    previouslyOwned.forEach(lineId => { if (!nextSet.has(lineId)) toShow.push(lineId); });
-    const toHide: number[] = [];
-    nextSet.forEach(lineId => { if (!previouslyOwned.has(lineId)) toHide.push(lineId); });
+    const toHide = currentlyInside.filter(lineId => {
+      const line = this.page.find(l => this.getXboxLineId(l) === lineId);
+      return !!line && line.visible !== 'false' && (line.visible as any) !== false;
+    });
+
+    const toShow = [...previouslyOwned].filter(
+      lineId => !currentlyInside.includes(lineId) && !coveredByOther(lineId)
+    );
 
     const lineChanges: any[] = [];
     if (toShow.length > 0) {
@@ -2581,14 +2599,17 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
       const line = this.page[lineIndex];
       if (line.visible === visible) return;
 
+      // Prefer docPageLineIndex for pdfService lookups; fall back to page array index.
+      const serviceLineIndex = typeof line.docPageLineIndex === 'number' ? line.docPageLineIndex : lineIndex;
+
       lineChanges.push({
         pageIndex: this.currentPageIndex,
-        lineIndex,
+        lineIndex: serviceLineIndex,
         previousLineState: cloneDeep(line),
         changeDescription,
       });
       line.visible = visible;
-      this.pdfService.updateLine(this.currentPageIndex, lineIndex, { visible }, true);
+      this.pdfService.updateLine(this.currentPageIndex, serviceLineIndex, { visible }, true);
     });
 
     if (lineChanges.length > 0) {

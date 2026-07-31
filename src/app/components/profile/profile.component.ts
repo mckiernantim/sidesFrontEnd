@@ -1,11 +1,12 @@
 import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { AuthService } from 'src/app/services/auth/auth.service';
+import { AuthModalService } from 'src/app/services/auth-modal/auth-modal.service';
 import { StripeService } from 'src/app/services/stripe/stripe.service';
 import { ScheduleApiService, ScheduleSummary } from 'src/app/services/schedule/schedule-api.service';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
 import { FunDataService } from 'src/app/services/fundata/fundata.service';
 import { AccurateStats, FunStats } from 'src/app/types/FunData';
-import { Router, NavigationEnd } from '@angular/router';
+import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
 import { User } from '@angular/fire/auth';
 import { 
   SubscriptionStatus, 
@@ -63,6 +64,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
   planChangeMessage: string | null = null;
   isChangingPlan = false;
   selectedInterval: BillingInterval = 'week';
+  /** Set when auth redirects a brand-new account here (?welcome=1). */
+  showWelcomeSubscribe = false;
   
   // Subscription benefits
   benefits: string[] = [
@@ -75,16 +78,19 @@ export class ProfileComponent implements OnInit, OnDestroy {
   // Router subscription
   private routerSubscription: Subscription | null = null;
   private authSubscription: Subscription | null = null;
+  private querySubscription: Subscription | null = null;
   
   @Output() subscriptionActivated = new EventEmitter<void>();
   
   constructor(
     private auth: AuthService,
+    private authModal: AuthModalService,
     private stripe: StripeService,
     private scheduleApi: ScheduleApiService,
     private pdfService: PdfService,
     private funDataService: FunDataService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit() {
@@ -92,6 +98,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
     
     // Check for active script in PdfService
     this.currentScriptName = this.pdfService.getScriptName();
+
+    this.querySubscription = this.route.queryParamMap.subscribe(params => {
+      this.showWelcomeSubscribe = params.get('welcome') === '1';
+    });
     
     // Subscribe to auth state changes
     this.authSubscription = this.auth.user$.subscribe(user => {
@@ -131,6 +141,26 @@ export class ProfileComponent implements OnInit, OnDestroy {
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
     }
+    if (this.querySubscription) {
+      this.querySubscription.unsubscribe();
+    }
+  }
+
+  /** Backend student window OR .edu email (optimistic before status loads). */
+  isStudentUser(): boolean {
+    if (this.subscription?.isStudent) return true;
+    const email = this.user?.email?.trim().toLowerCase() ?? '';
+    return email.endsWith('.edu');
+  }
+
+  dismissWelcome(): void {
+    this.showWelcomeSubscribe = false;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { welcome: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
   
   // Load subscription data - now gets everything in one call
@@ -417,9 +447,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     });
   }
   
-  // Sign in with Google
   signIn(): void {
-    this.auth.signInWithGoogle();
+    this.authModal.open();
   }
   
   // Logout

@@ -12,6 +12,7 @@
           [callsheetPath]="callSheetPath"
           [selectedScenes]="getSortedSelectedScenes()"
           [userData]="userData"
+          [subscriptionStatus]="subscriptionStatus"
           [isCheckingSubscription]="isCheckingSubscription"
           [callsheetReady]="callsheetReady"
           [callsheetState]="callsheetState"
@@ -27,7 +28,7 @@
           (sceneNumberEdit)="onRailSceneNumberEdit($event)"
           (sceneTextEdit)="onRailSceneTextEdit($event)"
           (getSides)="openConfirmPurchaseDialog()"
-          (signIn)="auth.signInWithGoogle()"
+          (signIn)="openSignIn()"
           (backToScenes)="toggleLastLooks()"
           (callsheetUpload)="handleCallSheetUpload($event)"
           (watermarkUpdate)="addWaterMark($event)"
@@ -39,6 +40,7 @@
         *ngIf="showCheckoutModal"
         [selectedScenes]="selected"
         [userData]="userData"
+        [subscriptionStatus]="subscriptionStatus"
         (checkout)="handleCheckout($event)"
         (close)="closeCheckoutModal()">
       </app-checkout-modal>
@@ -81,9 +83,97 @@
           [class.ss-row--controls]="sceneSelectPanel === 'controls'">
 
           <!-- LEFT: Scene selection table -->
-          <div class="sw-panel ss-scenes-panel p-3 sm:p-6 lg:max-h-none flex flex-col justify-around w-full md:w-3/5 min-w-0">
-            <h2 class="font-semibold text-xl sm:text-2xl m-2 sm:m-4">{{ script }} scenes</h2>
-            <div class="scene-selection-container flex-grow overflow-auto">
+          <div
+            class="sw-panel ss-scenes-panel p-3 sm:p-6 lg:max-h-none flex flex-col justify-around w-full min-w-0"
+            [ngClass]="viewMode === 'schedule' ? 'md:w-full' : 'md:w-3/5'">
+            <h2 *ngIf="viewMode !== 'schedule'" class="font-semibold text-xl sm:text-2xl m-2 sm:m-4">{{ script }} scenes</h2>
+
+            <!-- View Mode Tabs (Production / Casting) -->
+            <div class="flex items-center justify-between mb-4 px-2 gap-3 flex-wrap">
+              <div class="inline-flex rounded-lg border-2 border-sw-border bg-sw-surface p-1 shadow-md" role="tablist" aria-label="Sides mode">
+                <button
+                  type="button"
+                  role="tab"
+                  (click)="setViewMode('production')"
+                  class="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-md transition-all duration-150 uppercase tracking-wide"
+                  [class.bg-sw-accent]="viewMode === 'production'"
+                  [class.text-sw-bg]="viewMode === 'production'"
+                  [class.shadow-md]="viewMode === 'production'"
+                  [class.text-sw-text-muted]="viewMode !== 'production'"
+                  [attr.aria-selected]="viewMode === 'production'">
+                  Production
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  (click)="setViewMode('casting')"
+                  class="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-md transition-all duration-150 uppercase tracking-wide"
+                  [class.bg-sw-accent]="viewMode === 'casting'"
+                  [class.text-sw-bg]="viewMode === 'casting'"
+                  [class.shadow-md]="viewMode === 'casting'"
+                  [class.text-sw-text-muted]="viewMode !== 'casting'"
+                  [attr.aria-selected]="viewMode === 'casting'">
+                  Casting
+                </button>
+              </div>
+
+              <div *ngIf="viewMode === 'casting' && selectedCharacters.length > 0" class="flex items-center">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-sw-surface-2 text-sw-accent border border-sw-border">
+                  {{ selectedCharacters.length }} character{{ selectedCharacters.length > 1 ? 's' : '' }} selected
+                </span>
+                <button
+                  type="button"
+                  (click)="clearCharacterSelection()"
+                  class="ml-2 text-sw-text-muted hover:text-sw-text focus:outline-none"
+                  title="Clear selection"
+                  aria-label="Clear character selection">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Character Selection Panel (casting mode) -->
+            <div *ngIf="viewMode === 'casting'" class="mb-4 p-4 bg-sw-surface-2 rounded-lg border border-sw-border">
+              <h3 class="text-sm font-semibold text-sw-text mb-3 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+                </svg>
+                Select Speaking Character{{ selectedCharacters.length > 1 ? 's' : '' }}
+              </h3>
+              <p class="text-xs text-sw-text-muted mb-3">
+                Click characters to filter scenes. Select multiple to find scenes with all selected speaking characters.
+              </p>
+              <div class="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                <button
+                  type="button"
+                  *ngFor="let character of availableCharacters"
+                  (click)="onCharacterSelect(character)"
+                  class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ease-in-out"
+                  [class.bg-sw-accent]="isCharacterSelected(character)"
+                  [class.text-sw-bg]="isCharacterSelected(character)"
+                  [class.bg-sw-surface]="!isCharacterSelected(character)"
+                  [class.text-sw-text]="!isCharacterSelected(character)"
+                  [class.border]="!isCharacterSelected(character)"
+                  [class.border-sw-border]="!isCharacterSelected(character)"
+                  [class.shadow-sm]="isCharacterSelected(character)">
+                  {{ character }}
+                  <svg *ngIf="isCharacterSelected(character)" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+              <div class="mt-3 pt-3 border-t border-sw-border">
+                <p class="text-xs text-sw-text-muted">
+                  <span class="font-semibold text-sw-accent">{{ filteredScenes.length }}</span> scene{{ filteredScenes.length !== 1 ? 's' : '' }}
+                  <span *ngIf="selectedCharacters.length > 0"> with {{ selectedCharacters.join(' & ') }}</span>
+                  <span *ngIf="selectedCharacters.length === 0"> total</span>
+                </p>
+              </div>
+            </div>
+
+            <div *ngIf="viewMode !== 'schedule'" class="scene-selection-container flex-grow overflow-auto">
               <div class="filter-container mb-4">
                 <input
                   type="text"
@@ -93,8 +183,8 @@
               </div>
 
               <app-tailwind-table
-                [data]="scenes"
-                [columns]="tableColumns"
+                [data]="currentScenes"
+                [columns]="currentTableColumns"
                 [selectable]="true"
                 [pagination]="true"
                 [pageSize]="pageSize"
@@ -107,7 +197,10 @@
           </div>
 
           <!-- RIGHT: Controls + selected scenes rail -->
-          <div class="dash-side-panel ss-controls-panel w-full md:w-2/5 md:max-w-[40%] min-w-0" [class.edit-state]="editState">
+          <div
+            *ngIf="viewMode !== 'schedule'"
+            class="dash-side-panel ss-controls-panel w-full md:w-2/5 md:max-w-[40%] min-w-0"
+            [class.edit-state]="editState">
             <div class="ss-rail">
               <div class="ss-rail-header">
                 <div class="ss-rail-title-block">
@@ -117,60 +210,65 @@
                 </div>
               </div>
 
-              <div class="ss-rail-checkout">
-                <div class="ss-rail-actions">
-                  <button
-                    type="button"
-                    (click)="toggleLastLooks()"
-                    [disabled]="selected.length === 0"
-                    class="btn-sw btn-sw-primary ss-rail-action-btn">
-                    Continue
-                  </button>
-                  <button
-                    type="button"
-                    (click)="navigateBackToUpload()"
-                    class="btn-sw btn-sw-secondary ss-rail-action-btn">
-                    Back To Upload
-                  </button>
-                </div>
-
-                <div class="ss-rail-attachments">
-                  <div class="ss-rail-attach-item">
-                    <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
+              <!-- TOP 50%: controls (scrollable), always above selected scenes -->
+              <div class="ss-rail-controls">
+                <div class="ss-rail-checkout">
+                  <div class="ss-rail-actions">
+                    <button
+                      type="button"
+                      (click)="toggleLastLooks()"
+                      [disabled]="selected.length === 0"
+                      class="btn-sw btn-sw-primary ss-rail-action-btn">
+                      Continue
+                    </button>
+                    <button
+                      type="button"
+                      (click)="navigateBackToUpload()"
+                      class="btn-sw btn-sw-secondary ss-rail-action-btn">
+                      Back To Upload
+                    </button>
                   </div>
-                  <div class="ss-rail-attach-item">
-                    <app-add-watermark
-                      [hasWatermark]="hasWatermark"
-                      (waterMarkUpdate)="addWaterMark($event)"
-                      (waterMarkRemove)="removeWatermark()">
-                    </app-add-watermark>
+
+                  <div class="ss-rail-attachments">
+                    <div class="ss-rail-attach-item">
+                      <app-add-callsheet (callsheetInfo)="handleCallSheetUpload($event)"></app-add-callsheet>
+                    </div>
+                    <div class="ss-rail-attach-item">
+                      <app-add-watermark
+                        [hasWatermark]="hasWatermark"
+                        [showCastingDirector]="viewMode === 'casting'"
+                        (waterMarkUpdate)="addWaterMark($event)"
+                        (waterMarkRemove)="removeWatermark()">
+                      </app-add-watermark>
+                    </div>
+                  </div>
+
+                  <div *ngIf="callsheetReady && callSheetPath" class="ss-rail-chip ss-chip-mint">
+                    <svg class="ss-chip-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    Callsheet Ready
+                  </div>
+
+                  <div *ngIf="watermark" class="ss-rail-chip ss-chip-sky">
+                    <svg class="ss-chip-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                      <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+                    </svg>
+                    Watermark: {{ watermark }}
                   </div>
                 </div>
 
-                <div *ngIf="callsheetReady && callSheetPath" class="ss-rail-chip ss-chip-mint">
-                  <svg class="ss-chip-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                  </svg>
-                  Callsheet Ready
-                </div>
-
-                <div *ngIf="watermark" class="ss-rail-chip ss-chip-sky">
-                  <svg class="ss-chip-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                    <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
-                  </svg>
-                  Watermark: {{ watermark }}
+                <div class="ss-rail-status-row" *ngIf="callsheetState || watermark">
+                  <p class="ss-rail-status-text" *ngIf="callsheetState">
+                    <span class="font-medium">Callsheet:</span> {{ callsheet }}
+                  </p>
+                  <p class="ss-rail-status-text" *ngIf="watermark">
+                    <span class="font-medium">Watermark:</span> {{ watermark }}
+                  </p>
                 </div>
               </div>
 
-              <div class="ss-rail-status-row" *ngIf="callsheetState || watermark">
-                <p class="ss-rail-status-text" *ngIf="callsheetState">
-                  <span class="font-medium">Callsheet:</span> {{ callsheet }}
-                </p>
-                <p class="ss-rail-status-text" *ngIf="watermark">
-                  <span class="font-medium">Watermark:</span> {{ watermark }}
-                </p>
-              </div>
-
+              <!-- BOTTOM 50%: selected scenes (scrollable) -->
               <div class="ss-rail-scenes">
                 <h4 class="ss-rail-section-label">Select a Scene</h4>
 
