@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from 'src/app/services/auth/auth.service';
 import { DateFormatPipe } from 'src/app/pipes/date-format.pipe';
+import { StripeService } from 'src/app/services/stripe/stripe.service';
 @Component({
     selector: 'app-payment-success',
     templateUrl: './payment-success.component.html',
@@ -10,15 +11,20 @@ import { DateFormatPipe } from 'src/app/pipes/date-format.pipe';
 })
 export class PaymentSuccessComponent implements OnInit {
   nextBillingDate: Date = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
-  
+  /** Test-mode warning must disappear on its own once Stripe is switched to live keys */
+  showTestModeBanner = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private authService: AuthService,
-    private datePipe: DateFormatPipe
+    private datePipe: DateFormatPipe,
+    private stripeService: StripeService
   ) {}
 
   ngOnInit(): void {
+    this.showTestModeBanner = !this.stripeService.isLive;
+
     // Get session ID from URL if available
     this.route.queryParams.subscribe(params => {
       const sessionId = params['session_id'];

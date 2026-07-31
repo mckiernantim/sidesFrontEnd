@@ -38,6 +38,8 @@ export class PricingComponent implements OnInit {
   selectedInterval: BillingInterval = 'week';
   billingFaqText = getBillingFaqText({ isFounder: false, active: false }, 'week');
   readonly foundersRateSubtitle = FOUNDERS_RATE_SUBTITLE;
+  /** Test-mode warning must disappear on its own once Stripe is switched to live keys */
+  showTestModeBanner = false;
   private offerQuery: string | null = null;
   
   constructor(
@@ -47,6 +49,7 @@ export class PricingComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.showTestModeBanner = !this.stripeService.isLive;
     this.user$ = this.authService.user$;
     this.subscriptionStatus$ = this.stripeService.subscriptionStatus$;
     this.offerQuery = this.route.snapshot.queryParamMap.get('offer');
