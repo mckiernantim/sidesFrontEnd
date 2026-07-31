@@ -21,8 +21,9 @@ import { ContactComponent } from './components/contact/contact.component';
 import { HowItWorksComponent } from './components/how-it-works/how-it-works.component';
 import { SchedulePageComponent } from './components/schedule/schedule-page/schedule-page.component';
 import { HelpCenterComponent } from './components/help-center/help-center.component';
-import { PrivacyComponent } from './components/privacy/privacy.component';
-import { TermsComponent } from './components/terms/terms.component';
+import { PrivacyPolicyComponent } from './components/privacy-policy/privacy-policy.component';
+import { TermsOfServiceComponent } from './components/terms-of-service/terms-of-service.component';
+import { CookiePolicyComponent } from './components/cookie-policy/cookie-policy.component';
 
 const routes: Routes = [
   { path: 'test', component: TestComponent },
@@ -50,8 +51,9 @@ const routes: Routes = [
   { path: 'contact', component: ContactComponent },
   { path: 'how-it-works', component: HowItWorksComponent },
   { path: 'help', component: HelpCenterComponent },
-  { path: 'privacy', component: PrivacyComponent },
-  { path: 'terms', component: TermsComponent },
+  { path: 'privacy', component: PrivacyPolicyComponent },
+  { path: 'terms', component: TermsOfServiceComponent },
+  { path: 'cookie-policy', component: CookiePolicyComponent },
   { path: 'auth', component: AuthComponent },
   { path: 'sign-in', redirectTo: 'auth', pathMatch: 'full' },
   { path: "**", component:FourOfourComponent}

@@ -30,8 +30,9 @@ import { MaintenanceNoticeComponent } from './components/maintenance-notice/main
 import { HelpCenterComponent } from './components/help-center/help-center.component';
 import { AuthComponent } from './components/auth/auth.component';
 import { AuthModalComponent } from './components/auth-modal/auth-modal.component';
-import { PrivacyComponent } from './components/privacy/privacy.component';
-import { TermsComponent } from './components/terms/terms.component';
+import { PrivacyPolicyComponent } from './components/privacy-policy/privacy-policy.component';
+import { TermsOfServiceComponent } from './components/terms-of-service/terms-of-service.component';
+import { CookiePolicyComponent } from './components/cookie-policy/cookie-policy.component';
 
 // Factory function to ensure Firebase is initialized before the app starts
 export function initializeFirebase(authService: AuthService) {
@@ -64,8 +65,9 @@ export function initializeFirebase(authService: AuthService) {
     HelpCenterComponent,
     AuthComponent,
     AuthModalComponent,
-    PrivacyComponent,
-    TermsComponent,
+    PrivacyPolicyComponent,
+    TermsOfServiceComponent,
+    CookiePolicyComponent,
   ],
   imports: [
     BrowserModule,
