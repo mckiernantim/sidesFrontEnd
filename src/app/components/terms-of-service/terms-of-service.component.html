@@ -153,12 +153,12 @@
           <tbody>
             <tr>
               <td>Weekly</td>
-              <td>$20.00 USD</td>
+              <td>{{ weeklyPrice }} USD</td>
               <td>Every week</td>
             </tr>
             <tr>
               <td>Monthly</td>
-              <td>$60.00 USD</td>
+              <td>{{ monthlyPrice }} USD</td>
               <td>Every month</td>
             </tr>
           </tbody>
@@ -182,8 +182,9 @@
       <h3 class="sw-legal__subheading">6.2 Discounted Rates</h3>
       <p class="sw-legal__body">
         <strong>Founders Rate.</strong> Eligible early users may be offered a
-        Founders Rate of 50% off standard pricing ($10.00 per week or $30.00 per
-        month). Eligibility is determined by SidesWays and is not transferable.
+        Founders Rate of 50% off standard pricing ({{ foundersWeeklyPrice }} per
+        week or {{ foundersMonthlyPrice }} per month). Eligibility is determined
+        by SidesWays and is not transferable.
       </p>
       <p class="sw-legal__body">
         <strong>Student Rate.</strong> If you sign in with an email address

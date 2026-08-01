@@ -9,7 +9,7 @@
  */
 
 /** Master switch — set true only when you intend to take live payments. */
-export const STRIPE_IS_LIVE = false;
+export const STRIPE_IS_LIVE = true;
 
 export const STRIPE_PUBLISHABLE_TEST =
   'pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ';

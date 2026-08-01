@@ -10,10 +10,23 @@ import { SubscriptionStatus } from 'src/app/types/SubscriptionTypes';
 import {
   pricingCommandsForOffer,
   resolveOfferProduct,
+  setPriceCatalog,
   shouldRedirectToPricingAfterLogin,
   BillingInterval,
   OfferProduct
 } from '../../utils/founders-offer';
+
+interface StripePriceCatalogResponse {
+  success: boolean;
+  testMode?: boolean;
+  prices: {
+    standardWeekly: number | null;
+    standardMonthly: number | null;
+    foundersWeekly: number | null;
+    foundersMonthly: number | null;
+    student: number | null;
+  } | null;
+}
 
 interface StripeError {
   code: string;
@@ -106,6 +119,31 @@ export class StripeService {
         return throwError(() => new Error('Failed to get authentication headers'));
       })
     );
+  }
+
+  /**
+   * Hydrate advertised pricing from the live Stripe catalog at bootstrap.
+   * Never rejects — on failure the bundled defaults in founders-offer stand,
+   * so a Stripe outage degrades to slightly stale copy rather than a blank page.
+   */
+  loadPriceCatalog(): Promise<void> {
+    return firstValueFrom(
+      this.http.get<StripePriceCatalogResponse>(`${this.apiUrl}/stripe/prices`).pipe(
+        catchError(error => {
+          console.warn('STRIPE: Falling back to bundled prices', error?.message ?? error);
+          return of(null);
+        })
+      )
+    ).then(response => {
+      if (!response?.success || !response.prices) return;
+      const { standardWeekly, standardMonthly, foundersWeekly, foundersMonthly } = response.prices;
+      setPriceCatalog({
+        standardWeeklyCents: standardWeekly ?? undefined,
+        standardMonthlyCents: standardMonthly ?? undefined,
+        foundersWeeklyCents: foundersWeekly ?? undefined,
+        foundersMonthlyCents: foundersMonthly ?? undefined
+      });
+    });
   }
 
   getSubscriptionStatus(userId: string): Observable<SubscriptionStatus> {

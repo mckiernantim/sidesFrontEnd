@@ -272,7 +272,7 @@
         </div>
         
         <div class="flex justify-between items-center">
-          <p class="text-xl font-bold text-sw-accent">$20 per week</p>
+          <p class="text-xl font-bold text-sw-accent">{{ getSubscribePriceLabel() }}</p>
           <button
             (click)="handleNewSubscription()"
             [disabled]="subscription?.subscription?.status === 'pending'"

@@ -6,8 +6,8 @@ import {
 } from './stripe.keys';
 
 describe('stripe.keys go-live switch', () => {
-  it('defaults to test mode (isLive false)', () => {
-    expect(STRIPE_IS_LIVE).toBe(false);
+  it('is switched to live mode', () => {
+    expect(STRIPE_IS_LIVE).toBe(true);
   });
 
   it('resolveStripePublishableKey(false) returns test publishable key', () => {

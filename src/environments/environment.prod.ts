@@ -1,11 +1,13 @@
+import {
+  STRIPE_IS_LIVE,
+  STRIPE_PUBLISHABLE_TEST,
+  resolveStripePublishableKey
+} from './stripe.keys';
+
 export const environment = {
   production: true,
-  isLive: false,
-
-  // ⚠️⚠️⚠️ CRITICAL: CHANGE TO REAL STRIPE PRODUCTION KEY BEFORE GOING LIVE! ⚠️⚠️⚠️
-  // Current key is TEST mode - will NOT process real payments!
-  // Replace with: pk_live_... (your real production publishable key)
-  stripe: 'pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ',
+  isLive: STRIPE_IS_LIVE,
+  stripe: resolveStripePublishableKey(),
   contactFunctionUrl: 'https://us-central1-scriptthing.cloudfunctions.net/contactUs',
 
   firebaseConfig:{
@@ -41,9 +43,11 @@ export const environmentProd = environment;
 export function getConfig(isProd = false) {
   // Check if we're on the dev staging URL
   if (typeof window !== 'undefined' && window.location.hostname === 'scriptthing-dev.web.app') {
-    // DEV STAGING CONFIG
+    // DEV STAGING CONFIG — never takes live payments, even from a production build
     return {
       ...environment,
+      isLive: false,
+      stripe: STRIPE_PUBLISHABLE_TEST,
       firebaseConfig: {
         apiKey: "AIzaSyCr0Gemya880xoOnAYWtTcZWssg5Uc2HY0",
         authDomain: "scriptthing-dev.firebaseapp.com",

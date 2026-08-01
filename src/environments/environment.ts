@@ -2,6 +2,8 @@
 // `ng build --prod` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
 
+import { STRIPE_PUBLISHABLE_TEST } from './stripe.keys';
+
 // Base development configuration
 const devFirebaseConfig = {
   apiKey: "AIzaSyCr0Gemya880xoOnAYWtTcZWssg5Uc2HY0",
@@ -28,7 +30,7 @@ const prodFirebaseConfig = {
 export const environment = {
   production: false,
   isLive: false,
-  stripe: 'pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ',
+  stripe: STRIPE_PUBLISHABLE_TEST,
   firebaseConfig: devFirebaseConfig,
   url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
   contactFunctionUrl: 'https://us-central1-scriptthing-dev.cloudfunctions.net/contactUs',
@@ -40,7 +42,7 @@ export const environment = {
 export const environmentProd = {
   production: true,
   isLive: false,
-  stripe: 'pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ',
+  stripe: STRIPE_PUBLISHABLE_TEST,
   firebaseConfig: prodFirebaseConfig,
   url: 'https://sides3.herokuapp.com',
   contactFunctionUrl: 'https://us-central1-scriptthing.cloudfunctions.net/contactUs',
@@ -115,7 +117,7 @@ export function getConfig(isProd = false) {
       firebaseConfig: prodFirebaseConfig,
       url: 'https://sides3.herokuapp.com',
       contactFunctionUrl: 'https://us-central1-scriptthing.cloudfunctions.net/contactUs',
-      stripe: 'pk_test_51IEIywBojwZRnVT4jdQQwACDdPb6Zy0ceGk09ZXvUWoeseNOakmMrGB5F9aVY73b0VQqwhZD6jCOE74GTGXbV4Tj00ggYYXpjQ'
+      stripe: STRIPE_PUBLISHABLE_TEST
     };
   }
   

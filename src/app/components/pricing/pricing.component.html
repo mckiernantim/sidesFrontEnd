@@ -98,10 +98,10 @@
         </div>
 
         <div class="bg-gradient-to-br from-sw-surface-2 to-sw-surface text-white p-8 text-center border-b-4 border-sw-accent">
-          <h2 class="text-3xl font-bold text-sw-text mb-2">Professional Plan</h2>
+          <h2 class="text-3xl font-bold text-sw-text mb-2">{{ planTitle }}</h2>
           <div class="mt-6 flex items-center justify-center">
-            <span class="text-6xl font-bold text-sw-accent">$20</span>
-            <span class="ml-3 text-2xl text-sw-text-muted">/week</span>
+            <span class="text-6xl font-bold text-sw-accent">{{ priceAmount }}</span>
+            <span class="ml-3 text-2xl text-sw-text-muted">{{ getIntervalSuffix() }}</span>
           </div>
           <p class="mt-4 text-sw-text-subtle font-medium">Cancel anytime</p>
           <div class="mt-4 bg-yellow-400 text-black px-4 py-2 rounded-lg inline-block">
@@ -209,7 +209,7 @@
 
           <div class="bg-sw-surface p-6 rounded-lg shadow-lg border-2 border-sw-border">
             <h4 class="text-lg font-semibold mb-3 text-sw-accent">How does the weekly billing work?</h4>
-            <p class="text-sw-text-muted">You'll be charged $20 every week until you cancel. Your subscription will automatically renew each week.</p>
+            <p class="text-sw-text-muted">{{ billingFaqText }}</p>
           </div>
 
           <div class="bg-sw-surface p-6 rounded-lg shadow-lg border-2 border-sw-border">

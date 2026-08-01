@@ -14,6 +14,7 @@ import {
   getOfferPriceCents,
   getOfferPriceLabel,
   getStandardPriceLabel,
+  formatCents,
   shouldShowFoundersOffer,
   FOUNDERS_RATE_SUBTITLE
 } from '../../utils/founders-offer';
@@ -33,8 +34,9 @@ export class PricingComponent implements OnInit {
   isFounder = false;
   showFoundersOffer = false;
   planTitle = 'Professional Plan';
-  priceLabel = '$20 per week';
-  priceDollars = 20;
+  priceLabel = getOfferPriceLabel({ isFounder: false, active: false }, 'week');
+  priceDollars = getOfferPriceCents({ isFounder: false, active: false }, 'week') / 100;
+  priceAmount = formatCents(getOfferPriceCents({ isFounder: false, active: false }, 'week'));
   selectedInterval: BillingInterval = 'week';
   billingFaqText = getBillingFaqText({ isFounder: false, active: false }, 'week');
   readonly foundersRateSubtitle = FOUNDERS_RATE_SUBTITLE;
@@ -94,7 +96,9 @@ export class PricingComponent implements OnInit {
     isFounder: this.isFounder,
     active: false
   }): void {
-    this.priceDollars = getOfferPriceCents(eligibility, this.selectedInterval) / 100;
+    const cents = getOfferPriceCents(eligibility, this.selectedInterval);
+    this.priceDollars = cents / 100;
+    this.priceAmount = formatCents(cents);
     this.priceLabel = getOfferPriceLabel(eligibility, this.selectedInterval);
     this.billingFaqText = getBillingFaqText(eligibility, this.selectedInterval);
   }

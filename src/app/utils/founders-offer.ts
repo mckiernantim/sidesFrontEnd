@@ -11,11 +11,48 @@ export interface FounderEligibility {
   active: boolean;
 }
 
-/** Standard catalog + Founders at exactly 50% off. */
-export const STANDARD_WEEKLY_CENTS = 2000; // $20/week
-export const STANDARD_MONTHLY_CENTS = 6000; // $60/month
-export const FOUNDERS_WEEKLY_CENTS = 1000; // $10/week = 50% of $20
-export const FOUNDERS_MONTHLY_CENTS = 3000; // $30/month = 50% of $60
+export interface PriceCatalog {
+  standardWeeklyCents: number;
+  standardMonthlyCents: number;
+  foundersWeeklyCents: number;
+  foundersMonthlyCents: number;
+}
+
+/**
+ * Advertised amounts, hydrated at bootstrap from GET /stripe/prices so displayed
+ * pricing tracks the live Stripe catalog. Defaults mirror the current live
+ * catalog and are only used if that request fails.
+ */
+const priceCatalog: PriceCatalog = {
+  standardWeeklyCents: 1000,
+  standardMonthlyCents: 3000,
+  foundersWeeklyCents: 500,
+  foundersMonthlyCents: 1500
+};
+
+/** Ignores null/negative amounts so a partial Stripe response can't zero the UI. */
+export function setPriceCatalog(next: Partial<PriceCatalog> | null | undefined): void {
+  if (!next) return;
+  (Object.keys(priceCatalog) as Array<keyof PriceCatalog>).forEach(key => {
+    const amount = next[key];
+    if (typeof amount === 'number' && Number.isFinite(amount) && amount >= 0) {
+      priceCatalog[key] = amount;
+    }
+  });
+}
+
+export function getPriceCatalog(): PriceCatalog {
+  return { ...priceCatalog };
+}
+
+export function formatCents(cents: number): string {
+  return cents % 100 === 0 ? `$${cents / 100}` : `$${(cents / 100).toFixed(2)}`;
+}
+
+/** Always two decimals — legal copy should read "$10.00", never "$10". */
+export function formatCentsPrecise(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
 
 /** Consistent copy for Founder members (nav badge, profile tag, plan titles). */
 export const FOUNDERS_MEMBER_TAG = 'Founder';
@@ -69,9 +106,13 @@ export function getOfferPriceCents(
   interval: BillingInterval = 'week'
 ): number {
   if (interval === 'month') {
-    return isFounderMember(eligibility) ? FOUNDERS_MONTHLY_CENTS : STANDARD_MONTHLY_CENTS;
+    return isFounderMember(eligibility)
+      ? priceCatalog.foundersMonthlyCents
+      : priceCatalog.standardMonthlyCents;
   }
-  return isFounderMember(eligibility) ? FOUNDERS_WEEKLY_CENTS : STANDARD_WEEKLY_CENTS;
+  return isFounderMember(eligibility)
+    ? priceCatalog.foundersWeeklyCents
+    : priceCatalog.standardWeeklyCents;
 }
 
 /** @deprecated Prefer getOfferPriceCents(eligibility, 'week') */
@@ -87,13 +128,15 @@ export function getOfferPriceLabel(
   eligibility: FounderEligibility,
   interval: BillingInterval = 'week'
 ): string {
-  const dollars = getOfferPriceCents(eligibility, interval) / 100;
-  return interval === 'month' ? `$${dollars} per month` : `$${dollars} per week`;
+  const amount = formatCents(getOfferPriceCents(eligibility, interval));
+  return interval === 'month' ? `${amount} per month` : `${amount} per week`;
 }
 
 export function getStandardPriceLabel(interval: BillingInterval): string {
-  const dollars = (interval === 'month' ? STANDARD_MONTHLY_CENTS : STANDARD_WEEKLY_CENTS) / 100;
-  return interval === 'month' ? `$${dollars} per month` : `$${dollars} per week`;
+  const amount = formatCents(
+    interval === 'month' ? priceCatalog.standardMonthlyCents : priceCatalog.standardWeeklyCents
+  );
+  return interval === 'month' ? `${amount} per month` : `${amount} per week`;
 }
 
 export function getAlternateInterval(interval: BillingInterval): BillingInterval {
@@ -104,9 +147,7 @@ export function getBillingFaqText(
   eligibility: FounderEligibility,
   interval: BillingInterval = 'week'
 ): string {
-  const amount = interval === 'month'
-    ? (isFounderMember(eligibility) ? '$30' : '$60')
-    : (isFounderMember(eligibility) ? '$10' : '$20');
+  const amount = formatCents(getOfferPriceCents(eligibility, interval));
   const cadence = interval === 'month' ? 'month' : 'week';
   return `You'll be charged ${amount} every ${cadence} until you cancel. Your subscription will automatically renew each ${cadence}.`;
 }

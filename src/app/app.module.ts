@@ -26,6 +26,7 @@ import { HttpLogInterceptor } from './services/http-interceptor.service';
 import { HowItWorksComponent } from './components/how-it-works/how-it-works.component';
 import { SubscriptionModalComponent } from './components/subscription-modal/subscription-modal.component';
 import { AuthService } from './services/auth/auth.service';
+import { StripeService } from './services/stripe/stripe.service';
 import { MaintenanceNoticeComponent } from './components/maintenance-notice/maintenance-notice.component';
 import { HelpCenterComponent } from './components/help-center/help-center.component';
 import { AuthComponent } from './components/auth/auth.component';
@@ -33,6 +34,10 @@ import { AuthModalComponent } from './components/auth-modal/auth-modal.component
 import { PrivacyPolicyComponent } from './components/privacy-policy/privacy-policy.component';
 import { TermsOfServiceComponent } from './components/terms-of-service/terms-of-service.component';
 import { CookiePolicyComponent } from './components/cookie-policy/cookie-policy.component';
+
+export function initializePriceCatalog(stripeService: StripeService) {
+  return () => stripeService.loadPriceCatalog();
+}
 
 // Factory function to ensure Firebase is initialized before the app starts
 export function initializeFirebase(authService: AuthService) {
@@ -91,6 +96,12 @@ export function initializeFirebase(authService: AuthService) {
       provide: APP_INITIALIZER,
       useFactory: initializeFirebase,
       deps: [AuthService],
+      multi: true
+    },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializePriceCatalog,
+      deps: [StripeService],
       multi: true
     }
   ],
