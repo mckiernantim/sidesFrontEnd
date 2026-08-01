@@ -271,6 +271,31 @@
           </ul>
         </div>
         
+        <!-- Billing interval -->
+        <div class="mb-6">
+          <h4 class="font-medium text-sw-accent mb-2">Billing:</h4>
+          <div class="inline-flex rounded-md border border-sw-border overflow-hidden" role="group" aria-label="Billing interval">
+            <button
+              type="button"
+              (click)="selectInterval('week')"
+              [attr.aria-pressed]="selectedInterval === 'week'"
+              [ngClass]="selectedInterval === 'week' ? 'bg-sw-accent text-sw-bg' : 'bg-sw-surface-2 text-sw-text-muted hover:text-sw-text'"
+              class="px-5 py-2 text-sm font-semibold transition-all"
+            >
+              Weekly
+            </button>
+            <button
+              type="button"
+              (click)="selectInterval('month')"
+              [attr.aria-pressed]="selectedInterval === 'month'"
+              [ngClass]="selectedInterval === 'month' ? 'bg-sw-accent text-sw-bg' : 'bg-sw-surface-2 text-sw-text-muted hover:text-sw-text'"
+              class="px-5 py-2 text-sm font-semibold transition-all border-l border-sw-border"
+            >
+              Monthly
+            </button>
+          </div>
+        </div>
+
         <div class="flex justify-between items-center">
           <p class="text-xl font-bold text-sw-accent">{{ getSubscribePriceLabel() }}</p>
           <button

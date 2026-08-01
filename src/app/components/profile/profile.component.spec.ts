@@ -311,8 +311,33 @@ describe('ProfileComponent', () => {
 
       // of() resolves synchronously, so isLoading is already reset
       setTimeout(() => {
-        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('test-user-123', 'test@example.com');
+        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith(
+          'test-user-123',
+          'test@example.com',
+          undefined,
+          'week'
+        );
         expect(component.isLoading).toBe(false);
+        done();
+      }, 0);
+    });
+
+    it('should check out on the monthly price when monthly is selected', (done) => {
+      component.user = mockUser;
+      mockStripeService.createPortalSession.mockReturnValue(
+        of({ success: true, url: 'https://billing.stripe.com/checkout_123', type: 'checkout' as const })
+      );
+
+      component.selectInterval('month');
+      component.handleNewSubscription();
+
+      setTimeout(() => {
+        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith(
+          'test-user-123',
+          'test@example.com',
+          undefined,
+          'month'
+        );
         done();
       }, 0);
     });
@@ -542,8 +567,13 @@ describe('ProfileComponent', () => {
       component.handleNewSubscription();
 
       setTimeout(() => {
-        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('test-user-123', 'test@example.com');
-        
+        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith(
+          'test-user-123',
+          'test@example.com',
+          undefined,
+          'week'
+        );
+
         // Later, manage active subscription
         component.subscription = mockActiveSubscription;
         const manageResponse = {

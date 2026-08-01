@@ -179,7 +179,8 @@ export class StripeService {
                 currentPeriodStart: response.subscription.currentPeriodStart,
                 cancelAtPeriodEnd: response.subscription.cancelAtPeriodEnd,
                 willAutoRenew: response.subscription.status === 'active' && !response.subscription.cancelAtPeriodEnd,
-                originalStartDate: response.subscription.createdAt,
+                // Firestore-fallback responses omit createdAt; period start keeps the UI truthful
+                originalStartDate: response.subscription.createdAt || response.subscription.currentPeriodStart || null,
                 plan: response.subscription.plan ? {
                   id: response.subscription.plan.id,
                   amount: response.subscription.plan.amount,

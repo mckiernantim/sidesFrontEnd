@@ -432,10 +432,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   // Format dates - enhanced for the new structure
-  formatDate(dateString: string | null): string {
+  formatDate(dateString: string | null | undefined | { seconds?: number; _seconds?: number }): string {
     if (!dateString) return 'N/A';
 
-    const date = new Date(dateString);
+    // Firestore-sourced dates arrive as Timestamp objects, not ISO strings
+    const seconds =
+      typeof dateString === 'object'
+        ? dateString.seconds ?? dateString._seconds
+        : undefined;
+    const date = seconds != null ? new Date(seconds * 1000) : new Date(dateString as string);
 
     // Check if the date is valid
     if (isNaN(date.getTime())) {

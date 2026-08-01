@@ -91,7 +91,7 @@
       <!-- Pricing Card -->
       <div *ngIf="!isLoading" class="bg-sw-surface rounded-lg shadow-2xl overflow-hidden border-2 border-sw-border">
         <!-- BETA TEST MODE NOTICE -->
-        <div class="bg-yellow-400 border-b-4 border-yellow-500 px-6 py-4">
+        <div *ngIf="showTestModeBanner" class="bg-yellow-400 border-b-4 border-yellow-500 px-6 py-4">
           <p class="text-center text-black font-black text-lg md:text-xl uppercase">
             🚨 TEST MODE: NO REAL CHARGES WILL BE MADE 🚨
           </p>
@@ -99,12 +99,36 @@
 
         <div class="bg-gradient-to-br from-sw-surface-2 to-sw-surface text-white p-8 text-center border-b-4 border-sw-accent">
           <h2 class="text-3xl font-bold text-sw-text mb-2">{{ planTitle }}</h2>
+
+          <div class="mt-6 flex justify-center">
+            <div class="inline-flex rounded-md border border-sw-border overflow-hidden" role="group" aria-label="Billing interval">
+              <button
+                type="button"
+                (click)="selectInterval('week')"
+                [attr.aria-pressed]="selectedInterval === 'week'"
+                [ngClass]="selectedInterval === 'week' ? 'bg-sw-accent text-sw-bg' : 'bg-sw-surface-2 text-sw-text-muted hover:text-sw-text'"
+                class="px-6 py-2 text-sm font-semibold transition-all"
+              >
+                Weekly
+              </button>
+              <button
+                type="button"
+                (click)="selectInterval('month')"
+                [attr.aria-pressed]="selectedInterval === 'month'"
+                [ngClass]="selectedInterval === 'month' ? 'bg-sw-accent text-sw-bg' : 'bg-sw-surface-2 text-sw-text-muted hover:text-sw-text'"
+                class="px-6 py-2 text-sm font-semibold transition-all border-l border-sw-border"
+              >
+                Monthly
+              </button>
+            </div>
+          </div>
+
           <div class="mt-6 flex items-center justify-center">
             <span class="text-6xl font-bold text-sw-accent">{{ priceAmount }}</span>
             <span class="ml-3 text-2xl text-sw-text-muted">{{ getIntervalSuffix() }}</span>
           </div>
           <p class="mt-4 text-sw-text-subtle font-medium">Cancel anytime</p>
-          <div class="mt-4 bg-yellow-400 text-black px-4 py-2 rounded-lg inline-block">
+          <div *ngIf="showTestModeBanner" class="mt-4 bg-yellow-400 text-black px-4 py-2 rounded-lg inline-block">
             <p class="font-bold text-sm">BETA PRICING - NOT FINAL</p>
           </div>
         </div>
