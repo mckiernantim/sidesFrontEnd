@@ -66,6 +66,11 @@ export class UploadComponent implements OnInit, OnDestroy {
     private authService: AuthService
   ) {}
 
+  /** Pre-launch allowlist — only mckiernantim@gmail.com can upload until unlock. */
+  canUpload(user: User | null | undefined): boolean {
+    return this.authService.canUpload(user);
+  }
+
   ngOnInit(): void {
     const config = getConfig(!isDevMode());
     this.underConstruction = !config.production;

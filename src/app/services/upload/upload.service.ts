@@ -464,6 +464,11 @@ export class UploadService {
             () => new Error('User must be authenticated to upload files')
           );
         }
+        if (!this.auth.canUpload(user)) {
+          return throwError(
+            () => new Error('Uploads are temporarily restricted while we finalize launch')
+          );
+        }
 
         localStorage.setItem('name', fileToUpload.name.replace(/.pdf/, ''));
         this.script = localStorage.getItem('name');
@@ -687,6 +692,11 @@ export class UploadService {
         if (!user) {
           return throwError(
             () => new Error('User must be authenticated to upload files')
+          );
+        }
+        if (!this.auth.canUpload(user)) {
+          return throwError(
+            () => new Error('Uploads are temporarily restricted while we finalize launch')
           );
         }
 
@@ -974,6 +984,11 @@ export class UploadService {
         if (!user) {
           return throwError(
             () => new Error('User must be authenticated to upload files')
+          );
+        }
+        if (!this.auth.canUpload(user)) {
+          return throwError(
+            () => new Error('Uploads are temporarily restricted while we finalize launch')
           );
         }
 

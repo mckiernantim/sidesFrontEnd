@@ -87,31 +87,45 @@
 
         <ng-template #uploadSection>
           <ng-container *ngIf="(user$ | async) as user; else signInPrompt">
-            <div
-              class="upload-zone"
-              id="upload-zone"
-              (click)="fileInput.click()"
-              (dragover)="$event.preventDefault()"
-              (drop)="onFileDropped($event)"
-            >
-              <img
-                class="upload-bot"
-                src="assets/icons/bot-about-images/scan-bot-two.png"
-                alt=""
-                aria-hidden="true"
-              />
-              <div class="upload-cta">Click to upload or drag and drop</div>
-              <div class="upload-hint">PDF files only · max 25MB</div>
-              <input
-                id="file-upload"
-                type="file"
-                class="hidden"
-                accept="application/pdf,.pdf"
-                (change)="onFileSelected($event)"
-                (click)="$event.stopPropagation()"
-                #fileInput
-              />
-            </div>
+            <ng-container *ngIf="canUpload(user); else uploadLocked">
+              <div
+                class="upload-zone"
+                id="upload-zone"
+                (click)="fileInput.click()"
+                (dragover)="$event.preventDefault()"
+                (drop)="onFileDropped($event)"
+              >
+                <img
+                  class="upload-bot"
+                  src="assets/icons/bot-about-images/scan-bot-two.png"
+                  alt=""
+                  aria-hidden="true"
+                />
+                <div class="upload-cta">Click to upload or drag and drop</div>
+                <div class="upload-hint">PDF files only · max 25MB</div>
+                <input
+                  id="file-upload"
+                  type="file"
+                  class="hidden"
+                  accept="application/pdf,.pdf"
+                  (change)="onFileSelected($event)"
+                  (click)="$event.stopPropagation()"
+                  #fileInput
+                />
+              </div>
+            </ng-container>
+
+            <ng-template #uploadLocked>
+              <div class="maintenance-banner">
+                <h3>Launch validation in progress</h3>
+                <p>Uploads are temporarily limited while we finish final checks.</p>
+                <p>We'll open access shortly. Thank you for your patience.</p>
+                <p class="maintenance-email">
+                  Questions? Email
+                  <a href="mailto:admin&#64;sides-ways.com">admin&#64;sides-ways.com</a>
+                </p>
+              </div>
+            </ng-template>
           </ng-container>
 
           <ng-template #signInPrompt>

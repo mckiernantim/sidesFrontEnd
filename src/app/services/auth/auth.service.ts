@@ -35,6 +35,18 @@ export class AuthService {
   private isAdminSubject = new BehaviorSubject<boolean>(false);
   isAdmin$: Observable<boolean> = this.isAdminSubject.asObservable();
 
+  /**
+   * Temporary pre-launch upload lock. Until we unlock for everyone, only these
+   * signed-in emails may start a script upload. Keep this list tiny.
+   */
+  private static readonly UPLOAD_ALLOWLIST = ['mckiernantim@gmail.com'];
+
+  /** True when the given user is allowlisted to upload scripts. */
+  canUpload(user: User | null | undefined): boolean {
+    const email = user?.email?.trim().toLowerCase();
+    return !!email && AuthService.UPLOAD_ALLOWLIST.includes(email);
+  }
+
   constructor(
     private auth: Auth,
     private firestore: Firestore,
