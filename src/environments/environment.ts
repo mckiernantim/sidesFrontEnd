@@ -3,6 +3,7 @@
 // The list of file replacements can be found in `angular.json`.
 
 import { STRIPE_PUBLISHABLE_TEST } from './stripe.keys';
+import { UPLOAD_ALLOWLIST } from './upload-allowlist';
 
 // Base development configuration
 const devFirebaseConfig = {
@@ -35,7 +36,9 @@ export const environment = {
   url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
   contactFunctionUrl: 'https://us-central1-scriptthing-dev.cloudfunctions.net/contactUs',
   password:"NOTEWORTHY",
-  maintenanceMode: false
+  maintenanceMode: false,
+  /** From UPLOAD_ALLOWLIST at build time. Empty = open to all signed-in users. */
+  uploadAllowlist: UPLOAD_ALLOWLIST
 };
 
 // Fallback for production build (used by environment.prod.ts if not properly loaded)
@@ -47,7 +50,8 @@ export const environmentProd = {
   url: 'https://sides3.herokuapp.com',
   contactFunctionUrl: 'https://us-central1-scriptthing.cloudfunctions.net/contactUs',
   password: "NOTEWORTHY",
-  maintenanceMode: false
+  maintenanceMode: false,
+  uploadAllowlist: UPLOAD_ALLOWLIST
 };
 
 /**

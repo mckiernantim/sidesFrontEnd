@@ -66,7 +66,7 @@ export class UploadComponent implements OnInit, OnDestroy {
     private authService: AuthService
   ) {}
 
-  /** Pre-launch allowlist — only mckiernantim@gmail.com can upload until unlock. */
+  /** Driven by UPLOAD_ALLOWLIST at build time (empty = open to all signed-in users). */
   canUpload(user: User | null | undefined): boolean {
     return this.authService.canUpload(user);
   }

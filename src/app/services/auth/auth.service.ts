@@ -16,6 +16,8 @@ import { Firestore, doc, getDoc, setDoc } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Router } from '@angular/router';
 import { SubscriptionStatus } from '../../types/SubscriptionTypes';
+import { isUploadAllowed } from '../../../environments/upload-allowlist';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -36,15 +38,11 @@ export class AuthService {
   isAdmin$: Observable<boolean> = this.isAdminSubject.asObservable();
 
   /**
-   * Temporary pre-launch upload lock. Until we unlock for everyone, only these
-   * signed-in emails may start a script upload. Keep this list tiny.
+   * True when the user may upload. Driven by UPLOAD_ALLOWLIST at build time
+   * (see environment.uploadAllowlist). Empty allowlist = open to everyone.
    */
-  private static readonly UPLOAD_ALLOWLIST = ['mckiernantim@gmail.com'];
-
-  /** True when the given user is allowlisted to upload scripts. */
   canUpload(user: User | null | undefined): boolean {
-    const email = user?.email?.trim().toLowerCase();
-    return !!email && AuthService.UPLOAD_ALLOWLIST.includes(email);
+    return isUploadAllowed(user?.email, environment.uploadAllowlist || []);
   }
 
   constructor(
