@@ -281,6 +281,13 @@ export class LastLooksComponent implements OnInit, AfterViewInit, OnDestroy {
   // ── Edit tools strip visibility ───────────────────────────────────────────
   showEditTips: boolean = false;
 
+  /**
+   * Condense repaginates by dropping hidden lines, which discards x-box and
+   * bar annotations so they never reach the final document. Hidden until that
+   * is fixed; flip back to true to restore the tool.
+   */
+  condenseEnabled: boolean = false;
+
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit(): void {
     this.pages = [];

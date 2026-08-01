@@ -20,12 +20,16 @@ export class SubscriptionComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   subscriptionData$: Observable<SubscriptionStatus>;
 
+  /** Test-mode warning must disappear on its own once Stripe is switched to live keys */
+  showTestModeBanner = false;
+
   constructor(
     private stripeService: StripeService,
     private authService: AuthService,
   ) {}
 
   ngOnInit() {
+    this.showTestModeBanner = !this.stripeService.isLive;
     this.subscriptionData$ = this.authService.user$.pipe(
       switchMap(user => user ? this.stripeService.getSubscriptionStatus(user.uid) : of(null)),
       takeUntil(this.destroy$)

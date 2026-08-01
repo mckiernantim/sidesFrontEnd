@@ -77,7 +77,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private authSubscription: Subscription | null = null;
   
   @Output() subscriptionActivated = new EventEmitter<void>();
-  
+
+  /** Test-mode warning must disappear on its own once Stripe is switched to live keys */
+  showTestModeBanner = false;
+
   constructor(
     private auth: AuthService,
     private stripe: StripeService,
@@ -89,6 +92,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     console.log('Profile component initialized');
+    this.showTestModeBanner = !this.stripe.isLive;
     
     // Check for active script in PdfService
     this.currentScriptName = this.pdfService.getScriptName();

@@ -222,7 +222,7 @@
         <div class="ll-tool-divider" aria-hidden="true"></div>
 
         <!-- Condense Pages -->
-        <button type="button" class="ll-tool-btn ll-tool-btn--primary"
+        <button *ngIf="condenseEnabled" type="button" class="ll-tool-btn ll-tool-btn--primary"
                 (click)="lastLooksPage?.combinePages()"
                 aria-label="Condense Pages (remove hidden lines)">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -233,7 +233,7 @@
 
         <!-- Edit tips inline panel -->
         <div class="ll-tips-inline" *ngIf="showEditTips">
-          <strong>Tools:</strong> visibility · x-box · bars · redo · condense &nbsp;|&nbsp;
+          <strong>Tools:</strong> visibility · x-box · bars · redo<span *ngIf="condenseEnabled"> · condense</span> &nbsp;|&nbsp;
           <strong>Select:</strong> tap · Select Mode for multi &nbsp;|&nbsp;
           <strong>Edit text:</strong> double-tap &nbsp;|&nbsp;
           <strong>Move:</strong> drag &nbsp;|&nbsp;

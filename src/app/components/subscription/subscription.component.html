@@ -1,6 +1,6 @@
 <div class="min-h-screen bg-sw-bg">
   <!-- ⚠️ BETA TEST MODE WARNING BANNER ⚠️ -->
-  <div class="bg-gradient-to-r from-sw-warning via-yellow-400 to-sw-warning border-b-4 border-yellow-300 shadow-2xl">
+  <div *ngIf="showTestModeBanner" class="bg-gradient-to-r from-sw-warning via-yellow-400 to-sw-warning border-b-4 border-yellow-300 shadow-2xl">
     <div class="container mx-auto px-4 py-6">
       <div class="flex flex-col items-center justify-center space-y-2">
         <div class="flex items-center space-x-3">
@@ -42,10 +42,12 @@
   <div class="container mx-auto p-4">
     <div class="bg-sw-surface border-2 border-sw-border rounded-lg shadow-2xl p-6" *ngIf="subscriptionData$ | async as data">
       <div class="mb-4">
-        <h2 class="text-xl font-bold text-sw-text font-display">Subscription Status (Test Mode)</h2>
+        <h2 class="text-xl font-bold text-sw-text font-display">
+          Subscription Status<span *ngIf="showTestModeBanner"> (Test Mode)</span>
+        </h2>
       </div>
 
-      <div class="bg-yellow-400 border-2 border-yellow-500 rounded-lg p-3 mb-4">
+      <div *ngIf="showTestModeBanner" class="bg-yellow-400 border-2 border-yellow-500 rounded-lg p-3 mb-4">
         <p class="text-black font-black text-sm text-center">TEST MODE - $0.00 CHARGED</p>
       </div>
 
