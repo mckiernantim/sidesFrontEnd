@@ -3,7 +3,7 @@
 // The list of file replacements can be found in `angular.json`.
 
 import { STRIPE_PUBLISHABLE_TEST } from './stripe.keys';
-import { UPLOAD_ALLOWLIST } from './upload-allowlist';
+import { UPLOAD_GATE_ACTIVE } from './upload-gate';
 
 // Base development configuration
 const devFirebaseConfig = {
@@ -37,8 +37,8 @@ export const environment = {
   contactFunctionUrl: 'https://us-central1-scriptthing-dev.cloudfunctions.net/contactUs',
   password:"NOTEWORTHY",
   maintenanceMode: false,
-  /** From UPLOAD_ALLOWLIST at build time. Empty = open to all signed-in users. */
-  uploadAllowlist: UPLOAD_ALLOWLIST
+  /** From UPLOAD_GATE at build time. true = listed/ only; false = open. */
+  uploadGateActive: UPLOAD_GATE_ACTIVE
 };
 
 // Fallback for production build (used by environment.prod.ts if not properly loaded)
@@ -51,7 +51,7 @@ export const environmentProd = {
   contactFunctionUrl: 'https://us-central1-scriptthing.cloudfunctions.net/contactUs',
   password: "NOTEWORTHY",
   maintenanceMode: false,
-  uploadAllowlist: UPLOAD_ALLOWLIST
+  uploadGateActive: UPLOAD_GATE_ACTIVE
 };
 
 /**

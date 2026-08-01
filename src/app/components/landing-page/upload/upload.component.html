@@ -87,7 +87,7 @@
 
         <ng-template #uploadSection>
           <ng-container *ngIf="(user$ | async) as user; else signInPrompt">
-            <ng-container *ngIf="canUpload(user); else uploadLocked">
+            <ng-container *ngIf="uploadAllowed; else uploadLocked">
               <div
                 class="upload-zone"
                 id="upload-zone"

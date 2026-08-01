@@ -3,7 +3,7 @@ import {
   STRIPE_PUBLISHABLE_TEST,
   resolveStripePublishableKey
 } from './stripe.keys';
-import { UPLOAD_ALLOWLIST } from './upload-allowlist';
+import { UPLOAD_GATE_ACTIVE } from './upload-gate';
 
 export const environment = {
   production: true,
@@ -36,8 +36,8 @@ export const environment = {
   // url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
   password:"NOTEWORTHY",
   maintenanceMode: false,
-  /** From UPLOAD_ALLOWLIST at build time. Empty = open to all signed-in users. */
-  uploadAllowlist: UPLOAD_ALLOWLIST
+  /** From UPLOAD_GATE at build time. true = listed/ only; false = open. */
+  uploadGateActive: UPLOAD_GATE_ACTIVE
 };
 
 export const environmentProd = environment;

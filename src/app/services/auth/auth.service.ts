@@ -16,7 +16,6 @@ import { Firestore, doc, getDoc, setDoc } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Router } from '@angular/router';
 import { SubscriptionStatus } from '../../types/SubscriptionTypes';
-import { isUploadAllowed } from '../../../environments/upload-allowlist';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -33,16 +32,20 @@ export class AuthService {
   // Track if auth state has been initialized
   private authInitialized = false;
 
-  // Track admin whitelist status for maintenance mode bypass
+  // Track listed-collection admin status (maintenance bypass + upload gate)
   private isAdminSubject = new BehaviorSubject<boolean>(false);
   isAdmin$: Observable<boolean> = this.isAdminSubject.asObservable();
 
   /**
-   * True when the user may upload. Driven by UPLOAD_ALLOWLIST at build time
-   * (see environment.uploadAllowlist). Empty allowlist = open to everyone.
+   * True when the user may upload.
+   * - uploadGateActive false → any signed-in user
+   * - uploadGateActive true  → only Firestore `listed/{email}` members
    */
-  canUpload(user: User | null | undefined): boolean {
-    return isUploadAllowed(user?.email, environment.uploadAllowlist || []);
+  canUpload(_user?: User | null | undefined): boolean {
+    if (!environment.uploadGateActive) {
+      return true;
+    }
+    return this.isAdminSubject.value;
   }
 
   constructor(
@@ -234,12 +237,13 @@ export class AuthService {
         return;
       }
 
-      const encodedEmail = user.email.replace(/\./g, '_dot_').replace(/@/g, '_at_');
-      const adminDocRef = doc(this.firestore, `listed/${encodedEmail}`);
+      // Doc id must be the raw email — firestore.rules compares
+      // request.auth.token.email == email (the document id).
+      const adminDocRef = doc(this.firestore, `listed/${user.email}`);
       const adminSnapshot = await getDoc(adminDocRef);
 
       const isAdmin = adminSnapshot.exists();
-      console.log(`Admin whitelist check for ${user.email}:`, isAdmin);
+      console.log('Admin listed-collection check:', isAdmin);
       this.isAdminSubject.next(isAdmin);
     } catch (error) {
       console.error('Error checking admin whitelist:', error);

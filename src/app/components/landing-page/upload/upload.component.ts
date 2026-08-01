@@ -35,6 +35,8 @@ export class UploadComponent implements OnInit, OnDestroy {
   underConstruction: boolean;
   working: boolean;
   maintenanceMode: boolean = false;
+  /** Updated when listed/ membership resolves so the gate UI re-renders. */
+  uploadAllowed = false;
   displayData: {
     allLines: number;
     characters: number;
@@ -66,11 +68,6 @@ export class UploadComponent implements OnInit, OnDestroy {
     private authService: AuthService
   ) {}
 
-  /** Driven by UPLOAD_ALLOWLIST at build time (empty = open to all signed-in users). */
-  canUpload(user: User | null | undefined): boolean {
-    return this.authService.canUpload(user);
-  }
-
   ngOnInit(): void {
     const config = getConfig(!isDevMode());
     this.underConstruction = !config.production;
@@ -78,9 +75,12 @@ export class UploadComponent implements OnInit, OnDestroy {
     
     // Set initial maintenance mode from config
     this.maintenanceMode = !!config.maintenanceMode;
+    // If the gate is off, allow uploads immediately (no listed/ wait).
+    this.uploadAllowed = this.authService.canUpload();
     
-    // Subscribe to admin status - if user is admin, bypass maintenance mode
+    // listed/ membership drives maintenance bypass + the upload gate UI
     this.authService.isAdmin$.subscribe(isAdmin => {
+      this.uploadAllowed = this.authService.canUpload();
       if (isAdmin && config.maintenanceMode) {
         console.log('Admin user detected - bypassing maintenance mode');
         this.maintenanceMode = false;
