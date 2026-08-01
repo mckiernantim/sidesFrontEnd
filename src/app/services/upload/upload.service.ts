@@ -222,6 +222,7 @@ export class UploadService {
       userId: finalDocument.userId,
       annotations,
       pageAnnotations,
+      xboxes: finalDocument.xboxes || [],
       annotationMetadata: {
         count: annotations.length,
         types: annotations.reduce((acc: Record<string, number>, annotation: any) => {

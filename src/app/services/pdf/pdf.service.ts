@@ -3088,6 +3088,12 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
         ...annotation,
         pageIndex: annotation.pageIndex - 1
       }));
+    const xboxesWithoutCallsheet = (document.xboxes || [])
+      .filter((xbox: any) => xbox.pageIndex > 0)
+      .map((xbox: any) => ({
+        ...xbox,
+        pageIndex: xbox.pageIndex - 1
+      }));
     const annotatedDocumentData = this.attachAnnotationsToDocumentData(
       documentDataWithoutCallsheet,
       annotationsWithoutCallsheet
@@ -3099,6 +3105,7 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
       data: annotatedDocumentData,
       annotations: annotationsWithoutCallsheet,
       pageAnnotations: this.groupAnnotationsByPage(annotationsWithoutCallsheet),
+      xboxes: xboxesWithoutCallsheet,
       numPages: annotatedDocumentData.length
     };
     

@@ -2179,7 +2179,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
     this.annotationState.clearSelection();
     this.selectedLineIds = [];
 
-    this.undoService.recordXboxChange(previousXboxes, [], 'Add X-box');
+    const lineChanges = this.recomputeXboxOwnedLineIds(id, 'Add X-box');
+    this.undoService.recordXboxChange(previousXboxes, lineChanges, 'Add X-box');
     this.cdRef.detectChanges();
   }
 
@@ -2266,6 +2267,15 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
     if (!xbox) return;
 
     const previousXboxes = this.cloneXboxesSnapshot();
+
+    // Release the lines back to visible before the box goes away, otherwise they
+    // would stay greyed with nothing covering them.
+    const lineChanges = this.setXboxLinesVisibleInPage(
+      (xbox.lineIds || []) as number[],
+      true,
+      'Delete X-box'
+    );
+
     const doc = this.pdfService.finalDocument as any;
     doc.xboxes = (doc.xboxes || []).filter((x: any) => x.id !== originalIndex);
 
@@ -2273,8 +2283,7 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
       this.selectedXboxIndex = null;
     }
 
-    // Freestanding boxes never own line visibility — geometry-only undo.
-    this.undoService.recordXboxChange(previousXboxes, [], 'Delete X-box');
+    this.undoService.recordXboxChange(previousXboxes, lineChanges, 'Delete X-box');
     this.cdRef.detectChanges();
   }
 
@@ -2344,8 +2353,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
       return;
     }
 
-    // Geometry-only — do not retie lines to the box.
-    this.undoService.recordXboxChange(this.xboxUndoSnapshot, [], 'Drag X-box');
+    const lineChanges = this.recomputeXboxOwnedLineIds(this.selectedXboxIndex, 'Drag X-box');
+    this.undoService.recordXboxChange(this.xboxUndoSnapshot, lineChanges, 'Drag X-box');
 
     this.xboxDragging = false;
     this.xboxUndoSnapshot = [];
@@ -2427,7 +2436,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
       return;
     }
 
-    this.undoService.recordXboxChange(this.xboxUndoSnapshot, [], 'Resize X-box');
+    const lineChanges = this.recomputeXboxOwnedLineIds(this.selectedXboxIndex, 'Resize X-box');
+    this.undoService.recordXboxChange(this.xboxUndoSnapshot, lineChanges, 'Resize X-box');
 
     this.xboxResizing = false;
     this.xboxResizeEdge = null;
