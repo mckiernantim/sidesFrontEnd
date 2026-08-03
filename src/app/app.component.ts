@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, isDevMode } from '@angular/core';
-import { combineLatest, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
+import { User } from '@angular/fire/auth';
 import { AuthService } from './services/auth/auth.service';
 import { getConfig } from '../environments/environment';
 import { ListedAccessState } from './components/listed-access-gate/listed-access-gate.component';
@@ -12,16 +13,14 @@ import { ListedAccessState } from './components/listed-access-gate/listed-access
 })
 export class AppComponent implements OnInit, OnDestroy {
   title = 'side-ways';
-
-  /** Hosted scriptthing-dev only — see getConfig(). */
   listedAccessGateActive = false;
   accessState: ListedAccessState = 'loading';
 
   private sub: Subscription | null = null;
+  private evalGen = 0;
 
   constructor(private authService: AuthService) {
-    const config = getConfig(!isDevMode());
-    this.listedAccessGateActive = !!config.listedAccessGateActive;
+    this.listedAccessGateActive = !!getConfig(!isDevMode()).listedAccessGateActive;
   }
 
   ngOnInit(): void {
@@ -30,21 +29,25 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.sub = combineLatest([
-      this.authService.user$,
-      this.authService.isAdmin$,
-      this.authService.listedCheckReady$,
-    ]).subscribe(([user, isListed, ready]) => {
-      if (!ready) {
-        this.accessState = 'loading';
-        return;
-      }
-      if (!user) {
-        this.accessState = 'need-signin';
-        return;
-      }
-      this.accessState = isListed ? 'allowed' : 'denied';
+    // One stream, one async check. No combineLatest.
+    this.sub = this.authService.user$.subscribe((user) => {
+      const gen = ++this.evalGen;
+      void this.evaluateAccess(user, gen);
     });
+  }
+
+  private async evaluateAccess(user: User | null, gen: number): Promise<void> {
+    this.accessState = 'loading';
+
+    if (!user) {
+      if (gen === this.evalGen) this.accessState = 'need-signin';
+      return;
+    }
+
+    const allowed = await this.authService.ensureListedAccess(user);
+    if (gen === this.evalGen) {
+      this.accessState = allowed ? 'allowed' : 'denied';
+    }
   }
 
   ngOnDestroy(): void {

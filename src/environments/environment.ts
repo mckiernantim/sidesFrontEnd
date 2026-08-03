@@ -40,11 +40,11 @@ export const environment = {
   /** From UPLOAD_GATE at build time. true = listed/ only; false = open. */
   uploadGateActive: UPLOAD_GATE_ACTIVE,
   /**
-   * When true, the whole app is hidden until the signed-in user exists in
-   * Firestore `listed/{email}`. Enabled for hosted scriptthing-dev only
-   * (see getConfig). Localhost stays open for day-to-day work.
+   * When true, the whole app is hidden until the signed-in user is allowlisted.
+   * Enabled for hosted scriptthing-dev only (see getConfig).
    */
-  listedAccessGateActive: false
+  listedAccessGateActive: false,
+  listedAccessEmails: [] as string[]
 };
 
 // Fallback for production build (used by environment.prod.ts if not properly loaded)
@@ -58,7 +58,8 @@ export const environmentProd = {
   password: "NOTEWORTHY",
   maintenanceMode: false,
   uploadGateActive: UPLOAD_GATE_ACTIVE,
-  listedAccessGateActive: false
+  listedAccessGateActive: false,
+  listedAccessEmails: [] as string[]
 };
 
 /**
@@ -111,7 +112,7 @@ export function getConfig(isProd = false) {
     };
   }
   
-  // Dev staging environment — allowlist gate (Firestore listed/)
+  // Dev staging environment — hard email allowlist (+ optional Firestore listed/)
   if (hostname === 'scriptthing-dev.web.app' || hostname === 'scriptthing-dev.firebaseapp.com') {
     console.log('🧪 Running on DEV staging - Using DEV environment (listed-access gate ON)');
     return {
@@ -119,7 +120,8 @@ export function getConfig(isProd = false) {
       production: true,
       firebaseConfig: devFirebaseConfig,
       url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
-      listedAccessGateActive: true
+      listedAccessGateActive: true,
+      listedAccessEmails: ['mckiernantim@gmail.com']
     };
   }
   

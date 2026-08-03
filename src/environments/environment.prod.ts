@@ -39,7 +39,9 @@ export const environment = {
   /** From UPLOAD_GATE at build time. true = listed/ only; false = open. */
   uploadGateActive: UPLOAD_GATE_ACTIVE,
   /** Hosted DEV only — flipped on in getConfig for scriptthing-dev. */
-  listedAccessGateActive: false
+  listedAccessGateActive: false,
+  /** Hard allowlist for hosted DEV (checked before Firestore). */
+  listedAccessEmails: [] as string[]
 };
 
 export const environmentProd = environment;
@@ -68,7 +70,9 @@ export function getConfig(isProd = false) {
       },
       url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
       contactFunctionUrl: 'https://us-central1-scriptthing-dev.cloudfunctions.net/contactUs',
-      listedAccessGateActive: true
+      listedAccessGateActive: true,
+      // Guaranteed DEV access — does not depend on a Firestore read succeeding.
+      listedAccessEmails: ['mckiernantim@gmail.com']
     };
   }
 

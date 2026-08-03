@@ -16,7 +16,8 @@ import { Firestore, doc, getDoc, setDoc } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Router } from '@angular/router';
 import { SubscriptionStatus } from '../../types/SubscriptionTypes';
-import { environment } from '../../../environments/environment';
+import { environment, getConfig } from '../../../environments/environment';
+import { isDevMode } from '@angular/core';
 
 @Injectable({
   providedIn: 'root'
@@ -36,20 +37,26 @@ export class AuthService {
   private isAdminSubject = new BehaviorSubject<boolean>(false);
   isAdmin$: Observable<boolean> = this.isAdminSubject.asObservable();
 
-  /** True after auth init + listed/ check have settled for the current user (or signed-out). */
-  private listedCheckReadySubject = new BehaviorSubject<boolean>(false);
-  listedCheckReady$: Observable<boolean> = this.listedCheckReadySubject.asObservable();
-
   /**
    * True when the user may upload.
    * - uploadGateActive false → any signed-in user
-   * - uploadGateActive true  → only Firestore `listed/{email}` members
+   * - uploadGateActive true  → only allowlisted members
    */
   canUpload(_user?: User | null | undefined): boolean {
     if (!environment.uploadGateActive) {
       return true;
     }
     return this.isAdminSubject.value;
+  }
+
+  /**
+   * Resolve DEV/site allowlist for a signed-in user.
+   * 1) Hard email list from getConfig().listedAccessEmails (instant, reliable)
+   * 2) Firestore `listed/{email}` (optional extra testers)
+   */
+  async ensureListedAccess(user: User): Promise<boolean> {
+    const allowed = await this.checkAdminWhitelist(user);
+    return allowed;
   }
 
   constructor(
@@ -84,10 +91,6 @@ export class AuthService {
       this.auth,
       async (user) => {
         console.log('Auth state changed:', user?.uid || 'No user');
-        // Mark listed-check not ready BEFORE emitting the new user so the
-        // DEV allowlist gate cannot briefly treat a signed-in user as denied
-        // with a stale isAdmin=false + ready=true from the previous state.
-        this.listedCheckReadySubject.next(false);
         this.userSubject.next(user);
         this.authInitialized = true;
 
@@ -97,14 +100,11 @@ export class AuthService {
         } else {
           this.isAdminSubject.next(false);
         }
-        this.listedCheckReadySubject.next(true);
       },
       (error) => {
         console.error('Auth state error:', error);
-        this.listedCheckReadySubject.next(false);
         this.authInitialized = true;
         this.isAdminSubject.next(false);
-        this.listedCheckReadySubject.next(true);
       }
     );
   }
@@ -242,31 +242,34 @@ export class AuthService {
 
   // ─── Admin whitelist ────────────────────────────────────────────────────────
 
-  private async checkAdminWhitelist(user: User): Promise<void> {
+  private async checkAdminWhitelist(user: User): Promise<boolean> {
     try {
       if (!user.email) {
-        console.warn('Admin listed-collection check: user has no email');
         this.isAdminSubject.next(false);
-        return;
+        return false;
       }
 
-      // Doc id must match the Auth token email (firestore.rules compares
-      // request.auth.token.email == email). Normalize to lowercase so a
-      // mismatched casing in the console does not lock owners out.
       const emailKey = user.email.trim().toLowerCase();
-      const adminDocRef = doc(this.firestore, `listed/${emailKey}`);
-      const adminSnapshot = await getDoc(adminDocRef);
+      const config = getConfig(!isDevMode());
+      const hardList = (config.listedAccessEmails || []).map((e) =>
+        String(e).trim().toLowerCase()
+      );
 
+      if (hardList.includes(emailKey)) {
+        console.log('Allowlist: hard email match', emailKey);
+        this.isAdminSubject.next(true);
+        return true;
+      }
+
+      const adminSnapshot = await getDoc(doc(this.firestore, `listed/${emailKey}`));
       const isAdmin = adminSnapshot.exists();
-      console.log('Admin listed-collection check:', {
-        email: emailKey,
-        isAdmin,
-        projectId: this.firestore.app.options.projectId,
-      });
+      console.log('Allowlist: Firestore listed/', emailKey, isAdmin);
       this.isAdminSubject.next(isAdmin);
+      return isAdmin;
     } catch (error) {
-      console.error('Error checking admin whitelist:', error);
+      console.error('Error checking allowlist:', error);
       this.isAdminSubject.next(false);
+      return false;
     }
   }
 
