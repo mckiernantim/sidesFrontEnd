@@ -38,7 +38,13 @@ export const environment = {
   password:"NOTEWORTHY",
   maintenanceMode: false,
   /** From UPLOAD_GATE at build time. true = listed/ only; false = open. */
-  uploadGateActive: UPLOAD_GATE_ACTIVE
+  uploadGateActive: UPLOAD_GATE_ACTIVE,
+  /**
+   * When true, the whole app is hidden until the signed-in user exists in
+   * Firestore `listed/{email}`. Enabled for hosted scriptthing-dev only
+   * (see getConfig). Localhost stays open for day-to-day work.
+   */
+  listedAccessGateActive: false
 };
 
 // Fallback for production build (used by environment.prod.ts if not properly loaded)
@@ -51,7 +57,8 @@ export const environmentProd = {
   contactFunctionUrl: 'https://us-central1-scriptthing.cloudfunctions.net/contactUs',
   password: "NOTEWORTHY",
   maintenanceMode: false,
-  uploadGateActive: UPLOAD_GATE_ACTIVE
+  uploadGateActive: UPLOAD_GATE_ACTIVE,
+  listedAccessGateActive: false
 };
 
 /**
@@ -97,18 +104,22 @@ export function getConfig(isProd = false) {
       production: false,
       firebaseConfig: devFirebaseConfig,
       // DEFAULT to localhost when running locally (flip the default!)
-      url: useRemoteBackend ? 'https://sides3-dev-e045a1d9ac46.herokuapp.com' : 'http://localhost:8080'
+      url: useRemoteBackend ? 'https://sides3-dev-e045a1d9ac46.herokuapp.com' : 'http://localhost:8080',
+      // Never inherit a gated upload-gate.ts left over from a Firebase deploy build.
+      uploadGateActive: false,
+      listedAccessGateActive: false
     };
   }
   
-  // Dev staging environment
+  // Dev staging environment — allowlist gate (Firestore listed/)
   if (hostname === 'scriptthing-dev.web.app' || hostname === 'scriptthing-dev.firebaseapp.com') {
-    console.log('🧪 Running on DEV staging - Using DEV environment');
+    console.log('🧪 Running on DEV staging - Using DEV environment (listed-access gate ON)');
     return {
       ...environment,
       production: true,
       firebaseConfig: devFirebaseConfig,
-      url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com'
+      url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
+      listedAccessGateActive: true
     };
   }
   

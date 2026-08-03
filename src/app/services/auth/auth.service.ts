@@ -36,6 +36,10 @@ export class AuthService {
   private isAdminSubject = new BehaviorSubject<boolean>(false);
   isAdmin$: Observable<boolean> = this.isAdminSubject.asObservable();
 
+  /** True after auth init + listed/ check have settled for the current user (or signed-out). */
+  private listedCheckReadySubject = new BehaviorSubject<boolean>(false);
+  listedCheckReady$: Observable<boolean> = this.listedCheckReadySubject.asObservable();
+
   /**
    * True when the user may upload.
    * - uploadGateActive false → any signed-in user
@@ -82,6 +86,7 @@ export class AuthService {
         console.log('Auth state changed:', user?.uid || 'No user');
         this.userSubject.next(user);
         this.authInitialized = true;
+        this.listedCheckReadySubject.next(false);
 
         if (user) {
           await this.checkAdminWhitelist(user);
@@ -89,10 +94,13 @@ export class AuthService {
         } else {
           this.isAdminSubject.next(false);
         }
+        this.listedCheckReadySubject.next(true);
       },
       (error) => {
         console.error('Auth state error:', error);
         this.authInitialized = true;
+        this.isAdminSubject.next(false);
+        this.listedCheckReadySubject.next(true);
       }
     );
   }

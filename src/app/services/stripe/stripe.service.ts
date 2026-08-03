@@ -45,6 +45,7 @@ interface BackendSubscriptionResponse {
     currentPeriodStart: string | null;
     currentPeriodEnd: string | null;
     cancelAtPeriodEnd: boolean;
+    willAutoRenew?: boolean;
     plan: {
       id: string;
       nickname: string;
@@ -178,7 +179,11 @@ export class StripeService {
                 currentPeriodEnd: response.subscription.currentPeriodEnd,
                 currentPeriodStart: response.subscription.currentPeriodStart,
                 cancelAtPeriodEnd: response.subscription.cancelAtPeriodEnd,
-                willAutoRenew: response.subscription.status === 'active' && !response.subscription.cancelAtPeriodEnd,
+                willAutoRenew:
+                  typeof response.subscription.willAutoRenew === 'boolean'
+                    ? response.subscription.willAutoRenew
+                    : response.subscription.status === 'active' &&
+                      !response.subscription.cancelAtPeriodEnd,
                 // Firestore-fallback responses omit createdAt; period start keeps the UI truthful
                 originalStartDate: response.subscription.createdAt || response.subscription.currentPeriodStart || null,
                 plan: response.subscription.plan ? {

@@ -127,6 +127,11 @@
             <span class="text-6xl font-bold text-sw-accent">{{ priceAmount }}</span>
             <span class="ml-3 text-2xl text-sw-text-muted">{{ getIntervalSuffix() }}</span>
           </div>
+          <p *ngIf="isFounder" class="mt-3 text-sw-accent font-semibold">{{ foundersRateSubtitle }}</p>
+          <p *ngIf="isFounder" class="mt-1 text-sw-text-muted">
+            <span class="line-through">{{ getStruckThroughPrice() }}</span>
+            <span class="ml-2">Founders price for {{ selectedInterval === 'month' ? 'monthly' : 'weekly' }} billing</span>
+          </p>
           <p class="mt-4 text-sw-text-subtle font-medium">Cancel anytime</p>
           <div *ngIf="showTestModeBanner" class="mt-4 bg-yellow-400 text-black px-4 py-2 rounded-lg inline-block">
             <p class="font-bold text-sm">BETA PRICING - NOT FINAL</p>
@@ -164,7 +169,8 @@
           <div class="mt-8">
             <ng-container *ngIf="(user$ | async) as user; else signInTemplate">
               <ng-container *ngIf="(subscriptionStatus$ | async) as status">
-                <div *ngIf="status.active" class="text-center">
+                <!-- Fully active + renewing -->
+                <div *ngIf="isRenewingSubscription(status)" class="text-center">
                   <div class="bg-sw-surface-2 border-2 border-sw-success text-sw-text px-6 py-4 rounded-lg mb-4 shadow-md">
                     <p class="font-bold text-sw-success text-lg">You're subscribed!</p>
                     <p class="text-sm text-sw-text-muted mt-1">Your subscription is active until {{ formatDate(status.subscription?.currentPeriodEnd) }}</p>
@@ -173,6 +179,25 @@
                     (click)="manageSubscription()"
                     class="w-full bg-sw-accent hover:opacity-90 text-sw-bg font-bold py-4 px-6 rounded-lg transition-all shadow-md">
                     Manage Subscription
+                  </button>
+                </div>
+                <!-- Canceled / cancel-at-period-end but still in paid period -->
+                <div *ngIf="isCancelingSubscription(status)" class="text-center">
+                  <div class="bg-sw-surface-2 border-2 border-sw-warning text-sw-text px-6 py-4 rounded-lg mb-4 shadow-md">
+                    <p class="font-bold text-sw-warning text-lg">Subscription canceled</p>
+                    <p class="text-sm text-sw-text-muted mt-1">
+                      Access continues until {{ formatDate(status.subscription?.currentPeriodEnd) }}. It will not renew.
+                    </p>
+                  </div>
+                  <button
+                    (click)="subscribe()"
+                    class="w-full bg-sw-accent hover:opacity-90 text-sw-bg font-bold py-4 px-6 rounded-lg transition-all shadow-md mb-3">
+                    Resubscribe
+                  </button>
+                  <button
+                    (click)="manageSubscription()"
+                    class="w-full border-2 border-sw-border hover:border-sw-accent text-sw-text font-semibold py-3 px-6 rounded-lg transition-all">
+                    Manage billing
                   </button>
                 </div>
                 <div *ngIf="!status.active" class="text-center">
@@ -232,13 +257,13 @@
           </div>
 
           <div class="bg-sw-surface p-6 rounded-lg shadow-lg border-2 border-sw-border">
-            <h4 class="text-lg font-semibold mb-3 text-sw-accent">How does the weekly billing work?</h4>
+            <h4 class="text-lg font-semibold mb-3 text-sw-accent">How does billing work?</h4>
             <p class="text-sw-text-muted">{{ billingFaqText }}</p>
           </div>
 
           <div class="bg-sw-surface p-6 rounded-lg shadow-lg border-2 border-sw-border">
             <h4 class="text-lg font-semibold mb-3 text-sw-accent">Is there a limit to how many sides I can generate?</h4>
-            <p class="text-sw-text-muted">No, with the Professional Plan, you can generate unlimited sides during your subscription period.</p>
+            <p class="text-sw-text-muted">No, with the {{ planTitle }}, you can generate unlimited sides during your subscription period.</p>
           </div>
 
           <div class="bg-sw-surface p-6 rounded-lg shadow-lg border-2 border-sw-border">

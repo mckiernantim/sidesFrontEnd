@@ -37,7 +37,9 @@ export const environment = {
   password:"NOTEWORTHY",
   maintenanceMode: false,
   /** From UPLOAD_GATE at build time. true = listed/ only; false = open. */
-  uploadGateActive: UPLOAD_GATE_ACTIVE
+  uploadGateActive: UPLOAD_GATE_ACTIVE,
+  /** Hosted DEV only — flipped on in getConfig for scriptthing-dev. */
+  listedAccessGateActive: false
 };
 
 export const environmentProd = environment;
@@ -45,8 +47,12 @@ export const environmentProd = environment;
 // Helper function to get the right environment
 export function getConfig(isProd = false) {
   // Check if we're on the dev staging URL
-  if (typeof window !== 'undefined' && window.location.hostname === 'scriptthing-dev.web.app') {
-    // DEV STAGING CONFIG — never takes live payments, even from a production build
+  if (
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'scriptthing-dev.web.app' ||
+      window.location.hostname === 'scriptthing-dev.firebaseapp.com')
+  ) {
+    // DEV STAGING CONFIG — never takes live payments; listed/ allowlist only
     return {
       ...environment,
       isLive: false,
@@ -61,7 +67,8 @@ export function getConfig(isProd = false) {
         measurementId: "G-1JF7DG5L5H"
       },
       url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
-      contactFunctionUrl: 'https://us-central1-scriptthing-dev.cloudfunctions.net/contactUs'
+      contactFunctionUrl: 'https://us-central1-scriptthing-dev.cloudfunctions.net/contactUs',
+      listedAccessGateActive: true
     };
   }
 

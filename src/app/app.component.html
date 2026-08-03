@@ -1,6 +1,8 @@
 <div class="app-container">
-    <app-nav></app-nav>
+  <app-nav *ngIf="showApp"></app-nav>
+
+  <app-listed-access-gate
+    *ngIf="!showApp"
+    [state]="accessState"
+  ></app-listed-access-gate>
 </div>
-
-
-

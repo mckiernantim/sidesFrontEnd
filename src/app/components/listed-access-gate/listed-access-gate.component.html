@@ -1,0 +1,49 @@
+<section class="listed-gate" role="status" aria-live="polite">
+  <div class="listed-gate__content">
+    <img
+      class="listed-gate__logo"
+      src="assets/icons/logoFlat.png"
+      alt="Sides-Ways"
+    />
+
+    <ng-container [ngSwitch]="state">
+      <ng-container *ngSwitchCase="'loading'">
+        <h1 class="listed-gate__title">Checking access&hellip;</h1>
+        <p class="listed-gate__message">Hang on while we verify your account.</p>
+      </ng-container>
+
+      <ng-container *ngSwitchCase="'need-signin'">
+        <h1 class="listed-gate__title">Private staging</h1>
+        <p class="listed-gate__message">
+          This development environment is only available to allowlisted testers.
+          Sign in with the email on the list to continue.
+        </p>
+        <button
+          type="button"
+          class="listed-gate__btn"
+          (click)="signInWithGoogle()"
+          [disabled]="signingIn"
+        >
+          {{ signingIn ? 'Signing in&hellip;' : 'Sign in with Google' }}
+        </button>
+        <p class="listed-gate__hint">
+          Use the Google account whose email is on the staging allowlist.
+        </p>
+      </ng-container>
+
+      <ng-container *ngSwitchCase="'denied'">
+        <h1 class="listed-gate__title">You&rsquo;re not on the list</h1>
+        <p class="listed-gate__message">
+          You&rsquo;re signed in, but this account isn&rsquo;t in the staging
+          allowlist (<code>listed</code> in Firebase). Ask Tim to add your email,
+          then sign out and back in.
+        </p>
+        <button type="button" class="listed-gate__btn listed-gate__btn--secondary" (click)="signOut()">
+          Sign out
+        </button>
+      </ng-container>
+    </ng-container>
+
+    <p class="listed-gate__error" *ngIf="errorMessage" role="alert">{{ errorMessage }}</p>
+  </div>
+</section>

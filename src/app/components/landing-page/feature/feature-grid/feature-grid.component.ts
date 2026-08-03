@@ -10,7 +10,7 @@ import { FeatureCardComponent } from '../feature-card/feature-card.component';
 export class FeatureGridComponent {
   titles: string[] = [`Production`, `Casting`, `StudentFilms`];
   content: string[] = [
-    `With Sides-Ways you can get set-ready sides, both Bigs and Smalls, complete with call-sheet, in a matter of minutes  <strong>with no subsrcription fees, and no accounts to sign up for</strong>.
+    `With Sides-Ways you can get set-ready sides, both Bigs and Smalls, complete with call-sheet, in a matter of minutes.
    <br>Save time, save money, and get back on set.`,
     `With Sides-ways you can effortlessly upload your script and handpick the scenes required for auditions, edit the final documents quickly in the browser, even watermark the text. 
    <br>

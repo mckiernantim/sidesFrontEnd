@@ -28,6 +28,7 @@ import { SubscriptionModalComponent } from './components/subscription-modal/subs
 import { AuthService } from './services/auth/auth.service';
 import { StripeService } from './services/stripe/stripe.service';
 import { MaintenanceNoticeComponent } from './components/maintenance-notice/maintenance-notice.component';
+import { ListedAccessGateComponent } from './components/listed-access-gate/listed-access-gate.component';
 import { HelpCenterComponent } from './components/help-center/help-center.component';
 import { AuthComponent } from './components/auth/auth.component';
 import { AuthModalComponent } from './components/auth-modal/auth-modal.component';
@@ -67,6 +68,7 @@ export function initializeFirebase(authService: AuthService) {
     ContactComponent,
     SubscriptionModalComponent,
     MaintenanceNoticeComponent,
+    ListedAccessGateComponent,
     HelpCenterComponent,
     AuthComponent,
     AuthModalComponent,

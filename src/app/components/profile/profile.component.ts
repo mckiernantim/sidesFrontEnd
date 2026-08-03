@@ -192,12 +192,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return this.subscription?.subscription?.status === 'pending';
   }
   
-  // Check if subscription is active but will be canceled
+  // Check if subscription is active but will be canceled (period-end or immediate cancel grace)
   isSubscriptionCanceling(): boolean {
-    return this.subscription?.subscription?.cancelAtPeriodEnd === true;
+    if (this.subscription?.subscription?.cancelAtPeriodEnd === true) return true;
+    return this.isInGracePeriod();
   }
   
-  // Check if subscription is in grace period after cancellation
+  // Check if subscription is in grace period after immediate cancellation
   isInGracePeriod(): boolean {
     const status = this.subscription?.subscription?.status;
     return status === 'active_until_period_end';

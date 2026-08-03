@@ -116,6 +116,22 @@ export class PricingComponent implements OnInit {
     return this.selectedInterval === 'month' ? '/month' : '/week';
   }
 
+  /** Active and set to renew — not canceled / cancel-at-period-end. */
+  isRenewingSubscription(status: SubscriptionStatus | null | undefined): boolean {
+    if (!status?.active || !status.subscription) return false;
+    return !this.isCancelingSubscription(status);
+  }
+
+  /**
+   * Canceled in Stripe but still inside the paid period, OR cancel_at_period_end.
+   * These must NOT show the same “You're subscribed / Manage” CTA as a renewing sub.
+   */
+  isCancelingSubscription(status: SubscriptionStatus | null | undefined): boolean {
+    if (!status?.active || !status.subscription) return false;
+    if (status.subscription.cancelAtPeriodEnd) return true;
+    return status.subscription.status === 'active_until_period_end';
+  }
+
   signIn(): void {
     this.authService.signInWithGoogle();
   }

@@ -74,6 +74,7 @@ export interface BackendSubscriptionResponse {
     currentPeriodStart: string | null;
     currentPeriodEnd: string | null;
     cancelAtPeriodEnd: boolean;
+    willAutoRenew?: boolean;
     plan: {
       id: string;
       nickname: string;
