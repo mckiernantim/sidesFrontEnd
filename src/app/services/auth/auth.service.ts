@@ -84,9 +84,12 @@ export class AuthService {
       this.auth,
       async (user) => {
         console.log('Auth state changed:', user?.uid || 'No user');
+        // Mark listed-check not ready BEFORE emitting the new user so the
+        // DEV allowlist gate cannot briefly treat a signed-in user as denied
+        // with a stale isAdmin=false + ready=true from the previous state.
+        this.listedCheckReadySubject.next(false);
         this.userSubject.next(user);
         this.authInitialized = true;
-        this.listedCheckReadySubject.next(false);
 
         if (user) {
           await this.checkAdminWhitelist(user);
@@ -98,6 +101,7 @@ export class AuthService {
       },
       (error) => {
         console.error('Auth state error:', error);
+        this.listedCheckReadySubject.next(false);
         this.authInitialized = true;
         this.isAdminSubject.next(false);
         this.listedCheckReadySubject.next(true);
@@ -241,17 +245,24 @@ export class AuthService {
   private async checkAdminWhitelist(user: User): Promise<void> {
     try {
       if (!user.email) {
+        console.warn('Admin listed-collection check: user has no email');
         this.isAdminSubject.next(false);
         return;
       }
 
-      // Doc id must be the raw email — firestore.rules compares
-      // request.auth.token.email == email (the document id).
-      const adminDocRef = doc(this.firestore, `listed/${user.email}`);
+      // Doc id must match the Auth token email (firestore.rules compares
+      // request.auth.token.email == email). Normalize to lowercase so a
+      // mismatched casing in the console does not lock owners out.
+      const emailKey = user.email.trim().toLowerCase();
+      const adminDocRef = doc(this.firestore, `listed/${emailKey}`);
       const adminSnapshot = await getDoc(adminDocRef);
 
       const isAdmin = adminSnapshot.exists();
-      console.log('Admin listed-collection check:', isAdmin);
+      console.log('Admin listed-collection check:', {
+        email: emailKey,
+        isAdmin,
+        projectId: this.firestore.app.options.projectId,
+      });
       this.isAdminSubject.next(isAdmin);
     } catch (error) {
       console.error('Error checking admin whitelist:', error);
