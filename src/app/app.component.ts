@@ -5,6 +5,15 @@ import { AuthService } from './services/auth/auth.service';
 import { getConfig } from '../environments/environment';
 import { ListedAccessState } from './components/listed-access-gate/listed-access-gate.component';
 
+/** Must match environment.prod.ts — never gate real production hosts. */
+function isHostedDevStagingHostname(): boolean {
+  if (typeof window === 'undefined') return false;
+  const h = window.location.hostname;
+  return (
+    h === 'scriptthing-dev.web.app' || h === 'scriptthing-dev.firebaseapp.com'
+  );
+}
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -20,7 +29,9 @@ export class AppComponent implements OnInit, OnDestroy {
   private evalGen = 0;
 
   constructor(private authService: AuthService) {
-    this.listedAccessGateActive = !!getConfig(!isDevMode()).listedAccessGateActive;
+    // Belt + suspenders: config flag AND hostname must both say DEV staging.
+    const configWantsGate = !!getConfig(!isDevMode()).listedAccessGateActive;
+    this.listedAccessGateActive = configWantsGate && isHostedDevStagingHostname();
   }
 
   ngOnInit(): void {
@@ -29,7 +40,6 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // One stream, one async check. No combineLatest.
     this.sub = this.authService.user$.subscribe((user) => {
       const gen = ++this.evalGen;
       void this.evaluateAccess(user, gen);

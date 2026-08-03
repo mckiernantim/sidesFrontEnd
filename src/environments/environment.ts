@@ -125,7 +125,7 @@ export function getConfig(isProd = false) {
     };
   }
   
-  // Production environment
+  // Production Firebase hosting
   if (hostname === 'scriptthing.web.app' || hostname === 'scriptthing.firebaseapp.com') {
     console.log('🚀 Running on PRODUCTION');
     return {
@@ -134,12 +134,19 @@ export function getConfig(isProd = false) {
       firebaseConfig: prodFirebaseConfig,
       url: 'https://sides3.herokuapp.com',
       contactFunctionUrl: 'https://us-central1-scriptthing.cloudfunctions.net/contactUs',
-      stripe: STRIPE_PUBLISHABLE_TEST
+      stripe: STRIPE_PUBLISHABLE_TEST,
+      listedAccessGateActive: false,
+      listedAccessEmails: []
     };
   }
-  
-  // Default fallback
-  return isProd ? environmentProd : environment;
+
+  // Custom domains / anything else — never apply the DEV staging gate
+  const base = isProd ? environmentProd : environment;
+  return {
+    ...base,
+    listedAccessGateActive: false,
+    listedAccessEmails: []
+  };
 }
 
 /*

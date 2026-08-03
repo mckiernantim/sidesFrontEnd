@@ -46,15 +46,21 @@ export const environment = {
 
 export const environmentProd = environment;
 
+/** Site allowlist gate is ONLY for hosted Firebase DEV. Never prod / custom domain. */
+function isHostedDevStagingHostname(hostname: string): boolean {
+  return (
+    hostname === 'scriptthing-dev.web.app' ||
+    hostname === 'scriptthing-dev.firebaseapp.com'
+  );
+}
+
 // Helper function to get the right environment
 export function getConfig(isProd = false) {
-  // Check if we're on the dev staging URL
-  if (
-    typeof window !== 'undefined' &&
-    (window.location.hostname === 'scriptthing-dev.web.app' ||
-      window.location.hostname === 'scriptthing-dev.firebaseapp.com')
-  ) {
-    // DEV STAGING CONFIG — never takes live payments; listed/ allowlist only
+  const hostname =
+    typeof window !== 'undefined' ? window.location.hostname : '';
+
+  // DEV STAGING ONLY — never sides-ways.com / scriptthing.web.app / localhost
+  if (isHostedDevStagingHostname(hostname)) {
     return {
       ...environment,
       isLive: false,
@@ -71,13 +77,16 @@ export function getConfig(isProd = false) {
       url: 'https://sides3-dev-e045a1d9ac46.herokuapp.com',
       contactFunctionUrl: 'https://us-central1-scriptthing-dev.cloudfunctions.net/contactUs',
       listedAccessGateActive: true,
-      // Guaranteed DEV access — does not depend on a Firestore read succeeding.
       listedAccessEmails: ['mckiernantim@gmail.com']
     };
   }
 
-  // PRODUCTION CONFIG (default)
-  return environment;
+  // PRODUCTION (and every other host) — gate forced OFF
+  return {
+    ...environment,
+    listedAccessGateActive: false,
+    listedAccessEmails: []
+  };
 }
 
 
