@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Observable, Subscription, interval } from 'rxjs';
 import { AuthService } from '../../../services/auth/auth.service';
+import { AuthModalService } from '../../../services/auth-modal/auth-modal.service';
 import { PdfService } from '../../../services/pdf/pdf.service';
 import { StripeService } from '../../../services/stripe/stripe.service';
 import { Router, NavigationEnd } from '@angular/router';
@@ -31,6 +32,7 @@ export class MainNavComponent implements OnInit, OnDestroy {
 
   constructor(
     private authService: AuthService,
+    private authModal: AuthModalService,
     private pdfService: PdfService,
     private stripeService: StripeService,
     private router: Router
@@ -96,7 +98,7 @@ export class MainNavComponent implements OnInit, OnDestroy {
   }
 
   signIn() {
-    this.authService.signInWithGoogle();
+    this.authModal.open();
   }
 
   signOut() {

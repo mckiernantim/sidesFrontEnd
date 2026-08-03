@@ -3,6 +3,7 @@ import { of, throwError, Subject } from 'rxjs';
 import { ProfileComponent } from './profile.component';
 import { StripeService } from '../../services/stripe/stripe.service';
 import { AuthService } from '../../services/auth/auth.service';
+import { AuthModalService } from '../../services/auth-modal/auth-modal.service';
 import { ScheduleApiService } from '../../services/schedule/schedule-api.service';
 import { PdfService } from '../../services/pdf/pdf.service';
 import { FunDataService } from '../../services/fundata/fundata.service';
@@ -190,6 +191,7 @@ describe('ProfileComponent', () => {
       providers: [
         { provide: StripeService, useValue: mockStripeService },
         { provide: AuthService, useValue: mockAuthService },
+        { provide: AuthModalService, useValue: { open: jest.fn() } },
         { provide: ScheduleApiService, useValue: mockScheduleApiService },
         { provide: PdfService, useValue: mockPdfService },
         { provide: FunDataService, useValue: mockFunDataService },

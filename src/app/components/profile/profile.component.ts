@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { AuthService } from 'src/app/services/auth/auth.service';
+import { AuthModalService } from 'src/app/services/auth-modal/auth-modal.service';
 import { StripeService } from 'src/app/services/stripe/stripe.service';
 import { ScheduleApiService, ScheduleSummary } from 'src/app/services/schedule/schedule-api.service';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
@@ -83,6 +84,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   constructor(
     private auth: AuthService,
+    private authModal: AuthModalService,
     private stripe: StripeService,
     private scheduleApi: ScheduleApiService,
     private pdfService: PdfService,
@@ -422,9 +424,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     });
   }
   
-  // Sign in with Google
   signIn(): void {
-    this.auth.signInWithGoogle();
+    this.authModal.open();
   }
   
   // Logout

@@ -1,5 +1,6 @@
 <div class="app-container">
   <app-nav *ngIf="showApp"></app-nav>
+  <app-auth-modal *ngIf="showApp"></app-auth-modal>
 
   <app-listed-access-gate
     *ngIf="!showApp"

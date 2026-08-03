@@ -23,6 +23,7 @@ import { fadeInOutAnimation } from '../../../animations/animations';
 import { SpinningBotComponent } from '../../shared/spinning-bot/spinning-bot.component';
 import { TokenService } from 'src/app/services/token/token.service';
 import { AuthService } from 'src/app/services/auth/auth.service';
+import { AuthModalService } from 'src/app/services/auth-modal/auth-modal.service';
 import { privateDecrypt } from 'crypto';
 import { getAnalytics } from '@angular/fire/analytics';
 import {
@@ -245,6 +246,7 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
     public pdf: PdfService,
     public token: TokenService,
     public auth: AuthService,
+    public authModal: AuthModalService,
     private dialog: TailwindDialogService
   ) {
     try {
@@ -1005,18 +1007,9 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
         },
       });
 
-      loginDialog.afterClosed().subscribe(async (result) => {
+      loginDialog.afterClosed().subscribe((result) => {
         if (result === 'login') {
-          try {
-            await this.auth.signInWithGoogle();
-            this.sendFinalDocumentToServer(finalDocument);
-          } catch (error) {
-            console.error('Login failed:', error);
-            this.handleError(
-              'Login failed. Please try again.',
-              error.message || 'Unknown error'
-            );
-          }
+          this.authModal.open();
         }
         resolve();
       });

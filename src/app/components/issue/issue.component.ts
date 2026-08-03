@@ -15,6 +15,7 @@ import { UploadService } from '../../services/upload/upload.service';
 
 import { SpinningBotComponent } from '../shared/spinning-bot/spinning-bot.component';
 import { AuthService } from 'src/app/services/auth/auth.service';
+import { AuthModalService } from 'src/app/services/auth-modal/auth-modal.service';
 
 @Component({
     selector: 'app-issue',
@@ -67,7 +68,8 @@ export class IssueComponent implements OnInit, AfterViewInit {
   constructor(
     public upload: UploadService,
     public cdr: ChangeDetectorRef,
-    private auth:AuthService,
+    private auth: AuthService,
+    private authModal: AuthModalService,
   ) {
     // Don't access data properties in constructor - they'll be set by dialog service
   }
@@ -155,16 +157,8 @@ export class IssueComponent implements OnInit, AfterViewInit {
   addCallSheet() {
  
   }
-  async login() {
-    try {
-      await this.auth.signInWithGoogle();
- 
-    } catch (error) {
-      console.error('Login failed:', error);
-      // Handle login error
-      this.errorDetails = 'Login failed. Please try again.';
-      this.error = true;
-    }
+  login() {
+    this.authModal.open();
   }
   handleFileInput(file) {
     // Existing file input logic

@@ -8,6 +8,7 @@ import { fadeInOutAnimation } from '../../../animations/animations';
 import { getConfig } from '../../../../environments/environment';
 import { Auth, User } from '@angular/fire/auth';
 import { AuthService } from '../../../services/auth/auth.service';
+import { AuthModalService } from '../../../services/auth-modal/auth-modal.service';
 import { take } from 'rxjs/operators';
 import { TailwindDialogService } from '../../../services/tailwind-dialog/tailwind-dialog.service';
 import { TailwindDialogComponent } from '../../../components/shared/tailwind-dialog/tailwind-dialog.component';
@@ -65,7 +66,8 @@ export class UploadComponent implements OnInit, OnDestroy {
     private dialogService: TailwindDialogService,
     public pdf: PdfService,
     private auth: Auth,
-    private authService: AuthService
+    private authService: AuthService,
+    private authModal: AuthModalService
   ) {}
 
   ngOnInit(): void {
@@ -245,13 +247,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   }
 
   signIn() {
-    this.authService.signInWithGoogle()
-      .then(() => {
-        console.log('Successfully signed in');
-      })
-      .catch(error => {
-        console.error('Error signing in:', error);
-      });
+    this.authModal.open();
   }
 
   signOut() {

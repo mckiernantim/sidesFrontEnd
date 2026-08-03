@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { StripeService } from '../../services/stripe/stripe.service';
 import { AuthService } from '../../services/auth/auth.service';
+import { AuthModalService } from '../../services/auth-modal/auth-modal.service';
 import { Observable, firstValueFrom, take } from 'rxjs';
 import { User } from '@angular/fire/auth';
 import { SubscriptionStatus } from '../../types/SubscriptionTypes';
@@ -47,6 +48,7 @@ export class PricingComponent implements OnInit {
   constructor(
     private stripeService: StripeService,
     private authService: AuthService,
+    private authModal: AuthModalService,
     private route: ActivatedRoute
   ) { }
 
@@ -133,7 +135,7 @@ export class PricingComponent implements OnInit {
   }
 
   signIn(): void {
-    this.authService.signInWithGoogle();
+    this.authModal.open();
   }
 
   async subscribe(): Promise<void> {

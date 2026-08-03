@@ -3,6 +3,8 @@ import { of, throwError } from 'rxjs';
 import { PricingComponent } from './pricing.component';
 import { StripeService } from '../../services/stripe/stripe.service';
 import { AuthService } from '../../services/auth/auth.service';
+import { AuthModalService } from '../../services/auth-modal/auth-modal.service';
+import { ActivatedRoute } from '@angular/router';
 import { User } from '@angular/fire/auth';
 
 // Create mock user inline
@@ -45,6 +47,7 @@ describe('PricingComponent', () => {
   let fixture: ComponentFixture<PricingComponent>;
   let mockStripeService: jest.Mocked<StripeService>;
   let mockAuthService: jest.Mocked<AuthService>;
+  let mockAuthModal: { open: jest.Mock };
 
   const mockUser = createMockUser();
 
@@ -53,7 +56,8 @@ describe('PricingComponent', () => {
       createPortalSession: jest.fn(),
       getSubscriptionStatus: jest.fn(),
       subscriptionStatus$: of(null),
-      clearCache: jest.fn()
+      clearCache: jest.fn(),
+      isLive: false
     } as any;
 
     mockAuthService = {
@@ -65,11 +69,15 @@ describe('PricingComponent', () => {
       checkSubscriptionStatus: jest.fn()
     } as any;
 
+    mockAuthModal = { open: jest.fn() };
+
     await TestBed.configureTestingModule({
       declarations: [PricingComponent],
       providers: [
         { provide: StripeService, useValue: mockStripeService },
-        { provide: AuthService, useValue: mockAuthService }
+        { provide: AuthService, useValue: mockAuthService },
+        { provide: AuthModalService, useValue: mockAuthModal },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => null } } } }
       ]
     }).compileComponents();
 
@@ -99,10 +107,10 @@ describe('PricingComponent', () => {
   });
 
   describe('signIn', () => {
-    it('should call auth service sign in', () => {
+    it('should open the auth modal', () => {
       component.signIn();
 
-      expect(mockAuthService.signInWithGoogle).toHaveBeenCalled();
+      expect(mockAuthModal.open).toHaveBeenCalled();
     });
   });
 
@@ -311,7 +319,7 @@ describe('PricingComponent', () => {
 
       // User signs in
       component.signIn();
-      expect(mockAuthService.signInWithGoogle).toHaveBeenCalled();
+      expect(mockAuthModal.open).toHaveBeenCalled();
 
       // User becomes authenticated
       mockAuthService.user$ = of(mockUser);
