@@ -1008,61 +1008,63 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
       
     }
   
-    // CREATE A MAP OF SCENE NUMBERS TO ALL THEIR PAGE INDEXES (scenes can span multiple pages)
+    // CREATE A MAP OF SCENE NUMBERS TO ALL THEIR PAGE INDEXES (scenes can span multiple pages).
+    // A shared page (scene A ends / scene B begins) is registered under EVERY scene that
+    // has content on it so the later scene can detect the collision and double the page.
     const sceneToPageIndexes = new Map<string, number[]>();
-    const pageToPrimaryScene = new Map<number, string>();
-    
-    // First pass: Find pages with scene headers (primary scene pages)
-    this.finalDocument.data.forEach((page, pageIndex) => {
-      const sceneHeader = page.find(line => 
-        line.category === 'scene-header' && line.visible === 'true'
-      );
-      if (sceneHeader?.sceneNumberText) {
-        const sceneNumber = sceneHeader.sceneNumberText;
-        if (!sceneToPageIndexes.has(sceneNumber)) {
-          sceneToPageIndexes.set(sceneNumber, []);
-        }
-        sceneToPageIndexes.get(sceneNumber)!.push(pageIndex);
-        pageToPrimaryScene.set(pageIndex, sceneNumber);
+    const addPageToScene = (sceneNumber: string, pageIndex: number) => {
+      if (!sceneNumber) return;
+      if (!sceneToPageIndexes.has(sceneNumber)) {
+        sceneToPageIndexes.set(sceneNumber, []);
       }
-    });
-  
-    // Second pass: Find continuation pages and assign them to the appropriate scene
-    this.finalDocument.data.forEach((page, pageIndex) => {
-      // Skip if this page already has a primary scene
-      if (pageToPrimaryScene.has(pageIndex)) {
-        return;
+      const list = sceneToPageIndexes.get(sceneNumber)!;
+      if (!list.includes(pageIndex)) {
+        list.push(pageIndex);
       }
-      
-      // Find the most relevant scene for this page
-      let primarySceneNumber: string | null = null;
-      let maxSceneLines = 0;
-      
-      page.forEach(line => {
-        if (line.sceneNumberText) {
-          // Count lines for this scene on this page
-          const sceneLines = page.filter(l => l.sceneNumberText === line.sceneNumberText).length;
-          if (sceneLines > maxSceneLines) {
-            maxSceneLines = sceneLines;
-            primarySceneNumber = line.sceneNumberText;
-          }
+    };
+
+    // First pass: register every visible scene-header on each page (not just the first)
+    this.finalDocument.data.forEach((page, pageIndex) => {
+      page.forEach((line: any) => {
+        if (line.category === 'scene-header' && line.visible === 'true' && line.sceneNumberText) {
+          addPageToScene(line.sceneNumberText, pageIndex);
         }
       });
-      
-      if (primarySceneNumber && sceneToPageIndexes.has(primarySceneNumber)) {
-        sceneToPageIndexes.get(primarySceneNumber)!.push(pageIndex);
-        pageToPrimaryScene.set(pageIndex, primarySceneNumber);
-        console.log(`Assigned page ${pageIndex} to scene ${primarySceneNumber} (continuation)`);
-      }
     });
-  
+
+    // Second pass: register pages by sceneNumberText on any line (continuation pages,
+    // and the trailing half of a shared page that has no header for the ending scene)
+    this.finalDocument.data.forEach((page, pageIndex) => {
+      page.forEach((line: any) => {
+        if (line.sceneNumberText) {
+          addPageToScene(line.sceneNumberText, pageIndex);
+        }
+      });
+    });
+
+    // Third pass: use each scene's firstLine/lastLine range so unlabeled body lines
+    // (sceneNumberText === '') still associate the page with the correct scene.
+    newSceneOrder.forEach(scene => {
+      const first = scene.firstLine;
+      const last = scene.lastLine;
+      if (first == null || last == null) return;
+      this.finalDocument.data.forEach((page, pageIndex) => {
+        const inRange = page.some(
+          (line: any) => line.index != null && line.index >= first && line.index <= last
+        );
+        if (inRange) {
+          addPageToScene(scene.sceneNumberText, pageIndex);
+        }
+      });
+    });
+
     // Sort page indexes for each scene to maintain order
-    sceneToPageIndexes.forEach((pageIndexes, sceneNumber) => {
+    sceneToPageIndexes.forEach((pageIndexes) => {
       pageIndexes.sort((a, b) => a - b);
     });
-  
+
     console.log('Scene to page mapping:', Array.from(sceneToPageIndexes.entries()));
-  
+
     // Create new page order based on scene order
     const newPageOrder: any[] = [];
     const usedPageIndexes = new Set<number>();
@@ -1081,10 +1083,145 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
 
     // SECOND: Add ALL pages for each scene in the new order
     newSceneOrder.forEach(scene => {
+      // SHARED PAGE / PAGE DOUBLING CHECK
+      // Scan every already-used page for content belonging to the current scene.
+      // Two cases arise:
+      //
+      //   A) Classic shared page: the shared page contains a scene-header for this
+      //      scene (i.e. this scene STARTS on the shared page).  The doubled copy
+      //      must appear BEFORE the scene's own continuation pages.
+      //
+      //   B) Continuation shared page: the shared page has no scene-header for this
+      //      scene — the scene started earlier and its tail lives on a page that also
+      //      hosts another scene (e.g. scene 7 ends where scene 8 begins).  The
+      //      doubled copy must appear AFTER the scene's own pages so the reading
+      //      order is: [scene start page] → [continuation/end page].
+      //
+      // When a shared page is found we:
+      //   1. Cross out the current scene's lines on the original page so they appear
+      //      struck-through in the other scene's slot.
+      //   2. Insert a doubled copy where the current scene is visible and the other
+      //      scene is crossed out, in the correct position (before or after own pages).
+
+      const doubledPagesBeforeOwn: any[][] = []; // case A — scene starts here
+      const doubledPagesAfterOwn: any[][] = [];  // case B — scene continues/ends here
+
+      const sceneFirstLine: number | null = scene.firstLine ?? null;
+      const sceneLastLine: number | null = scene.lastLine ?? null;
+      const lineInCurrentScene = (line: any): boolean => {
+        if (line.sceneNumberText === scene.sceneNumberText) return true;
+        if (!line.sceneNumberText && sceneFirstLine != null && sceneLastLine != null && line.index != null) {
+          return line.index >= sceneFirstLine && line.index <= sceneLastLine;
+        }
+        return false;
+      };
+
+      for (const usedPageIndex of Array.from(usedPageIndexes)) {
+        const usedPage = this.finalDocument.data[usedPageIndex];
+        if (!usedPage) continue;
+
+        // Skip callsheets
+        if (usedPage[0]?.type === 'callsheet' || usedPage[0]?.category === 'callsheet') {
+          continue;
+        }
+
+        // Collect scene labels on this page; also infer the current scene via index range
+        // so unlabeled continuation lines still trigger doubling.
+        const scenesOnPage = new Set<string>(
+          usedPage
+            .filter((line: any) => line.sceneNumberText)
+            .map((line: any) => line.sceneNumberText as string)
+        );
+        const pageHasCurrentScene =
+          scenesOnPage.has(scene.sceneNumberText) ||
+          usedPage.some((line: any) => lineInCurrentScene(line));
+
+        // Need the current scene PLUS at least one other labelled scene (genuine share)
+        if (!pageHasCurrentScene || scenesOnPage.size < 1) continue;
+        const hasOtherScene = [...scenesOnPage].some(s => s !== scene.sceneNumberText) ||
+          usedPage.some(
+            (line: any) =>
+              line.category === 'scene-header' &&
+              line.sceneNumberText &&
+              line.sceneNumberText !== scene.sceneNumberText
+          );
+        if (!hasOtherScene) continue;
+
+        // Does this shared page have a scene-header for the current scene?
+        // If yes → the scene STARTS here (case A).
+        // If no  → the scene only continues/ends here (case B).
+        const sharedPageHasSceneHeader = usedPage.some(
+          (line: any) =>
+            line.category === 'scene-header' && line.sceneNumberText === scene.sceneNumberText
+        );
+
+        // Snapshot BEFORE mutating so the doubled copy keeps original CONTINUE /
+        // START / END markers on the lines that stay visible for this scene.
+        const pageSnapshot = usedPage.map((line: any) => ({ ...line }));
+
+        // Step 1 — update the original shared page: cross out ALL lines belonging
+        // to the current scene so they appear struck-through in the other scene's slot.
+        // Also clear CONTINUE / START / END markers so decorations don't render on
+        // hidden/crossed-out lines.
+        usedPage.forEach((line: any) => {
+          if (lineInCurrentScene(line)) {
+            line.visible = 'false';
+            if (line.cont === 'CONTINUE-TOP' || line.cont === 'CONTINUE') {
+              line.cont = 'hideCont';
+            }
+            if (line.bar === 'bar') {
+              line.bar = 'hideBar';
+            }
+            if (line.end === 'END') {
+              line.end = 'hideEnd';
+            }
+          }
+        });
+        if (usedPage[0]) usedPage[0].isDoubledPage = true;
+
+        // Step 2 — synthesise the doubled copy from the pre-mutation snapshot:
+        //   lines belonging to the current scene → visible: 'true' (markers kept)
+        //   lines labelled as another scene      → visible: 'false'
+        //   unlabeled lines outside this scene   → visible: 'false'
+        // Hidden clones also clear bar/end/cont so template *ngIf checks don't fire.
+        const doubledPage = pageSnapshot.map((line: any) => {
+          const cloned = { ...line };
+          if (lineInCurrentScene(cloned)) {
+            cloned.visible = 'true';
+          } else if (cloned.sceneNumberText) {
+            cloned.visible = 'false';
+          } else if (sceneFirstLine != null && sceneLastLine != null && cloned.index != null) {
+            cloned.visible = 'false';
+          }
+          if (cloned.visible === 'false') {
+            if (cloned.cont === 'CONTINUE-TOP' || cloned.cont === 'CONTINUE') cloned.cont = 'hideCont';
+            if (cloned.bar === 'bar') cloned.bar = 'hideBar';
+            if (cloned.end === 'END') cloned.end = 'hideEnd';
+          }
+          cloned.isDoubledPage = true;
+          return cloned;
+        });
+
+        if (sharedPageHasSceneHeader) {
+          doubledPagesBeforeOwn.push(doubledPage);
+          console.log(
+            `Page doubling (start): queued doubled page for scene ${scene.sceneNumberText} BEFORE own pages (shared with used page ${usedPageIndex})`
+          );
+        } else {
+          doubledPagesAfterOwn.push(doubledPage);
+          console.log(
+            `Page doubling (cont): queued doubled page for scene ${scene.sceneNumberText} AFTER own pages (shared with used page ${usedPageIndex})`
+          );
+        }
+      }
+
+      // Insert case-A doubled pages first (they represent the scene's opening)
+      doubledPagesBeforeOwn.forEach(dp => newPageOrder.push(dp));
+
+      // Then add all of the scene's own primary pages
       const pageIndexes = sceneToPageIndexes.get(scene.sceneNumberText);
       if (pageIndexes) {
         console.log(`Processing scene ${scene.sceneNumberText} with pages:`, pageIndexes);
-        // Add all pages for this scene in their original order
         pageIndexes.forEach(pageIndex => {
           if (!usedPageIndexes.has(pageIndex)) {
             newPageOrder.push(this.finalDocument.data[pageIndex]);
@@ -1097,6 +1234,9 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
       } else {
         console.log(`No pages found for scene ${scene.sceneNumberText}`);
       }
+
+      // Insert case-B doubled pages last (they represent the scene's continuation/end)
+      doubledPagesAfterOwn.forEach(dp => newPageOrder.push(dp));
     });
 
     // THIRD: Add any remaining pages that weren't part of scenes or callsheets
@@ -1106,13 +1246,13 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
         console.log(`Added remaining page ${pageIndex}`);
       }
     });
-  
+
     console.log(`Reordered from ${this.finalDocument.data.length} to ${newPageOrder.length} pages`);
     console.log('Final page order indexes:', newPageOrder.map((_, index) => index));
-  
+
     // Update finalDocument.data with new order
     this.finalDocument.data = newPageOrder;
-  
+
     // ONLY update docPageIndex and docPageLineIndex - leave everything else alone
     this.finalDocument.data.forEach((page, newDocPageIndex) => {
       page.forEach((line, newDocPageLineIndex) => {
@@ -1120,7 +1260,10 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
         line.docPageLineIndex = newDocPageLineIndex;
       });
     });
-  
+
+    // Remove CONTINUE / CONTINUE-TOP markers that are no longer valid after reordering
+    this.cleanupContinueMarkers(this.finalDocument.data);
+
     console.log('Document reordered, new page count:', this.finalDocument.data.length);
     
     // Store the new scene order
@@ -1133,7 +1276,53 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
       this._documentRegenerated$.next(true);
     }, 10);
   }
-    
+
+  /**
+   * After a reorder, CONTINUE / CONTINUE-TOP markers that no longer pair with
+   * an adjacent page must be cleared so the browser doesn't render stale bars.
+   *
+   * Rules (only visible lines are considered):
+   *   • CONTINUE-TOP on page N is valid only when page N-1 contains a visible
+   *     CONTINUE line belonging to the same scene (matched by sceneNumberText).
+   *   • CONTINUE on page N is valid only when page N+1 contains a visible
+   *     CONTINUE-TOP line belonging to the same scene.
+   *
+   * Any marker that fails its check is set to 'hideCont'.
+   */
+  cleanupContinueMarkers(pages: any[][]): void {
+    pages.forEach((page, pageIndex) => {
+      page.forEach((line: any) => {
+        if (line.visible !== 'true') return;
+
+        if (line.cont === 'CONTINUE-TOP' && line.sceneNumberText) {
+          const prevPage = pages[pageIndex - 1];
+          const prevHasContinue = prevPage?.some(
+            (pl: any) =>
+              pl.visible === 'true' &&
+              pl.cont === 'CONTINUE' &&
+              pl.sceneNumberText === line.sceneNumberText
+          );
+          if (!prevHasContinue) {
+            line.cont = 'hideCont';
+          }
+        }
+
+        if (line.cont === 'CONTINUE' && line.sceneNumberText) {
+          const nextPage = pages[pageIndex + 1];
+          const nextHasContinueTop = nextPage?.some(
+            (nl: any) =>
+              nl.visible === 'true' &&
+              nl.cont === 'CONTINUE-TOP' &&
+              nl.sceneNumberText === line.sceneNumberText
+          );
+          if (!nextHasContinueTop) {
+            line.cont = 'hideCont';
+          }
+        }
+      });
+    });
+  }
+
   setSelectedScenes(scenes: any[]): void {
     console.log('🔧 PDF Service: setSelectedScenes called with:', scenes?.map(s => s.sceneNumberText));
     this._selectedScenes = [...scenes];
