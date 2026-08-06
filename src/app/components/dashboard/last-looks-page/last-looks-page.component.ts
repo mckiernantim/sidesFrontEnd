@@ -241,6 +241,11 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
 
   }
 
+  /** Returns true when the current page was doubled during a scene reorder (FR-001). */
+  get isDoubledPage(): boolean {
+    return !!this.page?.[0]?.isDoubledPage;
+  }
+
   ngOnInit(): void {
     if (this.editMode) {
       this.canEditDocument = true;

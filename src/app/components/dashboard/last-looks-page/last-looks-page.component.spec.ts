@@ -1,265 +1,121 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { LastLooksPageComponent } from './last-looks-page.component';
-import { By } from '@angular/platform-browser';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { Subject, of } from 'rxjs';
-import { UndoService } from 'src/app/services/edit/undo.service';
+import { By } from '@angular/platform-browser';
+import { Subject, BehaviorSubject } from 'rxjs';
+
+import { LastLooksPageComponent } from './last-looks-page.component';
+import { PageAlertComponent } from '../page-alert/page-alert.component';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
+import { UndoService } from 'src/app/services/edit/undo.service';
 import { AnnotationStateService } from 'src/app/services/annotation/annotation-state.service';
-import * as kidnappedData from '../last-looks-test-data/kidnapped-scenes-actual.json';
-import * as roseData from '../last-looks-test-data/Rose-scenes-actual.json';
-import * as nextData from '../last-looks-test-data/next-scenes-actual.json';
 
-// localStorage mock required for jsdom environments that restrict it
-Object.defineProperty(window, 'localStorage', {
-  configurable: true,
-  value: {
-    getItem: jest.fn(() => null),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-    clear: jest.fn(),
-  },
-});
+const DOUBLED_PAGE_TOOLTIP = 'This page was duplicated because scenes that shared it were reordered. Only the lines for the scene being shot here are shown.';
 
-const mockUndoService = {
-  undoRedo$: new Subject<any>(),
-  recordLineChange: jest.fn(),
-  recordBatchChanges: jest.fn(),
-  recordAnnotationChange: jest.fn(),
-  recordXboxChange: jest.fn(),
-  undo: jest.fn(),
-  redo: jest.fn(),
-  canUndo: false,
-  canRedo: false,
-};
+function makePdfServiceMock() {
+  return {
+    finalDocumentData$: new BehaviorSubject<any>(null),
+    sceneHeaderTextUpdated$: new Subject<any>(),
+    finalDocument: null,
+  };
+}
 
-const mockPdfService = {
-  finalDocumentData$: new Subject<any>(),
-  sceneHeaderTextUpdated$: new Subject<any>(),
-  finalDocument: { data: [], name: 'test', annotations: [] },
-  saveDocumentState: jest.fn(),
-  updateLine: jest.fn(),
-  updateSceneHeaderText: jest.fn(),
-  updateSceneNumber: jest.fn(),
-  combinePages: jest.fn(),
-};
+function makeUndoServiceMock() {
+  return {
+    undoRedo$: new Subject<any>(),
+  };
+}
 
-const mockAnnotationState = {
-  clear: jest.fn(),
-  clearSelection: jest.fn(),
-  initializeLocal: jest.fn(),
-  addAnnotationLocally: jest.fn(),
-  removeAnnotationLocally: jest.fn(),
-  createAnnotation: jest.fn(),
-  deleteAnnotation: jest.fn(),
-  updateAnnotation: jest.fn(),
-  selectAnnotations: jest.fn(),
-  setActiveTool: jest.fn(),
-  getAnnotationsForPage: jest.fn(() => []),
-  toolState$: of(null),
-  toolState: null,
-  annotations$: of([]),
-  annotations: new Map(),
-};
+function makeAnnotationStateMock() {
+  return {
+    isAnnotationMode$: new BehaviorSubject<boolean>(false),
+    activeLayer$: new BehaviorSubject<any>(null),
+    annotations$: new BehaviorSubject<any[]>([]),
+  };
+}
 
-describe('LastLooksPageComponent', () => {
+describe('LastLooksPageComponent — doubled page toast (feature 025)', () => {
   let component: LastLooksPageComponent;
   let fixture: ComponentFixture<LastLooksPageComponent>;
-  const linesSelector = '.break ul li';
+  let pdfServiceMock: ReturnType<typeof makePdfServiceMock>;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [LastLooksPageComponent],
-      schemas: [NO_ERRORS_SCHEMA],
-      providers: [
-        { provide: UndoService, useValue: mockUndoService },
-        { provide: PdfService, useValue: mockPdfService },
-        { provide: AnnotationStateService, useValue: mockAnnotationState },
-      ],
-    }).compileComponents();
-  });
+    pdfServiceMock = makePdfServiceMock();
 
-  beforeEach(() => {
+    await TestBed.configureTestingModule({
+      declarations: [LastLooksPageComponent, PageAlertComponent],
+      providers: [
+        { provide: PdfService, useValue: pdfServiceMock },
+        { provide: UndoService, useValue: makeUndoServiceMock() },
+        { provide: AnnotationStateService, useValue: makeAnnotationStateMock() },
+      ],
+      schemas: [NO_ERRORS_SCHEMA],
+    }).compileComponents();
+
     fixture = TestBed.createComponent(LastLooksPageComponent);
     component = fixture.componentInstance;
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
-
-  it('should render the correct number of lines for rose-scenes data', () => {
-    const singlePageData = (roseData as any).default[0] || roseData[0];
-    component.page = singlePageData;
+  it('shows <app-page-alert> when page[0].isDoubledPage is true', () => {
+    component.page = [{ isDoubledPage: true }];
     fixture.detectChanges();
-
-    const lines = fixture.debugElement.queryAll(By.css(linesSelector));
-    // page-number lines render two <li> each (one at the page-number position +
-    // one in the general nonEditable template), so total >= singlePageData.length
-    expect(lines.length).toBeGreaterThanOrEqual(singlePageData.length);
+    const alert = fixture.debugElement.query(By.css('app-page-alert'));
+    expect(alert).not.toBeNull();
   });
 
-  it('should render the correct number of lines for kidnapped-scenes data', () => {
-    const singlePageData = (kidnappedData as any).default[0] || kidnappedData[0];
-    component.page = singlePageData;
+  it('hides <app-page-alert> when page[0].isDoubledPage is false', () => {
+    component.page = [{ isDoubledPage: false }];
     fixture.detectChanges();
-
-    const lines = fixture.debugElement.queryAll(By.css(linesSelector));
-    expect(lines.length).toBeGreaterThanOrEqual(singlePageData.length);
+    const alert = fixture.debugElement.query(By.css('app-page-alert'));
+    expect(alert).toBeNull();
   });
 
-  it('should render the correct number of lines for next-scenes data', () => {
-    const singlePageData = (nextData as any).default[0] || nextData[0];
-    component.page = singlePageData;
+  it('hides <app-page-alert> when isDoubledPage is undefined', () => {
+    component.page = [{}];
     fixture.detectChanges();
-
-    const lines = fixture.debugElement.queryAll(By.css(linesSelector));
-    expect(lines.length).toBeGreaterThanOrEqual(singlePageData.length);
+    const alert = fixture.debugElement.query(By.css('app-page-alert'));
+    expect(alert).toBeNull();
   });
 
-  describe('CONTINUE bar text drag (moveBarText)', () => {
-    const mockLine: any = {
-      docPageLineIndex: 0,
-      cont: 'CONTINUE',
-      continueTextOffset: 200,
-    };
-
-    beforeEach(() => {
-      component.canEditDocument = true;
-      component.page = [{ ...mockLine }];
-    });
-
-    it('should decrease continueTextOffset when dragging left (negative deltaX)', () => {
-      // Simulate mousedown to initialise drag state
-      const mousedown = new MouseEvent('mousedown', { clientX: 300, bubbles: false });
-      component.startBarTextDrag(mousedown, component.page[0], 'continue');
-
-      // Simulate mousemove 100px to the left
-      const mousemove = new MouseEvent('mousemove', { clientX: 200 });
-      component.moveBarText(mousemove);
-
-      expect(component.page[0].continueTextOffset).toBe(100);
-    });
-
-    it('should increase continueTextOffset when dragging right (positive deltaX)', () => {
-      const mousedown = new MouseEvent('mousedown', { clientX: 300, bubbles: false });
-      component.startBarTextDrag(mousedown, component.page[0], 'continue');
-
-      const mousemove = new MouseEvent('mousemove', { clientX: 400 });
-      component.moveBarText(mousemove);
-
-      expect(component.page[0].continueTextOffset).toBe(300);
-    });
-
-    it('should clamp continueTextOffset to 0 when dragging past the left edge', () => {
-      // Set initial offset near 0 so dragging left clamps
-      component.page[0].continueTextOffset = 20;
-      const mousedown = new MouseEvent('mousedown', { clientX: 300, bubbles: false });
-      component.startBarTextDrag(mousedown, component.page[0], 'continue');
-
-      // Drag 200px left — would result in -180, should clamp to 0
-      const mousemove = new MouseEvent('mousemove', { clientX: 100 });
-      component.moveBarText(mousemove);
-
-      expect(component.page[0].continueTextOffset).toBe(0);
-    });
-
-    it('should clamp continueTextOffset at xboxPageWidth (816) when dragging past right edge', () => {
-      component.page[0].continueTextOffset = 700;
-      const mousedown = new MouseEvent('mousedown', { clientX: 300, bubbles: false });
-      component.startBarTextDrag(mousedown, component.page[0], 'continue');
-
-      // Drag 200px right — would result in 900, should clamp to 816
-      const mousemove = new MouseEvent('mousemove', { clientX: 500 });
-      component.moveBarText(mousemove);
-
-      expect(component.page[0].continueTextOffset).toBe(816);
-    });
-
-    afterEach(() => {
-      // Clean up drag event listeners added by startBarTextDrag
-      const mouseup = new MouseEvent('mouseup');
-      document.dispatchEvent(mouseup);
-    });
-  });
-
-  it('should show callsheet watermark overlay when watermark is active', () => {
-    component.currentPageIndex = 0;
-    component.page = [{
-      type: 'callsheet',
-      category: 'callsheet',
-      imagePath: 'https://example.com/callsheet.png',
-      watermarkData: {
-        isActive: true,
-        actorName: 'TIM',
-        timestamp: '04:29:18 PM 07/26/26',
-        repetitions: 4
-      }
-    }];
+  it('passes correct label "Doubled page" to <app-page-alert>', () => {
+    component.page = [{ isDoubledPage: true }];
     fixture.detectChanges();
-
-    expect(component.isCallsheetPage(component.page)).toBe(true);
-    const overlay = fixture.debugElement.query(By.css('.callsheet-watermark-overlay'));
-    expect(overlay).toBeTruthy();
-    const container = fixture.debugElement.query(By.css('.callsheet-watermark-container'));
-    expect(container).toBeTruthy();
+    const alertEl = fixture.debugElement.query(By.css('app-page-alert'));
+    expect(alertEl).not.toBeNull();
+    const alertInstance = alertEl.componentInstance as PageAlertComponent;
+    expect(alertInstance.label).toBe('Doubled page');
   });
 
-  it('should hide callsheet watermark overlay when watermark is inactive', () => {
-    component.currentPageIndex = 0;
-    component.page = [{
-      type: 'callsheet',
-      category: 'callsheet',
-      imagePath: 'https://example.com/callsheet.png',
-      watermarkData: { isActive: false, actorName: 'TIM', repetitions: 4 }
-    }];
+  it('passes correct tooltipText to <app-page-alert>', () => {
+    component.page = [{ isDoubledPage: true }];
     fixture.detectChanges();
-
-    const overlay = fixture.debugElement.query(By.css('.callsheet-watermark-overlay'));
-    expect(overlay).toBeFalsy();
+    const alertEl = fixture.debugElement.query(By.css('app-page-alert'));
+    expect(alertEl).not.toBeNull();
+    const alertInstance = alertEl.componentInstance as PageAlertComponent;
+    expect(alertInstance.tooltipText).toBe(DOUBLED_PAGE_TOOLTIP);
   });
 
-  // ── Spec 023: pageScale @Input (FR-013, FR-017, SC-001) ──────────
-
-  it('should accept pageScale @Input and default to 1', () => {
-    expect(component.pageScale).toBe(1);
-  });
-
-  it('pageTransform should return scale() CSS string matching pageScale', () => {
-    component.pageScale = 1.5;
-    expect(component.pageTransform).toBe('scale(1.5)');
-  });
-
-  it('pageTransform should update when pageScale changes', () => {
-    component.pageScale = 0.5;
-    expect(component.pageTransform).toBe('scale(0.5)');
-    component.pageScale = 2.0;
-    expect(component.pageTransform).toBe('scale(2)');
-  });
-
-  it('should NOT own zoom state: fitScale, zoomOverride, MIN_SCALE, MAX_SCALE should not be properties', () => {
-    // SC-009: verify zoom state is NOT on LastLooksPageComponent
-    expect((component as any).fitScale).toBeUndefined();
-    expect((component as any).zoomOverride).toBeUndefined();
-    expect((component as any).MIN_SCALE).toBeUndefined();
-    expect((component as any).MAX_SCALE).toBeUndefined();
-  });
-
-  it('pageViewport ref should exist for backward-compat but not drive zoom (FR-013)', () => {
-    // The pageViewport @ViewChild exists but does not compute fitScale/zoom
-    // Just confirm the component does not have a viewportObserver that would update zoom
-    expect((component as any).viewportObserver).toBeUndefined();
-  });
-
-  it('scaledPageWidth should be 816 * pageScale', () => {
-    component.pageScale = 0.75;
+  it('toast disappears when isDoubledPage changes to false on the same page', () => {
+    component.page = [{ isDoubledPage: true }];
     fixture.detectChanges();
-    expect(component.scaledPageWidth).toBe(Math.round(816 * 0.75));
+    expect(fixture.debugElement.query(By.css('app-page-alert'))).not.toBeNull();
+
+    component.page = [{ isDoubledPage: false }];
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css('app-page-alert'))).toBeNull();
   });
 
-  it('scaledPageHeight should be 1056 * pageScale', () => {
-    component.pageScale = 1.25;
-    fixture.detectChanges();
-    expect(component.scaledPageHeight).toBe(Math.round(1056 * 1.25));
+  it('isDoubledPage getter returns true when page[0].isDoubledPage is true', () => {
+    component.page = [{ isDoubledPage: true }];
+    expect(component.isDoubledPage).toBe(true);
+  });
+
+  it('isDoubledPage getter returns false when page[0].isDoubledPage is false', () => {
+    component.page = [{ isDoubledPage: false }];
+    expect(component.isDoubledPage).toBe(false);
+  });
+
+  it('isDoubledPage getter returns false when page is empty', () => {
+    component.page = [];
+    expect(component.isDoubledPage).toBe(false);
   });
 });

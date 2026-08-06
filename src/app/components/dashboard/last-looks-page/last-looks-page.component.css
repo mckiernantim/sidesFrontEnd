@@ -71,6 +71,15 @@
     box-sizing: border-box;
 }
 
+/* Feature 025: doubled-page toast host — floats above page content, does not intercept page interactions */
+.page-alert-host {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  pointer-events: none;
+}
+
 html[data-theme='dark'] .page {
     background-color: #ffffff !important;
     color: #16181c;
