@@ -689,7 +689,10 @@ export class LastLooksComponent implements OnInit, AfterViewInit, OnDestroy {
   public refreshDocument(): void {
     if (this.pdf.finalDocument?.data) {
       this.pages = this.pdf.finalDocument.data;
-      this.currentPage = this.pages[this.currentPageIndex] || [];
+      // Always produce a new array reference so Angular's change detection sees a distinct
+      // object from whatever handleDocumentReorder() set, and ngOnChanges fires correctly
+      // in LastLooksPageComponent — preserving isDoubledPage and all other line properties.
+      this.currentPage = [...(this.pages[this.currentPageIndex] || [])];
       this.processLinesForLastLooks(this.pages);
       this.cdRef.detectChanges();
     }
