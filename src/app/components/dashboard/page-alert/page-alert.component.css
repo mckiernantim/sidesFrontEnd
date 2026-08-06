@@ -26,13 +26,15 @@
   color: var(--sw-text, #eef3f1);
   border: 1px solid var(--sw-border, #24443e);
   border-radius: 4px;
-  padding: 6px 10px;
-  font-size: 11px;
-  max-width: 280px;
+  padding: 4px 10px;
+  /* Slightly under page body type (~12pt); wide so helper copy sits on fewer lines */
+  font-size: 10px;
+  max-width: 420px;
+  width: max-content;
   z-index: 100;
   pointer-events: none;
   white-space: normal;
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
 .page-alert:hover .page-alert__tooltip,
