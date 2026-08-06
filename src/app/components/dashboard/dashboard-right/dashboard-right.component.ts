@@ -1241,25 +1241,36 @@ async sendFinalDocumentToServer(finalDocument) {
       clearInterval(subscriptionCheck);
     });
 
-    // Listen for subscription status changes
+    // Bounded post-checkout poll: checks every 3 s for up to 30 s (10 attempts)
+    // then stops automatically so it doesn't hammer the endpoint forever.
+    // The dialog's afterClosed() also calls clearInterval when the user dismisses.
+    let pollAttempts = 0;
+    const MAX_POLL_ATTEMPTS = 10;
+    const POLL_INTERVAL_MS = 3000;
+
     const subscriptionCheck = setInterval(() => {
-      if (this.userData?.uid) {
-        this.stripe.getSubscriptionStatus(this.userData.uid).subscribe({
-          next: (subscriptionStatus) => {
-            if (subscriptionStatus.active) {
-              // User now has active subscription, close modal and proceed
-              console.log('Subscription became active, closing modal and proceeding with checkout');
-              clearInterval(subscriptionCheck);
-              subscriptionDialog.close();
-              this.showCheckoutModal = true;
-            }
-          },
-          error: (error) => {
-            console.error('Error checking subscription status:', error);
-          }
-        });
+      if (!this.userData?.uid) return;
+
+      if (pollAttempts >= MAX_POLL_ATTEMPTS) {
+        clearInterval(subscriptionCheck);
+        return;
       }
-    }, 5000); // Check every 5 seconds
+      pollAttempts++;
+
+      this.stripe.getSubscriptionStatus(this.userData.uid).subscribe({
+        next: (subscriptionStatus) => {
+          if (subscriptionStatus.active) {
+            console.log('Subscription became active, closing modal and proceeding with checkout');
+            clearInterval(subscriptionCheck);
+            subscriptionDialog.close();
+            this.showCheckoutModal = true;
+          }
+        },
+        error: (error) => {
+          console.error('Error checking subscription status:', error);
+        }
+      });
+    }, POLL_INTERVAL_MS);
   }
 
   private handleError(title: string, message: string) {

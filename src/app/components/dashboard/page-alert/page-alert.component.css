@@ -1,0 +1,43 @@
+/* page-alert.component.css */
+
+.page-alert {
+  position: relative;
+  pointer-events: auto;
+  cursor: default;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: inherit;
+  background: var(--mustard, #f0b429);
+  color: var(--sw-surface, #16302b);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.page-alert__tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--sw-surface, #16302b);
+  color: var(--sw-text, #eef3f1);
+  border: 1px solid var(--sw-border, #24443e);
+  border-radius: 4px;
+  padding: 4px 10px;
+  /* Slightly under page body type (~12pt); wide so helper copy sits on fewer lines */
+  font-size: 10px;
+  max-width: 420px;
+  width: max-content;
+  z-index: 100;
+  pointer-events: none;
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.page-alert:hover .page-alert__tooltip,
+.page-alert__tooltip.show {
+  display: block;
+}

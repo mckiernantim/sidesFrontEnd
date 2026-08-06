@@ -241,6 +241,11 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
 
   }
 
+  /** Returns true when the current page was doubled during a scene reorder (FR-001). */
+  get isDoubledPage(): boolean {
+    return !!this.page?.[0]?.isDoubledPage;
+  }
+
   ngOnInit(): void {
     if (this.editMode) {
       this.canEditDocument = true;
@@ -2185,7 +2190,13 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
   }
 
   /**
-   * All X visuals for the page: freestanding boxes + auto stubs over crossed-out lines.
+   * All X visuals for the page: saved xboxes (geometry source of truth) + auto
+   * stubs over crossed-out lines that have not yet been promoted.
+   *
+   * IMPORTANT: once a stub is promoted via ensureXboxIsSaved(), it must appear
+   * here from the saved record (by id) so drag/resize updates paint. Previously
+   * promoted stubs omitted `isFreestanding`, so the UI kept reading line-based
+   * stub geometry and appeared non-interactive.
    */
   getDisplayedSkippedSections(): Array<{
     top: number;
@@ -2196,23 +2207,31 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
     isFreestanding: boolean;
     lineIds: number[];
   }> {
-    const freestanding = this.getFreestandingXboxesForPage().map((xbox: any) => ({
+    // All saved xboxes on this page — not only isFreestanding — so promoted
+    // "original" stubs remain editable after ensureXboxIsSaved().
+    const saved = this.getSavedXboxesForPage().map((xbox: any) => ({
       top: xbox.top,
       bottom: xbox.bottom,
       left: xbox.left,
       right: xbox.right,
       originalIndex: xbox.id as string,
-      isFreestanding: true,
-      lineIds: [] as number[],
+      isFreestanding: !!xbox.isFreestanding,
+      lineIds: [...((xbox.lineIds || []) as number[])],
     }));
 
-    // Auto stubs are visual-only (from line.visible === false). They do not own
-    // interactive handles — freestanding boxes are the editable objects.
-    const freestandingBounds = freestanding.map(s => ({ top: s.top, bottom: s.bottom }));
+    const savedBounds = saved.map(s => ({ top: s.top, bottom: s.bottom }));
+    const savedLineKeys = new Set(
+      saved
+        .map(s => this.getXboxStableKey(s.lineIds))
+        .filter((key: string) => !!key)
+    );
+
+    // Auto stubs only for skipped-line groups not already covered by a saved xbox.
     const stubSections = this.getSkippedSections()
       .filter(section => {
+        if (savedLineKeys.has(section.stableKey)) return false;
         const mid = (section.top + section.bottom) / 2;
-        return !freestandingBounds.some(b => mid >= b.top && mid <= b.bottom);
+        return !savedBounds.some(b => mid >= b.top && mid <= b.bottom);
       })
       .map(section => ({
         top: section.top,
@@ -2224,10 +2243,14 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
         lineIds: [...section.lineIds],
       }));
 
-    return [...freestanding, ...stubSections];
+    return [...saved, ...stubSections];
   }
 
-  /** Interactive overlay targets — freestanding boxes only. */
+  /**
+   * Interactive overlay targets — all displayed x-box sections (freestanding and
+   * auto-generated stubs over skipped lines). Stubs are promoted to saved records
+   * on first interaction via ensureXboxIsSaved().
+   */
   getEditableXboxSections(): Array<{
     top: number;
     bottom: number;
@@ -2235,20 +2258,21 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
     right: number;
     originalIndex: string;
   }> {
-    return this.getFreestandingXboxesForPage().map((xbox: any) => ({
-      top: xbox.top,
-      bottom: xbox.bottom,
-      left: xbox.left,
-      right: xbox.right,
-      originalIndex: xbox.id as string,
+    return this.getDisplayedSkippedSections().map(s => ({
+      top: s.top,
+      bottom: s.bottom,
+      left: s.left,
+      right: s.right,
+      originalIndex: s.originalIndex,
     }));
   }
 
   selectXbox(originalIndex: string, event: MouseEvent): void {
     event.stopPropagation();
     event.preventDefault();
-    if (!this.getXboxById(originalIndex)) return;
-    this.selectedXboxIndex = originalIndex;
+    const savedId = this.ensureXboxIsSaved(originalIndex);
+    if (!savedId) return;
+    this.selectedXboxIndex = savedId;
     this.selectedAnnotationId = null;
     this.annotationState.clearSelection();
     this.cdRef.detectChanges();
@@ -2263,7 +2287,9 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
     event?.stopPropagation();
     event?.preventDefault();
 
-    const xbox = this.getXboxById(originalIndex);
+    const savedId = this.ensureXboxIsSaved(originalIndex);
+    if (!savedId) return;
+    const xbox = this.getXboxById(savedId);
     if (!xbox) return;
 
     const previousXboxes = this.cloneXboxesSnapshot();
@@ -2277,9 +2303,9 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
     );
 
     const doc = this.pdfService.finalDocument as any;
-    doc.xboxes = (doc.xboxes || []).filter((x: any) => x.id !== originalIndex);
+    doc.xboxes = (doc.xboxes || []).filter((x: any) => x.id !== savedId);
 
-    if (this.selectedXboxIndex === originalIndex) {
+    if (this.selectedXboxIndex === savedId) {
       this.selectedXboxIndex = null;
     }
 
@@ -2297,10 +2323,12 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
     event.stopPropagation();
     event.preventDefault();
 
-    const xbox = this.getXboxById(originalIndex);
+    const savedId = this.ensureXboxIsSaved(originalIndex);
+    if (!savedId) return;
+    const xbox = this.getXboxById(savedId);
     if (!xbox) return;
 
-    this.selectedXboxIndex = originalIndex;
+    this.selectedXboxIndex = savedId;
     this.selectedAnnotationId = null;
     this.annotationState.clearSelection();
 
@@ -2312,6 +2340,9 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
     this.xboxDragInitialLeft = xbox.left;
     this.xboxDragInitialWidth = xbox.right - xbox.left;
     this.xboxDragInitialHeight = xbox.bottom - xbox.top;
+
+    // Rebind overlay from stub stableKey → saved xbox id so drag paints geometry.
+    this.cdRef.detectChanges();
 
     document.addEventListener('mousemove', this.handleXboxDragMove);
     document.addEventListener('mouseup', this.handleXboxDragEnd);
@@ -2366,10 +2397,12 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
     event.stopPropagation();
     event.preventDefault();
 
-    const xbox = this.getXboxById(originalIndex);
+    const savedId = this.ensureXboxIsSaved(originalIndex);
+    if (!savedId) return;
+    const xbox = this.getXboxById(savedId);
     if (!xbox) return;
 
-    this.selectedXboxIndex = originalIndex;
+    this.selectedXboxIndex = savedId;
     this.selectedAnnotationId = null;
     this.annotationState.clearSelection();
 
@@ -2379,6 +2412,9 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
     this.xboxResizeStartX = event.clientX;
     this.xboxResizeStartY = event.clientY;
     this.xboxResizeInitial = { top: xbox.top, bottom: xbox.bottom, left: xbox.left, right: xbox.right };
+
+    // Rebind overlay from stub stableKey → saved xbox id so resize paints geometry.
+    this.cdRef.detectChanges();
 
     document.addEventListener('mousemove', this.handleXboxResizeMove);
     document.addEventListener('mouseup', this.handleXboxResizeEnd);
@@ -2509,6 +2545,8 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
       bottom: stub.bottom,
       left: stub.left,
       right: stub.right,
+      // Must be true so the overlay binds to this record's geometry (drag/resize).
+      isFreestanding: true,
     };
     this.setSavedXboxesForPage([...this.getSavedXboxesForPage(), record]);
     return id;
@@ -2599,12 +2637,32 @@ export class LastLooksPageComponent implements OnInit, OnChanges, OnDestroy, Aft
       });
       line.visible = visible;
       this.pdfService.updateLine(this.currentPageIndex, lineIndex, { visible }, true);
+      if (isVisible) {
+        this.restoreStartBarOnReveal(line, lineIndex);
+      }
     });
 
     if (lineChanges.length > 0) {
       this.pageUpdate.emit([...this.page]);
     }
     return lineChanges;
+  }
+
+  private restoreStartBarOnReveal(line: any, lineIndex: number): void {
+    if (line.category !== 'scene-header') return;
+    if (line.bar === 'bar') return;
+
+    line.bar = 'bar';
+
+    if (!line.calculatedBarY && line.calculatedYpos) {
+      line.calculatedBarY = (parseInt(line.calculatedYpos as string) + 20) + 'px';
+      line.barY = parseInt(line.calculatedBarY) / 1.3;
+    } else if (!line.barY && line.barY !== 0) {
+      line.barY = 40;
+    }
+
+    line.startTextOffset = 10;
+    this.pdfService.updateLine(this.currentPageIndex, lineIndex, line, true);
   }
 
   private getXboxStableKey(lineIds: number[]): string {

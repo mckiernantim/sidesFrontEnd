@@ -5,6 +5,11 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { PdfService } from '../../../services/pdf/pdf.service';
+import { UploadService } from '../../../services/upload/upload.service';
+import { UndoService } from '../../../services/edit/undo.service';
+import { StripeService } from '../../../services/stripe/stripe.service';
+import { TokenService } from '../../../services/token/token.service';
+import { Router } from '@angular/router';
 import { Line } from '../../../types/Line';
 import * as kidnappedData from '../last-looks-test-data/kidnapped-scenes-actual.json';
 import * as roseData from '../last-looks-test-data/Rose-scenes-actual.json';
@@ -32,6 +37,14 @@ class MockPdfService {
   combinePages() { return { condensed: false }; }
 }
 
+class MockUploadService {}
+class MockStripeService {}
+class MockTokenService {}
+class MockRouter { navigate = jest.fn(); }
+class MockUndoService {
+  undoRedo$ = { subscribe: (_cb: any) => ({ unsubscribe: () => {} }) };
+}
+
 describe('LastLooksComponent', () => {
   let component: LastLooksComponent;
   let fixture: ComponentFixture<LastLooksComponent>;
@@ -46,6 +59,11 @@ describe('LastLooksComponent', () => {
       ],
       providers: [
         { provide: PdfService, useClass: MockPdfService },
+        { provide: UploadService, useClass: MockUploadService },
+        { provide: StripeService, useClass: MockStripeService },
+        { provide: TokenService, useClass: MockTokenService },
+        { provide: Router, useClass: MockRouter },
+        { provide: UndoService, useClass: MockUndoService },
       ],
       schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
@@ -280,39 +298,116 @@ describe('LastLooksComponent', () => {
 
   it('showHeadline is false while editing regardless of window height', () => {
     component.editState = true;
-    spyOnProperty(window, 'innerHeight').and.returnValue(1000);
+    Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 1000 });
     expect(component.showHeadline).toBeFalse();
   });
 
   it('showHeadline is false when height < 860 and not editing', () => {
     component.editState = false;
-    spyOnProperty(window, 'innerHeight').and.returnValue(800);
+    Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 800 });
     expect(component.showHeadline).toBeFalse();
   });
 
   it('showHeadline is true when height >= 860 and not editing', () => {
     component.editState = false;
-    spyOnProperty(window, 'innerHeight').and.returnValue(900);
+    Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 900 });
     expect(component.showHeadline).toBeTrue();
   });
 
   it('showHeadline is true at exactly 860px height', () => {
     component.editState = false;
-    spyOnProperty(window, 'innerHeight').and.returnValue(860);
+    Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 860 });
     expect(component.showHeadline).toBeTrue();
   });
 
   // ── Spec 023: Control bar mode switching (FR-011) ───────────────
 
   it('onEditPdfClick emits editModeToggle', () => {
-    const spy = spyOn(component.editModeToggle, 'emit');
+    const spy = jest.spyOn(component.editModeToggle, 'emit');
     component.onEditPdfClick();
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
   it('onSaveChanges emits editModeToggle', () => {
-    const spy = spyOn(component.editModeToggle, 'emit');
+    const spy = jest.spyOn(component.editModeToggle, 'emit');
     component.onSaveChanges();
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  // ── Spec 025: isDoubledPage preserved through handleDocumentReorder / refreshDocument ──
+
+  describe('feature 025 — doubled-page flag pipeline', () => {
+    /**
+     * Build a minimal two-page document where page 0 looks like a doubled-clone:
+     * every line carries isDoubledPage:true (as reorderScenes produces for clones)
+     * and page 1 is a regular page with no flag.
+     */
+    function makeDoubledDocument(): any[][] {
+      const doubledPage: any[] = [
+        { isDoubledPage: true, docPageIndex: 0, docPageLineIndex: 0, category: 'scene-header', sceneNumberText: '1', visible: 'true' },
+        { isDoubledPage: true, docPageIndex: 0, docPageLineIndex: 1, category: 'action', visible: 'true' },
+      ];
+      const regularPage: any[] = [
+        { docPageIndex: 1, docPageLineIndex: 0, category: 'scene-header', sceneNumberText: '2', visible: 'true' },
+      ];
+      return [doubledPage, regularPage];
+    }
+
+    it('handleDocumentReorder preserves isDoubledPage on page[0][0] through the deep-spread', () => {
+      (mockPdfService.finalDocument as any).data = makeDoubledDocument();
+      (component as any).handleDocumentReorder();
+
+      expect((component as any).currentPage[0].isDoubledPage).toBe(true);
+    });
+
+    it('refreshDocument preserves isDoubledPage after handleDocumentReorder runs first', () => {
+      (mockPdfService.finalDocument as any).data = makeDoubledDocument();
+      (component as any).handleDocumentReorder();
+
+      // Simulate the 10ms documentRegenerated$ callback
+      (component as any).refreshDocument();
+
+      expect((component as any).currentPage[0].isDoubledPage).toBe(true);
+    });
+
+    it('handleDocumentReorder produces a new array reference for currentPage (ngOnChanges guard)', () => {
+      (mockPdfService.finalDocument as any).data = makeDoubledDocument();
+      const pageBefore = (component as any).currentPage;
+
+      (component as any).handleDocumentReorder();
+
+      const pageAfter = (component as any).currentPage;
+      expect(pageAfter).not.toBe(pageBefore);
+    });
+
+    it('refreshDocument produces a new array reference for currentPage (ngOnChanges guard)', () => {
+      (mockPdfService.finalDocument as any).data = makeDoubledDocument();
+      (component as any).handleDocumentReorder();
+      const pageAfterReorder = (component as any).currentPage;
+
+      (component as any).refreshDocument();
+
+      const pageAfterRefresh = (component as any).currentPage;
+      expect(pageAfterRefresh).not.toBe(pageAfterReorder);
+    });
+
+    it('handleDocumentReorder resets currentPageIndex to 0', () => {
+      (mockPdfService.finalDocument as any).data = makeDoubledDocument();
+      (component as any).currentPageIndex = 1;
+
+      (component as any).handleDocumentReorder();
+
+      expect((component as any).currentPageIndex).toBe(0);
+    });
+
+    it('isDoubledPage is false on regular page after handleDocumentReorder', () => {
+      const regularDoc: any[][] = [
+        [{ docPageIndex: 0, docPageLineIndex: 0, category: 'scene-header', sceneNumberText: '1', visible: 'true' }],
+      ];
+      (mockPdfService.finalDocument as any).data = regularDoc;
+      (component as any).handleDocumentReorder();
+
+      expect((component as any).currentPage[0].isDoubledPage).toBeFalsy();
+    });
   });
 });

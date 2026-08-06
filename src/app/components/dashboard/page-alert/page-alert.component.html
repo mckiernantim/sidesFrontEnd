@@ -1,0 +1,13 @@
+<!-- page-alert.component.html -->
+<div
+  class="page-alert"
+  [title]="tooltipText"
+  (click)="toggleTooltip()"
+  role="status"
+  aria-live="polite"
+>
+  {{ label }}
+  <div class="page-alert__tooltip" [class.show]="showTooltip">
+    {{ tooltipText }}
+  </div>
+</div>

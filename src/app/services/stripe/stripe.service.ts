@@ -69,8 +69,7 @@ interface BackendSubscriptionResponse {
   usage: {
     pdfsGenerated: number;
     lastPdfGeneration: string | null;
-    monthlyLimit: number;
-    resetDate: string | null;
+    resetDate?: string | null;
   };
 }
 
@@ -197,15 +196,16 @@ export class StripeService {
               usage: {
                 pdfsGenerated: response.usage.pdfsGenerated,
                 lastPdfGeneration: response.usage.lastPdfGeneration,
-                pdfUsageLimit: response.usage.monthlyLimit,
+                pdfUsageLimit: 0,
                 subscriptionStatus: response.subscription?.status || 'inactive',
                 subscriptionFeatures: {
                   pdfGeneration: response.active,
-                  unlimitedPdfs: false, // Set based on your business logic
-                  pdfLimit: response.usage.monthlyLimit
+                  // An active subscription grants unlimited generation — there is no per-period cap.
+                  unlimitedPdfs: true,
+                  pdfLimit: 0
                 },
-                resetDate: response.usage.resetDate,
-                remainingPdfs: Math.max(0, response.usage.monthlyLimit - response.usage.pdfsGenerated)
+                resetDate: response.usage.resetDate || null,
+                remainingPdfs: 0
               },
               plan: response.subscription?.plan?.nickname || null,
               // Additional fields from new backend

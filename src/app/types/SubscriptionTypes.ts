@@ -91,8 +91,7 @@ export interface BackendSubscriptionResponse {
   usage: {
     pdfsGenerated: number;
     lastPdfGeneration: string | null;
-    monthlyLimit: number;
-    resetDate: string | null;
+    resetDate?: string | null;
   };
 }
 

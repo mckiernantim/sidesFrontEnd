@@ -12,6 +12,6 @@ module.exports = {
       '<rootDir>/dist/',
       '<rootDir>/src/test.ts',
     ],
-    // add any other configurations required for your project
+    watchman: false,
   };
   

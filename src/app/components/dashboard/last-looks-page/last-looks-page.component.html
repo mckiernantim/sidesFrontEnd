@@ -5,6 +5,13 @@
     <div class="ll-page-viewport" #pageViewport>
       <div class="ll-page-scaler" [style.width.px]="scaledPageWidth" [style.height.px]="scaledPageHeight">
     <div class="page shadow-lg border" [style.transform]="pageTransform" (click)="showContextMenu && closeContextMenu(); !$event.target.closest('li') && clearSelection()">
+        <!-- TODO(spec-023): verify toast position is within .page boundary post-redesign -->
+        <div class="page-alert-host" *ngIf="isDoubledPage">
+          <app-page-alert
+            label="Doubled page"
+            tooltipText="This page was duplicated because scenes that shared it were reordered. Only the lines for the scene being shot here are shown."
+          ></app-page-alert>
+        </div>
         <!-- Callsheet display section (+ watermark preview, spec 022) -->
         <div *ngIf="currentPageIndex === 0 && isCallsheetPage(page)" class="callsheet-container">
             <img [src]="page[0].imagePath" 
@@ -329,7 +336,7 @@
               </ng-container>
             </svg>
 
-            <!-- ═══ X-BOX INTERACTIVE CONTROLS (freestanding only, edit mode) ═══ -->
+            <!-- ═══ X-BOX INTERACTIVE CONTROLS (all x-boxes: freestanding + original stubs, edit mode) ═══ -->
             <div *ngIf="canEditDocument && getEditableXboxSections().length > 0"
                  class="xbox-controls-overlay">
                 <div *ngFor="let section of getEditableXboxSections()"

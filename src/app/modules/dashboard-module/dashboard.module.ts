@@ -19,6 +19,7 @@ import { CheckoutModalComponent } from '../../components/dashboard/checkout-moda
 import { DevLastLooksComponent } from '../../components/dev/dev-last-looks/dev-last-looks.component';
 import { AnnotationToolbarComponent } from '../../components/annotation-toolbar/annotation-toolbar.component';
 import { DisclaimerToggleComponent } from '../../components/annotation-toolbar/disclaimer-toggle/disclaimer-toggle.component';
+import { PageAlertComponent } from '../../components/dashboard/page-alert/page-alert.component';
 
 @NgModule({
   declarations: [
@@ -36,6 +37,7 @@ import { DisclaimerToggleComponent } from '../../components/annotation-toolbar/d
     DevLastLooksComponent,
     AnnotationToolbarComponent,
     DisclaimerToggleComponent,
+    PageAlertComponent,
   ],
   imports: [
     CommonModule,
