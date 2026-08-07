@@ -117,8 +117,30 @@
     </div>
   </div>
 
-  <!-- Continue Button -->
+  <!-- Post-Upload Fork (spec 029 US2 — scheduling-tier users only) -->
+  <div *ngIf="showFork" class="w-full flex flex-col sm:flex-row gap-3" data-testid="post-upload-fork">
+    <button
+      type="button"
+      data-testid="just-make-sides-btn"
+      (click)="onJustSides()"
+      class="flex-1 px-6 py-3 text-sw-text font-bold text-base rounded-lg border border-sw-border bg-sw-surface-2 shadow-sm transition-all duration-200 hover:bg-sw-border"
+    >
+      Just Make Sides
+    </button>
+    <button
+      type="button"
+      data-testid="save-as-project-btn"
+      (click)="onSaveProject()"
+      class="flex-1 px-6 py-3 text-sw-bg font-bold text-base rounded-lg shadow-lg transition-all duration-200 transform hover:scale-[1.02] hover:opacity-90"
+      style="background-color: var(--sw-accent);"
+    >
+      Save as Project
+    </button>
+  </div>
+
+  <!-- Continue Button (non-premium — unchanged) -->
   <button
+    *ngIf="!showFork"
     (click)="onContinue()"
     class="w-full px-6 py-3 text-sw-bg font-bold text-base rounded-lg shadow-lg transition-all duration-200 transform hover:scale-[1.02] hover:opacity-90"
     style="background-color: var(--sw-accent);"

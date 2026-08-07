@@ -8,9 +8,11 @@ import {
 import {
   ShootDay,
   ScheduleScene,
+  CastMember,
   formatFifteenMinIncrements,
 } from '../../../types/Schedule';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
+import { SceneSortMode, SCENE_SORT_MODE_OPTIONS } from '../../../utils/schedule-scene-sort';
 
 /**
  * ShootDayCardComponent — Displays a single shooting day as a card
@@ -42,6 +44,12 @@ export class ShootDayCardComponent {
   @Input() dropListId: string = '';
   @Input() connectedDropLists: string[] = [];
 
+  /** Forwarded to each `app-scene-strip` — spec 031 cast show/hide toggle. */
+  @Input() showCast: boolean = true;
+
+  /** Forwarded to each `app-scene-strip` for actor-name resolution (spec 031). */
+  @Input() castMembers: CastMember[] = [];
+
   @Output() sceneDrop = new EventEmitter<CdkDragDrop<ScheduleScene[]>>();
   @Output() sceneRemoved = new EventEmitter<{ scene: ScheduleScene; dayId: string }>();
   @Output() sceneClicked = new EventEmitter<ScheduleScene>();
@@ -53,6 +61,17 @@ export class ShootDayCardComponent {
     source: 'manual';
   }>();
   @Output() generateDayOneLiners = new EventEmitter<string>(); // Emits dayId
+  @Output() sortRequested = new EventEmitter<{ dayId: string; mode: SceneSortMode }>();
+  /** Bubbles cast show/hide up to the schedule builder (global setting). */
+  @Output() castVisibilityChange = new EventEmitter<boolean>();
+  /** Bubbles an inline scene header edit up to the schedule builder (spec 032). */
+  @Output() headerChanged = new EventEmitter<{ sceneId: string; sceneHeader: string }>();
+
+  /** Sort mode button metadata (spec 030, contracts/one-liner-sort-ui.md). */
+  readonly sortModes = SCENE_SORT_MODE_OPTIONS;
+
+  /** Last sort mode clicked on this day's compact sort control. */
+  activeSortMode: SceneSortMode | null = null;
 
   /**
    * Returns the formatted total estimated time for this day.
@@ -120,6 +139,20 @@ export class ShootDayCardComponent {
 
   onGenerateDayOneLiners(): void {
     this.generateDayOneLiners.emit(this.day.id);
+  }
+
+  /**
+   * True when this day has at least one scene to sort (spec 030 edge case:
+   * an empty day's sort controls are disabled).
+   */
+  get canSort(): boolean {
+    return !!this.day && !!this.day.scenes && this.day.scenes.length > 0;
+  }
+
+  onSort(mode: SceneSortMode): void {
+    if (!this.canSort) return;
+    this.activeSortMode = mode;
+    this.sortRequested.emit({ dayId: this.day.id, mode });
   }
 
   /**

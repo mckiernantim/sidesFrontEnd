@@ -33,9 +33,37 @@
   </div>
 
   <!-- Cast Summary and Actions -->
-  <div class="px-4 py-2 flex items-center justify-between bg-sw-bg border-b border-sw-border">
-    <div class="text-xs text-sw-text-muted">
-      {{ castSummary }}
+  <div class="px-4 py-2 flex flex-wrap items-center justify-between gap-2 bg-sw-bg border-b border-sw-border">
+    <div class="flex flex-wrap items-center gap-2">
+      <div class="text-xs text-sw-text-muted">
+        {{ castSummary }}
+      </div>
+      <!-- Show/Hide characters on scene strips (same global setting as Unscheduled panel) -->
+      <div class="flex items-center gap-1" role="group" aria-label="Character visibility">
+        <span class="text-xs text-sw-text-subtle">Cast:</span>
+        <button
+          type="button"
+          data-testid="day-cast-visibility-show"
+          class="text-xs px-2 py-0.5 rounded-md border font-medium transition-colors"
+          [ngClass]="showCast
+            ? 'bg-sw-accent text-sw-accent-fg border-sw-accent'
+            : 'bg-sw-surface-2 text-sw-text-muted border-sw-border'"
+          [attr.aria-pressed]="showCast"
+          (click)="castVisibilityChange.emit(true)">
+          Show
+        </button>
+        <button
+          type="button"
+          data-testid="day-cast-visibility-hide"
+          class="text-xs px-2 py-0.5 rounded-md border font-medium transition-colors"
+          [ngClass]="!showCast
+            ? 'bg-sw-accent text-sw-accent-fg border-sw-accent'
+            : 'bg-sw-surface-2 text-sw-text-muted border-sw-border'"
+          [attr.aria-pressed]="!showCast"
+          (click)="castVisibilityChange.emit(false)">
+          Hide
+        </button>
+      </div>
     </div>
     <!-- Generate One-Liners for Day Button -->
     <button
@@ -49,6 +77,26 @@
     <div *ngIf="editable && !canGenerateOneLiners && day?.scenes?.length > 0" class="text-xs text-sw-warning italic">
       No scenes ready for AI one-liners
     </div>
+  </div>
+
+  <!-- Per-Day Sort Controls (spec 030 US2) -->
+  <div
+    *ngIf="editable"
+    class="px-4 py-2 flex flex-wrap items-center gap-1.5 bg-sw-bg border-b border-sw-border"
+    role="group"
+    [attr.aria-label]="'Sort ' + dayLabel">
+    <span class="text-xs text-sw-text-subtle mr-1">Sort:</span>
+    <button
+      *ngFor="let opt of sortModes"
+      type="button"
+      data-testid="day-sort-btn"
+      class="sort-btn text-xs px-2 py-0.5 rounded-md border border-sw-border bg-sw-surface-2 text-sw-text-muted hover:bg-sw-border disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      [class.active]="activeSortMode === opt.mode"
+      [disabled]="!canSort"
+      [attr.aria-label]="'Sort ' + dayLabel + ' by ' + opt.label"
+      (click)="onSort(opt.mode)">
+      {{ opt.label }}
+    </button>
   </div>
 
   <!-- Scene List (Drop Zone) -->
@@ -72,10 +120,14 @@
         [editable]="editable"
         [showTimeline]="true"
         [showOneLiner]="true"
+        [showCast]="showCast"
+        [castMembers]="castMembers"
         (sceneClicked)="onSceneClicked($event)"
         (removeScene)="onSceneRemoved($event)"
         (timeChanged)="onTimeChanged($event)"
-        (oneLinerChanged)="onOneLinerChanged($event)">
+        (oneLinerChanged)="onOneLinerChanged($event)"
+        (castVisibilityChange)="castVisibilityChange.emit($event)"
+        (headerChanged)="headerChanged.emit($event)">
       </app-scene-strip>
     </div>
 

@@ -1,0 +1,237 @@
+<div class="min-h-screen bg-sw-bg">
+  <!-- Shared chrome — My Projects | Schedule nav (spec 029 US4) -->
+  <div class="bg-sw-surface-2 border-b border-sw-border" data-testid="scheduling-nav">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center gap-1">
+      <span
+        data-testid="nav-my-projects"
+        class="text-sm font-semibold text-sw-text px-3 py-1.5 rounded-md bg-sw-surface border border-sw-border">
+        My Projects
+      </span>
+      <button
+        type="button"
+        data-testid="nav-schedule"
+        [disabled]="!hasOpenSchedule"
+        [title]="hasOpenSchedule ? 'Back to your open schedule' : 'No schedule open yet'"
+        (click)="goToSchedule()"
+        class="text-sm font-medium text-sw-text-muted hover:text-sw-text px-3 py-1.5 rounded-md hover:bg-sw-surface transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
+        Schedule
+      </button>
+    </div>
+  </div>
+
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <!-- Header -->
+    <div class="flex items-start justify-between gap-4 mb-8">
+      <div>
+        <p class="text-xs font-semibold tracking-widest text-sw-accent uppercase mb-1">Your Library</p>
+        <h1 class="text-3xl font-bold text-sw-text">My Projects</h1>
+        <p class="text-sm text-sw-text-muted mt-1">Uploaded scripts, their schedules and sides.</p>
+      </div>
+      <button
+        type="button"
+        class="flex-shrink-0 bg-sw-accent hover:bg-sw-accent-hover text-sw-accent-fg text-sm font-semibold py-2.5 px-5 rounded-lg transition-colors"
+        data-testid="upload-script-btn"
+        (click)="uploadScript()"
+      >
+        + Upload Script
+      </button>
+    </div>
+
+    <!-- 5-project cap banner — same tone as SaveProjectDialogComponent's 409 handling (T052) -->
+    <div
+      *ngIf="isAtProjectLimit && !isLoading"
+      class="mb-6 p-4 bg-sw-surface-2 border-l-4 border-sw-warning rounded-lg"
+      role="alert"
+      data-testid="project-limit-banner"
+    >
+      <p class="font-semibold text-sw-warning mb-1">Project limit reached ({{ cards.length }}/{{ projectLimit }})</p>
+      <p class="text-sm text-sw-text-muted">
+        Delete a project below to make room for a new one.
+      </p>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="flex flex-col items-center gap-3 py-16" data-testid="my-projects-loading">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-sw-accent"></div>
+      <p class="text-sm text-sw-text-muted">Loading your projects…</p>
+    </div>
+
+    <p *ngIf="loadError && !isLoading" class="mb-4 p-3 bg-sw-surface-2 border-l-4 border-sw-danger rounded-lg text-sm text-sw-danger" data-testid="my-projects-error">
+      {{ loadError }}
+    </p>
+
+    <p *ngIf="openError" class="mb-4 p-3 bg-sw-surface-2 border-l-4 border-sw-danger rounded-lg text-sm text-sw-danger" data-testid="my-projects-open-error">
+      {{ openError }}
+    </p>
+
+    <!-- Zero-schedule fallback choice (US3 original contract — see noScheduleChoiceProjectId doc comment) -->
+    <div *ngIf="noScheduleChoiceProjectId" data-testid="no-schedule-choice" class="mb-6 bg-sw-surface-2 border border-sw-border rounded-lg p-4">
+      <p class="text-sm font-semibold text-sw-text mb-3">
+        "{{ noScheduleChoiceProjectTitle }}" has no schedule yet. What would you like to do?
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <button type="button" data-testid="create-schedule-btn" (click)="createScheduleForProject()"
+          class="bg-sw-accent hover:bg-sw-accent-hover text-sw-accent-fg text-sm font-semibold py-2 px-4 rounded-lg transition-colors">
+          Create Schedule
+        </button>
+        <button type="button" data-testid="continue-dashboard-btn" (click)="continueToDashboard()"
+          class="bg-sw-surface border border-sw-border text-sw-text text-sm font-semibold py-2 px-4 rounded-lg hover:bg-sw-surface-2 transition-colors">
+          Continue to Dashboard
+        </button>
+        <button type="button" (click)="closeNoScheduleChoice()" class="text-sm text-sw-text-muted hover:text-sw-text underline">
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <!-- Multiple-schedules picker (US3 acceptance scenario 3) -->
+    <div *ngIf="schedulePickerProjectId" data-testid="schedule-picker" class="mb-6 bg-sw-surface-2 border border-sw-border rounded-lg p-4">
+      <p class="text-sm font-semibold text-sw-text mb-3">This project has more than one schedule. Which one?</p>
+      <ul class="flex flex-col gap-2 mb-3">
+        <li *ngFor="let scheduleOption of schedulePickerOptions">
+          <button
+            type="button"
+            data-testid="schedule-picker-option"
+            (click)="chooseSchedule(scheduleOption.id)"
+            class="w-full flex items-center justify-between gap-3 text-left bg-sw-surface border border-sw-border rounded-lg px-4 py-2.5 hover:border-sw-accent transition-colors"
+          >
+            <span class="text-sm text-sw-text font-medium">{{ scheduleOption.projectTitle || scheduleOption.id }}</span>
+            <span class="text-xs text-sw-text-muted">
+              {{ scheduleOption.shootDayCount }} days · updated {{ scheduleOption.updatedAt | date: 'mediumDate' }}
+            </span>
+          </button>
+        </li>
+      </ul>
+      <button type="button" (click)="closeSchedulePicker()" class="text-sm text-sw-text-muted hover:text-sw-text underline">
+        Cancel
+      </button>
+    </div>
+
+    <ng-container *ngIf="!isLoading && !loadError">
+      <div *ngIf="cards.length === 0" class="text-center py-16" data-testid="my-projects-empty">
+        <p class="text-sw-text-muted mb-4">Your saved projects will appear here once you save one.</p>
+        <button
+          type="button"
+          data-testid="empty-upload-cta"
+          (click)="uploadScript()"
+          class="bg-sw-accent hover:bg-sw-accent-hover text-sw-accent-fg text-sm font-semibold py-2.5 px-5 rounded-lg transition-colors"
+        >
+          + Upload Script
+        </button>
+      </div>
+
+      <ul *ngIf="cards.length > 0" class="flex flex-col gap-4">
+        <li
+          *ngFor="let card of cards"
+          class="bg-sw-surface border border-sw-border rounded-xl p-5 flex items-center gap-5"
+          [attr.data-testid]="'project-item-' + card.project.id"
+        >
+          <!-- PDF icon -->
+          <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-sw-surface-2 border border-sw-border flex items-center justify-center">
+            <span class="text-[10px] font-bold tracking-wider text-sw-text-subtle">PDF</span>
+          </div>
+
+          <!-- Info -->
+          <div class="flex-1 min-w-0">
+            <ng-container *ngIf="renamingProjectId !== card.project.id; else renameForm">
+              <h2 class="text-lg font-semibold text-sw-text truncate" [attr.data-testid]="'project-title-' + card.project.id">
+                {{ card.project.title }}
+              </h2>
+            </ng-container>
+            <ng-template #renameForm>
+              <div class="flex items-center gap-2 mb-1">
+                <input
+                  type="text"
+                  class="flex-1 min-w-0 bg-sw-surface-2 border border-sw-border rounded-md px-2.5 py-1.5 text-sm text-sw-text focus:outline-none focus:border-sw-accent"
+                  [(ngModel)]="renameDraftTitle"
+                  maxlength="120"
+                  [disabled]="isRenaming"
+                  [attr.data-testid]="'rename-input-' + card.project.id"
+                  (keyup.enter)="confirmRename(card)"
+                  (keyup.escape)="cancelRename()"
+                />
+                <button type="button" data-testid="rename-save-btn" [disabled]="isRenaming" (click)="confirmRename(card)"
+                  class="text-sm font-semibold text-sw-accent hover:text-sw-accent-hover disabled:opacity-50">
+                  {{ isRenaming ? 'Saving…' : 'Save' }}
+                </button>
+                <button type="button" data-testid="rename-cancel-btn" [disabled]="isRenaming" (click)="cancelRename()"
+                  class="text-sm text-sw-text-muted hover:text-sw-text disabled:opacity-50">
+                  Cancel
+                </button>
+              </div>
+              <p *ngIf="renameError" class="text-xs text-sw-danger mb-1" data-testid="rename-error">{{ renameError }}</p>
+            </ng-template>
+
+            <p class="text-sm text-sw-text-muted">
+              {{ card.project.pageCount }} pages
+              <span class="mx-1">·</span>
+              {{ card.project.sceneCount }} scenes
+              <span class="mx-1">·</span>
+              <ng-container *ngIf="card.scheduleCount > 0; else noSchedulesYet">
+                {{ card.scheduleCount }} schedule{{ card.scheduleCount === 1 ? '' : 's' }}
+              </ng-container>
+              <ng-template #noSchedulesYet>No schedule yet</ng-template>
+            </p>
+            <p class="text-xs text-sw-text-subtle mt-1">Updated {{ card.project.updatedAt | date: 'mediumDate' }}</p>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex-shrink-0 flex items-center gap-2">
+            <button
+              *ngIf="card.scheduleCount > 0"
+              type="button"
+              data-testid="open-schedule-btn"
+              [disabled]="actingProjectId === card.project.id"
+              (click)="openProject(card)"
+              class="text-sm font-semibold text-sw-accent border border-sw-accent rounded-lg px-4 py-2 hover:bg-sw-accent hover:text-sw-accent-fg disabled:opacity-50 transition-colors"
+            >
+              {{ actingProjectId === card.project.id ? 'Opening…' : 'Open Schedule' }}
+            </button>
+            <button
+              *ngIf="card.scheduleCount === 0"
+              type="button"
+              data-testid="create-schedule-card-btn"
+              [disabled]="actingProjectId === card.project.id"
+              (click)="createScheduleForCard(card)"
+              class="text-sm font-semibold text-sw-accent border border-sw-accent rounded-lg px-4 py-2 hover:bg-sw-accent hover:text-sw-accent-fg disabled:opacity-50 transition-colors"
+            >
+              {{ actingProjectId === card.project.id ? 'Creating…' : 'Create Schedule' }}
+            </button>
+
+            <button
+              type="button"
+              data-testid="make-sides-btn"
+              [disabled]="makeSidesProjectId === card.project.id"
+              (click)="makeSides(card)"
+              class="text-sm font-medium text-sw-text bg-sw-surface-2 border border-sw-border rounded-lg px-4 py-2 hover:border-sw-text-muted transition-colors"
+            >
+              {{ makeSidesProjectId === card.project.id ? 'Opening…' : 'Make sides' }}
+            </button>
+
+            <button
+              type="button"
+              data-testid="rename-btn"
+              (click)="startRename(card)"
+              class="text-sm font-medium text-sw-text bg-sw-surface-2 border border-sw-border rounded-lg px-4 py-2 hover:border-sw-text-muted transition-colors"
+            >
+              Rename
+            </button>
+
+            <button
+              type="button"
+              data-testid="delete-btn"
+              [attr.aria-label]="'Delete ' + card.project.title"
+              [disabled]="deletingProjectId === card.project.id"
+              (click)="confirmDeleteCard(card)"
+              class="p-2 text-sw-text-muted hover:text-sw-danger rounded-lg hover:bg-sw-surface-2 disabled:opacity-50 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+        </li>
+      </ul>
+    </ng-container>
+  </div>
+</div>

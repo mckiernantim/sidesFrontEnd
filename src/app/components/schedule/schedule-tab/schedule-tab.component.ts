@@ -17,6 +17,7 @@ import { TailwindDialogComponent } from '../../shared/tailwind-dialog/tailwind-d
 import { ProductionSchedule } from '../../../types/Schedule';
 import { AuthService } from '../../../services/auth/auth.service';
 import { PdfService } from '../../../services/pdf/pdf.service';
+import { Project } from '../../../types/Project';
 
 /**
  * ScheduleTabComponent — Container that bridges the existing dashboard
@@ -49,6 +50,13 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
 
   /** Project title (script name) */
   @Input() projectTitle: string = '';
+
+  /**
+   * The saved project this schedule belongs to (spec 028 US5, T054) —
+   * passed straight through to ScheduleBuilderComponent's header. Supplied
+   * by SchedulePageComponent once it resolves the schedule's linked project.
+   */
+  @Input() project?: Project;
 
   /** Whether a schedule has been loaded */
   scheduleLoaded: boolean = false;
@@ -155,14 +163,16 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
 
     try {
-      const projectId = `proj-${Date.now()}`;
       let schedule: ProductionSchedule;
 
       // Prefer PDF Service if available (single source of truth)
       if (hasPdfService) {
         console.log('ScheduleTab: Creating schedule from PDF Service');
+        // Let ScheduleService resolve the real project id (spec 028 T040) when
+        // the working session is hydrated from a saved project; falls back to
+        // its own proj-{timestamp} placeholder otherwise.
         schedule = this.scheduleService.seedScheduleFromPdfService(
-          projectId,
+          null,
           this.projectTitle || 'Untitled Project',
           this.userId || 'anonymous',
           this.pdfService!
@@ -179,7 +189,7 @@ export class ScheduleTabComponent implements OnInit, OnDestroy {
         // Fallback to legacy allLines/scenes method
         console.log('ScheduleTab: Creating schedule from allLines (legacy)');
         schedule = this.scheduleService.seedAndActivateSchedule(
-          projectId,
+          `proj-${Date.now()}`,
           this.projectTitle || 'Untitled Project',
           this.userId || 'anonymous',
           this.allLines,

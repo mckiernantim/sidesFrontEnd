@@ -3,10 +3,12 @@ import { AuthService } from 'src/app/services/auth/auth.service';
 import { AuthModalService } from 'src/app/services/auth-modal/auth-modal.service';
 import { StripeService } from 'src/app/services/stripe/stripe.service';
 import { ScheduleApiService, ScheduleSummary } from 'src/app/services/schedule/schedule-api.service';
+import { ProjectApiService, ProjectLink, ProjectSummary, SavedSceneSummary } from 'src/app/services/project/project-api.service';
+import { ProjectService } from 'src/app/services/project/project.service';
 import { PdfService } from 'src/app/services/pdf/pdf.service';
 import { FunDataService } from 'src/app/services/fundata/fundata.service';
 import { AccurateStats, FunStats } from 'src/app/types/FunData';
-import { Router, NavigationEnd } from '@angular/router';
+import { Router, ActivatedRoute, NavigationEnd } from '@angular/router';
 import { User } from '@angular/fire/auth';
 import { 
   SubscriptionStatus, 
@@ -49,7 +51,48 @@ export class ProfileComponent implements OnInit, OnDestroy {
   savedSchedules: ScheduleSummary[] = [];
   isLoadingSchedules = false;
   scheduleError: string | null = null;
-  
+
+  // Project data
+  savedProjects: ProjectSummary[] = [];
+  isLoadingProjects = false;
+  projectError: string | null = null;
+
+  /** Id of the project row currently navigating/hydrating (T032 loading state). */
+  openingProjectId: string | null = null;
+  /** Id of the project whose stored content came back CONTENT_MISSING (T033). */
+  contentMissingProjectId: string | null = null;
+  isReuploading = false;
+
+  /** Linked schedules per project id, shown as children under each project row (027 US5 T056). */
+  projectLinks: { [projectId: string]: ProjectLink[] } = {};
+
+  /** Inline rename state (027 US5 T056). */
+  renamingProjectId: string | null = null;
+  renameDraftTitle = '';
+  isRenamingProject = false;
+  renameProjectError: string | null = null;
+
+  /** Delete confirmation state — names any linked schedules before deleting (027 US5 T056). */
+  confirmingDeleteProjectId: string | null = null;
+  deletingProjectId: string | null = null;
+  deleteProjectError: string | null = null;
+
+  readonly projectLimit = 5;
+
+  // Saved Scenes (027 US4 T052)
+  savedScenes: SavedSceneSummary[] = [];
+  isLoadingSavedScenes = false;
+  savedScenesError: string | null = null;
+  selectedSceneIds = new Set<string>();
+  openingSceneId: string | null = null;
+  deletingSceneId: string | null = null;
+
+  /** Inline naming form for "Create project from selected scenes" (T052). */
+  showCreateFromScenesForm = false;
+  createFromScenesDraftTitle = '';
+  isCreatingProjectFromScenes = false;
+  createFromScenesError: string | null = null;
+
   // Current script data
   currentScriptName: string = '';
 
@@ -64,6 +107,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
   planChangeMessage: string | null = null;
   isChangingPlan = false;
   selectedInterval: BillingInterval = 'week';
+
+  // Scheduling-tier upgrade CTA (spec 028 FR-001b; upgrade-in-place 2026-08-06)
+  isStartingSchedulingCheckout = false;
+  schedulingCheckoutError: string | null = null;
+  /** Shown after an in-place upgrade (no Checkout redirect happens for that path). */
+  schedulingUpgradeMessage: string | null = null;
   
   // Subscription benefits
   benefits: string[] = [
@@ -76,6 +125,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   // Router subscription
   private routerSubscription: Subscription | null = null;
   private authSubscription: Subscription | null = null;
+  private queryParamsSubscription: Subscription | null = null;
   
   @Output() subscriptionActivated = new EventEmitter<void>();
 
@@ -87,9 +137,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
     private authModal: AuthModalService,
     private stripe: StripeService,
     private scheduleApi: ScheduleApiService,
+    private projectApi: ProjectApiService,
+    private projectService: ProjectService,
     private pdfService: PdfService,
     private funDataService: FunDataService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit() {
@@ -106,6 +159,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
         console.log('User is authenticated, loading subscription data');
         this.loadSubscriptionData();
         this.loadSavedSchedules();
+        this.loadSavedProjects();
+        this.loadSavedScenes();
         this.loadFunData();
       } else {
         console.log('User is not authenticated');
@@ -118,13 +173,25 @@ export class ProfileComponent implements OnInit, OnDestroy {
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
       console.log('Navigation event detected, refreshing data');
+      // Clear the loading state for whichever project row triggered a /project/:id navigation
+      this.openingProjectId = null;
       // Clear the cache to force a fresh fetch
       this.stripe.clearCache();
       // Reload data if user is authenticated
       if (this.user) {
         this.loadSubscriptionData();
         this.loadSavedSchedules();
+        this.loadSavedProjects();
+        this.loadSavedScenes();
         this.loadFunData();
+      }
+    });
+
+    // ProjectResolveGuard redirects back here with ?projectError=... when opening a
+    // project fails (e.g. CONTENT_MISSING) — surface the right recovery action.
+    this.queryParamsSubscription = this.route.queryParams.subscribe((params) => {
+      if (params['projectError']) {
+        this.handleProjectOpenError(params['projectError'], params['projectId']);
       }
     });
   }
@@ -136,6 +203,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
+    }
+    if (this.queryParamsSubscription) {
+      this.queryParamsSubscription.unsubscribe();
     }
   }
   
@@ -362,39 +432,54 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return usage.remaining <= 1; // Warning when 1 or fewer PDFs remain
   }
   
-  // Handle new subscription
-  handleNewSubscription(): void {
-    if (!this.user || !this.user.email) {
-      this.error = 'You must be logged in to subscribe';
-      return;
-    }
-    
-    console.log('Creating new subscription for user:', this.user.uid, this.selectedInterval);
-    this.isLoading = true;
-    
-    this.stripe.createPortalSession(
-      this.user.uid,
-      this.user.email,
-      undefined,
-      this.selectedInterval
-    ).subscribe({
-      next: (result) => {
-        console.log('Portal session result:', result);
-        this.isLoading = false;
-        
-        if (!result.success) {
-          this.error = result.error || 'Failed to create subscription';
-        }
-        // Note: On success, user will be redirected to Stripe
-      },
-      error: (error) => {
-        console.error('Error creating subscription', error);
-        this.error = 'An error occurred while creating your subscription';
-        this.isLoading = false;
-      }
-    });
+  /**
+   * Navigate to /pricing for subscribe (no active subscription).
+   * Primary subscribe CTA — replaces inline checkout on profile (033 FR-005).
+   */
+  navigateToPricingSubscribe(): void {
+    this.router.navigate(['/pricing']);
   }
-  
+
+  /**
+   * Navigate to /pricing for Pro upgrade (Basic subscriber).
+   * Highlights the Pro card via ?tier=pro (033 FR-005).
+   */
+  navigateToPricingUpgradePro(): void {
+    this.router.navigate(['/pricing'], { queryParams: { tier: 'pro' } });
+  }
+
+  /**
+   * @deprecated Kept for internal callers that pass a subscription result back
+   * to the renewal flow. Navigates to /pricing (033 FR-005).
+   */
+  handleNewSubscription(): void {
+    this.navigateToPricingSubscribe();
+  }
+
+  /**
+   * Discoverable "Pro" upgrade indicator — true when user is logged in and on
+   * Basic (active, no scheduling tier). Replaces the inline upgrade widget with
+   * a navigation CTA to /pricing?tier=pro.
+   */
+  showProUpgradeCta(): boolean {
+    return Boolean(this.user) && Boolean(this.subscription?.active) && !this.subscription?.hasSchedulingTier;
+  }
+
+  // Legacy aliases kept so any remaining HTML references compile without change.
+  /** @deprecated Use showProUpgradeCta() */
+  showSchedulingUpgradeCta(): boolean {
+    return this.showProUpgradeCta();
+  }
+
+  /** @deprecated No longer used; pricing page owns upgrade UI */
+  getSchedulingPriceLabel(_interval?: BillingInterval): string { return ''; }
+  /** @deprecated No longer used; pricing page owns upgrade UI */
+  getPremiumTotalLabel(_interval?: BillingInterval): string { return ''; }
+  /** @deprecated No longer used; pricing page owns upgrade UI */
+  getSchedulingCumulativeCopy(_interval?: BillingInterval): string { return ''; }
+  /** @deprecated No longer used; pricing page owns upgrade UI */
+  startSchedulingCheckout(_interval?: BillingInterval): void {}
+
   // Manage existing subscription
   manageSubscription(): void {
     if (!this.user || !this.user.email) {
@@ -581,6 +666,347 @@ export class ProfileComponent implements OnInit, OnDestroy {
    */
   viewAllSchedules(): void {
     this.router.navigate(['/schedule']);
+  }
+
+  /**
+   * Navigate to the saved-project library — the entry point for building a
+   * schedule from an already-processed script (spec 028).
+   */
+  goToMyProjects(): void {
+    this.router.navigate(['/my-projects']);
+  }
+
+  // ─────────────────────────────────────────────
+  // Projects
+  // ─────────────────────────────────────────────
+
+  /**
+   * Load saved projects for the authenticated user.
+   * Shows title, created date, and scene count alongside savedSchedules.
+   */
+  loadSavedProjects(): void {
+    this.isLoadingProjects = true;
+    this.projectError = null;
+    this.projectApi.listProjects().subscribe({
+      next: (response) => {
+        this.savedProjects = response.projects || [];
+        this.isLoadingProjects = false;
+        this.loadProjectLinks();
+      },
+      error: (err) => {
+        console.error('Profile: Failed to load saved projects:', err);
+        this.savedProjects = [];
+        this.projectError = err?.message || 'Failed to load projects. Please try again.';
+        this.isLoadingProjects = false;
+      },
+    });
+  }
+
+  /**
+   * Fetches linked schedules per project (`GET /project/:id/links`, 027 T055)
+   * so each project row can show them as children (027 US5 T056). A failure
+   * for a single project degrades that project's row to an empty list rather
+   * than failing the whole page.
+   */
+  private loadProjectLinks(): void {
+    this.savedProjects.forEach((project) => {
+      this.projectApi.getProjectLinks(project.id).subscribe({
+        next: (response) => {
+          this.projectLinks[project.id] = response.schedules || [];
+        },
+        error: () => {
+          this.projectLinks[project.id] = [];
+        },
+      });
+    });
+  }
+
+  /** Linked schedules for a project row, or an empty array while still loading. */
+  getLinkedSchedules(projectId: string): ProjectLink[] {
+    return this.projectLinks[projectId] || [];
+  }
+
+  /**
+   * Open a saved project. Navigates through `/project/:id`, where
+   * ProjectResolveGuard hydrates UploadService + PdfService via
+   * ProjectService.openProject() and then redirects to /dashboard —
+   * this keeps a single hydration path (T030) with no divergence here.
+   */
+  openProject(project: ProjectSummary): void {
+    this.openingProjectId = project.id;
+    this.projectError = null;
+    this.contentMissingProjectId = null;
+    this.router.navigate(['/project', project.id]);
+  }
+
+  /**
+   * Maps a ProjectResolveGuard redirect (?projectError=...) into UI state.
+   * CONTENT_MISSING gets its own recovery flow (re-upload); everything else
+   * shows a generic, retryable error.
+   */
+  private handleProjectOpenError(code: string, projectId?: string): void {
+    if (code === 'CONTENT_MISSING') {
+      this.contentMissingProjectId = projectId || null;
+      this.projectError = null;
+    } else {
+      this.contentMissingProjectId = null;
+      this.projectError = 'Could not open that project. Please try again.';
+    }
+  }
+
+  /**
+   * Re-upload the original PDF into a project whose saved content is missing
+   * (CONTENT_MISSING/410). Reuses the standard upload flow via ProjectService
+   * so the user can keep working immediately without starting a new project.
+   */
+  reuploadFile(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files && input.files[0];
+    if (!file) {
+      return;
+    }
+
+    this.isReuploading = true;
+    this.projectError = null;
+
+    this.projectService.reuploadIntoProject(file).subscribe({
+      next: () => {
+        this.isReuploading = false;
+        this.contentMissingProjectId = null;
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        console.error('Profile: Failed to re-upload into project:', err);
+        this.isReuploading = false;
+        this.projectError = `Failed to re-upload the script: ${err?.message || 'Unknown error'}`;
+      },
+    });
+
+    input.value = '';
+  }
+
+  /**
+   * Dismiss the CONTENT_MISSING banner without re-uploading.
+   */
+  dismissContentMissing(): void {
+    this.contentMissingProjectId = null;
+  }
+
+  // ─────────────────────────────────────────────
+  // Projects — Rename (027 US5 T056)
+  // ─────────────────────────────────────────────
+
+  startRenameProject(project: ProjectSummary): void {
+    this.renamingProjectId = project.id;
+    this.renameDraftTitle = project.title;
+    this.renameProjectError = null;
+  }
+
+  cancelRenameProject(): void {
+    this.renamingProjectId = null;
+    this.renameDraftTitle = '';
+    this.renameProjectError = null;
+  }
+
+  /**
+   * Renames a project, updating the row optimistically and rolling back on
+   * error so the UI never shows a title that failed to persist (T054).
+   */
+  confirmRenameProject(project: ProjectSummary): void {
+    const title = this.renameDraftTitle.trim();
+    if (!title) {
+      this.renameProjectError = 'Title cannot be empty.';
+      return;
+    }
+
+    const previousTitle = project.title;
+    project.title = title;
+    this.isRenamingProject = true;
+    this.renameProjectError = null;
+
+    this.projectApi.renameProject(project.id, title).subscribe({
+      next: (response) => {
+        project.title = response.project.title;
+        this.isRenamingProject = false;
+        this.renamingProjectId = null;
+      },
+      error: (err) => {
+        project.title = previousTitle;
+        this.isRenamingProject = false;
+        this.renameProjectError = err?.message || 'Failed to rename this project.';
+      },
+    });
+  }
+
+  // ─────────────────────────────────────────────
+  // Projects — Delete (027 US5 T056/T057)
+  // ─────────────────────────────────────────────
+
+  /** Opens the inline delete confirmation, which names any linked schedules. */
+  requestDeleteProject(project: ProjectSummary): void {
+    this.confirmingDeleteProjectId = project.id;
+    this.deleteProjectError = null;
+  }
+
+  cancelDeleteProject(): void {
+    this.confirmingDeleteProjectId = null;
+    this.deleteProjectError = null;
+  }
+
+  /**
+   * Permanently deletes a project. Linked schedules are never deleted — they
+   * revert to legacy (unlinked) behavior — so `loadSavedSchedules()` is
+   * re-run afterward (T057) to reflect that immediately rather than waiting
+   * for the next NavigationEnd refresh.
+   */
+  confirmDeleteProject(project: ProjectSummary): void {
+    this.deletingProjectId = project.id;
+    this.deleteProjectError = null;
+
+    this.projectApi.deleteProject(project.id).subscribe({
+      next: () => {
+        this.savedProjects = this.savedProjects.filter((p) => p.id !== project.id);
+        delete this.projectLinks[project.id];
+        this.deletingProjectId = null;
+        this.confirmingDeleteProjectId = null;
+        this.loadSavedSchedules();
+      },
+      error: (err) => {
+        this.deletingProjectId = null;
+        this.deleteProjectError = err?.message || 'Failed to delete this project.';
+      },
+    });
+  }
+
+  // ─────────────────────────────────────────────
+  // Saved Scenes (027 US4 T052)
+  // ─────────────────────────────────────────────
+
+  /**
+   * Load saved scenes for the authenticated user (metadata only — no lines).
+   */
+  loadSavedScenes(): void {
+    this.isLoadingSavedScenes = true;
+    this.savedScenesError = null;
+    this.projectApi.listSavedScenes().subscribe({
+      next: (response) => {
+        this.savedScenes = response.scenes || [];
+        this.isLoadingSavedScenes = false;
+      },
+      error: (err) => {
+        console.error('Profile: Failed to load saved scenes:', err);
+        this.savedScenes = [];
+        this.savedScenesError = err?.message || 'Failed to load saved scenes. Please try again.';
+        this.isLoadingSavedScenes = false;
+      },
+    });
+  }
+
+  isSceneSelected(sceneId: string): boolean {
+    return this.selectedSceneIds.has(sceneId);
+  }
+
+  toggleSceneSelection(sceneId: string): void {
+    if (this.selectedSceneIds.has(sceneId)) {
+      this.selectedSceneIds.delete(sceneId);
+    } else {
+      this.selectedSceneIds.add(sceneId);
+    }
+  }
+
+  get selectedSceneCount(): number {
+    return this.selectedSceneIds.size;
+  }
+
+  /**
+   * "Open" a saved scene — assembles a single-scene project and lands on the
+   * dashboard, reusing ProjectService.createProjectFromScenes (US4) so there
+   * is exactly one hydration path for saved-scene content, same as opening a
+   * full project.
+   */
+  openSavedScene(scene: SavedSceneSummary): void {
+    this.openingSceneId = scene.id;
+    this.savedScenesError = null;
+
+    this.projectService
+      .createProjectFromScenes([scene.id], scene.sceneHeader || scene.sourceTitle || 'Untitled Scene')
+      .subscribe({
+        next: () => {
+          this.openingSceneId = null;
+          this.router.navigate(['/dashboard']);
+        },
+        error: (err) => {
+          this.openingSceneId = null;
+          this.savedScenesError = err?.message || 'Failed to open this scene. Please try again.';
+        },
+      });
+  }
+
+  /**
+   * Permanently deletes a saved scene. Independent of any project it
+   * originated from — deleting a project never deletes the scenes saved
+   * from it, and vice versa.
+   */
+  deleteSavedScene(scene: SavedSceneSummary): void {
+    this.deletingSceneId = scene.id;
+    this.savedScenesError = null;
+
+    this.projectApi.deleteSavedScene(scene.id).subscribe({
+      next: () => {
+        this.savedScenes = this.savedScenes.filter((s) => s.id !== scene.id);
+        this.selectedSceneIds.delete(scene.id);
+        this.deletingSceneId = null;
+      },
+      error: (err) => {
+        this.deletingSceneId = null;
+        this.savedScenesError = err?.message || 'Failed to delete this scene.';
+      },
+    });
+  }
+
+  /** Opens the inline "Create project from selected scenes" naming form. */
+  openCreateProjectFromScenes(): void {
+    if (this.selectedSceneCount === 0) {
+      return;
+    }
+    this.showCreateFromScenesForm = true;
+    this.createFromScenesDraftTitle = '';
+    this.createFromScenesError = null;
+  }
+
+  cancelCreateProjectFromScenes(): void {
+    this.showCreateFromScenesForm = false;
+    this.createFromScenesDraftTitle = '';
+    this.createFromScenesError = null;
+  }
+
+  /**
+   * Assembles a new project from every currently selected saved scene and
+   * navigates to the dashboard on success (US4 multi-select scenario).
+   */
+  confirmCreateProjectFromScenes(): void {
+    const title = this.createFromScenesDraftTitle.trim();
+    if (!title) {
+      this.createFromScenesError = 'Title cannot be empty.';
+      return;
+    }
+
+    const sceneIds = Array.from(this.selectedSceneIds);
+    this.isCreatingProjectFromScenes = true;
+    this.createFromScenesError = null;
+
+    this.projectService.createProjectFromScenes(sceneIds, title).subscribe({
+      next: () => {
+        this.isCreatingProjectFromScenes = false;
+        this.showCreateFromScenesForm = false;
+        this.selectedSceneIds.clear();
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        this.isCreatingProjectFromScenes = false;
+        this.createFromScenesError = err?.message || 'Failed to create a project from these scenes.';
+      },
+    });
   }
 
   // ─────────────────────────────────────────────

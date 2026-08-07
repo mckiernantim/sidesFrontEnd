@@ -1,10 +1,40 @@
 <div class="scene-selection-container">
   <h2 class="text-xl font-bold mb-4">Select a Scene</h2>
-  
+
   <div class="scene-list">
     <div *ngIf="scenes.length === 0" class="text-gray-500 italic">
       No scenes available. Please upload a PDF first.
     </div>
 
+    <div
+      *ngFor="let scene of scenes"
+      class="scene-row"
+      [class.scene-row--selected]="isSelected(scene)">
+      <button
+        type="button"
+        class="scene-row-main"
+        (click)="onRowClick(scene)">
+        <span class="scene-row-number">{{ scene.sceneNumberText }}</span>
+        <span class="scene-row-text">{{ scene.text }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="scene-save-btn"
+        [disabled]="!canSaveScene || isSavingScene(scene)"
+        [title]="canSaveScene ? 'Save this scene to your account' : 'Sign in to save scenes'"
+        (click)="saveScene(scene)">
+        {{ isSavingScene(scene) ? 'Saving…' : 'Save scene' }}
+      </button>
+    </div>
   </div>
-</div> 
+
+  <div
+    *ngIf="toastVisible"
+    class="scene-toast"
+    [class.scene-toast--success]="toastType === 'success'"
+    [class.scene-toast--error]="toastType === 'error'"
+    role="status">
+    {{ toastMessage }}
+  </div>
+</div>

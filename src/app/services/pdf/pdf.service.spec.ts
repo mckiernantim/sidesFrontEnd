@@ -874,3 +874,98 @@ describe('PdfService — reorderScenes page doubling', () => {
     });
   
 });
+
+describe('PdfService — syncSceneHeaderText (spec 032 US2/FR-004)', () => {
+  let service: PdfService;
+  let mockUpload: Partial<UploadService>;
+
+  beforeEach(() => {
+    mockUpload = {};
+    const mockUndo = {
+      setPdfService: jest.fn(),
+      reset$: new Subject<void>(),
+      recordLineChange: jest.fn(),
+    } as unknown as Partial<UndoService>;
+
+    TestBed.configureTestingModule({
+      providers: [
+        PdfService,
+        { provide: UploadService, useValue: mockUpload },
+        { provide: UndoService, useValue: mockUndo },
+      ],
+    });
+
+    service = TestBed.inject(PdfService);
+  });
+
+  const makeSceneHeaderLine = (overrides: any = {}) => ({
+    category: 'scene-header',
+    sceneNumberText: '4',
+    text: 'INT. KITCHEN - DAY',
+    index: 10,
+    ...overrides,
+  });
+
+  it('returns false when there are no live scenes', () => {
+    service.scenes = [];
+    expect(service.syncSceneHeaderText('4', 'EXT. BACKYARD - NIGHT')).toBe(false);
+  });
+
+  it('returns false when no scene matches the given sceneNumber', () => {
+    service.scenes = [makeSceneHeaderLine({ sceneNumberText: '7' })];
+    expect(service.syncSceneHeaderText('4', 'EXT. BACKYARD - NIGHT')).toBe(false);
+  });
+
+  it('updates the matched scene object text (also updates allLines since scenes are the same references)', () => {
+    const headerLine = makeSceneHeaderLine();
+    service.allLines = [headerLine];
+    service.scenes = [headerLine]; // same reference, as getScenes() produces via filter()
+
+    const result = service.syncSceneHeaderText('4', 'EXT. BACKYARD - NIGHT');
+
+    expect(result).toBe(true);
+    expect(headerLine.text).toBe('EXT. BACKYARD - NIGHT');
+    expect(service.allLines[0].text).toBe('EXT. BACKYARD - NIGHT');
+  });
+
+  it('matches by sceneNumber when sceneNumberText is absent', () => {
+    const headerLine = { category: 'scene-header', sceneNumber: '9', text: 'INT. LOFT - DAY', index: 3 };
+    service.allLines = [headerLine];
+    service.scenes = [headerLine];
+
+    const result = service.syncSceneHeaderText('9', 'EXT. ROOFTOP - NIGHT');
+
+    expect(result).toBe(true);
+    expect(headerLine.text).toBe('EXT. ROOFTOP - NIGHT');
+  });
+
+  it('syncs finalDocument via updateSceneHeaderText so Last Looks stays aligned', () => {
+    const headerLine = makeSceneHeaderLine();
+    service.allLines = [headerLine];
+    service.scenes = [headerLine];
+    service.finalDocument = {
+      data: [[{ ...headerLine }]],
+    };
+
+    service.syncSceneHeaderText('4', 'EXT. BACKYARD - NIGHT');
+
+    expect(service.finalDocument.data[0][0].text).toBe('EXT. BACKYARD - NIGHT');
+  });
+
+  it('defensively writes to UploadService.allLines when it has diverged from PdfService.allLines', () => {
+    const pdfHeaderLine = makeSceneHeaderLine({ index: 0 });
+    const uploadHeaderLine = makeSceneHeaderLine({ index: 0 });
+    service.allLines = [pdfHeaderLine];
+    service.scenes = [pdfHeaderLine];
+    mockUpload.allLines = [uploadHeaderLine]; // deliberately a different array reference
+
+    service.syncSceneHeaderText('4', 'EXT. BACKYARD - NIGHT');
+
+    expect(uploadHeaderLine.text).toBe('EXT. BACKYARD - NIGHT');
+  });
+
+  it('returns false when sceneNumber is empty', () => {
+    service.scenes = [makeSceneHeaderLine()];
+    expect(service.syncSceneHeaderText('', 'EXT. BACKYARD - NIGHT')).toBe(false);
+  });
+});

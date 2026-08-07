@@ -48,17 +48,19 @@ describe('OneLinerService', () => {
   // ─────────────────────────────────────────────
 
   describe('generateOneLiners()', () => {
-    it('should send scenes to backend and return one-liner map', async () => {
+    it('should send scenes to backend using the live payload shape (sceneHeader/sceneText/characters) and return one-liner map', async () => {
       const scenes: SceneForOneLiner[] = [
         {
           sceneNumber: '1',
-          header: 'INT. WAR ROOM - DAY',
-          descriptions: ['Team gathers around table.'],
+          sceneHeader: 'INT. WAR ROOM - DAY',
+          sceneText: ['Team gathers around table.'],
+          characters: ['JOHN', 'MARY'],
         },
         {
           sceneNumber: '2',
-          header: 'INT. LIBRARY - NIGHT',
-          descriptions: ['Sarah searches through books.'],
+          sceneHeader: 'INT. LIBRARY - NIGHT',
+          sceneText: ['Sarah searches through books.'],
+          characters: ['SARAH'],
         },
       ];
 
@@ -68,7 +70,7 @@ describe('OneLinerService', () => {
           '1': 'Team gathers in war room to discuss strategy',
           '2': 'Sarah discovers hidden message in old book',
         },
-        count: 2,
+        usage: { inputTokens: 100, outputTokens: 40, costUSD: 0.000024 },
       };
 
       const promise = service.generateOneLiners(scenes).toPromise();
@@ -89,6 +91,37 @@ describe('OneLinerService', () => {
       expect(result!.size).toBe(2);
     });
 
+    it('includes shootDayLabel in the request body when provided (matches contracts/one-liner-api.md)', async () => {
+      const scenes: SceneForOneLiner[] = [
+        { sceneNumber: '1', sceneHeader: 'INT. WAR ROOM - DAY', sceneText: ['Team gathers.'], characters: ['JOHN'] },
+      ];
+
+      const promise = service.generateOneLiners(scenes, 'Day 1 — Ranch Exteriors').toPromise();
+      await Promise.resolve();
+
+      const req = httpMock.expectOne(`${baseUrl}/one-liner`);
+      expect(req.request.body).toEqual({ scenes, shootDayLabel: 'Day 1 — Ranch Exteriors' });
+      req.flush({ success: true, oneLiners: { '1': 'One-liner.' } });
+
+      await promise;
+    });
+
+    it('omits shootDayLabel from the request body when not provided', async () => {
+      const scenes: SceneForOneLiner[] = [
+        { sceneNumber: '1', sceneHeader: 'INT. WAR ROOM - DAY', sceneText: ['Team gathers.'] },
+      ];
+
+      const promise = service.generateOneLiners(scenes).toPromise();
+      await Promise.resolve();
+
+      const req = httpMock.expectOne(`${baseUrl}/one-liner`);
+      expect(req.request.body).toEqual({ scenes });
+      expect(req.request.body.shootDayLabel).toBeUndefined();
+      req.flush({ success: true, oneLiners: { '1': 'One-liner.' } });
+
+      await promise;
+    });
+
     it('should return error if no scenes provided', (done) => {
       service.generateOneLiners([]).subscribe({
         next: () => fail('Should have thrown error'),
@@ -103,8 +136,8 @@ describe('OneLinerService', () => {
       const scenes: SceneForOneLiner[] = [
         {
           sceneNumber: '1',
-          header: 'INT. ROOM - DAY',
-          descriptions: [],
+          sceneHeader: 'INT. ROOM - DAY',
+          sceneText: [],
         },
       ];
 
@@ -128,8 +161,8 @@ describe('OneLinerService', () => {
       const scenes: SceneForOneLiner[] = [
         {
           sceneNumber: '1',
-          header: 'INT. ROOM - DAY',
-          descriptions: [],
+          sceneHeader: 'INT. ROOM - DAY',
+          sceneText: [],
         },
       ];
 
@@ -156,8 +189,8 @@ describe('OneLinerService', () => {
       const scenes: SceneForOneLiner[] = [
         {
           sceneNumber: '1',
-          header: 'INT. ROOM - DAY',
-          descriptions: [],
+          sceneHeader: 'INT. ROOM - DAY',
+          sceneText: [],
         },
       ];
 

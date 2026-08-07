@@ -19,3 +19,10 @@
   background-color: rgba(196, 255, 0, 0.04); /* subtle sw-accent tint */
   border-color: #C4FF00;                      /* sw-accent */
 }
+
+/* Sort Controls (spec 030) */
+.sort-btn.active {
+  background-color: #C4FF00; /* sw-accent */
+  color: #000000;            /* sw-accent-fg */
+  border-color: #C4FF00;
+}

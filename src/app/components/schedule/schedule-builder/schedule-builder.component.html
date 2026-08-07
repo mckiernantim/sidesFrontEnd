@@ -26,58 +26,245 @@
 
   <!-- Schedule View Tab -->
   <div *ngIf="activeTab === 'schedule'">
-    <!-- Schedule Header / Summary Bar -->
-    <div class="flex items-center justify-between p-4 bg-sw-surface rounded-lg border border-sw-border mb-4">
-      <div>
-        <h2 class="text-xl font-bold text-sw-text">{{ schedule.projectTitle }} — Schedule</h2>
-        <p class="text-sm text-sw-text-muted mt-1">
-          {{ scheduleProgress }} scenes scheduled · {{ schedule.shootDays.length }} shoot day{{ schedule.shootDays.length !== 1 ? 's' : '' }} · {{ totalScheduleTime }} total
-        </p>
-      </div>
-    <div class="flex items-center space-x-3">
-      <span *ngIf="saveError" class="text-xs text-sw-danger font-medium">⚠ {{ saveError }}</span>
-      <span *ngIf="isDirty && !isSaving && !saveError" class="text-xs text-sw-warning font-medium">● Unsaved changes</span>
-      <span *ngIf="isSaving" class="text-xs text-sw-info font-medium animate-pulse">Saving...</span>
-      <span *ngIf="lastSavedAt && !isDirty && !isSaving && !saveError" class="text-xs text-sw-success font-medium">Saved ✓</span>
+    <!-- Schedule Header / Summary Bar (spec 028 US5 — project/schedule context per design mock) -->
+    <div class="p-4 bg-sw-surface rounded-lg border border-sw-border mb-4" data-testid="schedule-header">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-baseline gap-3 min-w-0">
+          <h2 class="text-xl font-bold text-sw-text truncate" data-testid="header-project-name">{{ projectDisplayName }}</h2>
+          <span class="text-xs font-mono text-sw-text-subtle whitespace-nowrap" data-testid="header-schedule-name">{{ scheduleDisplayName }}</span>
+        </div>
 
-      <!-- One-Liner Status Message (when disabled) -->
-      <div *ngIf="!canGenerateOneLiners && totalScenes > 0" class="text-xs text-sw-warning bg-sw-surface-2 px-3 py-1.5 rounded-md border border-sw-border flex items-center space-x-1.5 max-w-xs">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        <span class="truncate">{{ oneLinerDisabledReason }}</span>
+        <div class="flex items-center gap-4 text-xs font-mono text-sw-text-muted border-l border-sw-border pl-4" data-testid="header-counts">
+          <span data-testid="header-day-count">{{ shootDayCount }} shoot day{{ shootDayCount !== 1 ? 's' : '' }}</span>
+          <span data-testid="header-scheduled-count">{{ scheduledSceneCount }} scheduled</span>
+          <span class="text-sw-warning" data-testid="header-unscheduled-count">{{ unscheduledSceneCount }} unscheduled</span>
+          <span class="text-sw-text-subtle">{{ totalScheduleTime }} total</span>
+        </div>
       </div>
 
-      <!-- Generate All One-Liners Button -->
-      <button
-        (click)="generateAllOneLiners()"
-        [disabled]="!canGenerateOneLiners || isGeneratingOneLiners || totalScenes === 0"
-        [title]="canGenerateOneLiners ? 'Generate AI one-liners for all scenes' : oneLinerDisabledReason"
-        class="bg-sw-surface-2 hover:bg-sw-border disabled:opacity-40 disabled:cursor-not-allowed text-sw-accent border border-sw-accent text-sm font-medium py-2 px-4 rounded-lg transition-colors flex items-center space-x-2">
-        <span *ngIf="!isGeneratingOneLiners">🤖</span>
-        <span *ngIf="isGeneratingOneLiners" class="animate-spin">⏳</span>
-        <span>{{ isGeneratingOneLiners ? 'Generating...' : 'Generate All One-Liners' }}</span>
-      </button>
+      <div class="flex flex-wrap items-center justify-between gap-3 mt-3">
+        <!-- Save-State Indicator (ScheduleAutoSaveService — always-visible per mock) -->
+        <div class="flex items-center space-x-3" data-testid="save-indicator">
+          <span *ngIf="saveError" class="text-xs text-sw-danger font-medium">⚠ {{ saveError }}</span>
+          <span *ngIf="isDirty && !isSaving && !saveError" class="text-xs text-sw-warning font-medium">● Unsaved changes</span>
+          <span *ngIf="isSaving" class="text-xs text-sw-info font-medium animate-pulse">Saving...</span>
+          <span *ngIf="lastSavedAt && !isDirty && !isSaving && !saveError" class="text-xs text-sw-success font-medium">Saved ✓</span>
+          <span *ngIf="headerSyncNotice" data-testid="header-sync-notice" class="text-xs text-sw-warning font-medium">⚠ {{ headerSyncNotice }}</span>
+        </div>
 
-      <button
-        (click)="addShootDay()"
-        class="bg-sw-accent hover:bg-sw-accent-hover text-sw-accent-fg text-sm font-semibold py-2 px-4 rounded-lg transition-colors">
-        + Add Day
-      </button>
+        <div class="flex items-center space-x-3">
+          <!-- One-Liner Status Message (when disabled) -->
+          <div *ngIf="!canGenerateOneLiners && totalScenes > 0" class="text-xs text-sw-warning bg-sw-surface-2 px-3 py-1.5 rounded-md border border-sw-border flex items-center space-x-1.5 max-w-xs">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span class="truncate">{{ oneLinerDisabledReason }}</span>
+          </div>
+
+          <!-- Generate All One-Liners Button -->
+          <button
+            (click)="generateAllOneLiners()"
+            [disabled]="!canGenerateOneLiners || isGeneratingOneLiners || totalScenes === 0"
+            [title]="canGenerateOneLiners ? 'Generate AI one-liners for all scenes' : oneLinerDisabledReason"
+            class="bg-sw-surface-2 hover:bg-sw-border disabled:opacity-40 disabled:cursor-not-allowed text-sw-accent border border-sw-accent text-sm font-medium py-2 px-4 rounded-lg transition-colors flex items-center space-x-2">
+            <span *ngIf="!isGeneratingOneLiners">🤖</span>
+            <span *ngIf="isGeneratingOneLiners" class="animate-spin">⏳</span>
+            <span>{{ isGeneratingOneLiners ? 'Generating...' : 'Generate All One-Liners' }}</span>
+          </button>
+
+          <button
+            (click)="addShootDay()"
+            class="bg-sw-accent hover:bg-sw-accent-hover text-sw-accent-fg text-sm font-semibold py-2 px-4 rounded-lg transition-colors">
+            + Add Day
+          </button>
+
+          <!-- Export affordance (spec 029 research D7 — no new export formats; entry point only) -->
+          <button
+            type="button"
+            data-testid="export-schedule-btn"
+            disabled
+            title="Schedule export is coming soon"
+            class="bg-sw-surface-2 border border-sw-border text-sw-text-subtle text-sm font-semibold py-2 px-4 rounded-lg opacity-60 cursor-not-allowed">
+            Export
+          </button>
+        </div>
+      </div>
+
+      <!-- Characters Show/Hide (spec 031) — own row so it stays visible -->
+      <div
+        class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-sw-border"
+        role="group"
+        aria-label="Character visibility"
+        data-testid="cast-visibility-toolbar">
+        <span class="text-xs font-semibold text-sw-text mr-1">Characters &amp; actors:</span>
+        <button
+          type="button"
+          data-testid="cast-visibility-show"
+          class="text-xs px-3 py-1.5 rounded-md border font-medium transition-colors"
+          [ngClass]="showSceneCastEnabled
+            ? 'bg-sw-accent text-sw-accent-fg border-sw-accent'
+            : 'bg-sw-surface-2 text-sw-text-muted border-sw-border hover:bg-sw-border'"
+          [attr.aria-pressed]="showSceneCastEnabled"
+          (click)="setCastVisibility(true)">
+          Show
+        </button>
+        <button
+          type="button"
+          data-testid="cast-visibility-hide"
+          class="text-xs px-3 py-1.5 rounded-md border font-medium transition-colors"
+          [ngClass]="!showSceneCastEnabled
+            ? 'bg-sw-accent text-sw-accent-fg border-sw-accent'
+            : 'bg-sw-surface-2 text-sw-text-muted border-sw-border hover:bg-sw-border'"
+          [attr.aria-pressed]="!showSceneCastEnabled"
+          (click)="setCastVisibility(false)">
+          Hide
+        </button>
+        <span class="text-xs text-sw-text-subtle">
+          {{ showSceneCastEnabled ? 'Showing cast on each scene' : 'Cast hidden on scenes' }}
+        </span>
+      </div>
+
+      <!-- Sort All Days (spec 030 US2/US3 — applies a mode to every shoot day independently) -->
+      <div
+        class="flex flex-wrap items-center gap-1.5 mt-3 pt-3 border-t border-sw-border"
+        role="group"
+        aria-label="Sort all days">
+        <span class="text-xs text-sw-text-subtle mr-1">Sort all days:</span>
+        <button
+          *ngFor="let opt of sortModes"
+          type="button"
+          data-testid="sort-all-days-btn"
+          class="sort-btn text-xs px-2.5 py-1 rounded-md border border-sw-border bg-sw-surface-2 text-sw-text-muted hover:bg-sw-border disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          [class.active]="allDaysSortMode === opt.mode"
+          [disabled]="shootDayCount === 0"
+          [attr.aria-label]="'Sort all days by ' + opt.label"
+          (click)="sortAllDays(opt.mode)">
+          {{ opt.label }}
+        </button>
+      </div>
     </div>
-  </div>
 
-  <!-- Main Content: Two-Panel Layout -->
+  <!-- Main Content: Two-Panel Layout (spec 028 US5 T055 — order matches design mock: -->
+  <!-- wide shoot-day board first, narrower Unscheduled Scenes pool second) -->
   <div class="flex flex-col xl:flex-row gap-4">
 
-    <!-- LEFT PANEL: Unscheduled Scenes Pool -->
+    <!-- MAIN PANEL: Shoot Days -->
+    <div class="xl:w-2/3 w-full">
+      <!-- Legacy schedule explanation (spec 028 T038/T039) -->
+      <div
+        *ngIf="isLegacySchedule && schedule.shootDays.length > 0"
+        class="mb-4 bg-sw-surface-2 border border-sw-warning/50 rounded-lg p-3 text-sm text-sw-text-muted">
+        This schedule isn't linked to a saved project, so Generate Sides is disabled.
+        <a routerLink="/" class="text-sw-accent hover:text-sw-accent-hover underline">Re-upload the script</a>
+        to enable it, or connect this schedule to a project from the Schedule page banner above.
+      </div>
+
+      <div class="space-y-4">
+        <div *ngFor="let day of schedule.shootDays; trackBy: trackByDayId" class="shoot-day-with-sides">
+          <app-shoot-day-card
+            [day]="day"
+            [editable]="true"
+            [dropListId]="'day-' + day.id"
+            [connectedDropLists]="getConnectedLists(day.id)"
+            [showCast]="showSceneCastEnabled"
+            [castMembers]="schedule.castMembers"
+            (sceneDrop)="onDayDrop($event, day.id)"
+            (sceneRemoved)="onSceneRemoved($event)"
+            (sceneClicked)="onSceneClicked($event)"
+            (dayRemoved)="removeShootDay($event)"
+            (timeChanged)="onTimeChanged($event)"
+            (oneLinerChanged)="onOneLinerChanged($event)"
+            (generateDayOneLiners)="generateDayOneLiners($event)"
+            (sortRequested)="onDaySortRequested($event)"
+            (castVisibilityChange)="setCastVisibility($event)"
+            (headerChanged)="onHeaderChanged($event)">
+          </app-shoot-day-card>
+
+          <!-- Generate Sides (spec 028 US2) -->
+          <div class="flex items-center justify-end gap-2 mt-1.5 px-1">
+            <span *ngIf="generateSidesError && generateSidesErrorDayId === day.id" class="text-xs text-sw-danger">
+              {{ generateSidesError }}
+            </span>
+            <button
+              type="button"
+              data-testid="generate-sides-btn"
+              (click)="generateSidesForDay(day)"
+              [disabled]="!canGenerateSidesForDay(day) || generatingSidesForDayId === day.id"
+              [title]="generateSidesTooltip(day)"
+              class="text-xs bg-sw-accent hover:bg-sw-accent-hover disabled:opacity-40 disabled:cursor-not-allowed text-sw-accent-fg font-semibold px-3 py-1.5 rounded-md transition-colors flex items-center space-x-1.5">
+              <span>🎬</span>
+              <span>{{ generatingSidesForDayId === day.id ? 'Generating…' : 'Generate Sides' }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div
+          *ngIf="schedule.shootDays.length === 0"
+          class="text-center py-12 bg-sw-surface rounded-lg border-2 border-dashed border-sw-border">
+          <div class="text-sw-text-muted text-lg mb-2">No shoot days yet</div>
+          <p class="text-sw-text-subtle text-sm mb-4">Add a day and drag scenes from the unscheduled pool</p>
+          <button
+            (click)="addShootDay()"
+            class="bg-sw-accent hover:bg-sw-accent-hover text-sw-accent-fg text-sm font-semibold py-2 px-6 rounded-lg transition-colors">
+            + Add First Day
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDE PANEL: Unscheduled Scenes Pool -->
     <div class="xl:w-1/3 w-full">
       <div class="bg-sw-surface rounded-lg border border-sw-border">
         <div class="p-3 bg-sw-bg border-b border-sw-border rounded-t-lg">
           <h3 class="text-sm font-bold text-sw-text-muted">
             Unscheduled Scenes
-            <span class="text-sw-text-subtle font-normal ml-1">({{ schedule.unscheduledScenes.length }})</span>
+            <span class="text-sw-text-subtle font-normal ml-1">({{ unscheduledSceneCount }})</span>
           </h3>
+          <p class="text-xs text-sw-text-subtle mt-0.5">Drag a strip onto a shoot day.</p>
+
+          <!-- Cast visibility (duplicate control near scene cards) -->
+          <div class="flex flex-wrap items-center gap-1.5 mt-2" role="group" aria-label="Character visibility">
+            <span class="text-xs text-sw-text-subtle">Cast:</span>
+            <button
+              type="button"
+              data-testid="cast-visibility-show-pool"
+              class="text-xs px-2 py-1 rounded-md border font-medium transition-colors"
+              [ngClass]="showSceneCastEnabled
+                ? 'bg-sw-accent text-sw-accent-fg border-sw-accent'
+                : 'bg-sw-surface-2 text-sw-text-muted border-sw-border'"
+              (click)="setCastVisibility(true)">
+              Show
+            </button>
+            <button
+              type="button"
+              data-testid="cast-visibility-hide-pool"
+              class="text-xs px-2 py-1 rounded-md border font-medium transition-colors"
+              [ngClass]="!showSceneCastEnabled
+                ? 'bg-sw-accent text-sw-accent-fg border-sw-accent'
+                : 'bg-sw-surface-2 text-sw-text-muted border-sw-border'"
+              (click)="setCastVisibility(false)">
+              Hide
+            </button>
+          </div>
+
+          <!-- Sort Controls (spec 030 US1) -->
+          <div
+            class="flex flex-wrap gap-1.5 mt-2"
+            role="group"
+            aria-label="Sort unscheduled scenes">
+            <button
+              *ngFor="let opt of sortModes"
+              type="button"
+              data-testid="unscheduled-sort-btn"
+              class="sort-btn text-xs px-2.5 py-1 rounded-md border border-sw-border bg-sw-surface-2 text-sw-text-muted hover:bg-sw-border disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              [class.active]="unscheduledSortMode === opt.mode"
+              [disabled]="unscheduledSceneCount === 0"
+              [attr.aria-label]="'Sort unscheduled by ' + opt.label"
+              (click)="sortUnscheduled(opt.mode)">
+              {{ opt.label }}
+            </button>
+          </div>
         </div>
 
         <div
@@ -99,8 +286,12 @@
               [showTimeline]="false"
               [showOneLiner]="true"
               [editable]="true"
+              [showCast]="showSceneCastEnabled"
+              [castMembers]="schedule.castMembers"
               (sceneClicked)="onSceneClicked($event)"
-              (oneLinerChanged)="onOneLinerChanged($event)">
+              (oneLinerChanged)="onOneLinerChanged($event)"
+              (castVisibilityChange)="setCastVisibility($event)"
+              (headerChanged)="onHeaderChanged($event)">
             </app-scene-strip>
           </div>
 
@@ -109,39 +300,6 @@
             class="text-center py-8 text-sw-text-subtle text-sm italic">
             All scenes scheduled ✓
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- RIGHT PANEL: Shoot Days -->
-    <div class="xl:w-2/3 w-full">
-      <div class="space-y-4">
-        <app-shoot-day-card
-          *ngFor="let day of schedule.shootDays; trackBy: trackByDayId"
-          [day]="day"
-          [editable]="true"
-          [dropListId]="'day-' + day.id"
-          [connectedDropLists]="getConnectedLists(day.id)"
-          (sceneDrop)="onDayDrop($event, day.id)"
-          (sceneRemoved)="onSceneRemoved($event)"
-          (sceneClicked)="onSceneClicked($event)"
-          (dayRemoved)="removeShootDay($event)"
-          (timeChanged)="onTimeChanged($event)"
-          (oneLinerChanged)="onOneLinerChanged($event)"
-          (generateDayOneLiners)="generateDayOneLiners($event)">
-        </app-shoot-day-card>
-
-        <!-- Empty State -->
-        <div
-          *ngIf="schedule.shootDays.length === 0"
-          class="text-center py-12 bg-sw-surface rounded-lg border-2 border-dashed border-sw-border">
-          <div class="text-sw-text-muted text-lg mb-2">No shoot days yet</div>
-          <p class="text-sw-text-subtle text-sm mb-4">Add a day and drag scenes from the unscheduled pool</p>
-          <button
-            (click)="addShootDay()"
-            class="bg-sw-accent hover:bg-sw-accent-hover text-sw-accent-fg text-sm font-semibold py-2 px-6 rounded-lg transition-colors">
-            + Add First Day
-          </button>
         </div>
       </div>
     </div>

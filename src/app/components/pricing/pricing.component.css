@@ -2,11 +2,15 @@
   display: block;
 }
 
+/* ── Page shell ──────────────────────────────────────────── */
+
 .pricing-page {
   background: var(--paper);
   color: var(--ink);
   min-height: 60vh;
 }
+
+/* ── Hero ─────────────────────────────────────────────────── */
 
 .pricing-hero {
   background: var(--tint);
@@ -18,18 +22,375 @@
 .pricing-hero h1 {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(32px, 4vw, 48px);
+  font-size: clamp(28px, 4vw, 44px);
   color: var(--ink);
-  margin: 0 0 12px;
+  margin: 0 0 10px;
 }
 
 .pricing-hero > .container > p,
 .pricing-hero .hero-sub {
   color: var(--ink-soft);
   max-width: 40rem;
-  margin: 0 auto 24px;
-  font-size: 1.125rem;
+  margin: 0 auto 16px;
+  font-size: 1.1rem;
 }
+
+.pricing-founders-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--mustard);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  border-radius: 20px;
+  margin-top: 8px;
+}
+
+/* ── Interval toggle ──────────────────────────────────────── */
+
+.pricing-section {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.pricing-toggle-wrap {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 4px;
+  background: var(--white-brand);
+  margin: 0 auto 32px;
+  width: fit-content;
+  display: flex;
+}
+
+.pricing-toggle-btn {
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 8px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pricing-toggle-btn.active {
+  background: var(--mustard);
+  color: var(--ink);
+}
+
+/* ── Cards grid — 3 columns desktop, stack mobile ─────────── */
+
+.pricing-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .pricing-cards-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 580px) {
+  .pricing-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* ── Card shell ───────────────────────────────────────────── */
+
+.pricing-card {
+  background: var(--white-brand);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow), var(--hl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.18s, border-color 0.18s;
+}
+
+.pricing-card:hover {
+  box-shadow: var(--shadow-lift), var(--hl);
+  border-color: var(--line-mid);
+}
+
+.pricing-card--emphasized {
+  border-color: var(--coral);
+  border-width: 2px;
+  box-shadow: 0 0 0 3px rgba(226, 102, 76, 0.12), var(--shadow-lift);
+}
+
+/* ── Card header ───────────────────────────────────────────
+ * DARK MODE FIX: All card headers use fixed brand-dark surface colors
+ * (not theme tokens) so they stay dark-on-light in every color scheme.
+ * Text is hardcoded #fffdf9 (SidesWays light cream) — never inverted.
+ ──────────────────────────────────────────────────────────── */
+
+.pricing-card-header {
+  /* Fixed dark brand surface — NOT var(--ink) which flips in dark mode */
+  background: #1e3235;
+  color: #fffdf9;
+  padding: 24px 28px;
+  position: relative;
+}
+
+.pricing-card-header--pro {
+  background: linear-gradient(135deg, #1a2b2d 0%, #14282a 100%);
+}
+
+.pricing-card-header--team {
+  background: linear-gradient(135deg, #1c2a2e 0%, #162326 100%);
+}
+
+/* badge that sits in the header — uses brand mustard, dark text is stable */
+.pricing-pro-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: #e8c84e; /* mustard — hardcoded so it never desaturates in dark mode */
+  color: #14282a;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pricing-tier-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.875rem;
+  /* hardcoded light — must stay visible on the fixed-dark header */
+  color: #fffdf9;
+  margin-bottom: 6px;
+}
+
+.pricing-tier-tagline {
+  /* hardcoded semi-transparent light — stays readable on the dark header */
+  color: rgba(255, 253, 249, 0.68);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* ── Card body — uses theme tokens so it adapts correctly ── */
+
+.pricing-card-body {
+  padding: 24px 28px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── Price display ────────────────────────────────────────── */
+
+.pricing-price-block {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.pricing-price-amount {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.2rem, 4.5vw, 3.2rem);
+  color: var(--ink);
+  line-height: 1;
+}
+
+.pricing-price-suffix {
+  font-size: 1rem;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+
+.pricing-founders-price {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+}
+
+.pricing-founders-strikethrough {
+  text-decoration: line-through;
+  color: var(--ink-soft);
+}
+
+.pricing-founders-tag {
+  background: var(--mustard);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.pricing-cancel-copy {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  margin-bottom: 20px;
+}
+
+/* ── Feature list ─────────────────────────────────────────── */
+
+.pricing-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pricing-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.875rem;
+  color: var(--ink);
+}
+
+.pricing-feature-item--everything {
+  font-weight: 600;
+}
+
+.pricing-check-icon {
+  width: 16px;
+  height: 16px;
+  color: #3faa8d;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ── CTA buttons ──────────────────────────────────────────── */
+
+.pricing-cta {
+  width: 100%;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: linear-gradient(180deg, #e2664c, #cf4d33);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(20, 40, 43, 0.14), 0 6px 16px -4px rgba(207, 77, 51, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  margin-top: auto;
+}
+
+.pricing-cta:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(20, 40, 43, 0.14), 0 12px 26px -6px rgba(207, 77, 51, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32);
+}
+
+.pricing-cta:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pricing-cta--pro {
+  background: linear-gradient(180deg, #2a8970, #1d6b57);
+  box-shadow: 0 1px 2px rgba(20, 40, 43, 0.14), 0 6px 16px -4px rgba(29, 107, 87, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.pricing-cta--pro:hover:not(:disabled) {
+  box-shadow: 0 2px 4px rgba(20, 40, 43, 0.14), 0 12px 26px -6px rgba(29, 107, 87, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.pricing-cta--team {
+  background: linear-gradient(180deg, #4a6fa5, #355c8c);
+  box-shadow: 0 1px 2px rgba(20, 40, 43, 0.14), 0 6px 16px -4px rgba(53, 92, 140, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.pricing-cta--team:hover:not(:disabled) {
+  box-shadow: 0 2px 4px rgba(20, 40, 43, 0.14), 0 12px 26px -6px rgba(53, 92, 140, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.pricing-cta--secondary {
+  background: transparent;
+  border-color: var(--line-mid);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.pricing-cta--secondary:hover:not(:disabled) {
+  border-color: var(--coral);
+  transform: none;
+  box-shadow: none;
+}
+
+.pricing-cta-current {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.pricing-cta-current-badge {
+  display: flex;
+  align-items: center;
+  color: #3faa8d;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin: 0 0 4px;
+}
+
+.pricing-cta-current-text {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  margin: 0 0 6px;
+}
+
+.pricing-cta-warning-text {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+
+/* ── Error banner ─────────────────────────────────────────── */
+
+.pricing-cta-error {
+  background: #fde8e4;
+  border-left: 3px solid var(--coral);
+  color: #7d2010;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  margin-bottom: 20px;
+}
+
+/* ── Founders footnote ────────────────────────────────────── */
+
+.pricing-founders-footnote {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin-top: 20px;
+}
+
+/* ── Testimonial quote ────────────────────────────────────── */
 
 .pricing-quote {
   max-width: 36rem;
@@ -44,94 +405,30 @@
   text-align: left;
 }
 
-.pricing-card {
-  background: var(--white-brand);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  box-shadow: var(--shadow), var(--hl);
-  overflow: hidden;
-  transition: box-shadow 0.18s, border-color 0.18s;
-}
+/* ── FAQ ──────────────────────────────────────────────────── */
 
-.pricing-card:hover {
-  box-shadow: var(--shadow-lift), var(--hl);
-  border-color: var(--line-mid);
-}
-
-.pricing-card-header {
-  background: var(--ink);
-  color: var(--paper);
-  padding: 24px;
-  text-align: center;
-}
-
-.pricing-card-header h2 {
+.pricing-faq h3 {
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.875rem;
-  margin: 0;
-}
-
-.pricing-interval {
-  margin-top: 20px;
-  display: inline-flex;
-  border: 1px solid rgba(255, 253, 249, 0.28);
-  border-radius: 10px;
-  padding: 4px;
-  background: rgba(255, 253, 249, 0.08);
-}
-
-.pricing-interval button {
-  border: none;
-  background: transparent;
-  color: rgba(255, 253, 249, 0.8);
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 13px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.pricing-interval button.active {
-  background: var(--mustard);
-  color: var(--ink);
-}
-
-.pricing-cta {
-  width: 100%;
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 14px;
-  padding: 12px 24px;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  background: linear-gradient(180deg, #e2664c, #cf4d33);
-  color: #fff;
-  box-shadow: 0 1px 2px rgba(20, 40, 43, 0.14), 0 6px 16px -4px rgba(207, 77, 51, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.28);
-  cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-
-.pricing-cta:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(20, 40, 43, 0.14), 0 12px 26px -6px rgba(207, 77, 51, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.32);
-}
-
-.pricing-faq h3,
-.pricing-faq h4 {
-  font-family: var(--font-display);
-  color: var(--ink);
 }
 
 .pricing-faq .faq-item {
   background: var(--white-brand);
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: 14px;
   box-shadow: var(--shadow), var(--hl);
-  padding: 20px 24px;
+  padding: 18px 22px;
 }
 
-.pricing-check {
-  color: #3faa8d;
+.pricing-faq .faq-item h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--coral);
+  margin: 0 0 8px;
+}
+
+.pricing-faq .faq-item p {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  margin: 0;
 }

@@ -96,7 +96,6 @@ describe('StripeService', () => {
     usage: {
       pdfsGenerated: 5,
       lastPdfGeneration: '2024-01-15T00:00:00Z',
-      monthlyLimit: 50,
       resetDate: '2024-02-01T00:00:00Z'
     }
   };
@@ -116,7 +115,6 @@ describe('StripeService', () => {
     usage: {
       pdfsGenerated: 0,
       lastPdfGeneration: null,
-      monthlyLimit: 0,
       resetDate: null
     }
   };
@@ -331,6 +329,288 @@ describe('StripeService', () => {
       const result = await resultPromise;
       expect(result.success).toBe(true);
       expect(window.location.href).toBe('https://billing.stripe.com/session_123');
+    });
+  });
+
+  describe('Scheduling tier entitlement (spec 028)', () => {
+    it('maps hasSchedulingTier and schedulingSubscription from the backend response', async () => {
+      const statusPromise = firstValueFrom(service.getSubscriptionStatus('test-user-123'));
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/subscription-status/test-user-123');
+      req.flush({
+        ...mockInactiveSubscriptionResponse,
+        hasSchedulingTier: true,
+        schedulingSubscription: {
+          status: 'active',
+          subscriptionId: 'sub_sched_123',
+          currentPeriodStart: '2024-01-01T00:00:00Z',
+          currentPeriodEnd: '2024-02-01T00:00:00Z',
+          cancelAtPeriodEnd: false,
+          plan: { id: 'price_scheduling_weekly', interval: 'week' }
+        }
+      });
+      const status = await statusPromise;
+
+      expect(status.hasSchedulingTier).toBe(true);
+      expect(status.schedulingSubscription).not.toBeNull();
+      expect(status.schedulingSubscription?.id).toBe('sub_sched_123');
+      expect(status.schedulingSubscription?.status).toBe('active');
+      expect(status.schedulingSubscription?.plan?.interval).toBe('week');
+    });
+
+    it('defaults hasSchedulingTier to false and schedulingSubscription to null when absent from the backend response', async () => {
+      const statusPromise = firstValueFrom(service.getSubscriptionStatus('test-user-123'));
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/subscription-status/test-user-123');
+      req.flush(mockInactiveSubscriptionResponse);
+      const status = await statusPromise;
+
+      expect(status.hasSchedulingTier).toBe(false);
+      expect(status.schedulingSubscription).toBeNull();
+    });
+
+    it('defaults hasSchedulingTier to false in createEmptyStatus (HTTP error path)', async () => {
+      const statusPromise = firstValueFrom(service.getSubscriptionStatus('test-user-123'));
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/subscription-status/test-user-123');
+      req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
+      const status = await statusPromise;
+
+      expect(status.hasSchedulingTier).toBe(false);
+      expect(status.schedulingSubscription).toBeNull();
+    });
+
+    it('createSchedulingCheckoutSession posts the selected interval and redirects on success', async () => {
+      Object.defineProperty(window, 'location', {
+        value: { origin: 'http://localhost:4200', href: '' },
+        writable: true
+      });
+
+      const resultPromise = firstValueFrom(
+        service.createSchedulingCheckoutSession('test-user-123', 'test@example.com', 'month')
+      );
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/scheduling/checkout');
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body.interval).toBe('month');
+      expect(req.request.body.userId).toBe('test-user-123');
+      req.flush({ success: true, url: 'https://checkout.stripe.com/session_123', priceOffered: 'price_scheduling_monthly' });
+
+      const result = await resultPromise;
+      expect(result.success).toBe(true);
+      expect(window.location.href).toBe('https://checkout.stripe.com/session_123');
+    });
+
+    it('surfaces ALREADY_HAS_SCHEDULING_TIER as a typed error the UI can render', async () => {
+      const resultPromise = firstValueFrom(
+        service.createSchedulingCheckoutSession('test-user-123', 'test@example.com', 'week')
+      );
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/scheduling/checkout');
+      req.flush({ success: false, error: 'ALREADY_HAS_SCHEDULING_TIER' }, { status: 409, statusText: 'Conflict' });
+
+      const result = await resultPromise;
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('ALREADY_HAS_SCHEDULING_TIER');
+    });
+
+    it('surfaces SCHEDULING_PRICE_MISSING as a typed error the UI can render', async () => {
+      const resultPromise = firstValueFrom(
+        service.createSchedulingCheckoutSession('test-user-123', 'test@example.com', 'month')
+      );
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/scheduling/checkout');
+      req.flush(
+        { success: false, error: 'SCHEDULING_PRICE_MISSING', message: 'STRIPE_SCHEDULING_MONTHLY_PRICE is not configured' },
+        { status: 500, statusText: 'Internal Server Error' }
+      );
+
+      const result = await resultPromise;
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('SCHEDULING_PRICE_MISSING');
+    });
+  });
+
+  describe('createTeamCheckoutSession (spec 033)', () => {
+    it('posts interval + userId to /stripe/team/checkout and redirects on success', async () => {
+      Object.defineProperty(window, 'location', {
+        value: { origin: 'http://localhost:4200', href: '' },
+        writable: true
+      });
+
+      const resultPromise = firstValueFrom(
+        service.createTeamCheckoutSession('test-user-123', 'test@example.com', 'month')
+      );
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/team/checkout');
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body.interval).toBe('month');
+      expect(req.request.body.userId).toBe('test-user-123');
+      expect(req.request.body.userEmail).toBe('test@example.com');
+      req.flush({ success: true, url: 'https://checkout.stripe.com/team_session_123', priceOffered: 'price_team_monthly' });
+
+      const result = await resultPromise;
+      expect(result.success).toBe(true);
+      expect(window.location.href).toBe('https://checkout.stripe.com/team_session_123');
+    });
+
+    it('returns upgraded=true for in-place Team upgrade without redirect', async () => {
+      const resultPromise = firstValueFrom(
+        service.createTeamCheckoutSession('test-user-123', 'test@example.com', 'week')
+      );
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/team/checkout');
+      req.flush({ success: true, upgraded: true, url: null, subscriptionId: 'sub_team_123' });
+
+      const result = await resultPromise;
+      expect(result.success).toBe(true);
+      expect(result.upgraded).toBe(true);
+      expect(result.url).toBeNull();
+    });
+
+    it('surfaces TEAM_PRICES_NOT_CONFIGURED with friendly message on 503', async () => {
+      const resultPromise = firstValueFrom(
+        service.createTeamCheckoutSession('test-user-123', 'test@example.com', 'week')
+      );
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/team/checkout');
+      req.flush(
+        { success: false, error: 'TEAM_PRICES_NOT_CONFIGURED', message: 'Team prices not yet set up' },
+        { status: 503, statusText: 'Service Unavailable' }
+      );
+
+      const result = await resultPromise;
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('TEAM_PRICES_NOT_CONFIGURED');
+      expect(result.message).toBe('Team plan coming online soon — contact us');
+    });
+
+    it('surfaces typed error from 4xx responses', async () => {
+      const resultPromise = firstValueFrom(
+        service.createTeamCheckoutSession('test-user-123', 'test@example.com', 'month')
+      );
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/team/checkout');
+      req.flush(
+        { success: false, error: 'ALREADY_HAS_TEAM_TIER', message: 'Already subscribed to Team' },
+        { status: 409, statusText: 'Conflict' }
+      );
+
+      const result = await resultPromise;
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('ALREADY_HAS_TEAM_TIER');
+    });
+
+    it('handles 401 with auth message', async () => {
+      const resultPromise = firstValueFrom(
+        service.createTeamCheckoutSession('test-user-123', 'test@example.com', 'week')
+      );
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/team/checkout');
+      req.flush({}, { status: 401, statusText: 'Unauthorized' });
+
+      const result = await resultPromise;
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('Authentication failed. Please log in again.');
+    });
+
+    it('sends returnUrl pointing to /profile', async () => {
+      Object.defineProperty(window, 'location', {
+        value: { origin: 'http://localhost:4200', href: '' },
+        writable: true
+      });
+
+      const resultPromise = firstValueFrom(
+        service.createTeamCheckoutSession('u1', 'u@test.com', 'week')
+      );
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/team/checkout');
+      expect(req.request.body.returnUrl).toBe('http://localhost:4200/profile');
+      req.flush({ success: true, url: 'https://checkout.stripe.com/x' });
+      await resultPromise;
+    });
+  });
+
+  describe('createBasicCheckoutSession (spec 033 downgrade)', () => {
+    it('posts interval + userId to /stripe/basic/checkout and handles in-place downgrade', async () => {
+      const resultPromise = firstValueFrom(
+        service.createBasicCheckoutSession('test-user-123', 'test@example.com', 'month')
+      );
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/basic/checkout');
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body.interval).toBe('month');
+      expect(req.request.body.userId).toBe('test-user-123');
+      expect(req.request.body.userEmail).toBe('test@example.com');
+      req.flush({ success: true, upgraded: true, url: null, subscriptionId: 'sub_basic_123' });
+
+      const result = await resultPromise;
+      expect(result.success).toBe(true);
+      expect(result.upgraded).toBe(true);
+      expect(result.url).toBeNull();
+    });
+
+    it('redirects to Checkout URL when no active sub to downgrade in place', async () => {
+      Object.defineProperty(window, 'location', {
+        value: { origin: 'http://localhost:4200', href: '' },
+        writable: true
+      });
+
+      const resultPromise = firstValueFrom(
+        service.createBasicCheckoutSession('test-user-123', 'test@example.com', 'week')
+      );
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/basic/checkout');
+      req.flush({ success: true, url: 'https://checkout.stripe.com/basic_123' });
+
+      const result = await resultPromise;
+      expect(result.success).toBe(true);
+      expect(window.location.href).toBe('https://checkout.stripe.com/basic_123');
+    });
+
+    it('surfaces typed error on 4xx', async () => {
+      const resultPromise = firstValueFrom(
+        service.createBasicCheckoutSession('test-user-123', 'test@example.com', 'week')
+      );
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/basic/checkout');
+      req.flush(
+        { success: false, error: 'BASIC_CHECKOUT_FAILED', message: 'Something went wrong' },
+        { status: 500, statusText: 'Internal Server Error' }
+      );
+
+      const result = await resultPromise;
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('BASIC_CHECKOUT_FAILED');
+    });
+
+    it('surfaces auth error message on 401', async () => {
+      const resultPromise = firstValueFrom(
+        service.createBasicCheckoutSession('test-user-123', 'test@example.com', 'week')
+      );
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/basic/checkout');
+      req.flush({}, { status: 401, statusText: 'Unauthorized' });
+
+      const result = await resultPromise;
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('Authentication failed. Please log in again.');
+    });
+
+    it('sends returnUrl pointing to /profile', async () => {
+      Object.defineProperty(window, 'location', {
+        value: { origin: 'http://localhost:4200', href: '' },
+        writable: true
+      });
+
+      const resultPromise = firstValueFrom(
+        service.createBasicCheckoutSession('u1', 'u@test.com', 'week')
+      );
+      await flushAuthToken();
+      const req = httpMock.expectOne('http://localhost:3000/stripe/basic/checkout');
+      expect(req.request.body.returnUrl).toBe('http://localhost:4200/profile');
+      req.flush({ success: true, upgraded: true, url: null });
+      await resultPromise;
     });
   });
 

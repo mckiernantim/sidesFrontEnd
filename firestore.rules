@@ -35,6 +35,24 @@ service cloud.firestore {
                     && request.resource.data.userId == request.auth.uid;
       allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
+
+    // Spec 027: Projects — owner-only access, mirrors schedules pattern.
+    // All CRUD is enforced server-side (Admin SDK bypasses these rules);
+    // these rules are defense-in-depth for any direct client access.
+    match /projects/{projectId} {
+      allow read, update, delete: if request.auth != null
+                                  && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Spec 027: Saved scenes — same owner-only pattern as projects.
+    match /savedScenes/{sceneId} {
+      allow read, update, delete: if request.auth != null
+                                  && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+    }
   }
 }
 

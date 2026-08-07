@@ -6,11 +6,13 @@ import { from, Observable, throwError, BehaviorSubject, of, firstValueFrom } fro
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
-import { SubscriptionStatus } from 'src/app/types/SubscriptionTypes';
+import { SubscriptionStatus, SubscriptionDetails } from 'src/app/types/SubscriptionTypes';
 import {
   pricingCommandsForOffer,
   resolveOfferProduct,
   setPriceCatalog,
+  setProPriceCatalog,
+  setTeamPriceCatalog,
   shouldRedirectToPricingAfterLogin,
   BillingInterval,
   OfferProduct
@@ -20,11 +22,32 @@ interface StripePriceCatalogResponse {
   success: boolean;
   testMode?: boolean;
   prices: {
+    // Basic tier (legacy names + explicit basic* aliases)
     standardWeekly: number | null;
     standardMonthly: number | null;
     foundersWeekly: number | null;
     foundersMonthly: number | null;
     student: number | null;
+    basicWeekly?: number | null;
+    basicMonthly?: number | null;
+    basicFoundersWeekly?: number | null;
+    basicFoundersMonthly?: number | null;
+    // Pro tier — explicit pro* keys ONLY (schedulingWeekly* NOT used for display
+    // to prevent stale $40-month value from overriding the locked $50 default)
+    proWeekly?: number | null;
+    proMonthly?: number | null;
+    proFoundersWeekly?: number | null;
+    proFoundersMonthly?: number | null;
+    // Legacy scheduling aliases — kept for parsing but NOT forwarded to Pro display
+    schedulingWeekly?: number | null;
+    schedulingMonthly?: number | null;
+    schedulingFoundersWeekly?: number | null;
+    schedulingFoundersMonthly?: number | null;
+    // Team tier
+    teamWeekly?: number | null;
+    teamMonthly?: number | null;
+    teamFoundersWeekly?: number | null;
+    teamFoundersMonthly?: number | null;
   } | null;
 }
 
@@ -71,6 +94,21 @@ interface BackendSubscriptionResponse {
     lastPdfGeneration: string | null;
     resetDate?: string | null;
   };
+  /** Premium ("Scheduling") tier (spec 028) — absent on any pre-028 backend response, defaults to false/null. */
+  hasSchedulingTier?: boolean;
+  schedulingSubscription?: {
+    status: string;
+    subscriptionId: string | null;
+    currentPeriodStart: string | null;
+    currentPeriodEnd: string | null;
+    cancelAtPeriodEnd: boolean;
+    plan: {
+      id: string | null;
+      interval: string | null;
+    } | null;
+  } | null;
+  /** Team tier (spec 033) — absent on pre-033 backend responses, defaults to false. */
+  hasTeamTier?: boolean;
 }
 
 @Injectable({
@@ -136,13 +174,37 @@ export class StripeService {
       )
     ).then(response => {
       if (!response?.success || !response.prices) return;
-      const { standardWeekly, standardMonthly, foundersWeekly, foundersMonthly } = response.prices;
+      const p = response.prices;
+
+      // Basic prices — support both legacy names and explicit basic* aliases
       setPriceCatalog({
-        standardWeeklyCents: standardWeekly ?? undefined,
-        standardMonthlyCents: standardMonthly ?? undefined,
-        foundersWeeklyCents: foundersWeekly ?? undefined,
-        foundersMonthlyCents: foundersMonthly ?? undefined
+        standardWeeklyCents: p.basicWeekly ?? p.standardWeekly ?? undefined,
+        standardMonthlyCents: p.basicMonthly ?? p.standardMonthly ?? undefined,
+        foundersWeeklyCents: p.basicFoundersWeekly ?? p.foundersWeekly ?? undefined,
+        foundersMonthlyCents: p.basicFoundersMonthly ?? p.foundersMonthly ?? undefined
       });
+
+      // Pro prices — ONLY apply explicit pro* keys so legacy schedulingWeekly*
+      // values (which reflect the old add-on price model) can never override
+      // the locked $50/month default.
+      if (p.proWeekly != null || p.proMonthly != null) {
+        setProPriceCatalog({
+          standardWeeklyCents: p.proWeekly ?? undefined,
+          standardMonthlyCents: p.proMonthly ?? undefined,
+          foundersWeeklyCents: p.proFoundersWeekly ?? undefined,
+          foundersMonthlyCents: p.proFoundersMonthly ?? undefined
+        });
+      }
+
+      // Team prices — only apply when team* keys are present
+      if (p.teamWeekly != null || p.teamMonthly != null) {
+        setTeamPriceCatalog({
+          standardWeeklyCents: p.teamWeekly ?? undefined,
+          standardMonthlyCents: p.teamMonthly ?? undefined,
+          foundersWeeklyCents: p.teamFoundersWeekly ?? undefined,
+          foundersMonthlyCents: p.teamFoundersMonthly ?? undefined
+        });
+      }
     });
   }
 
@@ -213,7 +275,16 @@ export class StripeService {
                 status: response.subscription.lastPaymentStatus as 'succeeded' | 'failed' | 'pending',
                 amount: response.subscription.lastPaymentAmount || 0,
                 date: response.subscription.lastPaymentDate || null
-              } : null
+              } : null,
+              // Premium/"Scheduling" tier (spec 028, revised 2026-08-06): ONE
+              // Stripe subscription per account. hasSchedulingTier reflects
+              // whether THAT subscription's price is the premium price;
+              // schedulingSubscription mirrors `subscription` when it is.
+              // Team tier (spec 033): hasTeamTier is true for Team prices;
+              // hasSchedulingTier is also true because Team includes Pro tools.
+              hasSchedulingTier: Boolean(response.hasSchedulingTier),
+              hasTeamTier: Boolean(response.hasTeamTier),
+              schedulingSubscription: this.mapSchedulingSubscription(response.schedulingSubscription)
             };
             
             console.log('STRIPE: Processed consolidated status:', status);
@@ -280,7 +351,40 @@ export class StripeService {
         remainingPdfs: 0
       },
       plan: null,
-      lastPayment: null
+      lastPayment: null,
+      hasSchedulingTier: false,
+      schedulingSubscription: null,
+      hasTeamTier: false
+    };
+  }
+
+  /**
+   * Maps the backend's schedulingSubscription shape (a mirror of the single
+   * `subscription` when it's on the premium price, or absent otherwise) into
+   * the shared SubscriptionDetails shape used elsewhere in the app. Fields
+   * the response doesn't carry (nickname, amount, created) default to safe
+   * placeholders — the UI is boolean-gated on hasSchedulingTier, not these
+   * display fields.
+   */
+  private mapSchedulingSubscription(
+    scheduling: BackendSubscriptionResponse['schedulingSubscription']
+  ): SubscriptionDetails | null {
+    if (!scheduling) return null;
+    return {
+      id: scheduling.subscriptionId || '',
+      status: scheduling.status,
+      created: null,
+      currentPeriodEnd: scheduling.currentPeriodEnd,
+      currentPeriodStart: scheduling.currentPeriodStart,
+      cancelAtPeriodEnd: Boolean(scheduling.cancelAtPeriodEnd),
+      willAutoRenew: scheduling.status === 'active' && !scheduling.cancelAtPeriodEnd,
+      originalStartDate: scheduling.currentPeriodStart,
+      plan: scheduling.plan ? {
+        id: scheduling.plan.id || '',
+        nickname: '',
+        amount: 0,
+        interval: scheduling.plan.interval || ''
+      } : null
     };
   }
 
@@ -475,6 +579,321 @@ export class StripeService {
           error: 'Failed to create portal session'
         });
       })
+    );
+  }
+
+  /**
+   * Start the "Premium with Scheduling" upgrade (spec 028, rewritten
+   * 2026-08-06 for the one-subscription product rule). This never creates a
+   * second Stripe Subscription:
+   *  - If the account already has an active/trialing/past_due subscription,
+   *    the backend upgrades it IN PLACE with proration and responds
+   *    `{ upgraded: true, url: null }` — there is nothing to redirect to.
+   *    Callers must refresh subscription status and stay on the current page.
+   *  - Otherwise the backend falls back to a Checkout Session for the
+   *    premium price and responds `{ upgraded: false, url: <checkout url> }`
+   *    — callers redirect exactly like the existing base-plan checkout flow.
+   * Only ever call this when hasSchedulingTier is false; the server
+   * re-checks and returns 409 ALREADY_HAS_SCHEDULING_TIER otherwise.
+   * Managing/canceling the subscription reuses the existing
+   * createPortalSession() unchanged (research D3) — no separate "manage"
+   * method is needed here.
+   */
+  createSchedulingCheckoutSession(
+    userId: string,
+    userEmail: string,
+    interval: BillingInterval = 'week'
+  ): Observable<{
+    success: boolean;
+    upgraded?: boolean;
+    url?: string | null;
+    priceOffered?: string;
+    subscriptionId?: string;
+    hasSchedulingTier?: boolean;
+    error?: string;
+    message?: string;
+  }> {
+    console.log('STRIPE: Starting scheduling/premium upgrade', { userId, userEmail, interval });
+
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => {
+        // Always send the current origin so local (localhost:4200) returns to
+        // the local app after Stripe Checkout, not the hosted CLIENT_URL.
+        // Only used by the Checkout-session fallback path (no active sub).
+        const returnUrl = `${window.location.origin}/profile`;
+
+        return this.http.post<{
+          success: boolean;
+          upgraded?: boolean;
+          url?: string | null;
+          priceOffered?: string;
+          subscriptionId?: string;
+          hasSchedulingTier?: boolean;
+          error?: string;
+          message?: string;
+        }>(
+          `${this.apiUrl}/stripe/scheduling/checkout`,
+          { userId, userEmail, interval, returnUrl },
+          { headers, withCredentials: true }
+        ).pipe(
+          map(response => {
+            if (!response?.success) {
+              return {
+                success: false,
+                error: response?.error || 'Failed to start scheduling upgrade',
+                message: response?.message
+              };
+            }
+
+            // Upgraded in place — no Checkout redirect. The caller (e.g.
+            // ProfileComponent) is responsible for refreshing subscription
+            // status and surfacing a success message; nothing to navigate to.
+            if (response.upgraded) {
+              this.clearCache();
+              return {
+                success: true,
+                upgraded: true,
+                url: null,
+                priceOffered: response.priceOffered,
+                subscriptionId: response.subscriptionId,
+                hasSchedulingTier: Boolean(response.hasSchedulingTier)
+              };
+            }
+
+            if (!response.url) {
+              return { success: false, error: 'No checkout URL received from server' };
+            }
+
+            try {
+              const url = new URL(response.url);
+              if (!['http:', 'https:'].includes(url.protocol)) {
+                throw new Error('Invalid URL protocol');
+              }
+              this.clearCache();
+              window.location.href = url.toString();
+              return { success: true, upgraded: false, url: url.toString(), priceOffered: response.priceOffered };
+            } catch (e) {
+              console.error('STRIPE: Invalid scheduling checkout URL received:', response.url);
+              return { success: false, error: 'Invalid URL format received from server' };
+            }
+          }),
+          catchError((error: HttpErrorResponse) => {
+            console.error('STRIPE: Error starting scheduling upgrade', error);
+            // Typed error codes (ALREADY_HAS_SCHEDULING_TIER, SCHEDULING_PRICE_MISSING,
+            // MISSING_FIELDS) travel through in error.error.error for the UI to render.
+            const code = error.error?.error;
+            const message = error.error?.message || (error.status === 401
+              ? 'Authentication failed. Please log in again.'
+              : 'An error occurred while starting your upgrade');
+            return of({ success: false, error: code || 'SCHEDULING_CHECKOUT_FAILED', message });
+          })
+        );
+      }),
+      catchError(() => of({ success: false, error: 'SCHEDULING_CHECKOUT_FAILED' }))
+    );
+  }
+
+  /**
+   * Start a Team plan checkout session (or in-place upgrade if one exists).
+   * Mirrors createSchedulingCheckoutSession but hits POST /stripe/team/checkout.
+   *
+   * 503 means Team prices are not yet configured in the backend env — the
+   * caller should surface a "coming online soon" message rather than a hard
+   * error so the Team card remains a visible marketing surface.
+   */
+  createTeamCheckoutSession(
+    userId: string,
+    userEmail: string,
+    interval: BillingInterval = 'week'
+  ): Observable<{
+    success: boolean;
+    upgraded?: boolean;
+    url?: string | null;
+    priceOffered?: string;
+    subscriptionId?: string;
+    error?: string;
+    message?: string;
+  }> {
+    console.log('STRIPE: Starting Team checkout', { userId, userEmail, interval });
+
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => {
+        const returnUrl = `${window.location.origin}/profile`;
+
+        return this.http.post<{
+          success: boolean;
+          upgraded?: boolean;
+          url?: string | null;
+          priceOffered?: string;
+          subscriptionId?: string;
+          error?: string;
+          message?: string;
+        }>(
+          `${this.apiUrl}/stripe/team/checkout`,
+          { userId, userEmail, interval, returnUrl },
+          { headers, withCredentials: true }
+        ).pipe(
+          map(response => {
+            if (!response?.success) {
+              return {
+                success: false,
+                error: response?.error || 'Failed to start Team checkout',
+                message: response?.message
+              };
+            }
+
+            if (response.upgraded) {
+              this.clearCache();
+              return {
+                success: true,
+                upgraded: true,
+                url: null,
+                priceOffered: response.priceOffered,
+                subscriptionId: response.subscriptionId
+              };
+            }
+
+            if (!response.url) {
+              return { success: false, error: 'No checkout URL received from server' };
+            }
+
+            try {
+              const url = new URL(response.url);
+              if (!['http:', 'https:'].includes(url.protocol)) {
+                throw new Error('Invalid URL protocol');
+              }
+              this.clearCache();
+              window.location.href = url.toString();
+              return { success: true, upgraded: false, url: url.toString(), priceOffered: response.priceOffered };
+            } catch (e) {
+              console.error('STRIPE: Invalid Team checkout URL received:', response.url);
+              return { success: false, error: 'Invalid URL format received from server' };
+            }
+          }),
+          catchError((error: HttpErrorResponse) => {
+            console.error('STRIPE: Error starting Team checkout', error);
+            // 503 means Team prices not yet configured — surface friendly copy
+            if (error.status === 503) {
+              return of({
+                success: false,
+                error: 'TEAM_PRICES_NOT_CONFIGURED',
+                message: 'Team plan coming online soon — contact us'
+              });
+            }
+            const code = error.error?.error;
+            const message = error.error?.message || (error.status === 401
+              ? 'Authentication failed. Please log in again.'
+              : 'An error occurred while starting your Team checkout');
+            return of({ success: false, error: code || 'TEAM_CHECKOUT_FAILED', message });
+          })
+        );
+      }),
+      catchError(() => of({ success: false, error: 'TEAM_CHECKOUT_FAILED' }))
+    );
+  }
+
+  /**
+   * Downgrade the current subscription to the Basic tier in-place (or start a
+   * new Basic checkout if no active sub exists). Mirrors createTeamCheckoutSession
+   * but hits POST /stripe/basic/checkout.
+   *
+   * - upgraded=true  → in-place price change; clearCache() and refresh status.
+   * - upgraded=false → checkout redirect; navigate to response.url.
+   * - 409 ALREADY_HAS_BASIC_TIER → surface "already on Basic" to the user.
+   */
+  createBasicCheckoutSession(
+    userId: string,
+    userEmail: string,
+    interval: BillingInterval = 'week'
+  ): Observable<{
+    success: boolean;
+    upgraded?: boolean;
+    url?: string | null;
+    priceOffered?: string;
+    subscriptionId?: string;
+    hasSchedulingTier?: boolean;
+    hasTeamTier?: boolean;
+    error?: string;
+    message?: string;
+  }> {
+    console.log('STRIPE: Starting Basic downgrade/checkout', { userId, userEmail, interval });
+
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => {
+        const returnUrl = `${window.location.origin}/profile`;
+
+        return this.http.post<{
+          success: boolean;
+          upgraded?: boolean;
+          url?: string | null;
+          priceOffered?: string;
+          subscriptionId?: string;
+          hasSchedulingTier?: boolean;
+          hasTeamTier?: boolean;
+          error?: string;
+          message?: string;
+        }>(
+          `${this.apiUrl}/stripe/basic/checkout`,
+          { userId, userEmail, interval, returnUrl },
+          { headers, withCredentials: true }
+        ).pipe(
+          map(response => {
+            if (!response?.success) {
+              return {
+                success: false,
+                error: response?.error || 'Failed to start Basic checkout',
+                message: response?.message
+              };
+            }
+
+            if (response.upgraded) {
+              this.clearCache();
+              return {
+                success: true,
+                upgraded: true,
+                url: null,
+                priceOffered: response.priceOffered,
+                subscriptionId: response.subscriptionId,
+                hasSchedulingTier: false,
+                hasTeamTier: false
+              };
+            }
+
+            if (!response.url) {
+              return { success: false, error: 'No checkout URL received from server' };
+            }
+
+            try {
+              const url = new URL(response.url);
+              if (!['http:', 'https:'].includes(url.protocol)) {
+                throw new Error('Invalid URL protocol');
+              }
+              this.clearCache();
+              window.location.href = url.toString();
+              return { success: true, upgraded: false, url: url.toString(), priceOffered: response.priceOffered };
+            } catch (e) {
+              console.error('STRIPE: Invalid Basic checkout URL received:', response.url);
+              return { success: false, error: 'Invalid URL format received from server' };
+            }
+          }),
+          catchError((error: HttpErrorResponse) => {
+            console.error('STRIPE: Error starting Basic checkout', error);
+            if (error.status === 409) {
+              return of({
+                success: false,
+                error: 'ALREADY_HAS_BASIC_TIER',
+                message: error.error?.message || 'Already subscribed to Basic plan'
+              });
+            }
+            const code = error.error?.error;
+            const message = error.error?.message || (error.status === 401
+              ? 'Authentication failed. Please log in again.'
+              : 'An error occurred while starting your downgrade');
+            return of({ success: false, error: code || 'BASIC_CHECKOUT_FAILED', message });
+          })
+        );
+      }),
+      catchError(() => of({ success: false, error: 'BASIC_CHECKOUT_FAILED' }))
     );
   }
 

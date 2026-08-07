@@ -1,0 +1,97 @@
+.post-login-choice {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 70vh;
+  padding: 24px;
+}
+
+.post-login-choice__card {
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+}
+
+.post-login-choice__title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.post-login-choice__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 0;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e2e2;
+  border-top-color: #4a4aff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.post-login-choice__note {
+  color: #8a6d00;
+  background: #fff7e0;
+  border: 1px solid #f0dca0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.post-login-choice__options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.post-login-choice__option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 20px 24px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.post-login-choice__option:hover {
+  border-color: #4a4aff;
+  box-shadow: 0 2px 10px rgba(74, 74, 255, 0.12);
+}
+
+.post-login-choice__option--primary {
+  border-color: #4a4aff;
+  background: #4a4aff;
+  color: #fff;
+}
+
+.post-login-choice__options--empty .post-login-choice__option--primary {
+  order: -1;
+}
+
+.post-login-choice__option-title {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.post-login-choice__option-subtitle {
+  font-size: 13px;
+  opacity: 0.85;
+}

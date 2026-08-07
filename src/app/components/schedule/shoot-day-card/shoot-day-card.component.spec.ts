@@ -1,9 +1,24 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ShootDayCardComponent } from './shoot-day-card.component';
 import { SceneStripComponent } from '../scene-strip/scene-strip.component';
-import { ShootDay, ScheduleScene } from '../../../types/Schedule';
+import { OneLinerEditorComponent } from '../one-liner-editor/one-liner-editor.component';
+import { ShootDay, ScheduleScene, CastMember } from '../../../types/Schedule';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { DragDropModule } from '@angular/cdk/drag-drop';
+
+function createMockCastMember(overrides: Partial<CastMember> = {}): CastMember {
+  return {
+    id: 'cast-001',
+    characterName: 'ALICE',
+    category: 'principal',
+    sceneNumbers: [],
+    totalScenes: 0,
+    totalPageCount: 0,
+    dayOutOfDays: [],
+    ...overrides,
+  };
+}
 
 function createMockScene(overrides: Partial<ScheduleScene> = {}): ScheduleScene {
   return {
@@ -17,6 +32,7 @@ function createMockScene(overrides: Partial<ScheduleScene> = {}): ScheduleScene 
     scriptPageStart: 1,
     scriptPageEnd: 3,
     characters: [],
+    descriptions: [],
     oneLiner: '',
     oneLinerSource: 'manual',
     oneLinerEdited: false,
@@ -53,8 +69,8 @@ describe('ShootDayCardComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ShootDayCardComponent, SceneStripComponent],
-      imports: [CommonModule, DragDropModule],
+      declarations: [ShootDayCardComponent, SceneStripComponent, OneLinerEditorComponent],
+      imports: [CommonModule, FormsModule, DragDropModule],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ShootDayCardComponent);
@@ -166,6 +182,66 @@ describe('ShootDayCardComponent', () => {
     });
   });
 
+  describe('sort controls', () => {
+    it('canSort is false when the day has no scenes', () => {
+      component.day = createMockDay({ scenes: [] });
+      expect(component.canSort).toBe(false);
+    });
+
+    it('canSort is true when the day has scenes', () => {
+      component.day = createMockDay({ scenes: [createMockScene()] });
+      expect(component.canSort).toBe(true);
+    });
+
+    it('emits sortRequested with the day id and mode', () => {
+      component.day = createMockDay({ id: 'day-42', scenes: [createMockScene()] });
+      const spy = jest.spyOn(component.sortRequested, 'emit');
+
+      component.onSort('location');
+
+      expect(spy).toHaveBeenCalledWith({ dayId: 'day-42', mode: 'location' });
+    });
+
+    it('tracks the last-clicked mode as active', () => {
+      component.day = createMockDay({ scenes: [createMockScene()] });
+      expect(component.activeSortMode).toBeNull();
+
+      component.onSort('intExt');
+
+      expect(component.activeSortMode).toBe('intExt');
+    });
+
+    it('does not emit when the day has no scenes', () => {
+      component.day = createMockDay({ scenes: [] });
+      const spy = jest.spyOn(component.sortRequested, 'emit');
+
+      component.onSort('script');
+
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('renders a disabled sort button for each mode when empty', () => {
+      component.day = createMockDay({ scenes: [] });
+      component.editable = true;
+      fixture.detectChanges();
+      const buttons: NodeListOf<HTMLButtonElement> = fixture.nativeElement.querySelectorAll('[data-testid="day-sort-btn"]');
+      expect(buttons.length).toBe(4);
+      buttons.forEach((btn) => expect(btn.disabled).toBe(true));
+    });
+
+    it('renders enabled sort buttons with aria-labels when scenes exist', () => {
+      component.day = createMockDay({ scenes: [createMockScene()] });
+      component.editable = true;
+      fixture.detectChanges();
+      const buttons: NodeListOf<HTMLButtonElement> = fixture.nativeElement.querySelectorAll('[data-testid="day-sort-btn"]');
+      expect(buttons.length).toBe(4);
+      buttons.forEach((btn) => {
+        expect(btn.disabled).toBe(false);
+        expect(btn.getAttribute('aria-label')).toContain('Sort');
+      });
+    });
+  });
+
   describe('trackBySceneId', () => {
     it('should return the scene id', () => {
       const scene = createMockScene({ id: 'test-uuid' });
@@ -209,6 +285,97 @@ describe('ShootDayCardComponent', () => {
       fixture.detectChanges();
       const el: HTMLElement = fixture.nativeElement;
       expect(el.textContent).toContain('2h 0m');
+    });
+  });
+
+  describe('day title (spec 031)', () => {
+    it('shows the derived day.label in the header when set', () => {
+      component.day = createMockDay({ label: 'KITCHEN → PARK' });
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      expect(el.textContent).toContain('KITCHEN → PARK');
+    });
+  });
+
+  describe('cast toggle forwarding (spec 031)', () => {
+    it('defaults showCast to true', () => {
+      expect(component.showCast).toBe(true);
+    });
+
+    it('forwards showCast=true to app-scene-strip and renders character names', () => {
+      component.day = createMockDay({
+        scenes: [
+          createMockScene({
+            characters: [{ characterName: 'ALICE', hasDialogue: true, isVoiceOver: false, isOffScreen: false }],
+          }),
+        ],
+      });
+      component.showCast = true;
+      fixture.detectChanges();
+
+      const el: HTMLElement = fixture.nativeElement;
+      expect(el.textContent).toContain('ALICE');
+    });
+
+    it('forwards showCast=false to app-scene-strip and hides character names', () => {
+      component.day = createMockDay({
+        scenes: [
+          createMockScene({
+            characters: [{ characterName: 'ALICE', hasDialogue: true, isVoiceOver: false, isOffScreen: false }],
+          }),
+        ],
+      });
+      component.showCast = false;
+      fixture.detectChanges();
+
+      const el: HTMLElement = fixture.nativeElement;
+      expect(el.textContent).not.toContain('ALICE');
+    });
+
+    it('forwards castMembers so linked actor names resolve inside scene strips', () => {
+      component.day = createMockDay({
+        scenes: [
+          createMockScene({
+            characters: [
+              { characterName: 'ALICE', castMemberId: 'cast-alice', hasDialogue: true, isVoiceOver: false, isOffScreen: false },
+            ],
+          }),
+        ],
+      });
+      component.castMembers = [createMockCastMember({ id: 'cast-alice', actorName: 'Jane Doe' })];
+      component.showCast = true;
+      fixture.detectChanges();
+
+      const el: HTMLElement = fixture.nativeElement;
+      expect(el.textContent).toContain('ALICE (Jane Doe)');
+    });
+
+    it('bubbles castVisibilityChange from a per-row scene-strip toggle (spec 032 US1)', () => {
+      component.day = createMockDay({ scenes: [createMockScene()] });
+      fixture.detectChanges();
+      const spy = jest.spyOn(component.castVisibilityChange, 'emit');
+
+      const strip = fixture.debugElement.query(
+        (el) => el.name === 'app-scene-strip'
+      );
+      strip.componentInstance.castVisibilityChange.emit(false);
+
+      expect(spy).toHaveBeenCalledWith(false);
+    });
+  });
+
+  describe('editable scene header forwarding (spec 032 US2)', () => {
+    it('bubbles headerChanged from a scene-strip up as its own output', () => {
+      component.day = createMockDay({ scenes: [createMockScene({ id: 'scene-abc' })] });
+      fixture.detectChanges();
+      const spy = jest.spyOn(component.headerChanged, 'emit');
+
+      const strip = fixture.debugElement.query(
+        (el) => el.name === 'app-scene-strip'
+      );
+      strip.componentInstance.headerChanged.emit({ sceneId: 'scene-abc', sceneHeader: 'EXT. PARK - DAY' });
+
+      expect(spy).toHaveBeenCalledWith({ sceneId: 'scene-abc', sceneHeader: 'EXT. PARK - DAY' });
     });
   });
 });

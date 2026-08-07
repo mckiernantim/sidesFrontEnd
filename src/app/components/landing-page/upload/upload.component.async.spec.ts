@@ -9,7 +9,14 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { UploadComponent } from './upload.component';
 import { UploadService } from '../../../services/upload/upload.service';
 import { TailwindDialogService } from '../../../services/tailwind-dialog/tailwind-dialog.service';
-import { Router } from '@angular/router';
+import { PdfService } from '../../../services/pdf/pdf.service';
+import { Auth } from '@angular/fire/auth';
+import { AuthService } from '../../../services/auth/auth.service';
+import { AuthModalService } from '../../../services/auth-modal/auth-modal.service';
+import { StripeService } from '../../../services/stripe/stripe.service';
+import { ProjectApiService } from '../../../services/project/project-api.service';
+import { ProjectService } from '../../../services/project/project.service';
+import { Router, ActivatedRoute } from '@angular/router';
 import { BehaviorSubject, of, delay } from 'rxjs';
 
 describe('UploadComponent - Async Upload Flow', () => {
@@ -29,7 +36,9 @@ describe('UploadComponent - Async Upload Flow', () => {
       scanProgress$: scanProgressSubject.asObservable(),
       postFileStream: jest.fn(),
       postFile: jest.fn(),
-      postFileAsync: jest.fn()
+      postFileAsync: jest.fn(),
+      getTestJSON: jest.fn(),
+      resetServiceState: jest.fn(),
     };
 
     // Mock dialog service
@@ -42,7 +51,8 @@ describe('UploadComponent - Async Upload Flow', () => {
 
     // Mock router
     mockRouter = {
-      navigate: jest.fn()
+      navigate: jest.fn(),
+      events: of()
     };
 
     TestBed.configureTestingModule({
@@ -50,7 +60,18 @@ describe('UploadComponent - Async Upload Flow', () => {
       providers: [
         { provide: UploadService, useValue: mockUploadService },
         { provide: TailwindDialogService, useValue: mockDialogService },
-        { provide: Router, useValue: mockRouter }
+        { provide: Router, useValue: mockRouter },
+        { provide: PdfService, useValue: { initializeData: jest.fn(), resetDocumentState: jest.fn() } },
+        { provide: Auth, useValue: { currentUser: null } },
+        {
+          provide: AuthService,
+          useValue: { user$: new BehaviorSubject(null), isAdmin$: of(false), canUpload: () => true },
+        },
+        { provide: AuthModalService, useValue: { open: jest.fn() } },
+        { provide: StripeService, useValue: { getSubscriptionStatus: jest.fn().mockReturnValue(of({ hasSchedulingTier: false })) } },
+        { provide: ProjectApiService, useValue: { listProjects: jest.fn().mockReturnValue(of({ projects: [] })) } },
+        { provide: ProjectService, useValue: { openProject: jest.fn() } },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => null } } } },
       ]
     });
 

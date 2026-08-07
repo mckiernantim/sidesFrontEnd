@@ -11,6 +11,8 @@ import {
 } from '../../types/Schedule';
 import { Line } from '../../types/Line';
 import { SceneRef } from '../../utils/buildCharacterSceneMap';
+import { ProjectService } from '../project/project.service';
+import { PdfService } from '../pdf/pdf.service';
 
 // ─────────────────────────────────────────────
 // Mock Factories
@@ -68,10 +70,12 @@ function createMockSceneHeader(
 describe('ScheduleService', () => {
   let service: ScheduleService;
   let stateService: ScheduleStateService;
+  let mockProjectService: { activeProjectId: string | null };
 
   beforeEach(() => {
     stateService = new ScheduleStateService();
-    service = new ScheduleService(stateService);
+    mockProjectService = { activeProjectId: null };
+    service = new ScheduleService(stateService, mockProjectService as unknown as ProjectService);
   });
 
   // ─────────────────────────────────────────────
@@ -761,6 +765,79 @@ describe('ScheduleService', () => {
       );
 
       expect(stateService.isDirty).toBe(false);
+    });
+  });
+
+  // ─────────────────────────────────────────────
+  // Seed From PDF Service — project id resolution (spec 027 T037/T040)
+  // ─────────────────────────────────────────────
+
+  describe('seedScheduleFromPdfService — project id resolution', () => {
+    function createMockPdfService(overrides: Partial<PdfService> = {}): PdfService {
+      return {
+        allLines: [
+          createMockLine({ category: 'scene-header', text: 'INT. OFFICE - DAY', index: 0, sceneIndex: 0 }),
+          createMockCharacterLine('BOSS', 1, 0),
+        ],
+        scenes: [createMockSceneHeader('1', 'INT. OFFICE - DAY', 0, 10)],
+        ...overrides,
+      } as unknown as PdfService;
+    }
+
+    it('stamps the explicitly provided projectId when one is passed', () => {
+      const pdfService = createMockPdfService();
+      mockProjectService.activeProjectId = 'proj-active-99';
+
+      const schedule = service.seedScheduleFromPdfService(
+        'proj-explicit-1', 'OFFICE FILM', 'user-abc', pdfService
+      );
+
+      expect(schedule.projectId).toBe('proj-explicit-1');
+    });
+
+    it('stamps ProjectService.activeProjectId (real saved project id) when no explicit projectId is passed', () => {
+      const pdfService = createMockPdfService();
+      mockProjectService.activeProjectId = 'proj-real-saved-42';
+
+      const schedule = service.seedScheduleFromPdfService(
+        null, 'OFFICE FILM', 'user-abc', pdfService
+      );
+
+      expect(schedule.projectId).toBe('proj-real-saved-42');
+    });
+
+    it('falls back to a proj-{timestamp} placeholder when there is no explicit id or active project', () => {
+      const pdfService = createMockPdfService();
+      mockProjectService.activeProjectId = null;
+
+      const schedule = service.seedScheduleFromPdfService(
+        null, 'OFFICE FILM', 'user-abc', pdfService
+      );
+
+      expect(schedule.projectId).toMatch(/^proj-\d+$/);
+    });
+
+    it('activates the seeded schedule in ScheduleStateService with the resolved projectId', () => {
+      const pdfService = createMockPdfService();
+      mockProjectService.activeProjectId = 'proj-real-7';
+
+      service.seedScheduleFromPdfService(null, 'OFFICE FILM', 'user-abc', pdfService);
+
+      expect(stateService.schedule?.projectId).toBe('proj-real-7');
+    });
+
+    it('throws when the PDF service has no allLines', () => {
+      const pdfService = createMockPdfService({ allLines: [] } as any);
+      expect(() =>
+        service.seedScheduleFromPdfService(null, 'OFFICE FILM', 'user-abc', pdfService)
+      ).toThrow('PDF Service has no allLines. Cannot create schedule.');
+    });
+
+    it('throws when the PDF service has no scenes', () => {
+      const pdfService = createMockPdfService({ scenes: [] } as any);
+      expect(() =>
+        service.seedScheduleFromPdfService(null, 'OFFICE FILM', 'user-abc', pdfService)
+      ).toThrow('PDF Service has no scenes. Cannot create schedule.');
     });
   });
 

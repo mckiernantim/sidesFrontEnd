@@ -1,0 +1,94 @@
+<div class="save-project-dialog sw-surface border border-sw-border rounded-lg shadow-lg p-6 max-w-md mx-auto">
+  <h2 class="text-xl font-semibold mb-2 text-sw-text">Save Script as Project</h2>
+  <p class="text-sm text-sw-text-muted mb-6">
+    Save your processed script so you can resume it in a future session — no re-upload needed.
+  </p>
+
+  <!-- Project Name -->
+  <div class="mb-4">
+    <label for="project-name" class="block text-sm font-medium text-sw-text mb-1">
+      Project name
+    </label>
+    <input
+      id="project-name"
+      type="text"
+      class="sw-input w-full"
+      placeholder="Enter a name for this project"
+      [(ngModel)]="projectName"
+      maxlength="120"
+      [disabled]="isSaving"
+      aria-required="true"
+    />
+  </div>
+
+  <!-- Storage Acknowledgment Checkbox -->
+  <div class="mb-6 p-4 bg-sw-surface-2 rounded-lg border border-sw-border">
+    <label class="flex items-start gap-3 cursor-pointer">
+      <input
+        type="checkbox"
+        class="mt-1 h-4 w-4 accent-sw-accent shrink-0"
+        [(ngModel)]="acknowledged"
+        [disabled]="isSaving"
+        aria-label="I understand my script will be stored on SidesWays servers"
+      />
+      <span class="text-sm text-sw-text leading-relaxed">
+        <strong class="text-sw-text">I understand</strong> that by saving this project, a copy of my
+        processed screenplay text will be securely stored on SidesWays servers. I can permanently
+        delete it at any time from my profile.
+      </span>
+    </label>
+  </div>
+
+  <!-- Limit Reached Banner -->
+  <div
+    *ngIf="isLimitReached"
+    class="mb-4 p-4 bg-sw-surface-2 border-l-4 border-sw-warning rounded-lg"
+    role="alert"
+    aria-live="assertive"
+  >
+    <p class="font-semibold text-sw-warning mb-1">Project limit reached (5/5)</p>
+    <p class="text-sm text-sw-text-muted">
+      You've used all 5 project slots. To save a new project, go to your
+      <a routerLink="/profile" class="text-sw-accent underline" (click)="onCancel()">profile</a>
+      and delete an existing project to make room.
+    </p>
+  </div>
+
+  <!-- Generic Error -->
+  <div
+    *ngIf="errorMessage"
+    class="mb-4 p-3 bg-sw-surface-2 border-l-4 border-sw-danger rounded-lg"
+    role="alert"
+    aria-live="assertive"
+  >
+    <p class="text-sm text-sw-danger">{{ errorMessage }}</p>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex justify-end gap-3">
+    <button
+      type="button"
+      class="btn-sw btn-sw-secondary"
+      (click)="onCancel()"
+      [disabled]="isSaving"
+    >
+      Cancel
+    </button>
+    <button
+      type="button"
+      class="btn-sw btn-sw-primary"
+      (click)="onSave()"
+      [disabled]="!canSave"
+      aria-label="Save project"
+    >
+      <span *ngIf="!isSaving">Save Project</span>
+      <span *ngIf="isSaving" class="flex items-center gap-2">
+        <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Saving…
+      </span>
+    </button>
+  </div>
+</div>

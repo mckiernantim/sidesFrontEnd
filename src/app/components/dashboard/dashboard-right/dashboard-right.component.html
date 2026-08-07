@@ -132,6 +132,15 @@
                     class="btn-sw btn-sw-secondary ss-rail-action-btn">
                     Back To Upload
                   </button>
+                  <!-- Save as Project — only when a processed script is present -->
+                  <button
+                    *ngIf="allLines && allLines.length > 0"
+                    type="button"
+                    (click)="openSaveProjectDialog()"
+                    class="btn-sw btn-sw-secondary ss-rail-action-btn"
+                    title="Save this script as a project to resume it later">
+                    Save as Project
+                  </button>
                 </div>
 
                 <div class="ss-rail-attachments">
@@ -248,5 +257,31 @@
       </div>
     </ng-container>
 
+  </div>
+
+  <!-- ══ Save as Project overlay ══ -->
+  <div
+    *ngIf="showSaveProjectDialog"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Save script as project">
+    <app-save-project-dialog
+      [data]="saveProjectDialogData"
+      (save)="onProjectSaved($event)"
+      (cancel)="onSaveProjectDialogCancel()">
+    </app-save-project-dialog>
+  </div>
+
+  <!-- Save success toast -->
+  <div
+    *ngIf="saveProjectSuccess"
+    class="fixed bottom-6 right-6 z-50 bg-sw-success text-sw-bg px-5 py-3 rounded-lg shadow-lg flex items-center gap-2"
+    role="status"
+    aria-live="polite">
+    <svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+    </svg>
+    Project saved! Find it in your profile.
   </div>
 </div>

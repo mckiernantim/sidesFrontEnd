@@ -196,8 +196,10 @@
           
           <div class="flex justify-between mt-2">
             <button
-              (click)="handleNewSubscription()"
+              type="button"
+              (click)="navigateToPricingSubscribe()"
               class="bg-sw-success hover:opacity-90 text-sw-bg font-semibold py-2 px-4 rounded-md transition-all shadow-md"
+              data-testid="profile-renew-cta"
             >
               Renew Subscription
             </button>
@@ -228,24 +230,28 @@
 
           <div class="flex justify-end">
             <button
-              (click)="handleNewSubscription()"
+              type="button"
+              (click)="navigateToPricingSubscribe()"
               class="bg-sw-warning hover:opacity-90 text-sw-bg font-semibold py-2 px-4 rounded-md transition-all shadow-md"
+              data-testid="profile-resubscribe-cta"
             >
-              Restart Subscription
+              Resubscribe
             </button>
           </div>
         </div>
       </div>
       
-      <!-- No subscription yet or pending subscription -->
+      <!-- No subscription yet or pending subscription — navigate to /pricing -->
       <div *ngIf="!isSubscriptionActive() && subscription?.subscription?.status !== 'canceled'" class="p-6 bg-sw-surface-2 rounded-lg border-2 border-sw-accent shadow-md">
-        <h3 class="text-xl font-semibold mb-4 text-sw-accent">Upgrade to Premium</h3>
+        <h3 class="text-xl font-semibold mb-3 text-sw-accent">Choose a Plan</h3>
+        <p class="text-sm text-sw-text-muted mb-5">
+          Subscribe to Basic for sides generation, or Pro for projects, scheduling, and callsheets.
+        </p>
 
-        <!-- Show pending message if status is pending -->
+        <!-- Pending subscription notice -->
         <div *ngIf="subscription?.subscription?.status === 'pending'" class="mb-4 p-3 bg-sw-surface-2 border-2 border-sw-warning rounded text-sw-warning">
           <p>Your subscription is currently being processed. This may take a few moments.</p>
           <p class="mt-2 text-sm">If this status persists for more than a few minutes, please refresh the page or contact support.</p>
-          
           <div class="mt-4 flex justify-between">
             <button
               (click)="refreshSubscriptionStatus()"
@@ -253,7 +259,6 @@
             >
               Refresh Status
             </button>
-
             <button
               (click)="manageSubscription()"
               class="bg-sw-warning hover:opacity-90 text-sw-bg font-semibold py-2 px-4 rounded-md transition-all shadow-md"
@@ -263,49 +268,46 @@
           </div>
         </div>
 
-        <!-- Benefits list -->
-        <div class="mb-6">
-          <h4 class="font-medium text-sw-accent mb-2">Premium Benefits:</h4>
-          <ul class="list-disc pl-5 space-y-1 text-sw-text-muted">
-            <li *ngFor="let benefit of benefits">{{ benefit }}</li>
-          </ul>
-        </div>
-        
-        <!-- Billing interval -->
-        <div class="mb-6">
-          <h4 class="font-medium text-sw-accent mb-2">Billing:</h4>
-          <div class="inline-flex rounded-md border border-sw-border overflow-hidden" role="group" aria-label="Billing interval">
+        <button
+          *ngIf="subscription?.subscription?.status !== 'pending'"
+          type="button"
+          (click)="navigateToPricingSubscribe()"
+          class="bg-sw-accent hover:opacity-90 text-sw-bg font-bold py-2 px-6 rounded-md transition-all shadow-md"
+          data-testid="profile-subscribe-cta"
+        >
+          View Plans &amp; Subscribe
+        </button>
+      </div>
+
+      <!-- Pro upgrade CTA for Basic subscribers — navigate to /pricing?tier=pro -->
+      <div
+        *ngIf="showProUpgradeCta()"
+        class="mt-6 p-6 bg-sw-surface-2 rounded-lg border-2 border-sw-accent shadow-md"
+        data-testid="pro-upgrade-cta"
+      >
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-semibold text-sw-accent mb-1">Upgrade to Pro</h3>
+            <p class="text-sm text-sw-text-muted">
+              Add persistent projects, shoot-day scheduling, callsheets, and encrypted script storage.
+            </p>
+            <div *ngIf="subscription?.hasSchedulingTier" class="mt-3 flex items-center text-sw-success font-semibold text-sm">
+              <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              Pro is active on your account
+            </div>
+          </div>
+          <div class="flex-shrink-0">
             <button
               type="button"
-              (click)="selectInterval('week')"
-              [attr.aria-pressed]="selectedInterval === 'week'"
-              [ngClass]="selectedInterval === 'week' ? 'bg-sw-accent text-sw-bg' : 'bg-sw-surface-2 text-sw-text-muted hover:text-sw-text'"
-              class="px-5 py-2 text-sm font-semibold transition-all"
+              (click)="navigateToPricingUpgradePro()"
+              class="bg-sw-accent hover:opacity-90 text-sw-bg font-semibold py-2 px-5 rounded-md transition-all shadow-md"
+              data-testid="profile-upgrade-pro-cta"
             >
-              Weekly
-            </button>
-            <button
-              type="button"
-              (click)="selectInterval('month')"
-              [attr.aria-pressed]="selectedInterval === 'month'"
-              [ngClass]="selectedInterval === 'month' ? 'bg-sw-accent text-sw-bg' : 'bg-sw-surface-2 text-sw-text-muted hover:text-sw-text'"
-              class="px-5 py-2 text-sm font-semibold transition-all border-l border-sw-border"
-            >
-              Monthly
+              Upgrade to Pro
             </button>
           </div>
-        </div>
-
-        <div class="flex justify-between items-center">
-          <p class="text-xl font-bold text-sw-accent">{{ getSubscribePriceLabel() }}</p>
-          <button
-            (click)="handleNewSubscription()"
-            [disabled]="subscription?.subscription?.status === 'pending'"
-            [ngClass]="{'opacity-50 cursor-not-allowed': subscription?.subscription?.status === 'pending'}"
-            class="bg-sw-accent hover:opacity-90 text-sw-bg font-bold py-2 px-6 rounded-md transition-all shadow-md"
-          >
-            {{ subscription?.subscription?.status === 'pending' ? 'Processing...' : 'Subscribe Now' }}
-          </button>
         </div>
       </div>
     </div>
@@ -336,19 +338,347 @@
       </div>
     </div>
 
+    <!-- My Projects Section -->
+    <div class="mt-10">
+      <div class="flex items-center justify-between mb-6 pb-2 border-b border-sw-border">
+        <h2 class="text-xl font-semibold text-sw-text">My Projects</h2>
+        <span *ngIf="savedProjects.length > 0" class="text-xs font-semibold bg-sw-surface-2 border border-sw-border text-sw-accent px-2 py-1 rounded">
+          {{ savedProjects.length }} / {{ projectLimit }}
+        </span>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="isLoadingProjects" class="flex items-center justify-center py-8">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-sw-accent mr-3"></div>
+        <span class="text-sm text-sw-text-subtle">Loading projects...</span>
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="!isLoadingProjects && projectError" class="p-4 bg-sw-surface-2 border-l-4 border-sw-danger rounded-lg mb-4">
+        <p class="text-sm text-sw-danger">{{ projectError }}</p>
+        <button (click)="loadSavedProjects()" class="mt-2 text-sm underline text-sw-accent">Retry</button>
+      </div>
+
+      <!-- Content missing: offer re-upload into this project (T033 / US2 scenario 3) -->
+      <div *ngIf="contentMissingProjectId" class="p-4 bg-sw-surface-2 border-l-4 border-sw-warning rounded-lg mb-4">
+        <p class="text-sm text-sw-text">
+          This project's saved script could not be found. Re-upload the original PDF to keep working with it.
+        </p>
+        <div class="mt-3 flex items-center gap-3">
+          <label
+            class="cursor-pointer bg-sw-accent hover:opacity-90 text-sw-bg font-semibold py-2 px-4 rounded-md transition-all shadow-md text-sm"
+            [class.opacity-50]="isReuploading"
+            [class.pointer-events-none]="isReuploading">
+            <span *ngIf="!isReuploading">Re-upload PDF into this project</span>
+            <span *ngIf="isReuploading">Uploading&hellip;</span>
+            <input type="file" accept="application/pdf" class="hidden" [disabled]="isReuploading" (change)="reuploadFile($event)" />
+          </label>
+          <button (click)="dismissContentMissing()" class="text-sm underline text-sw-text-subtle" [disabled]="isReuploading">
+            Dismiss
+          </button>
+        </div>
+      </div>
+
+      <!-- Rename error (T056) -->
+      <div *ngIf="renameProjectError" class="p-3 bg-sw-surface-2 border-l-4 border-sw-danger rounded-lg mb-4">
+        <p class="text-sm text-sw-danger">{{ renameProjectError }}</p>
+      </div>
+
+      <!-- Delete error (T056/T057) -->
+      <div *ngIf="deleteProjectError" class="p-3 bg-sw-surface-2 border-l-4 border-sw-danger rounded-lg mb-4">
+        <p class="text-sm text-sw-danger">{{ deleteProjectError }}</p>
+      </div>
+
+      <!-- Project list -->
+      <ng-container *ngIf="!isLoadingProjects && !projectError">
+        <div *ngIf="savedProjects.length > 0" class="space-y-3">
+          <div
+            *ngFor="let project of savedProjects"
+            class="p-4 bg-sw-surface-2 rounded-lg border border-sw-border hover:border-sw-accent transition-all group shadow-sm">
+
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4 min-w-0">
+                <!-- Script icon -->
+                <div class="flex-shrink-0 w-9 h-9 bg-sw-surface group-hover:bg-sw-border rounded-lg flex items-center justify-center transition-colors">
+                  <svg class="w-5 h-5 text-sw-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div class="min-w-0" *ngIf="renamingProjectId !== project.id">
+                  <p class="font-semibold text-sw-text group-hover:text-sw-accent transition-colors truncate">{{ project.title }}</p>
+                  <p class="text-xs text-sw-text-muted mt-0.5">
+                    {{ project.sceneCount }} scene{{ project.sceneCount !== 1 ? 's' : '' }}
+                    &middot; {{ formatDate(project.createdAt) }}
+                  </p>
+                </div>
+
+                <!-- Inline rename form (T056) -->
+                <div class="min-w-0 flex-1" *ngIf="renamingProjectId === project.id">
+                  <input
+                    type="text"
+                    [(ngModel)]="renameDraftTitle"
+                    maxlength="120"
+                    class="w-full px-2 py-1 rounded border border-sw-border bg-sw-surface text-sw-text text-sm"
+                    (keydown.enter)="confirmRenameProject(project)"
+                    (keydown.escape)="cancelRenameProject()" />
+                </div>
+              </div>
+
+              <div class="flex-shrink-0 flex items-center gap-2">
+                <ng-container *ngIf="renamingProjectId === project.id; else projectRowActions">
+                  <button
+                    (click)="confirmRenameProject(project)"
+                    [disabled]="isRenamingProject"
+                    class="text-sm font-semibold text-sw-accent hover:opacity-80 disabled:opacity-60">
+                    Save
+                  </button>
+                  <button (click)="cancelRenameProject()" class="text-sm text-sw-text-subtle hover:opacity-80">Cancel</button>
+                </ng-container>
+                <ng-template #projectRowActions>
+                  <button
+                    (click)="openProject(project)"
+                    [disabled]="openingProjectId === project.id"
+                    class="flex items-center gap-2 bg-sw-accent hover:opacity-90 text-sw-bg font-semibold py-2 px-4 rounded-md transition-all shadow-sm text-sm disabled:opacity-60">
+                    <span *ngIf="openingProjectId === project.id" class="animate-spin rounded-full h-4 w-4 border-b-2 border-sw-bg"></span>
+                    <span>{{ openingProjectId === project.id ? 'Opening…' : 'Open' }}</span>
+                  </button>
+                  <button
+                    (click)="startRenameProject(project)"
+                    class="text-sm text-sw-text-subtle hover:text-sw-accent px-2"
+                    title="Rename project">
+                    Rename
+                  </button>
+                  <button
+                    (click)="requestDeleteProject(project)"
+                    class="text-sm text-sw-danger hover:opacity-80 px-2"
+                    title="Delete project">
+                    Delete
+                  </button>
+                </ng-template>
+              </div>
+            </div>
+
+            <!-- Linked schedules shown as children (T056) -->
+            <div *ngIf="getLinkedSchedules(project.id).length > 0" class="mt-3 ml-13 pl-4 border-l-2 border-sw-border space-y-1">
+              <div
+                *ngFor="let link of getLinkedSchedules(project.id)"
+                (click)="openSchedule(link.id)"
+                class="text-xs text-sw-text-muted hover:text-sw-accent cursor-pointer flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Schedule: {{ link.projectTitle }}
+                <span *ngIf="link.updatedAt">&middot; {{ formatDate(link.updatedAt) }}</span>
+              </div>
+            </div>
+
+            <!-- Delete confirmation, names any linked schedules (T056) -->
+            <div *ngIf="confirmingDeleteProjectId === project.id" class="mt-3 p-3 bg-sw-surface border-2 border-sw-danger rounded-lg">
+              <p class="text-sm text-sw-text">
+                Delete <strong>{{ project.title }}</strong>? This permanently removes its stored script content and cannot be undone.
+                <ng-container *ngIf="getLinkedSchedules(project.id).length > 0">
+                  This project has {{ getLinkedSchedules(project.id).length }} linked schedule{{ getLinkedSchedules(project.id).length !== 1 ? 's' : '' }} —
+                  {{ getLinkedSchedules(project.id).length === 1 ? 'it' : 'they' }} will not be deleted, just unlinked.
+                </ng-container>
+              </p>
+              <div class="mt-3 flex items-center gap-3">
+                <button
+                  (click)="confirmDeleteProject(project)"
+                  [disabled]="deletingProjectId === project.id"
+                  class="bg-sw-danger hover:opacity-90 text-white font-semibold py-1.5 px-4 rounded-md text-sm disabled:opacity-60">
+                  {{ deletingProjectId === project.id ? 'Deleting…' : 'Delete' }}
+                </button>
+                <button (click)="cancelDeleteProject()" class="text-sm text-sw-text-subtle hover:opacity-80">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div *ngIf="savedProjects.length === 0" class="p-8 bg-sw-surface-2 rounded-lg border border-sw-border text-center">
+          <svg class="h-12 w-12 mx-auto text-sw-text-subtle mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+          </svg>
+          <p class="text-sw-text font-semibold mb-1">No saved projects yet</p>
+          <p class="text-sm text-sw-text-muted">Process a script on the dashboard and use "Save as Project" to save it here.</p>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Saved Scenes Section (027 US4 T052) -->
+    <div class="mt-10">
+      <div class="flex items-center justify-between mb-6 pb-2 border-b border-sw-border">
+        <h2 class="text-xl font-semibold text-sw-text">Saved Scenes</h2>
+        <span *ngIf="savedScenes.length > 0" class="text-xs font-semibold bg-sw-surface-2 border border-sw-border text-sw-accent px-2 py-1 rounded">
+          {{ savedScenes.length }}
+        </span>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="isLoadingSavedScenes" class="flex items-center justify-center py-8">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-sw-accent mr-3"></div>
+        <span class="text-sm text-sw-text-subtle">Loading saved scenes...</span>
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="!isLoadingSavedScenes && savedScenesError" class="p-4 bg-sw-surface-2 border-l-4 border-sw-danger rounded-lg mb-4">
+        <p class="text-sm text-sw-danger">{{ savedScenesError }}</p>
+        <button (click)="loadSavedScenes()" class="mt-2 text-sm underline text-sw-accent">Retry</button>
+      </div>
+
+      <ng-container *ngIf="!isLoadingSavedScenes">
+        <div *ngIf="savedScenes.length > 0">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs text-sw-text-muted">{{ selectedSceneCount }} selected</p>
+            <button
+              (click)="openCreateProjectFromScenes()"
+              [disabled]="selectedSceneCount === 0"
+              class="text-sm font-semibold bg-sw-accent hover:opacity-90 text-sw-bg py-1.5 px-3 rounded-md disabled:opacity-50">
+              Create project from selected scenes
+            </button>
+          </div>
+
+          <!-- Inline naming form (T052) -->
+          <div *ngIf="showCreateFromScenesForm" class="p-3 mb-3 bg-sw-surface border-2 border-sw-accent rounded-lg">
+            <label class="text-xs text-sw-text-muted mb-1 block">New project name</label>
+            <input
+              type="text"
+              [(ngModel)]="createFromScenesDraftTitle"
+              maxlength="120"
+              placeholder="Untitled Project"
+              class="w-full px-2 py-1 rounded border border-sw-border bg-sw-surface-2 text-sw-text text-sm mb-2"
+              (keydown.enter)="confirmCreateProjectFromScenes()"
+              (keydown.escape)="cancelCreateProjectFromScenes()" />
+            <p *ngIf="createFromScenesError" class="text-xs text-sw-danger mb-2">{{ createFromScenesError }}</p>
+            <div class="flex items-center gap-3">
+              <button
+                (click)="confirmCreateProjectFromScenes()"
+                [disabled]="isCreatingProjectFromScenes"
+                class="bg-sw-accent hover:opacity-90 text-sw-bg font-semibold py-1.5 px-4 rounded-md text-sm disabled:opacity-60">
+                {{ isCreatingProjectFromScenes ? 'Creating…' : 'Create Project' }}
+              </button>
+              <button (click)="cancelCreateProjectFromScenes()" class="text-sm text-sw-text-subtle hover:opacity-80">Cancel</button>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div
+              *ngFor="let scene of savedScenes"
+              class="flex items-center justify-between p-4 bg-sw-surface-2 rounded-lg border border-sw-border hover:border-sw-accent transition-all group shadow-sm">
+              <div class="flex items-center gap-4 min-w-0">
+                <input
+                  type="checkbox"
+                  [checked]="isSceneSelected(scene.id)"
+                  (change)="toggleSceneSelection(scene.id)"
+                  class="flex-shrink-0 h-4 w-4" />
+                <div class="min-w-0">
+                  <p class="font-semibold text-sw-text group-hover:text-sw-accent transition-colors truncate">
+                    Scene {{ scene.sceneNumber }}: {{ scene.sceneHeader }}
+                  </p>
+                  <p class="text-xs text-sw-text-muted mt-0.5">
+                    {{ scene.sourceTitle }} &middot; {{ formatDate(scene.createdAt) }}
+                  </p>
+                </div>
+              </div>
+              <div class="flex-shrink-0 flex items-center gap-2">
+                <button
+                  (click)="openSavedScene(scene)"
+                  [disabled]="openingSceneId === scene.id"
+                  class="bg-sw-accent hover:opacity-90 text-sw-bg font-semibold py-2 px-4 rounded-md transition-all shadow-sm text-sm disabled:opacity-60">
+                  {{ openingSceneId === scene.id ? 'Opening…' : 'Open' }}
+                </button>
+                <button
+                  (click)="deleteSavedScene(scene)"
+                  [disabled]="deletingSceneId === scene.id"
+                  class="text-sm text-sw-danger hover:opacity-80 px-2">
+                  {{ deletingSceneId === scene.id ? 'Deleting…' : 'Delete' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div *ngIf="savedScenes.length === 0" class="p-8 bg-sw-surface-2 rounded-lg border border-sw-border text-center">
+          <p class="text-sw-text font-semibold mb-1">No saved scenes yet</p>
+          <p class="text-sm text-sw-text-muted">Save individual scenes from the dashboard to reuse them later.</p>
+        </div>
+      </ng-container>
+    </div>
+
     <!-- My Schedules Section -->
     <div class="mt-10">
       <div class="flex items-center justify-between mb-6 pb-2 border-b border-sw-border">
         <h2 class="text-xl font-semibold text-sw-text">My Schedules</h2>
-        <span class="text-xs font-bold bg-sw-surface-2 border border-sw-border text-sw-text-subtle px-2 py-1 rounded uppercase tracking-wide">Coming Soon</span>
+        <span *ngIf="subscription?.hasSchedulingTier && savedSchedules.length > 0" class="text-xs font-semibold bg-sw-surface-2 border border-sw-border text-sw-accent px-2 py-1 rounded">
+          {{ savedSchedules.length }}
+        </span>
       </div>
 
-      <div class="p-8 bg-sw-surface-2 rounded-lg border border-sw-border text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-sw-text-subtle mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        <p class="text-sw-text font-semibold mb-2">Production Scheduling</p>
-        <p class="text-sm text-sw-text-muted">Full scheduling tools are on the way. Stay tuned.</p>
+      <!-- Loading -->
+      <div *ngIf="subscription?.hasSchedulingTier && isLoadingSchedules" class="flex items-center justify-center py-8">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-sw-accent mr-3"></div>
+        <span class="text-sm text-sw-text-subtle">Loading schedules...</span>
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="subscription?.hasSchedulingTier && !isLoadingSchedules && scheduleError" class="p-4 bg-sw-surface-2 border-l-4 border-sw-danger rounded-lg mb-4">
+        <p class="text-sm text-sw-danger">{{ scheduleError }}</p>
+        <button (click)="loadSavedSchedules()" class="mt-2 text-sm underline text-sw-accent">Retry</button>
+      </div>
+
+      <!-- Has the tier: real schedule list -->
+      <ng-container *ngIf="subscription?.hasSchedulingTier && !isLoadingSchedules && !scheduleError">
+        <div *ngIf="savedSchedules.length > 0" class="space-y-3">
+          <div
+            *ngFor="let sched of savedSchedules"
+            (click)="openSchedule(sched.id)"
+            class="flex items-center justify-between p-4 bg-sw-surface-2 rounded-lg border border-sw-border hover:border-sw-accent cursor-pointer transition-all group shadow-sm">
+            <div class="flex items-center gap-4 min-w-0">
+              <div class="flex-shrink-0 w-9 h-9 bg-sw-surface group-hover:bg-sw-border rounded-lg flex items-center justify-center transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-sw-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div class="min-w-0">
+                <p class="font-semibold text-sw-text group-hover:text-sw-accent transition-colors truncate">{{ sched.projectTitle }}</p>
+                <p class="text-xs text-sw-text-muted mt-0.5">
+                  {{ sched.shootDayCount }} shoot day{{ sched.shootDayCount !== 1 ? 's' : '' }}
+                  &middot; {{ sched.sceneCount }} scene{{ sched.sceneCount !== 1 ? 's' : '' }}
+                  &middot; {{ formatDate(sched.createdAt) }}
+                </p>
+              </div>
+            </div>
+            <span class="flex-shrink-0 text-sm font-medium text-sw-accent">Open</span>
+          </div>
+        </div>
+
+        <!-- Empty state, has the tier -->
+        <div *ngIf="savedSchedules.length === 0" class="p-8 bg-sw-surface-2 rounded-lg border border-sw-border text-center">
+          <p class="text-sw-text font-semibold mb-1">No schedules yet</p>
+          <p class="text-sm text-sw-text-muted">
+            Open a saved script from
+            <a (click)="goToMyProjects()" class="underline text-sw-accent cursor-pointer">My Projects</a>
+            and build your first shoot-day schedule.
+          </p>
+        </div>
+      </ng-container>
+
+      <!-- Doesn't have the tier yet: point at purchase, never "coming soon" -->
+      <div *ngIf="!subscription?.hasSchedulingTier" class="p-8 bg-sw-surface-2 rounded-lg border border-sw-border text-center">
+        <p class="text-sw-text font-semibold mb-2">Scheduling isn't on your account yet</p>
+        <p class="text-sm text-sw-text-muted mb-4">
+          Add the Production Scheduling add-on above, then build shoot-day schedules from your
+          <a (click)="goToMyProjects()" class="underline text-sw-accent cursor-pointer">saved projects</a>.
+        </p>
+        <button
+          type="button"
+          [disabled]="isStartingSchedulingCheckout"
+          (click)="startSchedulingCheckout(selectedInterval)"
+          class="bg-sw-accent hover:opacity-90 text-sw-bg font-semibold py-2 px-5 rounded-md transition-all shadow-md disabled:opacity-60"
+        >
+          {{ isStartingSchedulingCheckout ? 'Redirecting…' : 'Add Scheduling — ' + getSchedulingPriceLabel() }}
+        </button>
       </div>
     </div>
 
