@@ -272,6 +272,14 @@ export interface ScheduleSettings {
   startDate?: string;
   sixDayWeeks: boolean;
   dayOffDay: 'sunday' | 'saturday';
+
+  /**
+   * Show/hide per-scene character (and linked actor) chrome on scene
+   * cards/strips (spec 031 FR-001–FR-003). Optional for backward
+   * compatibility with schedules persisted before this field existed —
+   * treat `undefined` the same as `true` (default: shown).
+   */
+  showSceneCast?: boolean;
 }
 
 // ─────────────────────────────────────────────
@@ -332,5 +340,6 @@ export function getDefaultScheduleSettings(): ScheduleSettings {
     exportFormat: 'xlsx',
     sixDayWeeks: true,
     dayOffDay: 'sunday',
+    showSceneCast: true,
   };
 }

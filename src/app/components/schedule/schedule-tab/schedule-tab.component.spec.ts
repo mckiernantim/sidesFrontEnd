@@ -9,6 +9,7 @@ import { ScheduleApiService, ScheduleSummary } from '../../../services/schedule/
 import { ScheduleAutoSaveService } from '../../../services/schedule/schedule-auto-save.service';
 import { TailwindDialogService, DialogRef } from '../../../services/tailwind-dialog/tailwind-dialog.service';
 import { AuthService } from '../../../services/auth/auth.service';
+import { ProjectService } from '../../../services/project/project.service';
 import { CommonModule } from '@angular/common';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { Line } from '../../../types/Line';
@@ -33,6 +34,10 @@ class MockAuthService {
   setUser(user: any): void {
     this.userSubject.next(user);
   }
+}
+
+class MockProjectService {
+  activeProjectId: string | null = null;
 }
 
 class MockAutoSaveService {
@@ -121,6 +126,7 @@ describe('ScheduleTabComponent', () => {
         { provide: ScheduleAutoSaveService, useValue: mockAutoSave },
         { provide: TailwindDialogService, useValue: mockDialogService },
         { provide: AuthService, useClass: MockAuthService },
+        { provide: ProjectService, useClass: MockProjectService },
       ],
     }).compileComponents();
 

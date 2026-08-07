@@ -4,9 +4,11 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { Router } from '@angular/router';
 import { AuthComponent } from './auth.component';
 import { AuthService } from '../../services/auth/auth.service';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { StripeService } from '../../services/stripe/stripe.service';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { By } from '@angular/platform-browser';
+import { SubscriptionStatus } from '../../types/SubscriptionTypes';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -21,21 +23,32 @@ function buildAuthServiceMock(): jest.Mocked<AuthService> {
   } as unknown as jest.Mocked<AuthService>;
 }
 
+function buildStripeServiceMock(): jest.Mocked<StripeService> {
+  return {
+    getSubscriptionStatus: jest.fn().mockReturnValue(of({ hasSchedulingTier: false } as SubscriptionStatus)),
+  } as unknown as jest.Mocked<StripeService>;
+}
+
 // ─── Suite ──────────────────────────────────────────────────────────────────
 
 describe('AuthComponent', () => {
   let component: AuthComponent;
   let fixture: ComponentFixture<AuthComponent>;
   let authService: jest.Mocked<AuthService>;
+  let stripeService: jest.Mocked<StripeService>;
   let router: Router;
 
   beforeEach(async () => {
     authService = buildAuthServiceMock();
+    stripeService = buildStripeServiceMock();
 
     await TestBed.configureTestingModule({
       declarations: [AuthComponent],
       imports: [ReactiveFormsModule, RouterTestingModule, CommonModule],
-      providers: [{ provide: AuthService, useValue: authService }],
+      providers: [
+        { provide: AuthService, useValue: authService },
+        { provide: StripeService, useValue: stripeService },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AuthComponent);
@@ -303,16 +316,91 @@ describe('AuthComponent', () => {
   // ─── Auth-state redirect ─────────────────────────────────────────────────────
 
   describe('auth state redirect', () => {
-    it('should navigate to "/" when a user is already authenticated', fakeAsync(() => {
+    it('should navigate to "/" when a user is already authenticated (regression — pre-028 behavior for non-tier users)', fakeAsync(() => {
       const navigateSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);
       const userSubject = new BehaviorSubject<object | null>(null);
       (authService as unknown as { user$: Observable<object | null> }).user$ = userSubject.asObservable();
+      stripeService.getSubscriptionStatus.mockReturnValue(of({ hasSchedulingTier: false } as SubscriptionStatus));
 
       fixture = TestBed.createComponent(AuthComponent);
       component = fixture.componentInstance;
       fixture.detectChanges();
 
       userSubject.next({ uid: 'abc' });
+      tick();
+
+      expect(navigateSpy).toHaveBeenCalledWith(['/']);
+    }));
+
+    it('navigates to / (not /start) when explicit sign-in resolves hasSchedulingTier true (spec 029 research D1 realignment)', fakeAsync(() => {
+      const navigateSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);
+      const userSubject = new BehaviorSubject<object | null>(null);
+      (authService as unknown as { user$: Observable<object | null> }).user$ = userSubject.asObservable();
+      stripeService.getSubscriptionStatus.mockReturnValue(of({ hasSchedulingTier: true } as SubscriptionStatus));
+
+      fixture = TestBed.createComponent(AuthComponent);
+      component = fixture.componentInstance;
+      component.isModal = false;
+      fixture.detectChanges();
+
+      userSubject.next({ uid: 'scheduling-user' });
+      tick();
+
+      // The upload screen ("/") is the single source of truth for the
+      // Upload/Saved-project choice (contracts/upload-entry-ui.md §3) — /start
+      // no longer competes with it, for premium or non-premium users.
+      expect(navigateSpy).toHaveBeenCalledWith(['/']);
+      expect(navigateSpy).not.toHaveBeenCalledWith(['/start']);
+    }));
+
+    it('navigates to / when explicit sign-in resolves hasSchedulingTier false', fakeAsync(() => {
+      const navigateSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);
+      const userSubject = new BehaviorSubject<object | null>(null);
+      (authService as unknown as { user$: Observable<object | null> }).user$ = userSubject.asObservable();
+      stripeService.getSubscriptionStatus.mockReturnValue(of({ hasSchedulingTier: false } as SubscriptionStatus));
+
+      fixture = TestBed.createComponent(AuthComponent);
+      component = fixture.componentInstance;
+      component.isModal = false;
+      fixture.detectChanges();
+
+      userSubject.next({ uid: 'non-tier-user' });
+      tick();
+
+      expect(navigateSpy).toHaveBeenCalledWith(['/']);
+    }));
+
+    it('does not check scheduling entitlement or redirect when signing in via the modal (isModal=true)', fakeAsync(() => {
+      const navigateSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);
+      const userSubject = new BehaviorSubject<object | null>(null);
+      (authService as unknown as { user$: Observable<object | null> }).user$ = userSubject.asObservable();
+
+      fixture = TestBed.createComponent(AuthComponent);
+      component = fixture.componentInstance;
+      component.isModal = true;
+      const closeModalSpy = jest.spyOn(component.closeModal, 'emit');
+      fixture.detectChanges();
+
+      userSubject.next({ uid: 'modal-user' });
+      tick();
+
+      expect(stripeService.getSubscriptionStatus).not.toHaveBeenCalled();
+      expect(navigateSpy).not.toHaveBeenCalled();
+      expect(closeModalSpy).toHaveBeenCalled();
+    }));
+
+    it('falls back to / when the scheduling entitlement check errors', fakeAsync(() => {
+      const navigateSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);
+      const userSubject = new BehaviorSubject<object | null>(null);
+      (authService as unknown as { user$: Observable<object | null> }).user$ = userSubject.asObservable();
+      stripeService.getSubscriptionStatus.mockReturnValue(throwError(() => new Error('network error')));
+
+      fixture = TestBed.createComponent(AuthComponent);
+      component = fixture.componentInstance;
+      component.isModal = false;
+      fixture.detectChanges();
+
+      userSubject.next({ uid: 'error-user' });
       tick();
 
       expect(navigateSpy).toHaveBeenCalledWith(['/']);

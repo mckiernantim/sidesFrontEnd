@@ -6,6 +6,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import {
@@ -18,7 +19,11 @@ import { ScheduleStateService } from '../../../services/schedule/schedule-state.
 import { ScheduleService } from '../../../services/schedule/schedule.service';
 import { ScheduleAutoSaveService } from '../../../services/schedule/schedule-auto-save.service';
 import { OneLinerService, SceneForOneLiner } from '../../../services/schedule/one-liner.service';
+import { ScheduleToSidesService } from '../../../services/schedule/schedule-to-sides.service';
 import { PdfService } from '../../../services/pdf/pdf.service';
+import { isLegacyProjectId } from '../../../utils/legacyProjectId';
+import { Project } from '../../../types/Project';
+import { SceneSortMode, SCENE_SORT_MODE_OPTIONS } from '../../../utils/schedule-scene-sort';
 
 /**
  * ScheduleBuilderComponent — The main schedule building interface.
@@ -47,6 +52,14 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
   /** PDF Service - required for AI one-liner generation */
   @Input() pdfService?: PdfService;
 
+  /**
+   * The saved project this schedule belongs to (spec 028 US5, T054).
+   * Supplied by SchedulePageComponent once resolveLinkedProject() resolves
+   * a real (non-legacy) project — undefined for a fresh/legacy schedule,
+   * in which case the header falls back to the schedule's own projectTitle.
+   */
+  @Input() project?: Project;
+
   schedule: ProductionSchedule | null = null;
   isDirty: boolean = false;
   isSaving: boolean = false;
@@ -62,11 +75,120 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
   // Drop list IDs for CDK drag-drop connectivity
   unscheduledDropListId = 'unscheduled-pool';
 
+  // ─────────────────────────────────────────────
+  // Generate Sides (spec 028 US2)
+  // ─────────────────────────────────────────────
+  generatingSidesForDayId: string | null = null;
+  generateSidesError: string | null = null;
+  generateSidesErrorDayId: string | null = null;
+
+  // ─────────────────────────────────────────────
+  // Scene Sort Controls (spec 030)
+  // ─────────────────────────────────────────────
+  readonly sortModes = SCENE_SORT_MODE_OPTIONS;
+  unscheduledSortMode: SceneSortMode | null = null;
+  allDaysSortMode: SceneSortMode | null = null;
+
+  // ─────────────────────────────────────────────
+  // Cast Show/Hide Toggle (spec 031)
+  // ─────────────────────────────────────────────
+
+  /**
+   * Whether per-scene character/actor chrome is shown. Falls back to
+   * `true` when `settings.showSceneCast` is `undefined` (schedules
+   * persisted before spec 031 existed) — spec 031 FR-001.
+   */
+  get showSceneCastEnabled(): boolean {
+    return this.schedule?.settings?.showSceneCast !== false;
+  }
+
+  /**
+   * Show/hide per-scene characters & actors (spec 031).
+   * Persists via ScheduleStateService dirty/auto-save path.
+   */
+  setCastVisibility(show: boolean): void {
+    this.scheduleState.setShowSceneCast(show);
+  }
+
+  /** @deprecated use setCastVisibility — kept for any leftover select handlers */
+  onCastVisibilityChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.setCastVisibility(value === 'show');
+  }
+
+  // ─────────────────────────────────────────────
+  // Editable Scene Headers (spec 032 US2)
+  // ─────────────────────────────────────────────
+
+  /**
+   * Transient soft notice shown when a header edit saved to the schedule
+   * but couldn't sync to live scan data (no hydrated `pdfService` — spec
+   * 032 edge case). Cleared automatically after a few seconds.
+   */
+  headerSyncNotice: string | null = null;
+  private headerSyncNoticeTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Handles an inline scene header edit bubbled up from any `app-scene-strip`
+   * (in a shoot day or the unscheduled pool).
+   *
+   * 1. Updates the `ScheduleScene` (header/intExt/location/timeOfDay/
+   *    stripColor + day title refresh) via `ScheduleStateService`.
+   * 2. Syncs the live scan/classify data (`PdfService.allLines`/`scenes` +
+   *    `finalDocument` for Last Looks) via `PdfService.syncSceneHeaderText`,
+   *    matched by `sceneNumber` (spec 032 FR-004) — only when a hydrated
+   *    `pdfService` is actually available (research: no project GCS
+   *    content-update API exists for v1, so session scan + schedule
+   *    autosave are the sync targets; this session-only sync is
+   *    best-effort and surfaced with a soft notice when unavailable).
+   */
+  onHeaderChanged(event: { sceneId: string; sceneHeader: string }): void {
+    const scene = this.findSceneById(event.sceneId);
+    const sceneNumber = scene?.sceneNumber;
+
+    this.scheduleState.updateSceneHeader(event.sceneId, event.sceneHeader);
+
+    if (!this.pdfService) {
+      this.showHeaderSyncNotice('Header updated in the schedule — no live script open, so scan data wasn\'t synced.');
+      return;
+    }
+
+    const synced = sceneNumber ? this.pdfService.syncSceneHeaderText(sceneNumber, event.sceneHeader) : false;
+    if (!synced) {
+      this.showHeaderSyncNotice('Header updated in the schedule, but scan data wasn\'t available to sync.');
+    }
+  }
+
+  private showHeaderSyncNotice(message: string): void {
+    this.headerSyncNotice = message;
+    this.cdr.markForCheck();
+
+    if (this.headerSyncNoticeTimeout) {
+      clearTimeout(this.headerSyncNoticeTimeout);
+    }
+    this.headerSyncNoticeTimeout = setTimeout(() => {
+      this.headerSyncNotice = null;
+      this.headerSyncNoticeTimeout = null;
+      this.cdr.markForCheck();
+    }, 5000);
+  }
+
+  /** Finds a `ScheduleScene` by id across shoot days and the unscheduled pool. */
+  private findSceneById(sceneId: string): ScheduleScene | undefined {
+    if (!this.schedule) return undefined;
+    return (
+      this.schedule.unscheduledScenes.find((s) => s.id === sceneId) ||
+      this.schedule.shootDays.flatMap((d) => d.scenes).find((s) => s.id === sceneId)
+    );
+  }
+
   constructor(
     private scheduleState: ScheduleStateService,
     private scheduleService: ScheduleService,
     private autoSave: ScheduleAutoSaveService,
     private oneLinerService: OneLinerService,
+    private scheduleToSidesService: ScheduleToSidesService,
+    private router: Router,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -95,6 +217,9 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.forEach((s) => s.unsubscribe());
+    if (this.headerSyncNoticeTimeout) {
+      clearTimeout(this.headerSyncNoticeTimeout);
+    }
   }
 
   /**
@@ -149,6 +274,48 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
       this.schedule.unscheduledScenes.length +
       this.schedule.shootDays.reduce((sum, d) => sum + d.scenes.length, 0)
     );
+  }
+
+  // ─────────────────────────────────────────────
+  // Header — project/schedule context (spec 028 US5, T053/T054)
+  // ─────────────────────────────────────────────
+
+  /**
+   * Project name shown in the header. Falls back to the schedule's own
+   * `projectTitle` when no live `project` input is supplied — i.e. a
+   * legacy/unlinked schedule (SchedulePageComponent only passes `project`
+   * once resolveLinkedProject() resolves a real, owned project).
+   */
+  get projectDisplayName(): string {
+    return this.project?.title || this.schedule?.projectTitle || 'Untitled Project';
+  }
+
+  /**
+   * Schedule name shown alongside the project name. `ProductionSchedule`
+   * has no dedicated "name" field distinct from `projectTitle`, so this
+   * derives a stable, human-readable label from the schedule's own
+   * optimistic-concurrency version counter (mirrors the design mock's
+   * "Shooting Schedule v2" placeholder using real schedule data).
+   */
+  get scheduleDisplayName(): string {
+    if (!this.schedule) return '';
+    return `Shooting Schedule v${this.schedule.version}`;
+  }
+
+  /** Number of shoot days in the schedule. */
+  get shootDayCount(): number {
+    return this.schedule?.shootDays.length ?? 0;
+  }
+
+  /** Total scenes currently placed on any shoot day. */
+  get scheduledSceneCount(): number {
+    if (!this.schedule) return 0;
+    return this.schedule.shootDays.reduce((sum, d) => sum + d.scenes.length, 0);
+  }
+
+  /** Scenes not yet assigned to any shoot day. */
+  get unscheduledSceneCount(): number {
+    return this.schedule?.unscheduledScenes.length ?? 0;
   }
 
   // ─────────────────────────────────────────────
@@ -283,6 +450,27 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
   }
 
   // ─────────────────────────────────────────────
+  // Scene Sort Controls (spec 030)
+  // ─────────────────────────────────────────────
+
+  /** Sorts the unscheduled scene pool immediately (contract: click applies immediately). */
+  sortUnscheduled(mode: SceneSortMode): void {
+    this.unscheduledSortMode = mode;
+    this.scheduleState.sortUnscheduledScenes(mode);
+  }
+
+  /** Forwards a per-day sort request emitted by a `app-shoot-day-card`. */
+  onDaySortRequested(event: { dayId: string; mode: SceneSortMode }): void {
+    this.scheduleState.sortShootDay(event.dayId, event.mode);
+  }
+
+  /** Applies the given mode to every shoot day independently (FR-004). */
+  sortAllDays(mode: SceneSortMode): void {
+    this.allDaysSortMode = mode;
+    this.scheduleState.sortAllShootDays(mode);
+  }
+
+  // ─────────────────────────────────────────────
   // Helpers
   // ─────────────────────────────────────────────
 
@@ -341,19 +529,21 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
     }
 
     // Transform to the format expected by the service
+    const dayLabel = day.label || `Day ${day.dayNumber}`;
     const scenesForGeneration: SceneForOneLiner[] = scenesWithDescriptions.map((scene) => ({
       sceneNumber: scene.sceneNumber,
-      header: scene.sceneHeader,
-      descriptions: scene.descriptions || [],
+      sceneHeader: scene.sceneHeader,
+      sceneText: scene.descriptions || [],
+      characters: (scene.characters || []).map((c) => c.characterName),
       pageCount: scene.pageCount,
     }));
 
-    console.log(`Generating one-liners for ${scenesForGeneration.length} scenes in ${day.label || 'Day ' + day.dayNumber}`);
+    console.log(`Generating one-liners for ${scenesForGeneration.length} scenes in ${dayLabel}`);
 
     this.isGeneratingOneLiners = true;
     this.cdr.markForCheck();
 
-    this.oneLinerService.generateOneLiners(scenesForGeneration).subscribe({
+    this.oneLinerService.generateOneLiners(scenesForGeneration, dayLabel).subscribe({
       next: (oneLiners) => {
         this.isGeneratingOneLiners = false;
         this.cdr.markForCheck();
@@ -407,8 +597,9 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
     // Transform to the format expected by the service
     const scenesForGeneration: SceneForOneLiner[] = scenesWithDescriptions.map((scene) => ({
       sceneNumber: scene.sceneNumber,
-      header: scene.sceneHeader,
-      descriptions: scene.descriptions || [],
+      sceneHeader: scene.sceneHeader,
+      sceneText: scene.descriptions || [],
+      characters: (scene.characters || []).map((c) => c.characterName),
       pageCount: scene.pageCount,
     }));
 
@@ -485,5 +676,76 @@ export class ScheduleBuilderComponent implements OnInit, OnDestroy {
     }
 
     return `Generate AI one-liners for ${allScenes.length} scenes`;
+  }
+
+  // ─────────────────────────────────────────────
+  // Generate Sides (spec 028 US2)
+  // ─────────────────────────────────────────────
+
+  /**
+   * True when this schedule has no resolvable saved-project link (either no
+   * `projectId` at all, or the client-generated `proj-{timestamp}` placeholder
+   * stamped before a project existed — research D7, `legacyProjectId.ts`).
+   */
+  get isLegacySchedule(): boolean {
+    return isLegacyProjectId(this.schedule?.projectId);
+  }
+
+  /**
+   * Per shoot-day-precondition table (contracts/project-library-ui.md):
+   * a day needs at least one scene AND a schedule that's linked to a real,
+   * saved project before sides can be generated.
+   */
+  canGenerateSidesForDay(day: ShootDay): boolean {
+    if (!day || !day.scenes || day.scenes.length === 0) return false;
+    if (this.isLegacySchedule) return false;
+    return true;
+  }
+
+  generateSidesTooltip(day: ShootDay): string {
+    if (!day || !day.scenes || day.scenes.length === 0) {
+      return 'No scenes on this day';
+    }
+    if (this.isLegacySchedule) {
+      return "This schedule isn't linked to a saved project — re-upload the script or connect this schedule to a project to generate sides.";
+    }
+    return `Generate sides for ${day.scenes.length} scene(s) in ${day.label || 'Day ' + day.dayNumber}`;
+  }
+
+  /**
+   * Delegates entirely to ScheduleToSidesService.generateSidesForDay()
+   * (data-model.md's resolution sequence) then, on success, navigates to
+   * /dashboard with the one-shot router-state flag DashboardRightComponent
+   * reads once to reuse the existing toggleLastLooks() path (research D8) —
+   * guaranteeing FR-012 (identical output to a manual dashboard selection).
+   */
+  generateSidesForDay(day: ShootDay): void {
+    if (!this.schedule || !this.canGenerateSidesForDay(day) || this.generatingSidesForDayId) {
+      return;
+    }
+
+    this.generatingSidesForDayId = day.id;
+    this.generateSidesError = null;
+    this.generateSidesErrorDayId = null;
+    this.cdr.markForCheck();
+
+    this.scheduleToSidesService.generateSidesForDay(day, this.schedule).subscribe({
+      next: (result) => {
+        this.generatingSidesForDayId = null;
+        if (result.success) {
+          this.router.navigate(['/dashboard'], { state: { autoOpenLastLooks: true } });
+        } else {
+          this.generateSidesError = result.errorMessage || 'Could not generate sides for this day.';
+          this.generateSidesErrorDayId = day.id;
+        }
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.generatingSidesForDayId = null;
+        this.generateSidesError = 'Could not generate sides for this day. Please try again.';
+        this.generateSidesErrorDayId = day.id;
+        this.cdr.markForCheck();
+      },
+    });
   }
 }

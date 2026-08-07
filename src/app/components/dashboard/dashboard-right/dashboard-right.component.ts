@@ -48,6 +48,8 @@ import { LastLooksComponent } from '../last-looks/last-looks.component';
 import { TailwindDialogComponent } from '../../../components/shared/tailwind-dialog/tailwind-dialog.component';
 import { SubscriptionModalComponent } from '../../../components/subscription-modal/subscription-modal.component';
 import { CdkDropList } from '@angular/cdk/drag-drop';
+import { SaveProjectDialogData, SaveProjectResult } from '../../shared/save-project-dialog/save-project-dialog.component';
+import { ProjectContent } from 'src/app/types/Project';
 
 interface toolTipOption {
   title: string;
@@ -209,6 +211,12 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
 
   /** Mobile scene-select panel: Scenes list first, Controls for checkout / attachments. */
   sceneSelectPanel: 'scenes' | 'controls' = 'scenes';
+
+  // ── Save as Project ──────────────────────────────────────────────────────
+  showSaveProjectDialog = false;
+  saveProjectDialogData: SaveProjectDialogData = { defaultTitle: '', content: null as any };
+  saveProjectSuccess = false;
+  private saveProjectSuccessTimer: ReturnType<typeof setTimeout> | null = null;
 
   setSceneSelectPanel(panel: 'scenes' | 'controls'): void {
     this.sceneSelectPanel = panel;
@@ -449,6 +457,15 @@ export class DashboardRightComponent implements OnInit, OnDestroy {
           this.handleStripeReturn();
         }
       });
+
+    // Spec 028 US2 (T036): one-shot handoff from ScheduleToSidesService's
+    // "Generate Sides" flow (research D8) — read once on init, never on later
+    // change-detection cycles, and reuse the exact toggleLastLooks() path a
+    // manual dashboard selection already runs (no PDF-assembly duplication).
+    const navigationState = window.history.state as { autoOpenLastLooks?: boolean } | null;
+    if (navigationState?.autoOpenLastLooks && !this.lastLooksReady) {
+      this.toggleLastLooks();
+    }
   }
 
   ngAfterViewInit(): void {
@@ -1962,6 +1979,10 @@ async sendFinalDocumentToServer(finalDocument) {
     if (this.sceneOrderUpdatedSubscription) {
       this.sceneOrderUpdatedSubscription.unsubscribe();
     }
+
+    if (this.saveProjectSuccessTimer) {
+      clearTimeout(this.saveProjectSuccessTimer);
+    }
   }
 
   logAnalyticsEvent(eventName: string, params?: Record<string, any>) {
@@ -2195,5 +2216,57 @@ async sendFinalDocumentToServer(finalDocument) {
     
     // Navigate to upload page
     this.router.navigate(['/']);
+  }
+
+  // ─────────────────────────────────────────────
+  // Save as Project (T024)
+  // ─────────────────────────────────────────────
+
+  /**
+   * Open the Save-as-Project dialog.
+   * If the user is signed out, show the auth modal first; the in-session script
+   * remains intact because it lives in PdfService (not cleared on auth open).
+   */
+  openSaveProjectDialog(): void {
+    if (!this.userData) {
+      this.authModal.open();
+      return;
+    }
+
+    const content: ProjectContent = {
+      title: this.upload.title || this.script || '',
+      originalname: this.script || '',
+      createdAt: new Date().toISOString(),
+      allLines: this.pdf.allLines || [],
+      individualPages: this.pdf.individualPages || [],
+      allChars: this.upload.allChars || [],
+      firstAndLastLinesOfScenes: this.upload.firstAndLastLinesOfScenes || [],
+    };
+
+    this.saveProjectDialogData = {
+      defaultTitle: this.upload.title || this.script || '',
+      content,
+    };
+    this.showSaveProjectDialog = true;
+    this.cdr.detectChanges();
+  }
+
+  onProjectSaved(_result: SaveProjectResult): void {
+    this.showSaveProjectDialog = false;
+    this.saveProjectSuccess = true;
+    this.cdr.detectChanges();
+
+    if (this.saveProjectSuccessTimer) {
+      clearTimeout(this.saveProjectSuccessTimer);
+    }
+    this.saveProjectSuccessTimer = setTimeout(() => {
+      this.saveProjectSuccess = false;
+      this.cdr.detectChanges();
+    }, 4000);
+  }
+
+  onSaveProjectDialogCancel(): void {
+    this.showSaveProjectDialog = false;
+    this.cdr.detectChanges();
   }
 }

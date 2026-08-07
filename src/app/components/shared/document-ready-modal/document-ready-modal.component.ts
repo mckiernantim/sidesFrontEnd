@@ -30,7 +30,22 @@ export class DocumentReadyModalComponent {
     warnings: []
   };
 
+  /**
+   * Spec 029 US2 (post-upload fork, research D2): when true (scheduling-tier
+   * user), the single Continue button is replaced with "Save as Project" /
+   * "Just make sides". Non-premium users keep today's single-button behavior
+   * (this input defaults to false, so `continue` remains fully backward
+   * compatible).
+   */
+  @Input() showFork: boolean = false;
+
   @Output() continue = new EventEmitter<void>();
+
+  /** Fork choice: continue to the existing dashboard/sides flow, no project created (FR-004). */
+  @Output() justSides = new EventEmitter<void>();
+
+  /** Fork choice: caller opens SaveProjectDialog (027 opt-in) before navigating (FR-005). */
+  @Output() saveProject = new EventEmitter<void>();
 
   get hasWarnings(): boolean {
     // Only count errors and warnings, not info messages
@@ -121,6 +136,14 @@ export class DocumentReadyModalComponent {
 
   onContinue(): void {
     this.continue.emit();
+  }
+
+  onJustSides(): void {
+    this.justSides.emit();
+  }
+
+  onSaveProject(): void {
+    this.saveProject.emit();
   }
 }
 

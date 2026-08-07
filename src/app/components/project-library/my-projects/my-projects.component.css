@@ -1,0 +1,7 @@
+/*
+ * MyProjectsComponent styling is Tailwind-first (sw-* design tokens,
+ * tailwind.config.js) to match the rest of spec 028's newly authored
+ * scheduling-tier surfaces (schedule-page.component.html,
+ * save-project-dialog.component.html). This file is intentionally left
+ * empty — see my-projects.component.html for all styling.
+ */

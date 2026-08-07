@@ -408,4 +408,45 @@ describe('DashboardRightComponent', () => {
       expect(pdfServiceMock.removeScene).toHaveBeenCalled();
     });
   });
+
+  // ─────────────────────────────────────────────
+  // autoOpenLastLooks router state (spec 028 T033/T036)
+  // ─────────────────────────────────────────────
+  describe('autoOpenLastLooks router state', () => {
+    afterEach(() => {
+      // Reset jsdom history state so it never bleeds into other tests in this file.
+      window.history.replaceState({}, '', '/dashboard');
+    });
+
+    it('auto-opens Last Looks on init when history.state.autoOpenLastLooks is true', () => {
+      window.history.pushState({ autoOpenLastLooks: true }, '', '/dashboard');
+
+      const freshFixture = TestBed.createComponent(DashboardRightComponent);
+      freshFixture.detectChanges();
+
+      expect(freshFixture.componentInstance.lastLooksReady).toBeTrue();
+    });
+
+    it('does not auto-open Last Looks on a normal navigation to /dashboard', () => {
+      window.history.replaceState({}, '', '/dashboard');
+
+      const freshFixture = TestBed.createComponent(DashboardRightComponent);
+      freshFixture.detectChanges();
+
+      expect(freshFixture.componentInstance.lastLooksReady).toBeFalse();
+    });
+
+    it('reads the state flag exactly once, not on every change detection cycle', () => {
+      window.history.pushState({ autoOpenLastLooks: true }, '', '/dashboard');
+
+      const freshFixture = TestBed.createComponent(DashboardRightComponent);
+      const spy = jest.spyOn(freshFixture.componentInstance, 'toggleLastLooks');
+
+      freshFixture.detectChanges();
+      freshFixture.detectChanges();
+      freshFixture.detectChanges();
+
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+  });
 });

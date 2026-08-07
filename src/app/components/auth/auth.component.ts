@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, Input, Output, EventEmitter } from '@angu
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
+import { StripeService } from '../../services/stripe/stripe.service';
 import { Subscription } from 'rxjs';
 
 /** Possible views rendered inside the single auth component. */
@@ -54,6 +55,7 @@ export class AuthComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
+    private stripeService: StripeService,
     private router: Router,
   ) {
     this.signInForm = this.fb.group({
@@ -80,9 +82,11 @@ export class AuthComponent implements OnInit, OnDestroy {
     this.authSub = this.authService.user$.subscribe(user => {
       if (user) {
         if (this.isModal) {
+          // Modal sign-ins never check scheduling entitlement or redirect —
+          // the host page keeps control of navigation (spec 028 US1).
           this.closeModal.emit();
         } else {
-          this.router.navigate(['/']);
+          this.routeAfterSignIn(user.uid);
         }
       }
     });
@@ -90,6 +94,27 @@ export class AuthComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.authSub?.unsubscribe();
+  }
+
+  /**
+   * Explicit (non-modal) sign-in routing. Spec 029 research D1 realigns this:
+   * the upload screen ("/") is the single source of truth for the
+   * Upload-new-script / Use-saved-project choice (`shouldShowUploadEntryToggle`),
+   * so scheduling-tier users land directly on "/" instead of the old
+   * `/start` PostLoginChoice screen — that would otherwise be a second,
+   * competing dual-path UI (contracts/upload-entry-ui.md §3, forbidden).
+   * Non-premium keeps today's exact behavior. Any entitlement-check failure
+   * falls back to "/" rather than trapping the user.
+   */
+  private routeAfterSignIn(uid: string): void {
+    this.stripeService.getSubscriptionStatus(uid).subscribe({
+      next: () => {
+        this.router.navigate(['/']);
+      },
+      error: () => {
+        this.router.navigate(['/']);
+      },
+    });
   }
 
   // ─── Navigation between views ────────────────────────────────────────────────

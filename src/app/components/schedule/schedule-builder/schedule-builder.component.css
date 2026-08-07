@@ -76,3 +76,10 @@
 .cdk-drag-animating {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
+
+/* Sort Controls (spec 030) */
+.sort-btn.active {
+  background-color: #C4FF00; /* sw-accent */
+  color: #000000;            /* sw-accent-fg */
+  border-color: #C4FF00;
+}

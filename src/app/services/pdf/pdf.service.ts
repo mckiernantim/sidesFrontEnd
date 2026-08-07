@@ -2920,6 +2920,61 @@ getLineState(pageIndex: number, lineIndex: number): Line | null {
     });
   }
 
+  /**
+   * Syncs a scene header edit made elsewhere (e.g. the schedule builder,
+   * spec 032 US2) into the live scan/classify data this service holds:
+   *
+   * 1. `this.scenes` entries are the SAME object references as their
+   *    `scene-header` line in `this.allLines` (see `getScenes()`, which
+   *    builds `scenes` via `allLines.filter(...)` — no cloning). Mutating
+   *    the matched scene's `.text` therefore updates both in one write.
+   * 2. `this.allLines` is the same array reference as `UploadService.allLines`
+   *    after `initializeData()` (`this.allLines = this.upload.allLines`), so
+   *    this also keeps the upload session's copy aligned without a second
+   *    write — the defensive re-write below only matters if that reference
+   *    ever diverges (e.g. a fresh job result reassigned one but not other).
+   * 3. `updateSceneHeaderText()` is called to push the same text into the
+   *    separate `finalDocument` page data so Last Looks / dashboard-right
+   *    stay aligned (FR-004).
+   *
+   * There is no project GCS content-update API for scene text (v1) — this
+   * only syncs the current session's live scan data + Last Looks document.
+   * The correction is preserved for this session via the schedule's own
+   * autosave; a durable re-save of the classify blob is a follow-up.
+   *
+   * @param sceneNumber - `ScheduleScene.sceneNumber` (matches classify's
+   *   `sceneNumberText`) identifying which scene's header changed.
+   * @param newText - The new, already-trimmed scene header text.
+   * @returns true if a matching classify scene was found and synced, false
+   *   if no live scan data was available (caller should show a soft notice).
+   */
+  syncSceneHeaderText(sceneNumber: string, newText: string): boolean {
+    if (!sceneNumber || !this.scenes || this.scenes.length === 0) {
+      return false;
+    }
+
+    const matchedScene = this.scenes.find(
+      (s: any) => s.sceneNumberText === sceneNumber || String(s.sceneNumber) === sceneNumber
+    );
+    if (!matchedScene) {
+      return false;
+    }
+
+    matchedScene.text = newText;
+
+    // Defensive: only needed if allLines ever diverges from UploadService.allLines.
+    if (this.upload?.allLines && this.upload.allLines !== this.allLines) {
+      const uploadLine = this.upload.allLines[matchedScene.index];
+      if (uploadLine && uploadLine.category === 'scene-header') {
+        uploadLine.text = newText;
+      }
+    }
+
+    this.updateSceneHeaderText(matchedScene, newText).subscribe();
+
+    return true;
+  }
+
   // Add method to handle callsheet upload
   async handleCallSheetUpload(callsheet: File): Promise<boolean> {
     try {

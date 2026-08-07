@@ -9,21 +9,30 @@ import { getConfig } from 'src/environments/environment';
 // API Types
 // ─────────────────────────────────────────────
 
+/**
+ * Field names here match the live `POST /schedule/one-liner` payload exactly
+ * (SidesWaysBackEndProd/routes/schedule-handler.js + utils/anthropicService.js
+ * buildOneLinerPrompt — spec 027 T043): `sceneHeader` and `sceneText`, not
+ * the earlier `header`/`descriptions` placeholder names, plus `characters`
+ * which the backend prompt also uses.
+ */
 export interface SceneForOneLiner {
   sceneNumber: string;
-  header: string;
-  descriptions: string[];
+  sceneHeader: string;
+  sceneText: string[];
+  characters?: string[];
   pageCount?: number;
 }
 
 export interface GenerateOneLinersRequest {
+  shootDayLabel?: string;
   scenes: SceneForOneLiner[];
 }
 
 export interface GenerateOneLinersResponse {
   success: boolean;
   oneLiners: { [sceneNumber: string]: string };
-  count: number;
+  usage?: { inputTokens: number; outputTokens: number; costUSD: number };
 }
 
 // ─────────────────────────────────────────────
@@ -90,16 +99,17 @@ export class OneLinerService {
    * The caller (ScheduleBuilderComponent) is responsible for
    * applying the results to the schedule via ScheduleStateService.
    *
-   * @param scenes - Array of scenes with sceneNumber, header, and descriptions
+   * @param scenes - Array of scenes with sceneNumber, sceneHeader, and sceneText
+   * @param shootDayLabel - Optional label for the shoot day being generated (e.g. "Day 1 — Ranch Exteriors")
    * @returns Observable<Map<string, string>> - Map of sceneNumber to one-liner text
    */
-  generateOneLiners(scenes: SceneForOneLiner[]): Observable<Map<string, string>> {
+  generateOneLiners(scenes: SceneForOneLiner[], shootDayLabel?: string): Observable<Map<string, string>> {
     if (!scenes || scenes.length === 0) {
       console.warn('OneLinerService: No scenes provided for generation');
       return throwError(() => new Error('No scenes provided'));
     }
 
-    const request: GenerateOneLinersRequest = { scenes };
+    const request: GenerateOneLinersRequest = shootDayLabel ? { scenes, shootDayLabel } : { scenes };
 
     return this.getAuthHeaders().pipe(
       switchMap((headers) =>

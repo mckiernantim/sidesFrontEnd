@@ -21,6 +21,7 @@ import {
 import { Line } from '../../types/Line';
 import { ScheduleStateService } from './schedule-state.service';
 import { PdfService } from '../pdf/pdf.service';
+import { ProjectService } from '../project/project.service';
 
 /**
  * ScheduleService — bridges the scan-classify pipeline output to the
@@ -38,7 +39,10 @@ import { PdfService } from '../pdf/pdf.service';
   providedIn: 'root',
 })
 export class ScheduleService {
-  constructor(private scheduleState: ScheduleStateService) {}
+  constructor(
+    private scheduleState: ScheduleStateService,
+    private projectService: ProjectService
+  ) {}
 
   // ─────────────────────────────────────────────
   // Schedule Creation
@@ -126,9 +130,17 @@ export class ScheduleService {
   /**
    * Seeds a schedule from PDF service (single source of truth).
    * PDF service must have already processed the script (allLines and scenes populated).
+   *
+   * @param projectId - An explicit project id to stamp, if the caller already
+   *   knows it. Pass `null`/`undefined` to let this method resolve it itself
+   *   (spec 028 T040): `ProjectService.activeProjectId` when the working
+   *   session is hydrated from a saved project, falling back to a
+   *   `proj-{timestamp}` placeholder (the legacy behavior) when no project
+   *   is active — exactly the `LEGACY_PROJECT_ID_PATTERN` the backend
+   *   already recognizes in `schedule-handler.js`.
    */
   seedScheduleFromPdfService(
-    projectId: string,
+    projectId: string | null | undefined,
     projectTitle: string,
     userId: string,
     pdfService: PdfService
@@ -145,8 +157,10 @@ export class ScheduleService {
       throw new Error('PDF Service has no scenes. Cannot create schedule.');
     }
 
+    const resolvedProjectId = projectId || this.projectService.activeProjectId || `proj-${Date.now()}`;
+
     const schedule = this.seedScheduleFromClassifyData(
-      projectId,
+      resolvedProjectId,
       projectTitle,
       userId,
       pdfService.allLines,
@@ -190,7 +204,7 @@ export class ScheduleService {
   buildScheduleScenes(
     scenes: SceneRef[],
     sceneCharacterMap: Map<string, SceneCharacter[]>,
-    allLines: Line[]
+    allLines: Line[] = []
   ): ScheduleScene[] {
     console.log(`🏗️ buildScheduleScenes called with ${scenes.length} scenes and ${allLines.length} allLines`);
 

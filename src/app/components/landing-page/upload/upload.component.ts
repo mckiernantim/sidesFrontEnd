@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, isDevMode, ViewChild, ElementRef, ComponentRef } from '@angular/core';
-import { Router, NavigationEnd } from '@angular/router';
+import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
 import { Observable, Subscription, EMPTY } from 'rxjs';
 import { catchError, filter, switchMap } from 'rxjs/operators';
 import { UploadService } from '../../../services/upload/upload.service';
@@ -14,8 +14,14 @@ import { TailwindDialogService } from '../../../services/tailwind-dialog/tailwin
 import { TailwindDialogComponent } from '../../../components/shared/tailwind-dialog/tailwind-dialog.component';
 import { UploadProgressModalComponent } from '../../../components/shared/upload-progress-modal/upload-progress-modal.component';
 import { DocumentReadyModalComponent, DocumentMetadata, ScanWarning } from '../../../components/shared/document-ready-modal/document-ready-modal.component';
+import { SaveProjectDialogComponent, SaveProjectDialogData, SaveProjectResult } from '../../../components/shared/save-project-dialog/save-project-dialog.component';
 import { CarouselComponent } from '../../../components/carousel/carousel.component';
 import { getUserFriendlyMessage } from '../../../types/error';
+import { StripeService } from '../../../services/stripe/stripe.service';
+import { ProjectApiService, ProjectSummary } from '../../../services/project/project-api.service';
+import { ProjectService } from '../../../services/project/project.service';
+import { ProjectContent } from '../../../types/Project';
+import { UploadEntryMode, shouldShowUploadEntryToggle, shouldShowPostUploadFork } from '../../../types/SchedulingEntitlement';
 @Component({
     selector: 'app-upload',
     templateUrl: './upload.component.html',
@@ -60,14 +66,37 @@ export class UploadComponent implements OnInit, OnDestroy {
   enableAiValidation: boolean = false;
   showAiTooltip: boolean = false;
 
+  // ─────────────────────────────────────────────
+  // Spec 029 US1 — upload-screen dual entry (Upload new script / Use saved project)
+  // ─────────────────────────────────────────────
+
+  /** True once subscription status resolves for a scheduling-tier user (research D1). */
+  showEntryToggle = false;
+  /** Raw entitlement flag — also gates the post-upload fork (US2). */
+  hasSchedulingTier = false;
+  entryMode: UploadEntryMode = 'upload';
+  savedProjects: ProjectSummary[] = [];
+  isLoadingSavedProjects = false;
+  savedProjectsError: string | null = null;
+  openingProjectId: string | null = null;
+  private entitlementSubscription: Subscription | null = null;
+
+  // ─────────────────────────────────────────────
+  // Spec 029 US2 — post-upload fork (Save as Project / Just make sides)
+  // ─────────────────────────────────────────────
+
   constructor(
     public upload: UploadService,
     public router: Router,
+    private route: ActivatedRoute,
     private dialogService: TailwindDialogService,
     public pdf: PdfService,
     private auth: Auth,
     private authService: AuthService,
-    private authModal: AuthModalService
+    private authModal: AuthModalService,
+    private stripeService: StripeService,
+    private projectApi: ProjectApiService,
+    private projectService: ProjectService
   ) {}
 
   ngOnInit(): void {
@@ -116,6 +145,100 @@ export class UploadComponent implements OnInit, OnDestroy {
     
     // Handle tab switching and visibility changes
     this.handleTabVisibility();
+
+    // Spec 029 US1 — resolve scheduling entitlement to gate the upload-screen toggle.
+    this.initEntryMode();
+  }
+
+  /**
+   * Resolves `hasSchedulingTier` for the signed-in user and gates the
+   * upload-screen dual-path toggle (research D1: upload screen is the
+   * source of truth). Honors `?entry=upload|saved` (contracts/upload-entry-ui.md);
+   * a query param is only ever applied for scheduling-tier users — non-premium
+   * users never see the toggle regardless of the URL.
+   */
+  private initEntryMode(): void {
+    this.entitlementSubscription = this.authService.user$.subscribe((user) => {
+      if (!user) {
+        this.showEntryToggle = false;
+        this.entryMode = 'upload';
+        return;
+      }
+
+      this.stripeService.getSubscriptionStatus(user.uid).subscribe({
+        next: (status) => {
+          this.hasSchedulingTier = Boolean(status?.hasSchedulingTier);
+          this.showEntryToggle = shouldShowUploadEntryToggle({ hasSchedulingTier: this.hasSchedulingTier });
+          this.applyEntryQueryParam();
+        },
+        error: () => {
+          // Fail-soft: never trap the user behind a toggle that can't resolve.
+          this.hasSchedulingTier = false;
+          this.showEntryToggle = false;
+        },
+      });
+    });
+  }
+
+  private applyEntryQueryParam(): void {
+    if (!this.showEntryToggle) {
+      return;
+    }
+    const entry = this.route.snapshot.queryParamMap.get('entry');
+    if (entry === 'saved') {
+      this.setEntryMode('saved-project');
+    } else if (entry === 'upload') {
+      this.setEntryMode('upload');
+    }
+  }
+
+  /**
+   * Switches the upload-screen entry mode (contracts/upload-entry-ui.md).
+   * Loads the saved-project list on demand — the picker never appears for
+   * non-premium users since `showEntryToggle` gates the whole control.
+   */
+  setEntryMode(mode: UploadEntryMode): void {
+    this.entryMode = mode;
+    if (mode === 'saved-project') {
+      this.loadSavedProjects();
+    }
+  }
+
+  /** Fail-soft project list for "Use saved project" (contracts/upload-entry-ui.md §1). */
+  loadSavedProjects(): void {
+    this.isLoadingSavedProjects = true;
+    this.savedProjectsError = null;
+    this.projectApi.listProjects().subscribe({
+      next: (response) => {
+        this.savedProjects = response.projects || [];
+        this.isLoadingSavedProjects = false;
+      },
+      error: (err) => {
+        this.savedProjects = [];
+        this.savedProjectsError = err?.message || 'Failed to load your saved projects.';
+        this.isLoadingSavedProjects = false;
+      },
+    });
+  }
+
+  /**
+   * Hydrates the selected project (027) with zero PDF re-upload, then lands
+   * on the project screen (research D4: My Projects is the project hub).
+   */
+  selectSavedProject(project: ProjectSummary): void {
+    this.openingProjectId = project.id;
+    this.savedProjectsError = null;
+
+    this.projectService.openProject(project.id).subscribe({
+      next: () => {
+        this.openingProjectId = null;
+        this.router.navigate(['/my-projects']);
+      },
+      error: (err) => {
+        this.openingProjectId = null;
+        this.savedProjectsError = err?.message || 'Failed to open this project. Please try again.';
+      },
+    });
   }
 
   /**
@@ -158,9 +281,12 @@ export class UploadComponent implements OnInit, OnDestroy {
    * Handle page load events (refresh, direct URL access, etc.)
    */
   private handlePageLoad(): void {
-    // Check if this is a page refresh or direct access
-    if (performance.navigation.type === 1 || // Page refresh
-        performance.navigation.type === 0) { // Direct URL access
+    // Check if this is a page refresh or direct access.
+    // `performance.navigation` is undefined in some test environments (jsdom) —
+    // guard so unit tests exercising ngOnInit() don't crash.
+    const navigationType = performance?.navigation?.type;
+    if (navigationType === 1 || // Page refresh
+        navigationType === 0) { // Direct URL access
       console.log('UploadComponent: Page load detected - ensuring document state is reset');
       this.resetLocalData();
     }
@@ -244,6 +370,7 @@ export class UploadComponent implements OnInit, OnDestroy {
     if (this.totalLines) this.totalLines.unsubscribe();
     if (this.totalScenes) this.totalScenes.unsubscribe();
     if (this.totalCharacters) this.totalCharacters.unsubscribe();
+    if (this.entitlementSubscription) this.entitlementSubscription.unsubscribe();
   }
 
   signIn() {
@@ -523,38 +650,9 @@ export class UploadComponent implements OnInit, OnDestroy {
             this.currentUploadSubscription = null;
             this.awaitingDocumentHandoff = true;
 
-            // Extract document metadata from response
-            const metadata = this.extractDocumentMetadata(response, file.name);
-            
-            // Show the document ready modal with detailed information
-            const successDialog = this.dialogService.open(TailwindDialogComponent, {
-              data: {
-                componentType: DocumentReadyModalComponent,
-                componentInputs: { metadata },
-                showCloseButton: false,
-                disableClose: false
-              }
-            });
-
-            // Once the modal is gone the scan is either handed off or abandoned,
-            // so normal tab-visibility cleanup can resume.
-            successDialog.afterClosed().subscribe(() => {
-              this.awaitingDocumentHandoff = false;
-            });
-
-            // Wait for component to be created and subscribe to continue event
-            setTimeout(() => {
-              const dialogComponent = successDialog.componentRef?.instance as TailwindDialogComponent;
-              const docReadyComponent = dialogComponent?.componentRef?.instance as DocumentReadyModalComponent;
-              
-              if (docReadyComponent && docReadyComponent.continue) {
-                docReadyComponent.continue.subscribe(() => {
-                  this.router.navigate(['/dashboard']).then(() => {
-                    successDialog.close();
-                  });
-                });
-              }
-            }, 100);
+            // Spec 029 US2 — the post-upload fork replaces the single Continue
+            // for scheduling-tier users only (research D2).
+            this.openPostUploadHandoff(response, file.name);
           },
           error: (error) => {
             // Clean up progress subscription and component reference
@@ -699,6 +797,118 @@ export class UploadComponent implements OnInit, OnDestroy {
     this.selectedFiles = [];
     this.fileToUpload = null;
     this.working = false;
+  }
+
+  // ─────────────────────────────────────────────
+  // Spec 029 US2 — post-upload fork (Save as Project / Just make sides)
+  // ─────────────────────────────────────────────
+
+  /**
+   * Opens DocumentReadyModal with the post-upload fork for scheduling-tier
+   * users (contracts/upload-entry-ui.md §2), or the existing single-Continue
+   * flow unchanged for everyone else. Re-entrant: reopened after a cancelled
+   * Save as Project so the user can choose again without re-uploading.
+   */
+  private openPostUploadHandoff(response: any, filename: string): void {
+    const metadata = this.extractDocumentMetadata(response, filename);
+    const showFork = shouldShowPostUploadFork({ hasSchedulingTier: this.hasSchedulingTier });
+
+    const handoffDialog = this.dialogService.open(TailwindDialogComponent, {
+      data: {
+        componentType: DocumentReadyModalComponent,
+        componentInputs: { metadata, showFork },
+        showCloseButton: false,
+        disableClose: false,
+      },
+    });
+
+    // Once the modal is gone the scan is either handed off or abandoned,
+    // so normal tab-visibility cleanup can resume.
+    handoffDialog.afterClosed().subscribe(() => {
+      this.awaitingDocumentHandoff = false;
+    });
+
+    setTimeout(() => {
+      const dialogComponent = handoffDialog.componentRef?.instance as TailwindDialogComponent;
+      const docReadyComponent = dialogComponent?.componentRef?.instance as DocumentReadyModalComponent;
+
+      if (!docReadyComponent) {
+        return;
+      }
+
+      // Non-premium: unchanged single Continue → /dashboard.
+      docReadyComponent.continue?.subscribe(() => {
+        this.router.navigate(['/dashboard']).then(() => handoffDialog.close());
+      });
+
+      // Premium — "Just make sides": ZERO project create calls (contract §2).
+      docReadyComponent.justSides?.subscribe(() => {
+        this.router.navigate(['/dashboard']).then(() => handoffDialog.close());
+      });
+
+      // Premium — "Save as Project": hand off to the existing SaveProjectDialog.
+      docReadyComponent.saveProject?.subscribe(() => {
+        handoffDialog.close();
+        this.openSaveProjectDialog(response, filename);
+      });
+    }, 100);
+  }
+
+  /**
+   * Opens the existing SaveProjectDialog (027) with the just-classified
+   * script as its payload. On success, navigates to the project hub
+   * (research D4). On cancel, returns to the post-upload fork so the user
+   * can pick again — no project is ever created silently.
+   */
+  private openSaveProjectDialog(response: any, filename: string): void {
+    const content = this.buildProjectContent(response, filename);
+    const defaultTitle = (content.title || filename.replace(/\.pdf$/i, '')).trim();
+
+    const saveDialog = this.dialogService.open(TailwindDialogComponent, {
+      data: {
+        componentType: SaveProjectDialogComponent,
+        componentInputs: { data: { defaultTitle, content } as SaveProjectDialogData },
+        showCloseButton: false,
+        disableClose: false,
+      },
+    });
+
+    setTimeout(() => {
+      const dialogComponent = saveDialog.componentRef?.instance as TailwindDialogComponent;
+      const saveComponent = dialogComponent?.componentRef?.instance as SaveProjectDialogComponent;
+
+      if (!saveComponent) {
+        return;
+      }
+
+      saveComponent.save.subscribe((_result: SaveProjectResult) => {
+        saveDialog.close();
+        this.router.navigate(['/my-projects']);
+      });
+
+      saveComponent.cancel.subscribe(() => {
+        saveDialog.close();
+        this.openPostUploadHandoff(response, filename);
+      });
+    }, 100);
+  }
+
+  /** Best-effort ProjectContent from the classify response (no backend shape change). */
+  private buildProjectContent(response: any, filename: string): ProjectContent {
+    const data = response?.data || response || {};
+    return {
+      title: data.title || filename.replace(/\.pdf$/i, ''),
+      originalname: filename,
+      createdAt: new Date().toISOString(),
+      allLines: data.allLines || [],
+      individualPages: data.individualPages || [],
+      allChars: data.allChars || [],
+      firstAndLastLinesOfScenes: data.firstAndLastLinesOfScenes || [],
+      pdfMetadata: data.pdfMetadata,
+      warnings: data.warnings,
+      scanSummary: data.scanSummary,
+      aiValidated: this.enableAiValidation,
+    };
   }
 
   /**

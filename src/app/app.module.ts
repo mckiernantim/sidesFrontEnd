@@ -19,6 +19,7 @@ import { UploadModule } from './modules/upload-module/upload.module';
 import { DashboardModule } from './modules/dashboard-module/dashboard.module';
 import { SharedModule } from './modules/shared-module/shared.module';
 import { ScheduleModule } from './modules/schedule-module/schedule.module';
+import { ProjectLibraryModule } from './modules/project-library-module/project-library.module';
 import { PaymentSuccessComponent } from './components/payment-success/payment-success.component';
 import { ProfileComponent } from './components/profile/profile.component';
 import { TestComponent } from './components/test/test.component';
@@ -88,6 +89,7 @@ export function initializeFirebase(authService: AuthService) {
     SharedModule,
     DashboardModule,
     ScheduleModule,
+    ProjectLibraryModule,
     FirebaseModule.forRoot(),
     DragDropModule,
   ],

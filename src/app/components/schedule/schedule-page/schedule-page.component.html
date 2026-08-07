@@ -1,5 +1,33 @@
 <!-- Standalone Schedule Page -->
 <div class="min-h-screen bg-sw-bg">
+  <!-- Shared chrome — My Projects | Schedule nav + save indicator (spec 029 US4) -->
+  <div class="bg-sw-surface-2 border-b border-sw-border" data-testid="scheduling-nav">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-3">
+      <nav class="flex items-center gap-1" aria-label="Scheduling">
+        <button
+          type="button"
+          data-testid="nav-my-projects"
+          (click)="goToMyProjects()"
+          class="text-sm font-medium text-sw-text-muted hover:text-sw-text px-3 py-1.5 rounded-md hover:bg-sw-surface transition-colors">
+          My Projects
+        </button>
+        <span
+          data-testid="nav-schedule"
+          [class.text-sw-text]="hasOpenSchedule"
+          [class.text-sw-text-subtle]="!hasOpenSchedule"
+          class="text-sm font-semibold px-3 py-1.5 rounded-md bg-sw-surface border border-sw-border">
+          Schedule
+        </span>
+      </nav>
+
+      <div class="flex items-center" data-testid="schedule-page-save-indicator">
+        <span *ngIf="isSaving" class="text-xs text-sw-info font-medium animate-pulse">Saving…</span>
+        <span *ngIf="!isSaving && isDirty" class="text-xs text-sw-warning font-medium">● Unsaved changes</span>
+        <span *ngIf="!isSaving && !isDirty && lastSavedAt" class="text-xs text-sw-success font-medium">All changes saved</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Page Header -->
   <div class="bg-sw-surface border-b border-sw-border">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -63,10 +91,63 @@
   <!-- Schedule Content (ScheduleTabComponent handles everything) -->
   <div *ngIf="isAuthenticated && !isLoadingRoute && !routeLoadError"
        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Legacy/unlinked schedule: offer to attach a saved project (T042) -->
+    <div *ngIf="isLegacySchedule && !isHydratingProject" data-testid="attach-project-banner"
+         class="mb-6 bg-sw-surface border border-sw-border rounded-lg p-4 flex items-center justify-between gap-4">
+      <div>
+        <p class="text-sm font-semibold text-sw-text">This schedule isn't linked to a saved project</p>
+        <p class="text-sm text-sw-text-muted mt-0.5">
+          Manual one-liners still work. Link a saved project to regenerate AI one-liners and reuse live script data without re-uploading.
+        </p>
+      </div>
+      <button
+        type="button"
+        data-testid="open-attach-picker-btn"
+        (click)="openAttachPicker()"
+        class="flex-shrink-0 bg-sw-accent hover:bg-sw-accent-hover text-sw-accent-fg text-sm font-semibold py-2 px-4 rounded-lg transition-colors">
+        Link to a Project
+      </button>
+    </div>
+
+    <!-- Attach picker -->
+    <div *ngIf="isAttachPickerOpen" data-testid="attach-project-picker"
+         class="mb-6 bg-sw-surface border border-sw-border rounded-lg p-4">
+      <div *ngIf="isLoadingAttachOptions" class="text-sm text-sw-text-muted">Loading your saved projects...</div>
+
+      <div *ngIf="!isLoadingAttachOptions">
+        <p *ngIf="attachableProjects.length === 0" class="text-sm text-sw-text-muted">
+          You don't have any saved projects yet.
+        </p>
+
+        <ul *ngIf="attachableProjects.length > 0" class="space-y-2">
+          <li *ngFor="let project of attachableProjects" class="flex items-center justify-between gap-4">
+            <span class="text-sm text-sw-text">{{ project.title }}</span>
+            <button
+              type="button"
+              data-testid="attach-project-option"
+              [disabled]="isAttaching"
+              (click)="attachToProject(project.id)"
+              class="text-sm text-sw-accent hover:text-sw-accent-hover font-semibold disabled:opacity-60">
+              {{ isAttaching ? 'Linking…' : 'Attach' }}
+            </button>
+          </li>
+        </ul>
+
+        <p *ngIf="attachError" class="text-sm text-sw-danger mt-3">{{ attachError }}</p>
+
+        <button type="button" (click)="closeAttachPicker()" class="text-sm text-sw-text-muted hover:text-sw-text mt-3">
+          Cancel
+        </button>
+      </div>
+    </div>
+
     <app-schedule-tab
+      [pdfService]="isProjectLinked ? pdfService : undefined"
       [allLines]="[]"
       [scenes]="[]"
-      [projectTitle]="''">
+      [projectTitle]="''"
+      [project]="linkedProject || undefined">
     </app-schedule-tab>
 
     <!-- Hint: Upload to create new schedules -->

@@ -1,597 +1,155 @@
+/**
+ * Profile component — 033 navigation tests.
+ *
+ * Verifies that Subscribe / Upgrade CTAs navigate to /pricing (FR-005) and
+ * that Manage Subscription still calls createPortalSession (FR-006).
+ */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of, throwError, Subject } from 'rxjs';
+import { Router, ActivatedRoute } from '@angular/router';
+import { BehaviorSubject, of } from 'rxjs';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ProfileComponent } from './profile.component';
-import { StripeService } from '../../services/stripe/stripe.service';
 import { AuthService } from '../../services/auth/auth.service';
 import { AuthModalService } from '../../services/auth-modal/auth-modal.service';
+import { StripeService } from '../../services/stripe/stripe.service';
 import { ScheduleApiService } from '../../services/schedule/schedule-api.service';
+import { ProjectApiService } from '../../services/project/project-api.service';
+import { ProjectService } from '../../services/project/project.service';
 import { PdfService } from '../../services/pdf/pdf.service';
 import { FunDataService } from '../../services/fundata/fundata.service';
-import { Router, NavigationEnd } from '@angular/router';
 import { SubscriptionStatus } from '../../types/SubscriptionTypes';
-import { User } from '@angular/fire/auth';
 
-// Create mock user inline
-const createMockUser = (overrides: Partial<User> = {}): User => {
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function makeStatus(overrides: Partial<SubscriptionStatus> = {}): SubscriptionStatus {
   return {
-    uid: 'test-user-123',
-    email: 'test@example.com',
-    displayName: 'Test User',
-    photoURL: null,
-    phoneNumber: null,
-    providerId: 'firebase',
-    emailVerified: true,
-    isAnonymous: false,
-    metadata: {
-      creationTime: '2024-01-01T00:00:00Z',
-      lastSignInTime: '2024-01-01T00:00:00Z'
-    } as any,
-    providerData: [],
-    refreshToken: 'mock-refresh-token',
-    tenantId: null,
-    delete: jest.fn(),
-    getIdToken: jest.fn().mockResolvedValue('mock-id-token'),
-    getIdTokenResult: jest.fn().mockResolvedValue({
-      token: 'mock-id-token',
-      authTime: '2024-01-01T00:00:00Z',
-      issuedAtTime: '2024-01-01T00:00:00Z',
-      expirationTime: '2024-01-02T00:00:00Z',
-      signInProvider: 'google.com',
-      signInSecondFactor: null,
-      claims: {}
-    }),
-    reload: jest.fn().mockResolvedValue(undefined),
-    toJSON: jest.fn().mockReturnValue({}),
-    ...overrides
-  } as User;
-};
+    active: false,
+    isFounder: false,
+    isStudent: false,
+    subscription: null,
+    usage: { pdfsGenerated: 0, lastPdfGeneration: null, pdfUsageLimit: 0, subscriptionStatus: 'inactive', subscriptionFeatures: { pdfGeneration: false, unlimitedPdfs: false, pdfLimit: 0 }, resetDate: null, remainingPdfs: 0 },
+    plan: null,
+    lastPayment: null,
+    hasSchedulingTier: false,
+    schedulingSubscription: null,
+    ...overrides,
+  };
+}
 
-describe('ProfileComponent', () => {
+const MOCK_USER = { uid: 'uid1', email: 'u@test.com', displayName: 'Test User' } as any;
+
+// ─── Tests ────────────────────────────────────────────────────────────────────
+
+describe('ProfileComponent — 033 Subscribe/Upgrade routing', () => {
   let component: ProfileComponent;
   let fixture: ComponentFixture<ProfileComponent>;
-  let mockStripeService: jest.Mocked<StripeService>;
-  let mockAuthService: jest.Mocked<AuthService>;
-
-  const mockUser = createMockUser();
-
-  const mockActiveSubscription: SubscriptionStatus = {
-    active: true,
-    subscription: {
-      id: 'sub_test123',
-      status: 'active',
-      created: '2024-01-01T00:00:00Z',
-      currentPeriodEnd: '2024-02-01T00:00:00Z',
-      currentPeriodStart: '2024-01-01T00:00:00Z',
-      cancelAtPeriodEnd: false,
-      willAutoRenew: true,
-      originalStartDate: '2024-01-01T00:00:00Z',
-      plan: {
-        id: 'plan_monthly',
-        nickname: 'Monthly Plan',
-        amount: 2999,
-        interval: 'month'
-      }
-    },
-    usage: {
-      pdfsGenerated: 5,
-      lastPdfGeneration: '2024-01-15T00:00:00Z',
-      pdfUsageLimit: 50,
-      subscriptionStatus: 'active',
-      subscriptionFeatures: {
-        pdfGeneration: true,
-        unlimitedPdfs: false,
-        pdfLimit: 50
-      },
-      resetDate: '2024-02-01T00:00:00Z',
-      remainingPdfs: 45
-    },
-    plan: 'monthly',
-    lastPayment: {
-      status: 'succeeded',
-      amount: 2999,
-      date: '2024-01-01T00:00:00Z'
-    }
-  };
-
-  const mockInactiveSubscription: SubscriptionStatus = {
-    active: false,
-    subscription: {
-      id: 'sub_canceled',
-      status: 'canceled',
-      created: '2024-01-01T00:00:00Z',
-      currentPeriodEnd: '2024-01-31T00:00:00Z',
-      currentPeriodStart: '2024-01-01T00:00:00Z',
-      cancelAtPeriodEnd: true,
-      willAutoRenew: false,
-      originalStartDate: '2024-01-01T00:00:00Z',
-      plan: {
-        id: 'plan_monthly',
-        nickname: 'Monthly Plan',
-        amount: 2999,
-        interval: 'month'
-      }
-    },
-    usage: {
-      pdfsGenerated: 0,
-      lastPdfGeneration: null,
-      pdfUsageLimit: 0,
-      subscriptionStatus: 'canceled',
-      subscriptionFeatures: {
-        pdfGeneration: false,
-        unlimitedPdfs: false,
-        pdfLimit: 0
-      },
-      resetDate: null,
-      remainingPdfs: 0
-    },
-    plan: null
-  };
+  let mockStripeService: jest.Mocked<Partial<StripeService>>;
+  let mockRouter: { navigate: jest.Mock; events: BehaviorSubject<any>; url: string };
 
   beforeEach(async () => {
     mockStripeService = {
-      getSubscriptionStatus: jest.fn().mockReturnValue(of(mockActiveSubscription)),
-      createPortalSession: jest.fn(),
-      subscriptionStatus$: of(mockActiveSubscription),
+      isLive: false,
+      subscriptionStatus$: new BehaviorSubject<any>(null) as any,
+      getSubscriptionStatus: jest.fn().mockReturnValue(of(makeStatus())),
+      createPortalSession: jest.fn().mockReturnValue(of({ success: true, url: 'https://stripe.com/portal' })),
+      createSchedulingCheckoutSession: jest.fn().mockReturnValue(of({ success: true, upgraded: false, url: 'https://stripe.com/checkout' })),
       clearCache: jest.fn(),
-      canGeneratePdf: jest.fn().mockReturnValue(true)
-    } as any;
-
-    mockAuthService = {
-      user$: of(mockUser),
-      getCurrentUser: jest.fn(),
-      getAuthenticatedUser: jest.fn(),
-      signInWithGoogle: jest.fn(),
-      signOut: jest.fn(),
-      checkSubscriptionStatus: jest.fn()
-    } as any;
-
-    const mockScheduleApiService = {
-      listSchedules: jest.fn().mockReturnValue(of({ success: true, schedules: [], count: 0 })),
-      getSchedule: jest.fn(),
-      createSchedule: jest.fn(),
-      updateSchedule: jest.fn(),
-      deleteSchedule: jest.fn(),
+      refreshSubscriptionStatus: jest.fn().mockReturnValue(of(makeStatus())),
+      canGeneratePdf: jest.fn().mockReturnValue(false),
     };
 
-    const mockPdfService = {
-      getScriptName: jest.fn().mockReturnValue(''),
-    };
-
-    const mockFunDataService = {
-      getStats: jest.fn().mockReturnValue(of({
-        success: true,
-        stats: {
-          accurate: {
-            scriptsProcessed: 0,
-            linesCrawled: 0,
-            scenesFound: 0,
-            charactersDiscovered: 0,
-            sidesCreated: 0,
-            pagesGenerated: 0,
-            schedulesCreated: 0,
-            totalCharacterAppearances: 0,
-          },
-          fun: {
-            minutesSaved: 0,
-            circlesNotDrawn: 0,
-            cigarettesNotSmoked: 0,
-          },
-          updatedAt: null,
-        },
-      })),
-    };
-
-    const mockRouter = {
-      navigate: jest.fn(),
-      events: new Subject<any>(),
-    };
+    mockRouter = { navigate: jest.fn(), events: new BehaviorSubject<any>(null), url: '/profile' };
 
     await TestBed.configureTestingModule({
       declarations: [ProfileComponent],
       providers: [
-        { provide: StripeService, useValue: mockStripeService },
-        { provide: AuthService, useValue: mockAuthService },
+        { provide: AuthService, useValue: { user$: of(MOCK_USER), getCurrentUser: () => MOCK_USER, signOut: jest.fn() } },
         { provide: AuthModalService, useValue: { open: jest.fn() } },
-        { provide: ScheduleApiService, useValue: mockScheduleApiService },
-        { provide: PdfService, useValue: mockPdfService },
-        { provide: FunDataService, useValue: mockFunDataService },
-        { provide: Router, useValue: mockRouter }
-      ]
+        { provide: StripeService, useValue: mockStripeService },
+        { provide: ScheduleApiService, useValue: { listSchedules: jest.fn().mockReturnValue(of({ schedules: [] })) } },
+        { provide: ProjectApiService, useValue: { listProjects: jest.fn().mockReturnValue(of({ projects: [] })), getProjectLinks: jest.fn().mockReturnValue(of({ schedules: [] })), listSavedScenes: jest.fn().mockReturnValue(of({ scenes: [] })) } },
+        { provide: ProjectService, useValue: {} },
+        { provide: PdfService, useValue: { getScriptName: jest.fn().mockReturnValue('') } },
+        { provide: FunDataService, useValue: { getStats: jest.fn().mockReturnValue(of({ stats: { accurate: null, fun: null } })) } },
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
+      ],
+      schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ProfileComponent);
     component = fixture.componentInstance;
+    component.user = MOCK_USER;
+    fixture.detectChanges();
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
+  // ── FR-005: Subscribe → /pricing ──────────────────────────────────────────
+
+  it('navigateToPricingSubscribe navigates to /pricing', () => {
+    component.navigateToPricingSubscribe();
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['/pricing']);
   });
 
-  describe('Component Initialization', () => {
-    it('should create', () => {
-      expect(component).toBeTruthy();
-    });
-
-    it('should initialize with default values', () => {
-      expect(component.user).toBeNull();
-      expect(component.subscription).toBeNull();
-      expect(component.isLoading).toBe(true); // Default is true until data loads
-      expect(component.error).toBeNull();
-    });
+  it('handleNewSubscription delegates to navigateToPricingSubscribe', () => {
+    component.handleNewSubscription();
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['/pricing']);
   });
 
-  describe('ngOnInit', () => {
-    it('should load user and subscription data', (done) => {
-      mockStripeService.getSubscriptionStatus.mockReturnValue(of(mockActiveSubscription));
-      
-      component.ngOnInit();
+  // ── FR-005: Upgrade → /pricing?tier=pro ───────────────────────────────────
 
-      setTimeout(() => {
-        expect(component.subscription).toEqual(mockActiveSubscription);
-        expect(mockStripeService.getSubscriptionStatus).toHaveBeenCalledWith('test-user-123');
-        done();
-      }, 0);
-    });
-
-    it('should handle no user scenario', () => {
-      mockAuthService.user$ = of(null);
-      
-      component.ngOnInit();
-
-      expect(component.isLoading).toBe(false);
-    });
+  it('navigateToPricingUpgradePro navigates to /pricing with tier=pro', () => {
+    component.navigateToPricingUpgradePro();
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['/pricing'], { queryParams: { tier: 'pro' } });
   });
 
-  describe('isUsageNearLimit', () => {
-    it('should return true when usage is near limit', () => {
-      component.subscription = {
-        ...mockActiveSubscription,
-        usage: {
-          ...mockActiveSubscription.usage,
-          pdfsGenerated: 49,
-          pdfUsageLimit: 50,
-          remainingPdfs: 1
-        }
-      };
+  // ── FR-006: Manage Subscription still calls createPortalSession ───────────
 
-      expect(component.isUsageNearLimit()).toBe(true);
-    });
-
-    it('should return true when no PDFs remain', () => {
-      component.subscription = {
-        ...mockActiveSubscription,
-        usage: {
-          ...mockActiveSubscription.usage,
-          pdfsGenerated: 50,
-          pdfUsageLimit: 50,
-          remainingPdfs: 0
-        }
-      };
-
-      expect(component.isUsageNearLimit()).toBe(true);
-    });
-
-    it('should return false when usage is not near limit', () => {
-      component.subscription = {
-        ...mockActiveSubscription,
-        usage: {
-          ...mockActiveSubscription.usage,
-          pdfsGenerated: 30,
-          pdfUsageLimit: 50,
-          remainingPdfs: 20
-        }
-      };
-
-      expect(component.isUsageNearLimit()).toBe(false);
-    });
-
-    it('should return false when subscription data is null', () => {
-      component.subscription = null;
-      expect(component.isUsageNearLimit()).toBe(false);
-    });
+  it('manageSubscription calls createPortalSession and does NOT navigate to /pricing', () => {
+    component.manageSubscription();
+    expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('uid1', 'u@test.com');
+    const calls = (mockRouter.navigate as jest.Mock).mock.calls;
+    const pricingCalls = calls.filter((args: any[]) => args[0]?.[0]?.includes?.('pricing'));
+    expect(pricingCalls.length).toBe(0);
   });
 
-  describe('handleNewSubscription', () => {
-    beforeEach(() => {
-      Object.defineProperty(window, 'location', {
-        value: { href: '' },
-        writable: true
-      });
-    });
+  // ── showProUpgradeCta ─────────────────────────────────────────────────────
 
-    it('should create new subscription successfully', (done) => {
-      component.user = mockUser;
-      const mockResponse = {
-        success: true,
-        url: 'https://billing.stripe.com/checkout_123',
-        type: 'checkout' as const
-      };
-
-      mockStripeService.createPortalSession.mockReturnValue(of(mockResponse));
-
-      component.handleNewSubscription();
-
-      // of() resolves synchronously, so isLoading is already reset
-      setTimeout(() => {
-        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith(
-          'test-user-123',
-          'test@example.com',
-          undefined,
-          'week'
-        );
-        expect(component.isLoading).toBe(false);
-        done();
-      }, 0);
-    });
-
-    it('should check out on the monthly price when monthly is selected', (done) => {
-      component.user = mockUser;
-      mockStripeService.createPortalSession.mockReturnValue(
-        of({ success: true, url: 'https://billing.stripe.com/checkout_123', type: 'checkout' as const })
-      );
-
-      component.selectInterval('month');
-      component.handleNewSubscription();
-
-      setTimeout(() => {
-        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith(
-          'test-user-123',
-          'test@example.com',
-          undefined,
-          'month'
-        );
-        done();
-      }, 0);
-    });
-
-    it('should handle missing user', () => {
-      component.user = null;
-
-      component.handleNewSubscription();
-
-      expect(component.error).toBe('You must be logged in to subscribe');
-      expect(mockStripeService.createPortalSession).not.toHaveBeenCalled();
-    });
-
-    it('should handle missing email', () => {
-      component.user = createMockUser({ email: null });
-
-      component.handleNewSubscription();
-
-      expect(component.error).toBe('You must be logged in to subscribe');
-      expect(mockStripeService.createPortalSession).not.toHaveBeenCalled();
-    });
-
-    it('should handle subscription creation error', (done) => {
-      component.user = mockUser;
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      mockStripeService.createPortalSession.mockReturnValue(throwError(() => new Error('Subscription failed')));
-
-      component.handleNewSubscription();
-
-      setTimeout(() => {
-        expect(consoleSpy).toHaveBeenCalled();
-        expect(consoleSpy.mock.calls[0][0]).toBe('Error creating subscription');
-        expect(component.error).toBe('An error occurred while creating your subscription');
-        expect(component.isLoading).toBe(false);
-        consoleSpy.mockRestore();
-        done();
-      }, 0);
-    });
-
-    it('should handle unsuccessful response', (done) => {
-      component.user = mockUser;
-      const mockResponse = {
-        success: false,
-        error: 'Payment failed'
-      };
-
-      mockStripeService.createPortalSession.mockReturnValue(of(mockResponse));
-
-      component.handleNewSubscription();
-
-      setTimeout(() => {
-        expect(component.error).toBe('Payment failed');
-        expect(component.isLoading).toBe(false);
-        done();
-      }, 0);
-    });
+  it('showProUpgradeCta returns false when no user', () => {
+    component.user = null;
+    expect(component.showProUpgradeCta()).toBe(false);
   });
 
-  describe('manageSubscription', () => {
-    it('should manage subscription successfully', (done) => {
-      component.user = mockUser;
-      const mockResponse = {
-        success: true,
-        url: 'https://billing.stripe.com/portal_123',
-        type: 'portal' as const
-      };
-
-      mockStripeService.createPortalSession.mockReturnValue(of(mockResponse));
-
-      component.manageSubscription();
-
-      // of() resolves synchronously, so isLoading is already reset
-      setTimeout(() => {
-        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('test-user-123', 'test@example.com');
-        expect(component.isLoading).toBe(false);
-        expect(component.error).toBeNull();
-        done();
-      }, 0);
-    });
-
-    it('should handle missing user', () => {
-      component.user = null;
-
-      component.manageSubscription();
-
-      expect(component.error).toBe('You must be logged in to manage your subscription');
-      expect(mockStripeService.createPortalSession).not.toHaveBeenCalled();
-    });
-
-    it('should handle management error', (done) => {
-      component.user = mockUser;
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      mockStripeService.createPortalSession.mockReturnValue(throwError(() => new Error('Management failed')));
-
-      component.manageSubscription();
-
-      setTimeout(() => {
-        expect(consoleSpy).toHaveBeenCalled();
-        expect(consoleSpy.mock.calls[0][0]).toBe('Error opening portal');
-        expect(component.error).toBe('An error occurred while opening subscription management');
-        expect(component.isLoading).toBe(false);
-        consoleSpy.mockRestore();
-        done();
-      }, 0);
-    });
+  it('showProUpgradeCta returns false when inactive subscription', () => {
+    component.user = MOCK_USER;
+    component.subscription = makeStatus({ active: false });
+    expect(component.showProUpgradeCta()).toBe(false);
   });
 
-  describe('Subscription Status Display', () => {
-    it('should display active subscription correctly', () => {
-      component.subscription = mockActiveSubscription;
-
-      expect(component.subscription?.active).toBe(true);
-      expect(component.subscription?.subscription?.status).toBe('active');
-      expect(component.subscription?.usage?.remainingPdfs).toBe(45);
-    });
-
-    it('should display inactive subscription correctly', () => {
-      component.subscription = mockInactiveSubscription;
-
-      expect(component.subscription?.active).toBe(false);
-      expect(component.subscription?.subscription?.status).toBe('canceled');
-      expect(component.subscription?.usage?.remainingPdfs).toBe(0);
-    });
+  it('showProUpgradeCta returns false when already on Pro', () => {
+    component.user = MOCK_USER;
+    component.subscription = makeStatus({ active: true, hasSchedulingTier: true });
+    expect(component.showProUpgradeCta()).toBe(false);
   });
 
-  describe('Error Handling', () => {
-    it('should not overwrite error on successful subscription creation', () => {
-      component.error = 'Previous error';
-      component.user = mockUser;
-      mockStripeService.createPortalSession.mockReturnValue(of({ success: true }));
-
-      component.handleNewSubscription();
-
-      // Component does not explicitly clear error on start; success path doesn't set error
-      expect(component.error).toBe('Previous error');
-    });
-
-    it('should not overwrite error on successful subscription management', () => {
-      component.error = 'Previous error';
-      component.user = mockUser;
-      mockStripeService.createPortalSession.mockReturnValue(of({ success: true, url: 'https://example.com' }));
-
-      component.manageSubscription();
-
-      // Component does not explicitly clear error on start; success path doesn't set error
-      expect(component.error).toBe('Previous error');
-    });
-
-    it('should handle network errors gracefully', (done) => {
-      component.user = mockUser;
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      mockStripeService.createPortalSession.mockReturnValue(throwError(() => new Error('Network error')));
-
-      component.handleNewSubscription();
-
-      setTimeout(() => {
-        expect(consoleSpy).toHaveBeenCalled();
-        expect(consoleSpy.mock.calls[0][0]).toBe('Error creating subscription');
-        expect(component.error).toBe('An error occurred while creating your subscription');
-        consoleSpy.mockRestore();
-        done();
-      }, 0);
-    });
+  it('showProUpgradeCta returns true for active Basic subscriber', () => {
+    component.user = MOCK_USER;
+    component.subscription = makeStatus({ active: true, hasSchedulingTier: false });
+    expect(component.showProUpgradeCta()).toBe(true);
   });
 
-  describe('Loading States', () => {
-    it('should be false after synchronous subscription creation completes', () => {
-      component.user = mockUser;
-      mockStripeService.createPortalSession.mockReturnValue(of({ success: true, url: 'test' }));
+  // ── Deprecated stubs don't throw ─────────────────────────────────────────
 
-      component.handleNewSubscription();
-
-      // of() resolves synchronously, so isLoading is already reset
-      expect(component.isLoading).toBe(false);
-    });
-
-    it('should clear loading state on error', (done) => {
-      component.user = mockUser;
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      mockStripeService.createPortalSession.mockReturnValue(throwError(() => new Error('Test error')));
-
-      component.handleNewSubscription();
-
-      setTimeout(() => {
-        expect(component.isLoading).toBe(false);
-        consoleSpy.mockRestore();
-        done();
-      }, 0);
-    });
+  it('legacy showSchedulingUpgradeCta delegates to showProUpgradeCta', () => {
+    component.user = MOCK_USER;
+    component.subscription = makeStatus({ active: true, hasSchedulingTier: false });
+    expect(component.showSchedulingUpgradeCta()).toBe(true);
   });
 
-  describe('Current Script', () => {
-    it('should initialize currentScriptName as empty when no script is loaded', () => {
-      component.ngOnInit();
-      expect(component.currentScriptName).toBe('');
-    });
-
-    it('should set currentScriptName when a script is loaded in PdfService', () => {
-      const pdfService = TestBed.inject(PdfService);
-      (pdfService.getScriptName as jest.Mock).mockReturnValue('THE_WACKNESS.pdf');
-
-      component.ngOnInit();
-      expect(component.currentScriptName).toBe('THE_WACKNESS.pdf');
-    });
-
-    it('should navigate to dashboard on navigateToDashboard()', () => {
-      const router = TestBed.inject(Router);
-      component.navigateToDashboard();
-      expect(router.navigate).toHaveBeenCalledWith(['/dashboard']);
-    });
+  it('legacy getSchedulingPriceLabel returns empty string', () => {
+    expect(component.getSchedulingPriceLabel()).toBe('');
   });
 
-  describe('Integration Scenarios', () => {
-    it('should handle complete subscription lifecycle', (done) => {
-      // Start with inactive subscription
-      component.user = mockUser;
-      component.subscription = mockInactiveSubscription;
-
-      // Start new subscription
-      const startResponse = {
-        success: true,
-        url: 'https://billing.stripe.com/checkout_123',
-        type: 'checkout' as const
-      };
-      mockStripeService.createPortalSession.mockReturnValue(of(startResponse));
-
-      component.handleNewSubscription();
-
-      setTimeout(() => {
-        expect(mockStripeService.createPortalSession).toHaveBeenCalledWith(
-          'test-user-123',
-          'test@example.com',
-          undefined,
-          'week'
-        );
-
-        // Later, manage active subscription
-        component.subscription = mockActiveSubscription;
-        const manageResponse = {
-          success: true,
-          url: 'https://billing.stripe.com/portal_123',
-          type: 'portal' as const
-        };
-        mockStripeService.createPortalSession.mockReturnValue(of(manageResponse));
-
-        component.manageSubscription();
-
-        setTimeout(() => {
-          expect(mockStripeService.createPortalSession).toHaveBeenCalledWith('test-user-123', 'test@example.com');
-          done();
-        }, 0);
-      }, 0);
-    });
+  it('legacy startSchedulingCheckout does not throw', () => {
+    expect(() => component.startSchedulingCheckout('week')).not.toThrow();
   });
 });

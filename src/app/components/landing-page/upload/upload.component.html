@@ -88,7 +88,31 @@
         <ng-template #uploadSection>
           <ng-container *ngIf="(user$ | async) as user; else signInPrompt">
             <ng-container *ngIf="uploadAllowed; else uploadLocked">
+
+              <!-- Spec 029 US1 — Upload new script | Use saved project (premium only) -->
+              <div class="entry-toggle" data-testid="entry-toggle" *ngIf="showEntryToggle">
+                <button
+                  type="button"
+                  class="entry-toggle-btn"
+                  data-testid="entry-toggle-upload"
+                  [class.active]="entryMode === 'upload'"
+                  (click)="setEntryMode('upload')"
+                >
+                  Upload new script
+                </button>
+                <button
+                  type="button"
+                  class="entry-toggle-btn"
+                  data-testid="entry-toggle-saved"
+                  [class.active]="entryMode === 'saved-project'"
+                  (click)="setEntryMode('saved-project')"
+                >
+                  Use saved project
+                </button>
+              </div>
+
               <div
+                *ngIf="entryMode === 'upload'"
                 class="upload-zone"
                 id="upload-zone"
                 (click)="fileInput.click()"
@@ -112,6 +136,44 @@
                   (click)="$event.stopPropagation()"
                   #fileInput
                 />
+              </div>
+
+              <!-- Spec 029 US1 — saved-project picker -->
+              <div *ngIf="entryMode === 'saved-project'" class="saved-project-panel" data-testid="saved-project-panel">
+                <div *ngIf="isLoadingSavedProjects" class="saved-project-loading" data-testid="saved-project-loading">
+                  Loading your saved projects…
+                </div>
+
+                <p *ngIf="savedProjectsError && !isLoadingSavedProjects" class="saved-project-error" data-testid="saved-project-error">
+                  {{ savedProjectsError }}
+                </p>
+
+                <ng-container *ngIf="!isLoadingSavedProjects && !savedProjectsError">
+                  <div *ngIf="savedProjects.length === 0" class="saved-project-empty" data-testid="saved-project-empty">
+                    <p>You don't have any saved projects yet.</p>
+                    <button type="button" class="btn-sw btn-sw-ghost" (click)="setEntryMode('upload')">
+                      Upload new script
+                    </button>
+                  </div>
+
+                  <ul *ngIf="savedProjects.length > 0" class="saved-project-list">
+                    <li *ngFor="let project of savedProjects" class="saved-project-item" [attr.data-testid]="'saved-project-' + project.id">
+                      <div class="saved-project-info">
+                        <span class="saved-project-title">{{ project.title }}</span>
+                        <span class="saved-project-meta">{{ project.pageCount }} pages · {{ project.sceneCount }} scenes</span>
+                      </div>
+                      <button
+                        type="button"
+                        class="btn-sw btn-sw-primary"
+                        data-testid="saved-project-select-btn"
+                        [disabled]="openingProjectId === project.id"
+                        (click)="selectSavedProject(project)"
+                      >
+                        {{ openingProjectId === project.id ? 'Opening…' : 'Use this project' }}
+                      </button>
+                    </li>
+                  </ul>
+                </ng-container>
               </div>
             </ng-container>
 

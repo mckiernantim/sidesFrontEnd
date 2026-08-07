@@ -31,8 +31,25 @@
     </div>
   </div>
 
-  <!-- Scene Header — full text, wraps freely -->
-  <div class="scene-card-header">{{ scene?.sceneHeader || scene?.location }}</div>
+  <!-- Scene Header — full text, wraps freely; click to edit inline (spec 032 US2) -->
+  <div
+    *ngIf="!isEditingHeader"
+    class="scene-card-header"
+    [class.cursor-text]="editable"
+    (click)="enterHeaderEdit($event)"
+    [title]="editable ? 'Click to edit scene header' : ''">
+    {{ scene?.sceneHeader || scene?.location }}
+  </div>
+  <div *ngIf="isEditingHeader" class="scene-header-edit" (click)="$event.stopPropagation()">
+    <input
+      type="text"
+      class="scene-header-input"
+      data-testid="scene-header-input"
+      [(ngModel)]="editHeaderValue"
+      (keydown)="onHeaderKeyDown($event)"
+      (blur)="onHeaderBlur()"
+      autofocus />
+  </div>
 
   <!-- Characters -->
   <div *ngIf="characterNames" class="mt-2 flex items-start space-x-1.5">
@@ -43,15 +60,44 @@
   </div>
 </div>
 
-<!-- One-Liner Editor (card mode) -->
-<div *ngIf="isCard && shouldShowOneLiner" class="mt-1 px-3 pb-2" (click)="$event.stopPropagation()">
-  <app-one-liner-editor
-    [oneLiner]="scene?.oneLiner || ''"
-    [oneLinerSource]="scene?.oneLinerSource || 'manual'"
-    [editable]="editable"
-    [compact]="compact"
-    (oneLinerChanged)="onOneLinerChanged($event)">
-  </app-one-liner-editor>
+<!-- One-Liner Editor + Cast Show/Hide (card mode, spec 031/032) -->
+<div *ngIf="isCard && shouldShowOneLiner" class="mt-1 px-3 pb-2 flex items-center gap-1.5" (click)="$event.stopPropagation()">
+  <div class="flex-1 min-w-0">
+    <app-one-liner-editor
+      [oneLiner]="scene?.oneLiner || ''"
+      [oneLinerSource]="scene?.oneLinerSource || 'manual'"
+      [editable]="editable"
+      [compact]="compact"
+      (oneLinerChanged)="onOneLinerChanged($event)">
+    </app-one-liner-editor>
+  </div>
+  <div class="flex items-center gap-1 flex-shrink-0" role="group" aria-label="Character visibility">
+    <span class="text-[10px] text-sw-text-subtle">Cast:</span>
+    <button
+      type="button"
+      data-testid="row-cast-visibility-show"
+      class="text-[10px] px-1.5 py-1 rounded border font-medium transition-colors"
+      [ngClass]="showCast
+        ? 'bg-sw-accent text-sw-accent-fg border-sw-accent'
+        : 'bg-sw-surface-2 text-sw-text-muted border-sw-border hover:bg-sw-border'"
+      [attr.aria-pressed]="showCast"
+      title="Show cast on all scenes"
+      (click)="onCastVisibilityChange(true, $event)">
+      Show
+    </button>
+    <button
+      type="button"
+      data-testid="row-cast-visibility-hide"
+      class="text-[10px] px-1.5 py-1 rounded border font-medium transition-colors"
+      [ngClass]="!showCast
+        ? 'bg-sw-accent text-sw-accent-fg border-sw-accent'
+        : 'bg-sw-surface-2 text-sw-text-muted border-sw-border hover:bg-sw-border'"
+      [attr.aria-pressed]="!showCast"
+      title="Hide cast on all scenes"
+      (click)="onCastVisibilityChange(false, $event)">
+      Hide
+    </button>
+  </div>
 </div>
 
 
@@ -77,11 +123,28 @@
     </span>
   </div>
 
-  <!-- Scene Header truncated -->
+  <!-- Scene Header truncated; click to edit inline (spec 032 US2) -->
   <div class="flex-1 mx-3 min-w-0">
-    <div class="text-sm font-medium truncate text-sw-text" [title]="scene?.sceneHeader">{{ scene?.sceneHeader || scene?.location }}</div>
-    <div *ngIf="!compact && scene?.characters?.length" class="text-xs text-sw-text-muted truncate">
-      {{ scene.characters.length }} character{{ scene.characters.length !== 1 ? 's' : '' }}
+    <div
+      *ngIf="!isEditingHeader"
+      class="text-sm font-medium truncate text-sw-text"
+      [class.cursor-text]="editable"
+      [title]="editable ? 'Click to edit scene header' : scene?.sceneHeader"
+      (click)="enterHeaderEdit($event)">
+      {{ scene?.sceneHeader || scene?.location }}
+    </div>
+    <div *ngIf="isEditingHeader" (click)="$event.stopPropagation()">
+      <input
+        type="text"
+        class="scene-header-input scene-header-input-compact"
+        data-testid="scene-header-input"
+        [(ngModel)]="editHeaderValue"
+        (keydown)="onHeaderKeyDown($event)"
+        (blur)="onHeaderBlur()"
+        autofocus />
+    </div>
+    <div *ngIf="!compact && characterNames && !isEditingHeader" class="text-xs text-sw-text-muted truncate" [title]="characterNames">
+      {{ characterNames }}
     </div>
   </div>
 
@@ -130,13 +193,42 @@
   </button>
 </div>
 
-<!-- One-Liner Editor (strip mode) -->
-<div *ngIf="!isCard && shouldShowOneLiner" class="mt-1 px-3 pb-2" (click)="$event.stopPropagation()">
-  <app-one-liner-editor
-    [oneLiner]="scene?.oneLiner || ''"
-    [oneLinerSource]="scene?.oneLinerSource || 'manual'"
-    [editable]="editable"
-    [compact]="compact"
-    (oneLinerChanged)="onOneLinerChanged($event)">
-  </app-one-liner-editor>
+<!-- One-Liner Editor + Cast Show/Hide (strip mode, spec 031/032) -->
+<div *ngIf="!isCard && shouldShowOneLiner" class="mt-1 px-3 pb-2 flex items-center gap-1.5" (click)="$event.stopPropagation()">
+  <div class="flex-1 min-w-0">
+    <app-one-liner-editor
+      [oneLiner]="scene?.oneLiner || ''"
+      [oneLinerSource]="scene?.oneLinerSource || 'manual'"
+      [editable]="editable"
+      [compact]="compact"
+      (oneLinerChanged)="onOneLinerChanged($event)">
+    </app-one-liner-editor>
+  </div>
+  <div class="flex items-center gap-1 flex-shrink-0" role="group" aria-label="Character visibility">
+    <span class="text-[10px] text-sw-text-subtle">Cast:</span>
+    <button
+      type="button"
+      data-testid="row-cast-visibility-show"
+      class="text-[10px] px-1.5 py-1 rounded border font-medium transition-colors"
+      [ngClass]="showCast
+        ? 'bg-sw-accent text-sw-accent-fg border-sw-accent'
+        : 'bg-sw-surface-2 text-sw-text-muted border-sw-border hover:bg-sw-border'"
+      [attr.aria-pressed]="showCast"
+      title="Show cast on all scenes"
+      (click)="onCastVisibilityChange(true, $event)">
+      Show
+    </button>
+    <button
+      type="button"
+      data-testid="row-cast-visibility-hide"
+      class="text-[10px] px-1.5 py-1 rounded border font-medium transition-colors"
+      [ngClass]="!showCast
+        ? 'bg-sw-accent text-sw-accent-fg border-sw-accent'
+        : 'bg-sw-surface-2 text-sw-text-muted border-sw-border hover:bg-sw-border'"
+      [attr.aria-pressed]="!showCast"
+      title="Hide cast on all scenes"
+      (click)="onCastVisibilityChange(false, $event)">
+      Hide
+    </button>
+  </div>
 </div>

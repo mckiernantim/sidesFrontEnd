@@ -61,6 +61,37 @@ export interface SubscriptionStatus {
   usage: UsageInfo;
   plan: string | null;
   lastPayment?: PaymentInfo | null;
+  /**
+   * Premium ("Scheduling") tier (spec 028, revised 2026-08-06): ONE Stripe
+   * subscription per account — "Premium with Scheduling" is that same
+   * subscription upgraded to a higher price via proration, never a second
+   * subscription. hasSchedulingTier is derived from the SAME subscription's
+   * price. Optional (like isFounder/isStudent above) so existing
+   * SubscriptionStatus literals elsewhere in the app don't need updating;
+   * StripeService always populates a concrete false/null. Defaults to
+   * false/null for every account that has never upgraded to premium.
+   */
+  hasSchedulingTier?: boolean;
+  schedulingSubscription?: SubscriptionDetails | null;
+  /**
+   * Team tier flag (spec 033) — populated by the Stripe agent alongside
+   * hasSchedulingTier. Optional so existing SubscriptionStatus literals
+   * don't need updating; StripeService always populates a concrete false.
+   */
+  hasTeamTier?: boolean;
+}
+
+/** Mirrors the backend's schedulingSubscription shape (billing-entitlement-api.md) */
+export interface BackendSchedulingSubscription {
+  status: string;
+  subscriptionId: string | null;
+  currentPeriodStart: string | null;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  plan: {
+    id: string | null;
+    interval: string | null;
+  } | null;
 }
 
 // Backend response interface (what your API returns)
@@ -93,6 +124,59 @@ export interface BackendSubscriptionResponse {
     lastPdfGeneration: string | null;
     resetDate?: string | null;
   };
+  /** Premium ("Scheduling") tier (spec 028) — absent on any pre-028 backend response, defaults to false/null. */
+  hasSchedulingTier?: boolean;
+  schedulingSubscription?: BackendSchedulingSubscription | null;
+  /** Team tier (spec 033) — absent on pre-033 responses, defaults to false. */
+  hasTeamTier?: boolean;
+}
+
+/**
+ * Shape of GET /stripe/prices response `prices` object (spec 033).
+ *
+ * Locked price matrix (2026-08-07, amounts in cents):
+ *   Basic  ($10/$30  | Founders $5/$15)   → standardWeekly/Monthly + foundersWeekly/Monthly
+ *   Pro    ($20/$50  | Founders $10/$25)  → schedulingWeekly/Monthly + schedulingFounders*
+ *   Team   ($30/$70  | Founders $15/$35)  → teamWeekly/Monthly + teamFounders*
+ *
+ * All tiers are the same single Stripe subscription upgraded in-place (spec 028).
+ * Tier alias keys (basicWeekly, proWeekly, teamWeekly, …) are preferred for the
+ * pricing page; original keys remain for backward compatibility. Team values are
+ * null until STRIPE_TEAM_* env vars are configured in Doppler.
+ */
+export interface PriceCatalog {
+  // ── Original keys (backward-compatible) ─────────────────────────────────
+  standardWeekly: number | null;
+  standardMonthly: number | null;
+  foundersWeekly: number | null;
+  foundersMonthly: number | null;
+  student: number | null;
+  schedulingWeekly: number | null;
+  schedulingMonthly: number | null;
+  schedulingFoundersWeekly: number | null;
+  schedulingFoundersMonthly: number | null;
+  // ── Basic tier aliases (spec 033) ────────────────────────────────────────
+  basicWeekly: number | null;
+  basicMonthly: number | null;
+  basicFoundersWeekly: number | null;
+  basicFoundersMonthly: number | null;
+  // ── Pro tier aliases (spec 033) ──────────────────────────────────────────
+  proWeekly: number | null;
+  proMonthly: number | null;
+  proFoundersWeekly: number | null;
+  proFoundersMonthly: number | null;
+  // ── Team tier (spec 033) — null until STRIPE_TEAM_* env vars are set ────
+  teamWeekly: number | null;
+  teamMonthly: number | null;
+  teamFoundersWeekly: number | null;
+  teamFoundersMonthly: number | null;
+}
+
+/** Response shape of GET /stripe/prices */
+export interface PricesResponse {
+  success: boolean;
+  testMode: boolean;
+  prices: PriceCatalog;
 }
 
 // Legacy interface for backward compatibility (if needed)

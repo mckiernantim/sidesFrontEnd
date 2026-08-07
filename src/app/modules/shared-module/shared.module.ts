@@ -20,6 +20,7 @@ import { TailwindTableComponent } from '../../components/shared/tailwind-table/t
 import { SpinnerComponent } from '../../components/shared/spinner/spinner.component';
 import { UploadProgressModalComponent } from '../../components/shared/upload-progress-modal/upload-progress-modal.component';
 import { DocumentReadyModalComponent } from '../../components/shared/document-ready-modal/document-ready-modal.component';
+import { SaveProjectDialogComponent } from '../../components/shared/save-project-dialog/save-project-dialog.component';
 
 
 @NgModule({
@@ -38,6 +39,7 @@ import { DocumentReadyModalComponent } from '../../components/shared/document-re
     SpinnerComponent,
     UploadProgressModalComponent,
     DocumentReadyModalComponent,
+    SaveProjectDialogComponent,
 
     
   ],
@@ -65,6 +67,7 @@ import { DocumentReadyModalComponent } from '../../components/shared/document-re
     SpinnerComponent,
     UploadProgressModalComponent,
     DocumentReadyModalComponent,
+    SaveProjectDialogComponent,
   ],
   providers: [DatePipe, AsyncPipe, DateFormatPipe],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]

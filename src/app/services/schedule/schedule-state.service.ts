@@ -1,6 +1,9 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { ProductionSchedule, ShootDay, ScheduleScene } from '../../types/Schedule';
+import { SceneSortMode, sortScheduleScenes } from '../../utils/schedule-scene-sort';
+import { buildDayTitleFromScenes, locationsInShootOrder } from '../../utils/shoot-day-title';
+import { parseSceneHeader } from '../../utils/parseSceneHeader';
 
 /**
  * Reactive state management for the scheduling UI.
@@ -82,6 +85,28 @@ export class ScheduleStateService {
   }
 
   // ─────────────────────────────────────────────
+  // Day Title Helpers (spec 031)
+  // ─────────────────────────────────────────────
+
+  /**
+   * Returns a copy of `day` with `label`, `primaryLocation`, and
+   * `secondaryLocations` re-derived from its current scene order
+   * (spec 031 FR-004/FR-005). Callers apply this to any day whose
+   * `scenes` array changed (move, sort, remove) so the auto title
+   * stays the source of truth for both display and persisted export
+   * fields.
+   */
+  private refreshDayTitle(day: ShootDay): ShootDay {
+    const locations = locationsInShootOrder(day.scenes);
+    return {
+      ...day,
+      label: buildDayTitleFromScenes(day.scenes, day.dayNumber),
+      primaryLocation: locations[0] ?? '',
+      secondaryLocations: locations.slice(1),
+    };
+  }
+
+  // ─────────────────────────────────────────────
   // Scene Drag-Drop Operations
   // ─────────────────────────────────────────────
 
@@ -111,12 +136,12 @@ export class ScheduleStateService {
 
       // Recalculate order and totals
       const reorderedScenes = newScenes.map((s, i) => ({ ...s, orderInDay: i }));
-      return {
+      return this.refreshDayTitle({
         ...day,
         scenes: reorderedScenes,
         estimatedPageCount: reorderedScenes.reduce((sum, s) => sum + s.pageCount, 0),
         estimatedTotalTime: reorderedScenes.reduce((sum, s) => sum + s.estimatedTimeInFifteenMin, 0),
-      };
+      });
     });
 
     this.updateSchedule({
@@ -152,12 +177,12 @@ export class ScheduleStateService {
       newScenes.splice(idx, 1);
       const reorderedScenes = newScenes.map((s, i) => ({ ...s, orderInDay: i }));
 
-      return {
+      return this.refreshDayTitle({
         ...day,
         scenes: reorderedScenes,
         estimatedPageCount: reorderedScenes.reduce((sum, s) => sum + s.pageCount, 0),
         estimatedTotalTime: reorderedScenes.reduce((sum, s) => sum + s.estimatedTimeInFifteenMin, 0),
-      };
+      });
     });
 
     if (!movedScene) return;
@@ -172,12 +197,12 @@ export class ScheduleStateService {
       newScenes.splice(targetIndex, 0, movedScene as ScheduleScene);
       const reorderedScenes = newScenes.map((s, i) => ({ ...s, orderInDay: i }));
 
-      return {
+      return this.refreshDayTitle({
         ...day,
         scenes: reorderedScenes,
         estimatedPageCount: reorderedScenes.reduce((sum, s) => sum + s.pageCount, 0),
         estimatedTotalTime: reorderedScenes.reduce((sum, s) => sum + s.estimatedTimeInFifteenMin, 0),
-      };
+      });
     });
 
     this.updateSchedule({
@@ -206,12 +231,12 @@ export class ScheduleStateService {
       newScenes.splice(idx, 1);
       const reorderedScenes = newScenes.map((s, i) => ({ ...s, orderInDay: i }));
 
-      return {
+      return this.refreshDayTitle({
         ...day,
         scenes: reorderedScenes,
         estimatedPageCount: reorderedScenes.reduce((sum, s) => sum + s.pageCount, 0),
         estimatedTotalTime: reorderedScenes.reduce((sum, s) => sum + s.estimatedTimeInFifteenMin, 0),
-      };
+      });
     });
 
     if (!movedScene) return;
@@ -263,6 +288,92 @@ export class ScheduleStateService {
   }
 
   // ─────────────────────────────────────────────
+  // Scene Sort Operations (spec 030)
+  // ─────────────────────────────────────────────
+
+  /**
+   * Sorts the unscheduled scene pool by the given mode. No-op when the
+   * pool is empty or there is no schedule loaded (spec 030 edge cases).
+   */
+  sortUnscheduledScenes(mode: SceneSortMode): void {
+    const schedule = this.schedule;
+    if (!schedule || schedule.unscheduledScenes.length === 0) return;
+
+    this.updateSchedule({
+      ...schedule,
+      unscheduledScenes: sortScheduleScenes(schedule.unscheduledScenes, mode),
+    });
+  }
+
+  /**
+   * Sorts the scenes within a single shoot day by the given mode.
+   * Reindexes `orderInDay` to match the new order. Never moves scenes
+   * to another day or the unscheduled pool. No-op for an empty/missing
+   * day or when there is no schedule loaded.
+   */
+  sortShootDay(dayId: string, mode: SceneSortMode): void {
+    const schedule = this.schedule;
+    if (!schedule) return;
+
+    const day = schedule.shootDays.find((d) => d.id === dayId);
+    if (!day || day.scenes.length === 0) return;
+
+    const sortedScenes = sortScheduleScenes(day.scenes, mode).map((scene, index) => ({
+      ...scene,
+      orderInDay: index,
+    }));
+
+    this.updateSchedule({
+      ...schedule,
+      shootDays: schedule.shootDays.map((d) =>
+        d.id === dayId ? this.refreshDayTitle({ ...d, scenes: sortedScenes }) : d
+      ),
+    });
+  }
+
+  /**
+   * Applies the given sort mode to every shoot day independently.
+   * Scenes never move between days (spec 030 D4). No-op when there
+   * are no shoot days or no schedule loaded.
+   */
+  sortAllShootDays(mode: SceneSortMode): void {
+    const schedule = this.schedule;
+    if (!schedule || schedule.shootDays.length === 0) return;
+
+    this.updateSchedule({
+      ...schedule,
+      shootDays: schedule.shootDays.map((day) => {
+        if (day.scenes.length === 0) return day;
+        const sortedScenes = sortScheduleScenes(day.scenes, mode).map((scene, index) => ({
+          ...scene,
+          orderInDay: index,
+        }));
+        return this.refreshDayTitle({ ...day, scenes: sortedScenes });
+      }),
+    });
+  }
+
+  // ─────────────────────────────────────────────
+  // Schedule Settings (spec 031)
+  // ─────────────────────────────────────────────
+
+  /**
+   * Show/hide per-scene character & actor chrome across the schedule
+   * builder (spec 031 FR-001). Persists via the existing settings field
+   * on `ProductionSchedule`, so it flows through the normal dirty/auto-save
+   * path — no separate storage.
+   */
+  setShowSceneCast(value: boolean): void {
+    const schedule = this.schedule;
+    if (!schedule) return;
+
+    this.updateSchedule({
+      ...schedule,
+      settings: { ...schedule.settings, showSceneCast: value },
+    });
+  }
+
+  // ─────────────────────────────────────────────
   // One-Liner Management
   // ─────────────────────────────────────────────
 
@@ -296,6 +407,64 @@ export class ScheduleStateService {
         scenes: day.scenes.map(updater),
       })),
       unscheduledScenes: schedule.unscheduledScenes.map(updater),
+    });
+  }
+
+  // ─────────────────────────────────────────────
+  // Scene Header Editing (spec 032)
+  // ─────────────────────────────────────────────
+
+  /**
+   * Update a scene's header text (spec 032 US2/FR-002/FR-003).
+   * Searches both shootDays and unscheduledScenes. Re-runs `parseSceneHeader`
+   * on the new text — the same helper `ScheduleService.buildScheduleScenes`
+   * uses when a schedule is first seeded — to keep `intExt`, `location`,
+   * `timeOfDay`, `isOmitted`, `needsNight`, and `stripColor` derived from the
+   * header rather than stale. Refreshes the affected day's auto-title
+   * (FR-005) since the location may have changed. Marks the schedule dirty
+   * → triggers auto-save.
+   *
+   * Does NOT touch live scan/classify data (`PdfService.allLines`/`scenes`)
+   * — that sync is the caller's responsibility (ScheduleBuilderComponent),
+   * since this service has no knowledge of the hydrated PdfService.
+   *
+   * No-ops (does not update or mark dirty) when `newText` trims to empty —
+   * per spec edge case, an empty header reverts to the previous value.
+   */
+  updateSceneHeader(sceneId: string, newText: string): void {
+    const schedule = this.schedule;
+    if (!schedule) return;
+
+    const trimmed = (newText || '').trim();
+    if (!trimmed) return;
+
+    const parsed = parseSceneHeader(trimmed);
+
+    const updater = (scene: ScheduleScene): ScheduleScene => {
+      if (scene.id !== sceneId) return scene;
+      return {
+        ...scene,
+        sceneHeader: trimmed,
+        intExt: parsed.intExt,
+        location: parsed.location,
+        timeOfDay: parsed.timeOfDay,
+        isOmitted: parsed.isOmitted,
+        needsNight: parsed.needsNight,
+        stripColor: parsed.stripColor,
+      };
+    };
+
+    const updatedUnscheduled = schedule.unscheduledScenes.map(updater);
+    const updatedDays = schedule.shootDays.map((day) => {
+      const idx = day.scenes.findIndex((s) => s.id === sceneId);
+      if (idx === -1) return day;
+      return this.refreshDayTitle({ ...day, scenes: day.scenes.map(updater) });
+    });
+
+    this.updateSchedule({
+      ...schedule,
+      unscheduledScenes: updatedUnscheduled,
+      shootDays: updatedDays,
     });
   }
 
